@@ -43,6 +43,46 @@ def get_current_user(request):
     return Response(UserSerializer(request.user).data)
 
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def admin_stats(request):
+    """
+    Admin statistics: total users by role, recent activity
+    """
+    from django.contrib.auth import get_user_model
+    from django.db.models import Count
+
+    User = get_user_model()
+
+    # Only admins can access
+    if request.user.role != 'ADMIN':
+        return Response({'detail': 'Admin access required'}, status=status.HTTP_403_FORBIDDEN)
+
+    # User counts by role
+    role_counts = User.objects.values('role').annotate(count=Count('id'))
+    total_users = User.objects.count()
+
+    # Recent activity (last 10 logins)
+    # Since we don't have a login log model yet, we'll use last_login field
+    recent_activity = []
+    recent_users = User.objects.filter(last_login__isnull=False).order_by('-last_login')[:10]
+
+    for user in recent_users:
+        recent_activity.append({
+            'action': 'Connexion',
+            'user': f"{user.first_name} {user.last_name}",
+            'time': user.last_login.isoformat() if user.last_login else None,
+            'role': user.role,
+        })
+
+    return Response({
+        'total_users': total_users,
+        'role_counts': list(role_counts),
+        'recent_activity': recent_activity,
+        'active_roles': len(role_counts),
+    })
+
+
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_profile(request):

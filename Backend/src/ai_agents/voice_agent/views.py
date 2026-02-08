@@ -76,3 +76,49 @@ def index_docs(request):
         {"detail": f"{count} documents indexed successfully."},
         status=status.HTTP_200_OK,
     )
+
+
+@api_view(["POST"])
+@permission_classes([IsAuthenticated, IsAdmin])
+def index_from_url(request):
+    """
+    Index documentation from a URL using Firecrawl (optional).
+
+    POST body: {"url": "https://docs.example.com", "limit": 5}
+    Requires FIRECRAWL_API_KEY and firecrawl-py package.
+    """
+    url = request.data.get("url")
+    if not url:
+        return Response(
+            {"detail": "Missing required field: url"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    limit = request.data.get("limit", 5)
+
+    from ai_agents.voice_agent.url_indexer import crawl_url_to_documents
+
+    documents = crawl_url_to_documents(url, limit=limit)
+    if not documents:
+        return Response(
+            {
+                "detail": (
+                    "No documents crawled. Ensure FIRECRAWL_API_KEY is set and "
+                    "firecrawl-py is installed: pip install firecrawl-py"
+                ),
+            },
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    vector_store = get_vector_store()
+    if vector_store.client is None:
+        return Response(
+            {"detail": "Qdrant client is not available."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+    vector_store.setup_collection()
+    count = vector_store.store_documents(documents)
+    return Response(
+        {"detail": f"{count} documents indexed from URL successfully.", "url": url},
+        status=status.HTTP_200_OK,
+    )

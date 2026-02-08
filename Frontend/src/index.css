@@ -1,7 +1,9 @@
-/* Smart-HR Design System — Professional Corporate IT
-   Palette: Strict whites · Deep Indigo primary · Muted semantics
-   Inspiration: Hooyia, Notion, Linear, Stripe Dashboard */
+/* Smart-HR Design System v1.0 — Professional SaaS RH
+   Palette: Blanc, bleu pro (#2563EB), gris doux
+   Mode sombre: bleu nuit, gris élégant
+   Crédible pour mémoire licence + publication scientifique */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -155,7 +157,7 @@
   }
 
   html {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
   }
 
   body {

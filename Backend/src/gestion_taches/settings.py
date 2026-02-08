@@ -112,10 +112,10 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
-# CORS
+# CORS (Vite par défaut : 5173)
 CORS_ALLOWED_ORIGINS = config(
     'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:8080,http://localhost:3000',
+    default='http://localhost:5173,http://localhost:8080,http://localhost:3000,http://127.0.0.1:5173',
     cast=Csv()
 )
 CORS_ALLOW_CREDENTIALS = True

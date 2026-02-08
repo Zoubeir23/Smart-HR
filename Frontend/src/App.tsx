@@ -12,6 +12,7 @@ import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 
 // Dashboards
+import AdminDashboard from "@/pages/dashboard/AdminDashboard";
 import HRDashboard from "@/pages/dashboard/HRDashboard";
 import EmployeeDashboard from "@/pages/dashboard/EmployeeDashboard";
 import CandidateDashboard from "@/pages/dashboard/CandidateDashboard";
@@ -40,6 +41,8 @@ import VoiceAssistantPage from "@/pages/ai/VoiceAssistantPage";
 
 // Parametres
 import SettingsPage from "@/pages/settings/SettingsPage";
+import SecurityPage from "@/pages/settings/SecurityPage";
+import ProfilePage from "@/pages/settings/ProfilePage";
 
 // Pages generales
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -55,6 +58,7 @@ function DashboardRedirect() {
 
   switch (user.role) {
     case 'ADMIN':
+      return <AdminDashboard />;
     case 'RH':
       return <HRDashboard />;
     case 'EMPLOYEE':
@@ -229,6 +233,24 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <SettingsPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/profile"
+                element={
+                  <ProtectedRoute>
+                    <ProfilePage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/security"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <SecurityPage />
                   </ProtectedRoute>
                 }
               />

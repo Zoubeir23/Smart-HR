@@ -36,13 +36,14 @@ class JobOfferCreateSerializer(serializers.ModelSerializer):
 class ApplicationListSerializer(serializers.ModelSerializer):
     candidate = UserSerializer(read_only=True)
     job_title = serializers.CharField(source='job_offer.title', read_only=True)
+    job_department = serializers.CharField(source='job_offer.department', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     cv_analysis = serializers.SerializerMethodField()
 
     class Meta:
         model = Application
         fields = [
-            'id', 'job_offer', 'job_title', 'candidate', 'cv', 'cover_letter',
+            'id', 'job_offer', 'job_title', 'job_department', 'candidate', 'cv', 'cover_letter',
             'status', 'status_display', 'matching_score', 'cv_analysis', 'created_at',
         ]
 

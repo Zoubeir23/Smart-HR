@@ -1,4 +1,6 @@
-import { Bell, Search, Moon, Sun, Menu } from 'lucide-react';
+import { Bell, Search, Moon, Sun, Menu, LogOut, User, Settings } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import Logo from '@/components/common/Logo';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -19,7 +21,7 @@ interface NavbarProps {
 
 export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const notifications = [
     { id: 1, title: 'Nouvelle demande de congé', description: 'Amadou Sow a demandé un congé', time: 'Il y a 5 min' },
@@ -35,6 +37,10 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
             <Menu className="h-5 w-5" />
           </Button>
         )}
+        <Link to="/dashboard" className="flex items-center shrink-0">
+          <span className="sm:hidden"><Logo variant="icon" size="sm" /></span>
+          <span className="hidden sm:inline"><Logo variant="full" size="sm" /></span>
+        </Link>
         
         {/* Search */}
         <div className="relative hidden md:block">
@@ -103,10 +109,24 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Profil</DropdownMenuItem>
-            <DropdownMenuItem>Paramètres</DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/profile">
+                <User className="mr-2 h-4 w-4" />
+                Profil
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/settings">
+                <Settings className="mr-2 h-4 w-4" />
+                Paramètres
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive cursor-pointer"
+              onClick={() => logout()}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
               Déconnexion
             </DropdownMenuItem>
           </DropdownMenuContent>

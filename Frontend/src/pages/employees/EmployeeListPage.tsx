@@ -38,7 +38,6 @@ import { cn } from '@/lib/utils';
 import { employeeService } from '@/services/employeeService';
 import { useQuery } from '@tanstack/react-query';
 
-const departments = ['Tous', 'Développement', 'Marketing', 'Commercial', 'Finance', 'RH', 'IT'];
 const statuses = [
   { value: 'all', label: 'Tous les statuts', icon: Users },
   { value: 'active', label: 'Actifs', icon: UserCheck },
@@ -68,7 +67,14 @@ export default function EmployeeListPage() {
     queryKey: ['employees'],
     queryFn: () => employeeService.getAll(),
   });
+  const { data: departmentsData } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => employeeService.getDepartments(),
+  });
+
   const employees: Employee[] = employeesData?.results || employeesData || [];
+  const departmentsList = departmentsData?.results ?? departmentsData ?? [];
+  const departments = ['Tous', ...departmentsList.map((d: { name: string }) => d.name)];
 
   // Filtrer les employés
   const filteredEmployees = employees.filter((employee) => {
@@ -76,10 +82,11 @@ export default function EmployeeListPage() {
       employee.user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       employee.user.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       employee.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      employee.position.toLowerCase().includes(searchQuery.toLowerCase());
+      ((employee as { position_title?: string }).position_title ?? employee.position ?? '').toLowerCase().includes(searchQuery.toLowerCase());
 
+    const deptName = (employee as { department_name?: string }).department_name ?? employee.department;
     const matchesDepartment =
-      selectedDepartment === 'Tous' || employee.department === selectedDepartment;
+      selectedDepartment === 'Tous' || deptName === selectedDepartment;
 
     const matchesStatus = selectedStatus === 'all' || employee.status === selectedStatus;
 
@@ -276,8 +283,8 @@ export default function EmployeeListPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{employee.department}</TableCell>
-                    <TableCell>{employee.position}</TableCell>
+                    <TableCell>{(employee as { department_name?: string }).department_name ?? employee.department}</TableCell>
+                    <TableCell>{(employee as { position_title?: string }).position_title ?? employee.position}</TableCell>
                     <TableCell>
                       <Badge variant="outline" className={statusStyles[employee.status]}>
                         {statusLabels[employee.status]}

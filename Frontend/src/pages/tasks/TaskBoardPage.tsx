@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { taskService } from '@/services/taskService';
+import { employeeService } from '@/services/employeeService';
+import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -65,11 +67,24 @@ const priorityConfig = {
 
 const TaskBoardPage = () => {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    assignee: '',
+    priority: 'medium' as TaskPriority,
+    due_date: '',
+  });
 
   const { data: tasksData, isLoading } = useQuery({
     queryKey: ['tasks'],
     queryFn: () => taskService.getAll(),
+  });
+
+  const { data: employeesData } = useQuery({
+    queryKey: ['employees-list'],
+    queryFn: () => employeeService.getAll(),
   });
 
   const rawTasks = tasksData?.results || tasksData || [];
@@ -89,10 +104,38 @@ const TaskBoardPage = () => {
     description: (t.description as string) || '',
   }));
 
+  const employees = employeesData?.results || employeesData || [];
+
+  const createTaskMutation = useMutation({
+    mutationFn: (taskData: Record<string, unknown>) => taskService.create(taskData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setIsDialogOpen(false);
+      setNewTask({ title: '', description: '', assignee: '', priority: 'medium', due_date: '' });
+      toast({
+        title: 'Tâche créée',
+        description: 'La tâche a été créée avec succès.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de créer la tâche. Veuillez réessayer.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: ({ id, status }: { id: number; status: string }) =>
       taskService.updateStatus(id, status),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      toast({
+        title: 'Statut mis à jour',
+        description: 'Le statut de la tâche a été modifié.',
+      });
+    },
   });
 
   const getTasksByStatus = (status: TaskStatus) => {
@@ -197,7 +240,12 @@ const TaskBoardPage = () => {
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="title">Titre</Label>
-                  <Input id="title" placeholder="Titre de la tâche" />
+                  <Input
+                    id="title"
+                    placeholder="Titre de la tâche"
+                    value={newTask.title}
+                    onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="description">Description</Label>
@@ -205,25 +253,35 @@ const TaskBoardPage = () => {
                     id="description"
                     placeholder="Description détaillée"
                     rows={3}
+                    value={newTask.description}
+                    onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="assignee">Assigné à</Label>
-                    <Select>
+                    <Select
+                      value={newTask.assignee}
+                      onValueChange={(value) => setNewTask({ ...newTask, assignee: value })}
+                    >
                       <SelectTrigger id="assignee">
                         <SelectValue placeholder="Sélectionner" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="md">Moussa Diop</SelectItem>
-                        <SelectItem value="fs">Fatou Sall</SelectItem>
-                        <SelectItem value="ab">Amadou Ba</SelectItem>
+                        {employees.map((emp: any) => (
+                          <SelectItem key={emp.id} value={String(emp.id)}>
+                            {emp.user?.first_name} {emp.user?.last_name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="priority">Priorité</Label>
-                    <Select>
+                    <Select
+                      value={newTask.priority}
+                      onValueChange={(value) => setNewTask({ ...newTask, priority: value as TaskPriority })}
+                    >
                       <SelectTrigger id="priority">
                         <SelectValue placeholder="Sélectionner" />
                       </SelectTrigger>
@@ -237,7 +295,12 @@ const TaskBoardPage = () => {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="due-date">Date d'échéance</Label>
-                  <Input id="due-date" type="date" />
+                  <Input
+                    id="due-date"
+                    type="date"
+                    value={newTask.due_date}
+                    onChange={(e) => setNewTask({ ...newTask, due_date: e.target.value })}
+                  />
                 </div>
               </div>
               <DialogFooter>
@@ -249,9 +312,17 @@ const TaskBoardPage = () => {
                 </Button>
                 <Button
                   className="bg-primary text-primary-foreground"
-                  onClick={() => setIsDialogOpen(false)}
+                  onClick={() => createTaskMutation.mutate({
+                    title: newTask.title,
+                    description: newTask.description,
+                    assignee: newTask.assignee,
+                    priority: newTask.priority,
+                    due_date: newTask.due_date,
+                    status: 'todo',
+                  })}
+                  disabled={createTaskMutation.isPending || !newTask.title || !newTask.assignee}
                 >
-                  Créer
+                  {createTaskMutation.isPending ? 'Création...' : 'Créer'}
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -53,4 +53,9 @@ export const authService = {
     const { data } = await api.post('/auth/token/refresh/', { refresh });
     return data;
   },
+
+  getAdminStats: async () => {
+    const { data } = await api.get('/auth/admin/stats/');
+    return data;
+  },
 };
