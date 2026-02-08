@@ -65,17 +65,17 @@ npm run dev
 
 | Email | Mot de passe | Rôle |
 |-------|-------------|------|
-| `admin@smarthr.com` | `admin123` | ADMIN |
-| `rh@smarthr.com` | `rh123` | RH |
-| `employee@smarthr.com` | `emp123` | EMPLOYEE |
-| `candidate@smarthr.com` | `cand123` | CANDIDATE |
+| `<ADMIN_EMAIL>` | `<ADMIN_PASSWORD>` | ADMIN |
+| `<RH_EMAIL>` | `<RH_PASSWORD>` | RH |
+| `<EMPLOYEE_EMAIL>` | `<EMPLOYEE_PASSWORD>` | EMPLOYEE |
+| `<CANDIDATE_EMAIL>` | `<CANDIDATE_PASSWORD>` | CANDIDATE |
 
 ---
 
 ## 🧪 Tests Rapides
 
 ### Test 1 : Dashboard RH
-1. Se connecter avec `rh@smarthr.com` / `rh123`
+1. Se connecter avec `<RH_EMAIL>` / `<RH_PASSWORD>`
 2. Vérifier que le **RetentionChart** affiche des données (pas de valeurs en dur)
 3. Vérifier que le **ChurnGauge** affiche un nombre
 4. Cliquer sur **"Approuver"** un congé en attente
@@ -90,7 +90,7 @@ npm run dev
 6. Vérifier que la tâche apparaît dans la colonne "À faire"
 
 ### Test 3 : Création de Congé
-1. Se connecter avec `employee@smarthr.com` / `emp123`
+1. Se connecter avec `<EMPLOYEE_EMAIL>` / `<EMPLOYEE_PASSWORD>`
 2. Aller sur **"Congés"** dans le menu
 3. Cliquer sur **"Nouvelle demande"**
 4. Remplir le formulaire (type, dates, motif)
@@ -98,10 +98,10 @@ npm run dev
 6. Vérifier qu'un toast "Demande envoyée" apparaît
 
 ### Test 4 : RBAC (Contrôle d'Accès)
-1. Se connecter avec `employee@smarthr.com` / `emp123`
+1. Se connecter avec `<EMPLOYEE_EMAIL>` / `<EMPLOYEE_PASSWORD>`
 2. Aller sur le Dashboard
 3. **Vérifier** : Le bouton "Nouvel employé" NE doit PAS être visible
-4. Se déconnecter et se reconnecter avec `rh@smarthr.com`
+4. Se déconnecter et se reconnecter avec `<RH_EMAIL>`
 5. **Vérifier** : Le bouton "Nouvel employé" DOIT être visible
 
 ---
