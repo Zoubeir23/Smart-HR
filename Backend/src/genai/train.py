@@ -1,68 +1,57 @@
-from personnel.models import Personnel
-from conge.models import Conge
-from paiement.models import Paiement
 from datetime import datetime
-from presence.models import Presence
-from tache.models import Tache
-from personnel.models import Service
-from personnel.models import Fonction
+
+from personnel.models import Employee, Department, Position
+from conge.models import LeaveRequest
+from paiement.models import Payroll
+from presence.models import Attendance
+from tache.models import Task
 from document.models import Document
 
+
 def train(question):
-    personnel = Personnel.objects.all()
-    personnel_str = ", ".join([str(p) for p in personnel])
+    employees = Employee.objects.select_related('user', 'department', 'position').all()
+    employees_str = ", ".join([str(e) for e in employees])
 
-    conge = Conge.objects.all()
-    conge_str = ", ".join([str(c) for c in conge])
+    leaves = LeaveRequest.objects.select_related('employee__user').all()
+    leaves_str = ", ".join([str(c) for c in leaves])
 
-    paiement = Paiement.objects.all()
-    paiement_str = ", ".join([str(p) for p in paiement])
+    payrolls = Payroll.objects.select_related('employee__user').all()
+    payrolls_str = ", ".join([str(p) for p in payrolls])
 
-    presence = Presence.objects.all()
-    presence_str = ", ".join([str(p) for p in presence])
+    attendance = Attendance.objects.select_related('employee__user').all()
+    attendance_str = ", ".join([str(p) for p in attendance])
 
-    tache = Tache.objects.all()
-    tache_str = ", ".join([str(t) for t in tache])
+    tasks = Task.objects.select_related('assignee__user').all()
+    tasks_str = ", ".join([str(t) for t in tasks])
 
-    service = Service.objects.all()
-    service_str = ", ".join([str(s) for s in service])
+    departments = Department.objects.all()
+    departments_str = ", ".join([str(d) for d in departments])
 
-    fonction = Fonction.objects.all()
-    fonction_str = ", ".join([str(f) for f in fonction])
+    positions = Position.objects.all()
+    positions_str = ", ".join([str(p) for p in positions])
 
-    documents = Document.objects.all()
+    documents = Document.objects.select_related('employee__user').all()
     documents_str = ", ".join([str(d) for d in documents])
 
     training_data = f"""Données RH dans base de données pour que tu puisse repondre aux questions concernant les données RH:
     date et heure actuelle : {datetime.now()}
-    - Personnel ou employer : {personnel_str}
-    - Congés : {conge_str}
-    - Paiements : {paiement_str}
-    - Présences : {presence_str}
-    - Tâches : {tache_str}
-    - Services : {service_str}
-    - Fonctions : {fonction_str}
+    - Employés : {employees_str}
+    - Congés : {leaves_str}
+    - Paiements : {payrolls_str}
+    - Présences : {attendance_str}
+    - Tâches : {tasks_str}
+    - Départements : {departments_str}
+    - Postes : {positions_str}
     - Documents : {documents_str}
-    
- 
-        
-    quand repond en donnant des données il faut les cites comme suit:
-    exemple : 
-    * qui sont les personne en conge en ce moment?
-     - Diane Keaton, debut : 2022-01-01, fin : 2022-01-10, motif : vacances
-    - John Doe, debut : 2022-01-01, fin : 2022-01-10, motif : vacances
-    
-         Indication de la signification de chaque numéro etats ou status des tache :         
-            1 = "A Faire"
-            2 = "En Cours"
-            3 = "En Revue"
-            4 = "Effectuée ou Terminée"
-    * liste des taches en cours
-     \n - refaire le site web, status : En cours
-     \n - faire le rapport, status : En attente
 
-    
-    Repond à cette question : {question}
+    quand tu réponds en donnant des données il faut les citer comme suit:
+    exemple :
+    * qui sont les personnes en congé en ce moment?
+     - Diane Keaton, debut : 2022-01-01, fin : 2022-01-10, motif : vacances
+     - John Doe, debut : 2022-01-01, fin : 2022-01-10, motif : vacances
+
+    Statuts des tâches : todo = "À Faire", in_progress = "En Cours", in_review = "En Revue", done = "Terminée"
+
+    Répond à cette question : {question}
     """
-    print(training_data)
     return training_data

@@ -1,24 +1,36 @@
 from django.db import models
-from personnel.models import Personnel
+from personnel.models import Employee
 
-# Create your models here.
 
-class Presence(models.Model):
-    """Modèle représentant la présence d'un employé"""
-    STATUT_CHOICES = [
-        ('Présent', 'Présent'),
-        ('Absent', 'Absent'),
-        ('Retard', 'Retard'),
-        ('Congé', 'Congé'),
-    ]
+class Attendance(models.Model):
+    """Modèle représentant la présence quotidienne d'un employé."""
 
-    personnel = models.ForeignKey(Personnel, on_delete=models.CASCADE)
-    date_jour = models.DateField(auto_now_add=True)
-    heure_arrivee = models.TimeField(null=True, blank=True)
-    heure_depart = models.TimeField(null=True, blank=True)
-    statut = models.CharField(max_length=10, choices=STATUT_CHOICES, default='Présent')
-    commentaire = models.TextField(blank=True, null=True)
-    
+    class Status(models.TextChoices):
+        PRESENT = 'present', 'Présent'
+        ABSENT = 'absent', 'Absent'
+        LATE = 'late', 'En retard'
+        HALF_DAY = 'half_day', 'Demi-journée'
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='attendances',
+    )
+    date = models.DateField()
+    check_in = models.TimeField(null=True, blank=True)
+    check_out = models.TimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PRESENT,
+    )
+    note = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name = 'Présence'
+        verbose_name_plural = 'Présences'
+        ordering = ['-date', 'employee']
+        unique_together = ['employee', 'date']
+
     def __str__(self):
-        return f" {self.personnel.nom} {self.personnel.prenom} - {self.date_jour} - {self.heure_arrivee} - {self.heure_depart} - {self.statut} - {self.commentaire}"
-    
+        return f"{self.employee} — {self.date} ({self.get_status_display()})"

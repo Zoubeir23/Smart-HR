@@ -1,86 +1,53 @@
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .models import Personnel, Salaire, Paiement
-from .serializers import SalaireSerializer, PaiementSerializer
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
+
+from utilisateur.permissions import IsRH
+from .models import Payroll
+from .serializers import PayrollListSerializer, PayrollCreateSerializer
 
 
-# ➤ GESTION DES SALAIRES
+class PayrollViewSet(viewsets.ModelViewSet):
+    """
+    CRUD complet pour la gestion des fiches de paie.
 
-@api_view(['GET'])
-def getAllSalaires(request):
-    """Liste tous les salaires"""
-    salaires = Salaire.objects.all()
-    serializer = SalaireSerializer(salaires, many=True)
-    return Response(serializer.data)
+    - list / retrieve : RH et Admin voient tout, employé voit les siens
+    - create / update / delete : RH uniquement
+    - Filtres : month, status, employee (query params)
+    """
 
-@api_view(['POST'])
-def createSalaire(request):
-    data=request.data
-    employe=Personnel.objects.get(pk=int(data["personnel"]))
-    salaire = Salaire.objects.create(
-        personnel=employe,
-        mois=data["mois"],
-        salaire_brut=data["salaire_brut"],
-        primes=data["primes"], 
-        )
-    salaire.calculer_salaire_net()
-    salaire.save()
-    serializer = SalaireSerializer(salaire, many=False)
-    return Response(serializer.data)
+    queryset = Payroll.objects.select_related(
+        'employee__user', 'employee__department',
+    ).all()
 
-@api_view(['PUT'])
-def updateSalaire(request, id):
-    """Met à jour un salaire"""
-    salaire = Salaire.objects.get(pk=id)
-    serializer = SalaireSerializer(instance=salaire, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-    return Response(serializer.data)
+    def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return PayrollCreateSerializer
+        return PayrollListSerializer
 
-@api_view(['DELETE'])
-def deleteSalaire(request, id):
-    """Supprime un salaire"""
-    salaire = Salaire.objects.get(pk=id)
-    salaire.delete()
-    return Response({"message": "Salaire supprimé avec succès"})
+    def get_permissions(self):
+        if self.action in ('create', 'update', 'partial_update', 'destroy'):
+            return [IsAuthenticated(), IsRH()]
+        return [IsAuthenticated()]
 
-# ➤ GESTION DES PAIEMENTS
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
 
-@api_view(['GET'])
-def getAllPaiements(request):
-    """Liste tous les paiements"""
-    paiements = Paiement.objects.all()
-    serializer = PaiementSerializer(paiements, many=True)
-    return Response(serializer.data)
+        # Employees can only see their own payrolls
+        if user.role not in ('ADMIN', 'RH'):
+            qs = qs.filter(employee__user=user)
 
-@api_view(['POST'])
-def createPaiement(request):
-    """Ajoute un paiement"""
-    data=request.data
-    employe=Personnel.objects.get(pk=data["personnel"])
-    salaire=Salaire.objects.get(pk=data["salaire"])
-    paiement = Paiement.objects.create(
-        personnel=employe,
-        salaire=salaire,
-        mode_paiement=data["mode_paiement"],
-        statut=data["statut"]
-    )
-    paiement.save()
-    serializer = PaiementSerializer(paiement, many=False)
-    return Response(serializer.data)
+        # Filters
+        employee_id = self.request.query_params.get('employee')
+        if employee_id:
+            qs = qs.filter(employee_id=employee_id)
 
-@api_view(['PUT'])
-def updatePaiement(request, id):
-    """Met à jour un paiement"""
-    paiement = Paiement.objects.get(pk=id)
-    serializer = PaiementSerializer(instance=paiement, data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-    return Response(serializer.data)
+        month = self.request.query_params.get('month')
+        if month:
+            qs = qs.filter(month=month)
 
-@api_view(['DELETE'])
-def deletePaiement(request, id):
-    """Supprime un paiement"""
-    paiement = Paiement.objects.get(pk=id)
-    paiement.delete()
-    return Response({"message": "Paiement supprimé avec succès"})
+        filter_status = self.request.query_params.get('status')
+        if filter_status:
+            qs = qs.filter(status=filter_status)
+
+        return qs

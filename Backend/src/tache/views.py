@@ -1,63 +1,69 @@
-from django.shortcuts import render
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.serializers import Serializer
-from rest_framework.decorators import api_view
 
-from personnel.models import Personnel, Service
-from .serializers import TacheSerializer
-from .models import Tache
-from utilisateur.models import Utilisateur
-
-# Create your views here.
-
-
-@api_view(['GET'])
-def findAllTache(request):
-    tache = Tache.objects.all()
-    serializer = TacheSerializer(tache, many=True)
-    return Response(serializer.data)
+from utilisateur.permissions import IsRH, IsEmployee, IsOwnerOrRH
+from .models import Task
+from .serializers import (
+    TaskListSerializer,
+    TaskCreateUpdateSerializer,
+    TaskSerializer,
+)
 
 
-@api_view(['POST'])
-def createTache(request):
-    data = request.data
-    personnel = Personnel.objects.get(pk=data['personnel'])
-    service = Service.objects.get(pk=data['service'])
-    utilisateur = Utilisateur.objects.get(pk=data['utilisateur'])
-    tache = Tache.objects.create(nom=data['nom'], date_debut=data['date_debut'], date_fin=data['date_fin'],
-                                 utilisateur=utilisateur, personnel=personnel, service=service, description=data["description"])
-    serializer = TacheSerializer(tache, many=False)
-    return Response(serializer.data)
+class TaskViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing tasks.
 
+    - Employees see only tasks assigned to them.
+    - RH / Admin can see and manage all tasks.
+    """
 
-@api_view(['PUT'])
-def updateTache(request):
-    data = request.data
-    tache = Tache.objects.get(pk=data["id"])
-    tache.date_debut = data["date_debut"]
-    tache.date_fin = data["date_fin"]
-    tache.nom = data["nom"]
-    tache.description = data["description"]
-    tache.personnel = Personnel.objects.get(pk=data['personnel'])
-    tache.service = Service.objects.get(pk=data['service'])
-    tache.save()
-    serializer = TacheSerializer(tache, many=False)
-    return Response(serializer.data)
+    def get_queryset(self):
+        user = self.request.user
+        qs = Task.objects.select_related(
+            'assignee__user',
+            'assignee__department',
+            'assignee__position',
+            'created_by',
+        )
+        if user.role in ('ADMIN', 'RH'):
+            return qs.all()
+        # Regular employees see only tasks assigned to them
+        return qs.filter(assignee__user=user)
 
+    def get_permissions(self):
+        if self.action in ('create', 'destroy'):
+            return [IsAuthenticated(), IsRH()]
+        return [IsAuthenticated(), IsEmployee()]
 
-@api_view(['PUT'])
-def updateEtat(request):
-    data = request.data
-    tache = Tache.objects.get(pk=data["id"])
-    tache.etat = data['etat']
-    tache.save()
-    serializer = TacheSerializer(tache, many=False)
-    return Response(serializer.data)
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return TaskListSerializer
+        if self.action in ('create', 'update', 'partial_update'):
+            return TaskCreateUpdateSerializer
+        return TaskSerializer
 
+    @action(detail=True, methods=['patch'], url_path='update-status')
+    def update_status(self, request, pk=None):
+        """Allow updating only the status field of a task."""
+        task = self.get_object()
+        new_status = request.data.get('status')
+        valid_statuses = [choice[0] for choice in Task.Status.choices]
 
-@api_view(['DELETE'])
-def deleteTache(request, id):
-    tache = Tache.objects.get(pk=id)
-    tache.delete()
-    serializer = TacheSerializer(tache, many=False)
-    return Response(serializer.data)
+        if not new_status:
+            return Response(
+                {'detail': 'Le champ "status" est requis.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if new_status not in valid_statuses:
+            return Response(
+                {'detail': f'Statut invalide. Choix valides : {valid_statuses}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        task.status = new_status
+        task.save(update_fields=['status'])
+        serializer = TaskSerializer(task)
+        return Response(serializer.data)

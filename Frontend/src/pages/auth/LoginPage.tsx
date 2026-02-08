@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Mail, Lock, ArrowRight, Sparkles } from 'lucide-react';
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import Logo from '@/components/common/Logo';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -47,6 +48,7 @@ export default function LoginPage() {
     { email: 'admin@smarthr.com', password: 'admin123', role: 'Admin' },
     { email: 'rh@smarthr.com', password: 'rh123', role: 'RH' },
     { email: 'employee@smarthr.com', password: 'employee123', role: 'Employé' },
+    { email: 'candidate@smarthr.com', password: 'candidate123', role: 'Candidat' },
   ];
 
   return (
@@ -67,12 +69,7 @@ export default function LoginPage() {
           transition={{ duration: 0.5 }}
           className="relative z-10"
         >
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-              <Sparkles className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="text-2xl font-bold">Smart-HR</span>
-          </div>
+          <Logo variant="full" size="lg" />
         </motion.div>
         
         {/* Hero Content */}
@@ -122,24 +119,25 @@ export default function LoginPage() {
           transition={{ duration: 0.5, delay: 0.6 }}
           className="relative z-10 text-sm text-muted-foreground"
         >
-          © 2024 Smart-HR. Tous droits réservés.
+          © 2026 Smart-HR. Tous droits réservés.
         </motion.div>
       </div>
 
       {/* Panneau droit - Formulaire */}
-      <div className="flex w-full flex-col justify-center px-8 lg:w-1/2 lg:px-16 xl:px-24">
+      <div className="relative flex w-full flex-col justify-center px-8 lg:w-1/2 lg:px-16 xl:px-24">
+        <div className="absolute inset-0 overflow-hidden lg:hidden">
+          <div className="absolute -right-20 -top-20 h-60 w-60 rounded-full bg-primary/5 blur-3xl" />
+          <div className="absolute -bottom-20 -left-20 h-60 w-60 rounded-full bg-accent/5 blur-3xl" />
+        </div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mx-auto w-full max-w-md space-y-8"
+          className="relative z-10 mx-auto w-full max-w-md space-y-8"
         >
           {/* Mobile Logo */}
-          <div className="flex items-center gap-3 lg:hidden">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary">
-              <Sparkles className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">Smart-HR</span>
+          <div className="lg:hidden">
+            <Logo variant="full" size="md" />
           </div>
           
           {/* Header */}

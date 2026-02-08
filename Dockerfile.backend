@@ -1,0 +1,38 @@
+# Smart-HR Backend
+FROM python:3.13-slim
+
+# System deps for psycopg2
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc libpq-dev curl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install Python deps first (cache layer)
+COPY Backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
+
+# Copy source code
+COPY Backend/src/ .
+
+# Copy entrypoint
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Create media directories
+RUN mkdir -p media/documents media/audio media/cvs staticfiles
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD curl -sf http://localhost:8000/api/auth/login/ -o /dev/null || exit 1
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+
+# Run with gunicorn (4 workers, 120s timeout for AI calls)
+CMD ["gunicorn", "gestion_taches.wsgi:application", \
+     "--bind", "0.0.0.0:8000", \
+     "--workers", "4", \
+     "--timeout", "120", \
+     "--access-logfile", "-", \
+     "--error-logfile", "-"]

@@ -1,9 +1,10 @@
-from django.urls import path
-from .views import findAllPresence, createPresence, updatePresence, deletePresence
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import AttendanceViewSet
+
+router = DefaultRouter()
+router.register('attendance', AttendanceViewSet, basename='attendance')
 
 urlpatterns = [
-    path('', findAllPresence, name='findAllPresence'),
-    path('create/', createPresence, name='createPresence'),
-    path('update/', updatePresence, name='updatePresence'),
-    path('delete/<int:id>/', deletePresence, name='deletePresence'),
+    path('', include(router.urls)),
 ]

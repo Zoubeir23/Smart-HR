@@ -1,19 +1,3 @@
-"""
-URL configuration for gestion_taches project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/4.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
@@ -21,15 +5,26 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('personnel.urls')),
-    path('tache/', include('tache.urls')),
-    path('utilisateur/', include('utilisateur.urls')),
-    path('presences/', include('presence.urls')),
-    path('paiement/', include('paiement.urls')),
-    path('conges/', include('conge.urls')),
-    path('documents/', include('document.urls')),
-    path('genai/', include('genai.urls')),
-    path('formations/', include('formation.urls')),
+
+    # Auth
+    path('api/auth/', include('utilisateur.urls')),
+
+    # Core HR
+    path('api/personnel/', include('personnel.urls')),
+    path('api/conges/', include('conge.urls')),
+    path('api/taches/', include('tache.urls')),
+    path('api/presences/', include('presence.urls')),
+    path('api/paiements/', include('paiement.urls')),
+    path('api/documents/', include('document.urls')),
+    path('api/formations/', include('formation.urls')),
+
+    # AI
+    path('api/genai/', include('genai.urls')),
+
+    # Recruitment & AI Engine
+    path('api/recruitment/', include('recruitment.urls')),
+    path('api/ai-engine/', include('ai_engine.urls')),
+    path('api/agents/', include('ai_agents.urls')),
 ]
 
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

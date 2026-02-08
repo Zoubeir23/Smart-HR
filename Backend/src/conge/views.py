@@ -1,50 +1,76 @@
-from rest_framework.decorators import api_view
+from rest_framework import viewsets, status
+from rest_framework.decorators import action
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from .models import Conge
-from .serializers import CongeSerializer
-from personnel.models import Personnel
 
-# ➤ LISTER LES CONGÉS
-@api_view(['GET'])
-def getAllConges(request):
-    conges = Conge.objects.all()
-    serializer = CongeSerializer(conges, many=True)
-    return Response(serializer.data)
+from utilisateur.permissions import IsRH, IsEmployee, IsOwnerOrRH
+from .models import LeaveRequest
+from .serializers import (
+    LeaveRequestListSerializer,
+    LeaveRequestCreateSerializer,
+    LeaveRequestSerializer,
+)
 
-# ➤ CRÉER UN CONGÉ (style que tu préfères)
-@api_view(['POST'])
-def createConge(request):
-    data = request.data
-    personnel = Personnel.objects.get(pk=data["personnel"])
 
-    conge = Conge.objects.create(
-        personnel=personnel,
-        date_debut=data["date_debut"],
-        date_fin=data["date_fin"],
-        motif=data["motif"]
-    )
+class LeaveRequestViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet for managing leave requests.
 
-    serializer = CongeSerializer(conge, many=False)
-    return Response(serializer.data)
+    - Employees can list their own leaves and create new requests.
+    - RH / Admin can list all leaves and approve or reject them.
+    """
 
-# ➤ MODIFIER UN CONGÉ
-@api_view(['PUT'])
-def updateConge(request, id):
-    data = request.data
-    conge = Conge.objects.get(pk=id)
+    def get_queryset(self):
+        user = self.request.user
+        qs = LeaveRequest.objects.select_related(
+            'employee__user',
+            'employee__department',
+            'employee__position',
+            'approved_by',
+        )
+        if user.role in ('ADMIN', 'RH'):
+            return qs.all()
+        # Regular employees see only their own leaves
+        return qs.filter(employee__user=user)
 
-    conge.date_debut = data["date_debut"]
-    conge.date_fin = data["date_fin"]
-    conge.motif = data["motif"]
-    conge.personnel = Personnel.objects.get(pk=data["personnel"])
-    conge.save()
+    def get_permissions(self):
+        if self.action in ('approve', 'reject'):
+            return [IsAuthenticated(), IsRH()]
+        if self.action == 'destroy':
+            return [IsAuthenticated(), IsRH()]
+        return [IsAuthenticated(), IsEmployee()]
 
-    serializer = CongeSerializer(conge, many=False)
-    return Response(serializer.data)
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return LeaveRequestListSerializer
+        if self.action == 'create':
+            return LeaveRequestCreateSerializer
+        return LeaveRequestSerializer
 
-# ➤ SUPPRIMER UN CONGÉ
-@api_view(['DELETE'])
-def deleteConge(request, id):
-    conge = Conge.objects.get(pk=id)
-    conge.delete()
-    return Response({"message": "Congé supprimé avec succès"})
+    @action(detail=True, methods=['patch'], url_path='approve')
+    def approve(self, request, pk=None):
+        leave = self.get_object()
+        if leave.status != LeaveRequest.Status.PENDING:
+            return Response(
+                {'detail': 'Seules les demandes en attente peuvent être approuvées.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        leave.status = LeaveRequest.Status.APPROVED
+        leave.approved_by = request.user
+        leave.save(update_fields=['status', 'approved_by'])
+        serializer = LeaveRequestSerializer(leave)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['patch'], url_path='reject')
+    def reject(self, request, pk=None):
+        leave = self.get_object()
+        if leave.status != LeaveRequest.Status.PENDING:
+            return Response(
+                {'detail': 'Seules les demandes en attente peuvent être refusées.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        leave.status = LeaveRequest.Status.REJECTED
+        leave.approved_by = request.user
+        leave.save(update_fields=['status', 'approved_by'])
+        serializer = LeaveRequestSerializer(leave)
+        return Response(serializer.data)

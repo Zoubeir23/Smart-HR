@@ -1,0 +1,36 @@
+# Git
+.git/
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+Backend/venv/
+Backend/.venv/
+
+# Node
+Frontend/node_modules/
+Frontend/dist/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Docs & non-essential
+Docs/
+claude-talk-to-figma-mcp/
+claude.md
+licence
+
+# Env files (injected at runtime)
+Backend/src/.env
+
+# Logs
+*.log

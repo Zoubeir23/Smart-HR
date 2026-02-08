@@ -1,9 +1,11 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
+from .views import LeaveRequestViewSet
+
+router = DefaultRouter()
+router.register('leaves', LeaveRequestViewSet, basename='leave-request')
 
 urlpatterns = [
-    path('', views.getAllConges),
-    path('create/', views.createConge),
-    path('update/<int:id>/', views.updateConge),
-    path('delete/<int:id>/', views.deleteConge),
+    path('', include(router.urls)),
 ]

@@ -1,16 +1,12 @@
-from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 
+router = DefaultRouter()
+router.register(r'employees', views.EmployeeViewSet)
+router.register(r'departments', views.DepartmentViewSet)
+router.register(r'positions', views.PositionViewSet)
+
 urlpatterns = [
-    path('personnel/findall/', views.findAllPersonnel ),
-    path('personnel/create/<int:id>', views.createPersonnel ),
-    path('personnel/delete/<int:id>', views.deletePersonnel ),
-    path('personnel/update', views.updatePersonnel ),
-    path('service/findall/', views.findAllService ),
-    path('service/create', views.createService ),
-    path('service/update/<int:id>', views.updateService ),
-    path('service/delete/<int:id>', views.deleteService ),
-    path('fonction/findall/', views.findAllFonction ),
-    
+    path('', include(router.urls)),
 ]
