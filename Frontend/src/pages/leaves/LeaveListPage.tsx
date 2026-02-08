@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { leaveService } from '@/services/leaveService';
+import { useToast } from '@/hooks/use-toast';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -40,8 +41,15 @@ type LeaveStatus = 'pending' | 'approved' | 'rejected';
 
 const LeaveListPage = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newLeave, setNewLeave] = useState({
+    leave_type: '',
+    start_date: '',
+    end_date: '',
+    reason: '',
+  });
 
   const queryClient = useQueryClient();
 
@@ -51,14 +59,47 @@ const LeaveListPage = () => {
   });
   const leaves = leavesData?.results || leavesData || [];
 
+  const createLeaveMutation = useMutation({
+    mutationFn: (leaveData: { leave_type: string; start_date: string; end_date: string; reason: string }) =>
+      leaveService.create(leaveData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+      setIsDialogOpen(false);
+      setNewLeave({ leave_type: '', start_date: '', end_date: '', reason: '' });
+      toast({
+        title: 'Demande envoyée',
+        description: 'Votre demande de congé a été soumise avec succès.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de créer la demande. Veuillez réessayer.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const approveMutation = useMutation({
     mutationFn: (id: number) => leaveService.approve(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['leaves'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+      toast({
+        title: 'Congé approuvé',
+        description: 'La demande de congé a été approuvée.',
+      });
+    },
   });
 
   const rejectMutation = useMutation({
     mutationFn: (id: number) => leaveService.reject(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['leaves'] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+      toast({
+        title: 'Congé refusé',
+        description: 'La demande de congé a été refusée.',
+      });
+    },
   });
 
   const handleApprove = (id: number) => {
@@ -122,24 +163,39 @@ const LeaveListPage = () => {
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
                   <Label htmlFor="type">Type de congé</Label>
-                  <Select>
+                  <Select
+                    value={newLeave.leave_type}
+                    onValueChange={(value) => setNewLeave({ ...newLeave, leave_type: value })}
+                  >
                     <SelectTrigger id="type">
                       <SelectValue placeholder="Sélectionnez un type" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="vacances">Vacances</SelectItem>
-                      <SelectItem value="maladie">Maladie</SelectItem>
-                      <SelectItem value="personnel">Personnel</SelectItem>
+                      <SelectItem value="vacation">Vacances</SelectItem>
+                      <SelectItem value="sick">Maladie</SelectItem>
+                      <SelectItem value="personal">Personnel</SelectItem>
+                      <SelectItem value="maternity">Maternité</SelectItem>
+                      <SelectItem value="other">Autre</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="start-date">Date de début</Label>
-                  <Input id="start-date" type="date" />
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={newLeave.start_date}
+                    onChange={(e) => setNewLeave({ ...newLeave, start_date: e.target.value })}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="end-date">Date de fin</Label>
-                  <Input id="end-date" type="date" />
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={newLeave.end_date}
+                    onChange={(e) => setNewLeave({ ...newLeave, end_date: e.target.value })}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="reason">Motif</Label>
@@ -147,6 +203,8 @@ const LeaveListPage = () => {
                     id="reason"
                     placeholder="Décrivez brièvement la raison de votre demande"
                     rows={4}
+                    value={newLeave.reason}
+                    onChange={(e) => setNewLeave({ ...newLeave, reason: e.target.value })}
                   />
                 </div>
               </div>
@@ -159,9 +217,10 @@ const LeaveListPage = () => {
                 </Button>
                 <Button
                   className="bg-primary text-primary-foreground"
-                  onClick={() => setIsDialogOpen(false)}
+                  onClick={() => createLeaveMutation.mutate(newLeave)}
+                  disabled={createLeaveMutation.isPending || !newLeave.leave_type || !newLeave.start_date || !newLeave.end_date}
                 >
-                  Soumettre
+                  {createLeaveMutation.isPending ? 'Soumission...' : 'Soumettre'}
                 </Button>
               </DialogFooter>
             </DialogContent>

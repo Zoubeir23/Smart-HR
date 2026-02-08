@@ -1,6 +1,6 @@
 ## 📘 CAHIER DES CHARGES : SMART-HR
 
-**Version :** 1.0
+**Version :** 1.1
 
 **Date :** Février 2026
 
@@ -298,20 +298,25 @@ tts_agent = Agent(
 - **AI/ML :** Scikit-Learn, Pandas, Numpy.
 - **DevOps :** Docker, Docker Compose, GitHub Actions.
 
-#### Agents IA Multi-Agents
+#### Agents IA intégrés (Django - `src/ai_agents/`)
 
-- **Framework Agents :** Phidata, Agno (>=2.2.10)
 - **Agent de Recrutement :**
     - PyPDF2 (parsing CV)
-    - OpenAI GPT-4o (analyse intelligente)
+    - OpenAI / Gemini (analyse intelligente)
     - Zoom API (planification entretiens)
     - Gmail (emails automatisés)
 - **Agent Vocal :**
-    - Firecrawl (crawling documentation)
     - Qdrant (base vectorielle)
     - FastEmbed (embeddings)
+    - Firecrawl (optionnel : indexation docs depuis URL)
     - OpenAI TTS (text-to-speech)
-- **Assistant IA Conversationnel :** [Z.ai](http://Z.ai) GLM 4.7 / Google Gemini
+- **Assistant IA Conversationnel :** Google Gemini / Z.ai GLM 4.7
+
+#### Démos de référence (`Backend/reference_agents/`)
+
+- Démos Streamlit **standalone** (non intégrées à Django) : `ai_recruitment_agent_team`, `customer_support_voice_agent`
+- Frameworks : Phidata, Agno (dépendances propres à chaque démo)
+- Utilisation : référence et apprentissage ; lancer séparément avec `streamlit run`
 
 ### 5.2 Architecture d'Intégration
 
@@ -335,7 +340,7 @@ tts_agent = Agent(
 ┌────────┐  ┌──────────┐  ┌─────────────┐  ┌──────────┐
 │ Django │  │  Agent   │  │   Agent     │  │  Agent   │
 │  Core  │  │Recrutement│ │   Vocal     │  │   IA     │
-│  RH    │  │(Phidata) │  │ (OpenAI)    │  │ (Z.ai)   │
+│  RH    │  │ (ai_agents)│ │ (ai_agents) │  │(Gemini)  │
 └────────┘  └──────────┘  └─────────────┘  └──────────┘
     │             │              │                │
     ▼             ▼              ▼                ▼
@@ -345,6 +350,17 @@ tts_agent = Agent(
 │  & Prod  │  │         │  │  Vector  │   │ GLM-4.7  │
 └─────────┘  └─────────┘  └──────────┘   └──────────┘
 ```
+
+#### 5.2.1 Utilisation des agents en production
+
+Les agents sont utilisés **automatiquement** lorsque le Frontend et le Backend sont lancés :
+
+1. L'utilisateur (RH, Admin) interagit via l'interface React.
+2. Le Frontend appelle les API Django (ex. `POST /api/agents/voice/ask/`, `POST /api/agents/recruitment/analyze-resume/`).
+3. Django exécute les agents dans `src/ai_agents/` qui utilisent les clés API (`.env` : `OPENAI_API_KEY`, `GEMINI_API_KEY`, etc.).
+4. La réponse est renvoyée au Frontend et affichée.
+
+**Important :** Le dossier `Backend/reference_agents/` contient des démos Streamlit **standalone** (ai_recruitment_agent_team, customer_support_voice_agent). Elles ne font pas partie du flux normal et nécessitent un venv dédié avec leurs propres dépendances (agno, phidata, streamlit). Elles servent de référence pour comprendre les concepts.
 
 ### 5.3 Arborescence du Projet (Approche Progressive)
 
@@ -371,12 +387,13 @@ gestion_rh_django/          # 📁 RACINE DU PROJET
 ├── .vscode/                # Configuration VS Code
 ├── README.md               # Documentation du projet
 ├── requirements.txt        # Dépendances Python globales
-│                           # Django, DRF, scikit-learn, phidata, agno, openai, qdrant
+│                           # Django, DRF, OpenAI, qdrant-client, fastembed, PyPDF2
 ├── .env                    # 🔴 VARIABLES D'ENVIRONNEMENT
-│                           # API Keys: Z.ai (GLM-4.7), Zoom, Gmail, Google OAuth2
+│                           # API Keys: OpenAI, Gemini, Zoom, Gmail, Google OAuth2
+│                           # Qdrant (voice agent), FIRECRAWL_API_KEY (optionnel)
 │                           # DB: PostgreSQL (DATABASE_URL)
 │
-└── src/                    # 📂 CODE SOURCE PRINCIPAL (BACKEND DJANGO)
+├── src/                    # 📂 CODE SOURCE PRINCIPAL (BACKEND DJANGO)
     │
     ├── manage.py           # 🔧 Script Django de gestion du projet
     │
@@ -515,13 +532,12 @@ gestion_rh_django/          # 📁 RACINE DU PROJET
     │   └── voice_agent/    # 🎙️ AGENT VOCAL RH
     │       ├── __init__.py
     │       ├── models.py   # Modèles: VoiceSession, AudioResponse
-    │       ├── processor.py         # 📖 Documentation Processor (RAG)
-    │       ├── tts_handler.py       # 🔊 Text-to-Speech (**Coqui TTS** open source)
-    │       ├── qdrant_client.py     # 🗄️ Base vectorielle (**Qdrant** open source auto-hébergé)
-    │       ├── views.py             # 🌐 Django REST endpoints
+    │       ├── services.py # Qdrant + FastEmbed, RAG, vector_store
+    │       ├── url_indexer.py       # Indexation URL via Firecrawl (optionnel)
+    │       ├── views.py             # ask/, index-docs/, index-from-url/
     │       ├── serializers.py       # Serializers pour l'agent vocal
     │       └── urls.py              # Routes: /api/agents/voice/
-    │       # Source: voice_ai_agents/customer_support_voice_agent/
+    │       # Endpoints: ask/, index-docs/, index-from-url/ (Firecrawl)
     │
     ├── media/              # 📁 FICHIERS UPLOADÉS
     │   ├── documents/      # Documents RH (contrats, attestations)
@@ -536,6 +552,12 @@ gestion_rh_django/          # 📁 RACINE DU PROJET
     │
     └── db.sqlite3      # 💾 Fichier SQLite (uniquement pour tests unitaires rapides)
                             # Production & Dev : PostgreSQL
+│
+└── reference_agents/   # 📂 DÉMOS STANDALONE (hors src/)
+    ├── SMART_HR_README.md  # Guide : correspondance avec ai_agents
+    ├── voice_ai_agents/customer_support_voice_agent/   # Démo Streamlit
+    └── advanced_ai_agents/.../ai_recruitment_agent_team/  # Démo Streamlit
+        # Dépendances propres : agno, phidata, streamlit. Venv dédié recommandé.
 ```
 
 ---
@@ -772,7 +794,7 @@ frontend/                   # 📁 RACINE DU FRONTEND
 | **Phase** | **Composants** | **Technologie** | **Semaines** |
 | --- | --- | --- | --- |
 | **Phase 1** | Backend Django (11 apps fonctionnelles) | Django + DRF + postgresql+ **Z.ai (GLM-4.7)** | 1-8 |
-| **Phase 2** | Agents IA Multi-Agents | Phidata + **Z.ai (GLM-4.7)**+ Qdrant | 9-10 |
+| **Phase 2** | Agents IA intégrés (ai_agents) | OpenAI + Qdrant + FastEmbed | 9-10 |
 | **Phase 3** | Frontend React | React 18 + Vite 5 + Tailwind | 11-12 |
 
 <aside>
@@ -977,11 +999,10 @@ jobs:
     - Badge "Risque" dans le tableau employés.
     - Composant "Jauge de Risque".
 
-#### 4.2 Agent de Recrutement Multi-Agents
+#### 4.2 Agent de Recrutement
 
-- **Extraction du Repository**
-    - Clone sélectif : `ai_recruitment_agent_team/`
-    - Installation dépendances : phidata, agno, PyPDF2
+- **Implémentation Django** : `src/ai_agents/recruitment_agent/`
+- **Démo de référence** : `reference_agents/.../ai_recruitment_agent_team/` (Streamlit, venv dédié)
 - **Configuration API Keys**
     - [**Z.ai](http://Z.ai) GLM-4.7** (pour analyse de CV)
     - Zoom API (Account ID, Client ID/Secret)
@@ -998,24 +1019,21 @@ jobs:
     - Vérification scoring
     - Test emails automatiques
 
-#### 4.3 Agent Vocal Multi-Agents
+#### 4.3 Agent Vocal
 
-- **Extraction du Repository**
-    - Clone sélectif : `customer_support_voice_agent/`
-    - Installation dépendances : qdrant-client, fastembed, openai
+- **Implémentation Django** : `src/ai_agents/voice_agent/`
+- **Démo de référence** : `reference_agents/.../customer_support_voice_agent/` (Streamlit, venv dédié)
 - **Configuration**
-    - **Qdrant** (base vectorielle open source auto-hébergée)
-    - BeautifulSoup/Scrapy (crawling docs RH)
-    - **Coqui TTS** ou **Piper TTS** (synthèse vocale open source)
-    - **Sentence-Transformers** (embeddings open source)
+    - **Qdrant** (base vectorielle), **FastEmbed** (embeddings)
+    - **Firecrawl** (optionnel) : indexation documentation depuis URL
 - **Cas d'usage RH**
     - Adapter pour FAQ RH vocale
     - Briefing vocal candidats
     - Onboarding vocal employés
 - **Endpoints API**
-    - `/api/voice/ask-question/`
-    - `/api/voice/candidate-greeting/`
-    - `/api/voice/interview-briefing/`
+    - `/api/agents/voice/ask/` : Poser une question FAQ RH
+    - `/api/agents/voice/index-docs/` : Ré-indexer la FAQ par défaut
+    - `/api/agents/voice/index-from-url/` : Indexer une doc depuis une URL (Firecrawl optionnel)
 
 #### 4.4 Assistant Conversationnel IA
 
@@ -1375,7 +1393,7 @@ GET  /api/proctoring/verify/<test_id>/  # Pour le RH
 | **Coûts API [Z.ai](http://Z.ai)** | Budget dépassé | Limiter le nombre d'appels, utiliser cache, prévoir quotas [Z.ai](http://Z.ai) GLM-4.7. |
 | **Latence agents IA** | UX dégradée | Traitement asynchrone (Celery), feedback visuel (loaders). |
 | **Intégration Zoom/Gmail** | Authentification complexe | Suivre documentation officielle, tests unitaires poussés. |
-| **Dépendances multiples** | Conflits versions | Virtualenv séparés, Docker pour isolation complète. |
+| **Dépendances multiples** | Conflits versions | `reference_agents/` : venv dédié. Django : requirements.txt principal sans phidata/agno. |
 | **Conformité RGPD (données vocales)** | Risque juridique | Consentement explicite, chiffrement, suppression automatique J+90. |
 
 <aside>

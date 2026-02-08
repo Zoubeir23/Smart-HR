@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
 import {
   FileText,
   Briefcase,
   Calendar,
-  TrendingUp,
   Clock,
   ArrowRight,
   Send,
@@ -32,33 +32,31 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-// Badge helpers
+// Badge helpers — statuts API: pending, reviewing, interview, accepted, rejected
 function getStatusBadge(status: string) {
-  switch (status) {
-    case 'EN_ATTENTE':
+  const s = (status || '').toLowerCase();
+  switch (s) {
+    case 'pending':
       return <Badge variant="warning">En attente</Badge>;
-    case 'ENTRETIEN':
+    case 'reviewing':
+      return <Badge variant="secondary">En revue</Badge>;
+    case 'interview':
       return <Badge variant="default">Entretien</Badge>;
-    case 'ACCEPTE':
+    case 'accepted':
       return <Badge variant="success">Accepté</Badge>;
-    case 'REFUSE':
+    case 'rejected':
       return <Badge variant="destructive">Refusé</Badge>;
     default:
-      return <Badge>{status}</Badge>;
+      return <Badge>{status || '—'}</Badge>;
   }
 }
 
-function getMatchingColor(score: number) {
-  if (score >= 90) return 'text-success';
-  if (score >= 80) return 'text-primary';
-  return 'text-warning';
-}
-
-function getMatchingBgColor(score: number) {
-  if (score >= 90) return 'bg-success';
-  if (score >= 80) return 'bg-primary';
-  return 'bg-warning';
-}
+const JOB_TYPE_LABELS: Record<string, string> = {
+  full_time: 'CDI',
+  part_time: 'Temps partiel',
+  contract: 'CDD',
+  internship: 'Stage',
+};
 
 export default function CandidateDashboard() {
   const { user } = useAuth();
@@ -69,8 +67,8 @@ export default function CandidateDashboard() {
   const candidatures = myApps?.results || myApps || [];
   const offresRecommandees = jobs?.results || jobs || [];
 
-  const entretiens = candidatures.filter((c: Record<string, unknown>) => c.statut === 'ENTRETIEN');
-  const mockEntretien = entretiens.length > 0 ? entretiens[0] : null;
+  const entretiens = candidatures.filter((c: Record<string, unknown>) => (c.status || c.statut) === 'interview');
+  const prochainEntretien = entretiens.length > 0 ? entretiens[0] : null;
 
   // Stats
   const stats = [
@@ -157,9 +155,11 @@ export default function CandidateDashboard() {
         <motion.div variants={itemVariants} className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-foreground">Mes Candidatures</h2>
-            <Button variant="ghost" size="sm" className="text-primary">
-              Voir tout
-              <ArrowRight className="ml-1 h-4 w-4" />
+            <Button variant="ghost" size="sm" className="text-primary" asChild>
+              <Link to="/my-applications">
+                Voir tout
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </Link>
             </Button>
           </div>
 
@@ -187,9 +187,9 @@ export default function CandidateDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {candidatures.map((candidature) => (
+                    {candidatures.map((candidature: Record<string, unknown>) => (
                       <motion.tr
-                        key={candidature.id}
+                        key={String(candidature.id)}
                         variants={itemVariants}
                         className="transition-colors hover:bg-muted/50"
                       >
@@ -197,22 +197,22 @@ export default function CandidateDashboard() {
                           <div className="flex items-center gap-2">
                             <Briefcase className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium text-foreground">
-                              {candidature.poste}
+                              {(candidature.job_title ?? candidature.poste) as string}
                             </span>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-sm text-muted-foreground">
-                          {candidature.departement}
+                          {(candidature.job_department ?? (candidature.job_offer as { department?: string })?.department ?? candidature.departement) ?? '—'}
                         </td>
                         <td className="px-6 py-4 text-sm text-muted-foreground">
-                          {new Date(candidature.date_candidature).toLocaleDateString('fr-FR')}
+                          {new Date((candidature.created_at ?? candidature.date_candidature) as string).toLocaleDateString('fr-FR')}
                         </td>
                         <td className="px-6 py-4">
-                          {getStatusBadge(candidature.statut)}
+                          {getStatusBadge((candidature.status ?? candidature.statut) as string)}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <Button variant="ghost" size="sm">
-                            Voir détails
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link to="/my-applications">Voir détails</Link>
                           </Button>
                         </td>
                       </motion.tr>
@@ -228,15 +228,15 @@ export default function CandidateDashboard() {
         <motion.div variants={itemVariants} className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-bold text-foreground">Offres recommandées</h2>
-            <Button variant="outline" size="sm">
-              Toutes les offres
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/jobs">Toutes les offres</Link>
             </Button>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {offresRecommandees.map((offre) => (
+            {offresRecommandees.map((offre: Record<string, unknown>) => (
               <motion.div
-                key={offre.id}
+                key={String(offre.id)}
                 variants={itemVariants}
                 whileHover={{ y: -4 }}
                 transition={{ type: 'spring', stiffness: 300 }}
@@ -244,44 +244,42 @@ export default function CandidateDashboard() {
                 <Card className="h-full border border-border shadow-sm transition-shadow hover:shadow-md">
                   <CardHeader>
                     <div className="space-y-2">
-                      <CardTitle className="text-lg">{offre.titre}</CardTitle>
+                      <CardTitle className="text-lg">{(offre.title ?? offre.titre) as string}</CardTitle>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Briefcase className="h-4 w-4" />
-                        {offre.departement}
+                        {(offre.department ?? offre.departement) as string}
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="flex items-center gap-2">
-                      <Badge variant={offre.contrat === 'CDI' ? 'default' : 'secondary'}>
-                        {offre.contrat}
+                      <Badge variant={(offre.job_type ?? offre.contrat) === 'full_time' ? 'default' : 'secondary'}>
+                        {JOB_TYPE_LABELS[(offre.job_type ?? offre.contrat) as string] ?? (offre.contrat as string) ?? '—'}
                       </Badge>
                     </div>
 
-                    {/* Matching score */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <TrendingUp className="h-4 w-4" />
-                          <span>Compatibilité</span>
+                    {offre.matching_score != null && (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Compatibilité</span>
+                          <span className="font-bold">{(offre.matching_score ?? offre.matching) as number}%</span>
                         </div>
-                        <span className={`font-bold ${getMatchingColor(offre.matching)}`}>
-                          {offre.matching}%
-                        </span>
+                        <div className="h-2 overflow-hidden rounded-full bg-muted">
+                          <motion.div
+                            initial={{ width: 0 }}
+                            animate={{ width: `${(offre.matching_score ?? offre.matching) ?? 0}%` }}
+                            transition={{ duration: 0.8, ease: 'easeOut' }}
+                            className="h-full rounded-full bg-primary"
+                          />
+                        </div>
                       </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${offre.matching}%` }}
-                          transition={{ duration: 0.8, ease: 'easeOut' }}
-                          className={`h-full rounded-full ${getMatchingBgColor(offre.matching)}`}
-                        />
-                      </div>
-                    </div>
+                    )}
 
-                    <Button className="w-full">
-                      <Send className="mr-2 h-4 w-4" />
-                      Postuler
+                    <Button className="w-full" asChild>
+                      <Link to={`/jobs/${offre.id}/apply`}>
+                        <Send className="mr-2 h-4 w-4" />
+                        Postuler
+                      </Link>
                     </Button>
                   </CardContent>
                 </Card>
@@ -294,7 +292,7 @@ export default function CandidateDashboard() {
         <motion.div variants={itemVariants} className="space-y-4">
           <h2 className="text-xl font-bold text-foreground">Prochains entretiens</h2>
 
-          {mockEntretien ? (
+          {prochainEntretien ? (
             <Card className="border border-border shadow-sm">
               <CardContent className="p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -303,13 +301,17 @@ export default function CandidateDashboard() {
                       <Calendar className="h-6 w-6 text-primary" />
                     </div>
                     <div className="space-y-1">
-                      <h3 className="font-semibold text-foreground">{mockEntretien.poste}</h3>
+                      <h3 className="font-semibold text-foreground">
+                        {(prochainEntretien as Record<string, unknown>).job_title ?? (prochainEntretien as Record<string, unknown>).poste}
+                      </h3>
                       <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                        {mockEntretien.date && (
+                        {((prochainEntretien as Record<string, unknown>).interview_date ?? (prochainEntretien as Record<string, unknown>).created_at) && (
                           <div className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
                             <span>
-                              {new Date(mockEntretien.date).toLocaleDateString('fr-FR', {
+                              {new Date(
+                                ((prochainEntretien as Record<string, unknown>).interview_date ?? (prochainEntretien as Record<string, unknown>).created_at) as string
+                              ).toLocaleDateString('fr-FR', {
                                 weekday: 'long',
                                 day: 'numeric',
                                 month: 'long',
@@ -318,22 +320,20 @@ export default function CandidateDashboard() {
                             </span>
                           </div>
                         )}
-                        {mockEntretien.heure && (
+                        {(prochainEntretien as Record<string, unknown>).interview_time && (
                           <div className="flex items-center gap-1">
                             <Clock className="h-4 w-4" />
-                            <span>{mockEntretien.heure}</span>
+                            <span>{(prochainEntretien as Record<string, unknown>).interview_time as string}</span>
                           </div>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 pt-1">
-                        {mockEntretien.type && <Badge variant="secondary">{mockEntretien.type}</Badge>}
-                        {mockEntretien.lieu && <span className="text-sm text-muted-foreground">{mockEntretien.lieu}</span>}
-                      </div>
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
-                    Voir les détails
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to="/my-applications">
+                      Voir les détails
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
                   </Button>
                 </div>
               </CardContent>

@@ -1,0 +1,80 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║  Smart-HR - Git Ignore File                                     ║
+# ║  IMPORTANT: Never commit sensitive files!                        ║
+# ╚══════════════════════════════════════════════════════════════════╝
+
+# ── Environment Variables (CRITICAL - NEVER COMMIT) ────────────────
+.env
+.env.local
+.env.docker
+.env.production
+.env.*.local
+*.env
+
+# ── Python ─────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Django ─────────────────────────────────────────────────────────
+db.sqlite3
+db.sqlite3-journal
+*.log
+local_settings.py
+media/
+staticfiles/
+
+# ── Node.js / React ────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+dist/
+build/
+
+# ── IDE / Editors ──────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# ── Docker ─────────────────────────────────────────────────────────
+*.pid
+docker-compose.override.yml
+
+# ── AI Models & Large Files ────────────────────────────────────────
+*.pkl
+*.h5
+*.pth
+*.onnx
+
+# ── Secrets & Credentials ──────────────────────────────────────────
+*.pem
+*.key
+*.crt
+credentials.json
+secrets.json
+token.json
+
+# ── Temporary Files ────────────────────────────────────────────────
+*.tmp
+*.temp
+*.bak
+*.swp
+.cache/
+
+# ── OS ─────────────────────────────────────────────────────────────
+Thumbs.db
+.DS_Store

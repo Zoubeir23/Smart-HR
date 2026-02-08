@@ -35,6 +35,11 @@ export const employeeService = {
     return data;
   },
 
+  getRetentionStats: async () => {
+    const { data } = await api.get('/personnel/employees/retention_stats/');
+    return data;
+  },
+
   getDepartments: async () => {
     const { data } = await api.get('/personnel/departments/');
     return data;

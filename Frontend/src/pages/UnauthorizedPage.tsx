@@ -2,10 +2,14 @@ import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ShieldX, ArrowLeft, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import Logo from '@/components/common/Logo';
 
 export default function UnauthorizedPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-background p-4">
+      <Link to="/" className="absolute top-6 left-6">
+        <Logo variant="full" size="md" />
+      </Link>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}

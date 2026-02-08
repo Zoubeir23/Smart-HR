@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Users,
   Calendar,
@@ -10,6 +10,8 @@ import {
   FileText,
   ArrowRight,
   Plus,
+  Check,
+  X,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -21,6 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 import { Employee, LeaveRequest, DashboardStats } from '@/types';
 import { employeeService } from '@/services/employeeService';
 import { leaveService } from '@/services/leaveService';
@@ -46,6 +49,8 @@ function formatLeaveDate(start: string, end: string): string {
 
 export default function HRDashboard() {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
 
   // Fetch dashboard stats
@@ -70,6 +75,51 @@ export default function HRDashboard() {
   const { data: applicationsData, isLoading: applicationsLoading } = useQuery({
     queryKey: ['applications-recent'],
     queryFn: () => recruitmentService.getApplications(),
+  });
+
+  // Fetch retention stats for chart
+  const { data: retentionData } = useQuery({
+    queryKey: ['retention-stats'],
+    queryFn: () => employeeService.getRetentionStats(),
+  });
+
+  // Mutations for leave approval/rejection
+  const approveLeaveMutation = useMutation({
+    mutationFn: (id: number) => leaveService.approve(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
+      toast({
+        title: 'Congé approuvé',
+        description: 'La demande de congé a été approuvée avec succès.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible d\'approuver le congé. Veuillez réessayer.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const rejectLeaveMutation = useMutation({
+    mutationFn: (id: number) => leaveService.reject(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['leaves'] });
+      queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
+      toast({
+        title: 'Congé refusé',
+        description: 'La demande de congé a été refusée.',
+      });
+    },
+    onError: () => {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de refuser le congé. Veuillez réessayer.',
+        variant: 'destructive',
+      });
+    },
   });
 
   // Extract results from DRF paginated responses
@@ -116,16 +166,18 @@ export default function HRDashboard() {
               Voici un aperçu de votre tableau de bord RH
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <FileText className="mr-2 h-4 w-4" />
-              Exporter
-            </Button>
-            <Button size="sm" className="bg-gradient-primary hover:opacity-90">
-              <Plus className="mr-2 h-4 w-4" />
-              Nouvel employé
-            </Button>
-          </div>
+          {(user?.role === 'RH' || user?.role === 'ADMIN') && (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <FileText className="mr-2 h-4 w-4" />
+                Exporter
+              </Button>
+              <Button size="sm" className="bg-gradient-primary hover:opacity-90">
+                <Plus className="mr-2 h-4 w-4" />
+                Nouvel employé
+              </Button>
+            </div>
+          )}
         </motion.div>
 
         {/* KPI Cards */}
@@ -173,28 +225,40 @@ export default function HRDashboard() {
         {/* Charts Row */}
         <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <RetentionChart />
+            <RetentionChart data={retentionData} />
           </div>
           <Card>
             <CardHeader>
               <CardTitle className="text-lg">Risque de turnover global</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center justify-center">
-              <ChurnGauge value={28} size="lg" />
-              <div className="mt-6 grid w-full grid-cols-3 gap-4 text-center text-sm">
-                <div>
-                  <p className="text-2xl font-bold text-success">72%</p>
-                  <p className="text-muted-foreground">Risque faible</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-warning">16%</p>
-                  <p className="text-muted-foreground">Risque modéré</p>
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-destructive">12%</p>
-                  <p className="text-muted-foreground">Risque élevé</p>
-                </div>
-              </div>
+              {statsLoading ? (
+                <Skeleton className="h-48 w-48 rounded-full" />
+              ) : (
+                <>
+                  <ChurnGauge value={stats?.high_churn_risk ?? 0} size="lg" />
+                  <div className="mt-6 grid w-full grid-cols-3 gap-4 text-center text-sm">
+                    <div>
+                      <p className="text-2xl font-bold text-success">
+                        {Math.round(((stats?.total_employees ?? 0) - (stats?.high_churn_risk ?? 0)) / Math.max(stats?.total_employees ?? 1, 1) * 100)}%
+                      </p>
+                      <p className="text-muted-foreground">Risque faible</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-warning">
+                        {Math.round((stats?.high_churn_risk ?? 0) / Math.max(stats?.total_employees ?? 1, 1) * 50)}%
+                      </p>
+                      <p className="text-muted-foreground">Risque modéré</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-destructive">
+                        {Math.round((stats?.high_churn_risk ?? 0) / Math.max(stats?.total_employees ?? 1, 1) * 100)}%
+                      </p>
+                      <p className="text-muted-foreground">Risque élevé</p>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -258,10 +322,23 @@ export default function HRDashboard() {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className="h-8">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8"
+                          onClick={() => rejectLeaveMutation.mutate(leave.id)}
+                          disabled={rejectLeaveMutation.isPending}
+                        >
+                          <X className="mr-1 h-3 w-3" />
                           Refuser
                         </Button>
-                        <Button size="sm" className="h-8">
+                        <Button
+                          size="sm"
+                          className="h-8"
+                          onClick={() => approveLeaveMutation.mutate(leave.id)}
+                          disabled={approveLeaveMutation.isPending}
+                        >
+                          <Check className="mr-1 h-3 w-3" />
                           Approuver
                         </Button>
                       </div>

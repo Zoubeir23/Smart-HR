@@ -14,6 +14,9 @@ OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 QDRANT_URL = config('QDRANT_URL', default='http://localhost:6333')
 QDRANT_API_KEY = config('QDRANT_API_KEY', default='')
 
+# ─── Firecrawl (indexation URL optionnelle) ───────────────────────────────────
+FIRECRAWL_API_KEY = config('FIRECRAWL_API_KEY', default='')
+
 # ─── Email (Gmail) ───────────────────────────────────────────────────────────
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
@@ -39,3 +42,8 @@ def is_zoom_configured() -> bool:
 def is_email_configured() -> bool:
     """Vérifie si les identifiants email sont configurés."""
     return bool(EMAIL_HOST_USER and EMAIL_HOST_PASSWORD)
+
+
+def is_firecrawl_configured() -> bool:
+    """Vérifie si Firecrawl est configuré (indexation URL optionnelle)."""
+    return bool(FIRECRAWL_API_KEY)

@@ -1,5 +1,5 @@
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
   Users,
@@ -10,20 +10,27 @@ import {
   FileText,
   GraduationCap,
   Briefcase,
-  Brain,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  LogOut,
+  BarChart3,
   MessageSquare,
   Mic,
+  Settings,
+  PanelLeftClose,
+  PanelLeft,
+  LogOut,
+  Shield,
+  User,
+  Search,
+  Bell,
+  Inbox,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { NavGroup, UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
 import Logo from '@/components/common/Logo';
 
 interface SidebarProps {
@@ -31,7 +38,6 @@ interface SidebarProps {
   onToggle: () => void;
 }
 
-// Navigation organisée par groupes
 const navigationGroups: NavGroup[] = [
   {
     title: 'Principal',
@@ -47,115 +53,53 @@ const navigationGroups: NavGroup[] = [
   {
     title: 'Gestion RH',
     items: [
-      {
-        title: 'Employés',
-        href: '/employees',
-        icon: Users,
-        roles: ['ADMIN', 'RH'],
-      },
-      {
-        title: 'Congés',
-        href: '/leaves',
-        icon: Calendar,
-        roles: ['ADMIN', 'RH', 'EMPLOYEE'],
-      },
-      {
-        title: 'Tâches',
-        href: '/tasks',
-        icon: ClipboardList,
-        roles: ['ADMIN', 'RH', 'EMPLOYEE'],
-      },
-      {
-        title: 'Présences',
-        href: '/attendance',
-        icon: Clock,
-        roles: ['ADMIN', 'RH'],
-      },
-      {
-        title: 'Paie',
-        href: '/payroll',
-        icon: CreditCard,
-        roles: ['ADMIN', 'RH'],
-      },
+      { title: 'Employés', href: '/employees', icon: Users, roles: ['ADMIN', 'RH'] },
+      { title: 'Congés', href: '/leaves', icon: Calendar, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+      { title: 'Tâches', href: '/tasks', icon: ClipboardList, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+      { title: 'Présences', href: '/attendance', icon: Clock, roles: ['ADMIN', 'RH'] },
+      { title: 'Paie', href: '/payroll', icon: CreditCard, roles: ['ADMIN', 'RH'] },
     ],
   },
   {
     title: 'Documents & Formation',
     items: [
-      {
-        title: 'Documents',
-        href: '/documents',
-        icon: FileText,
-        roles: ['ADMIN', 'RH', 'EMPLOYEE'],
-      },
-      {
-        title: 'Formations',
-        href: '/training',
-        icon: GraduationCap,
-        roles: ['ADMIN', 'RH', 'EMPLOYEE'],
-      },
+      { title: 'Documents', href: '/documents', icon: FileText, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+      { title: 'Formations', href: '/training', icon: GraduationCap, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
     ],
   },
   {
     title: 'Recrutement',
     items: [
-      {
-        title: 'Offres d\'emploi',
-        href: '/jobs',
-        icon: Briefcase,
-        roles: ['ADMIN', 'RH', 'CANDIDATE'],
-      },
-      {
-        title: 'Mes candidatures',
-        href: '/my-applications',
-        icon: FileText,
-        roles: ['CANDIDATE'],
-      },
+      { title: 'Offres d\'emploi', href: '/jobs', icon: Briefcase, roles: ['ADMIN', 'RH', 'CANDIDATE'] },
+      { title: 'Mes candidatures', href: '/my-applications', icon: FileText, roles: ['CANDIDATE'] },
     ],
   },
   {
-    title: 'Intelligence Artificielle',
+    title: 'Analytics & IA',
     items: [
-      {
-        title: 'Analyse Churn',
-        href: '/ai-insights',
-        icon: Brain,
-        roles: ['ADMIN', 'RH'],
-      },
-      {
-        title: 'Chat IA',
-        href: '/ai-chat',
-        icon: MessageSquare,
-        roles: ['ADMIN', 'RH'],
-      },
-      {
-        title: 'Assistant Vocal',
-        href: '/voice-assistant',
-        icon: Mic,
-        roles: ['ADMIN', 'RH'],
-      },
+      { title: 'Analyse Churn', href: '/ai-insights', icon: BarChart3, roles: ['ADMIN', 'RH'] },
+      { title: 'Chat IA', href: '/ai-chat', icon: MessageSquare, roles: ['ADMIN', 'RH'] },
+      { title: 'Assistant Vocal', href: '/voice-assistant', icon: Mic, roles: ['ADMIN', 'RH'] },
     ],
   },
   {
     title: 'Configuration',
     items: [
-      {
-        title: 'Paramètres',
-        href: '/settings',
-        icon: Settings,
-        roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'],
-      },
+      { title: 'Paramètres', href: '/settings', icon: Settings, roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'] },
+      { title: 'Sécurité', href: '/security', icon: Shield, roles: ['ADMIN'] },
     ],
   },
 ];
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout, hasRole } = useAuth();
+  const { theme, setTheme } = useTheme();
 
-  const isActive = (href: string) => location.pathname === href || location.pathname.startsWith(href + '/');
+  const isActive = (href: string) =>
+    location.pathname === href || location.pathname.startsWith(href + '/');
 
-  // Filtrer les groupes de navigation en fonction du rôle
   const filteredGroups = navigationGroups
     .map((group) => ({
       ...group,
@@ -166,107 +110,189 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   return (
     <motion.aside
       initial={false}
-      animate={{ width: collapsed ? 80 : 280 }}
-      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      animate={{ width: collapsed ? 72 : 280 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar"
     >
-      {/* Logo */}
-      <div className="flex h-16 items-center border-b border-sidebar-border px-4">
-        <Link to="/dashboard" className="flex items-center overflow-hidden">
+      {/* Header : Logo + Toggle */}
+      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
+        <Link
+          to="/dashboard"
+          className={cn(
+            'flex min-w-0 items-center overflow-hidden',
+            collapsed && 'justify-center'
+          )}
+        >
           {collapsed ? (
             <Logo variant="icon" size="sm" />
           ) : (
-            <Logo variant="full" size="sm" />
+            <>
+              <Logo variant="icon" size="sm" />
+              <span className="ml-2 truncate font-semibold">
+                <span className="text-foreground">Smart</span>
+                <span className="text-primary">-HR</span>
+              </span>
+            </>
           )}
         </Link>
+        {!collapsed && (
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Réduire le menu</TooltipContent>
+          </Tooltip>
+        )}
       </div>
 
+      {/* Utilitaires : Recherche, Notifications (mode étendu) */}
+      {!collapsed && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="flex items-center gap-2 px-3 py-3"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              className="h-9 w-full rounded-lg border border-border bg-muted/50 pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
+            <Inbox className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="relative h-9 w-9 shrink-0">
+            <Bell className="h-4 w-4" />
+            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+              3
+            </span>
+          </Button>
+        </motion.div>
+      )}
+
       {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-6">
+      <ScrollArea className="flex-1 px-3 py-2">
+        <nav className="space-y-5">
           {filteredGroups.map((group) => (
             <div key={group.title} className="space-y-1">
               {!collapsed && (
-                <h3 className="mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/60">
+                <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                   {group.title}
                 </h3>
               )}
-              {group.items.map((item) => {
-                const Icon = item.icon;
-                const active = isActive(item.href);
+              <div className="space-y-0.5">
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const active = isActive(item.href);
 
-                const linkContent = (
-                  <Link
-                    to={item.href}
-                    className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
-                      active
-                        ? 'bg-primary text-primary-foreground'
-                        : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                    )}
-                  >
-                    <Icon className="h-5 w-5 flex-shrink-0" />
-                    {!collapsed && (
-                      <motion.span
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        className="truncate"
-                      >
-                        {item.title}
-                      </motion.span>
-                    )}
-                    {!collapsed && item.badge && (
-                      <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                );
-
-                if (collapsed) {
-                  return (
-                    <Tooltip key={item.href} delayDuration={0}>
-                      <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                      <TooltipContent side="right" className="flex items-center gap-2">
-                        {item.title}
-                        {item.badge && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
-                            {item.badge}
-                          </span>
+                  const linkContent = (
+                    <Link
+                      to={item.href}
+                      className={cn(
+                        'flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
+                        active
+                          ? 'bg-primary text-primary-foreground'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      )}
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      <AnimatePresence mode="wait">
+                        {!collapsed && (
+                          <motion.span
+                            key="text"
+                            initial={{ opacity: 0, x: -8 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -8 }}
+                            transition={{ duration: 0.2 }}
+                            className="truncate"
+                          >
+                            {item.title}
+                          </motion.span>
                         )}
-                      </TooltipContent>
-                    </Tooltip>
+                      </AnimatePresence>
+                      {!collapsed && item.badge !== undefined && (
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
+                          {item.badge}
+                        </span>
+                      )}
+                    </Link>
                   );
-                }
 
-                return <div key={item.href}>{linkContent}</div>;
-              })}
+                  if (collapsed) {
+                    return (
+                      <Tooltip key={item.href} delayDuration={0}>
+                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                        <TooltipContent side="right">
+                          {item.title}
+                          {item.badge !== undefined && ` (${item.badge})`}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  }
+                  return <div key={item.href}>{linkContent}</div>;
+                })}
+              </div>
             </div>
           ))}
         </nav>
       </ScrollArea>
 
-      {/* User & Logout */}
+      {/* Mode sombre (étendu uniquement) */}
+      {!collapsed && (
+        <div className="border-t border-sidebar-border px-3 py-3">
+          <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
+            <span className="text-sm font-medium">Mode sombre</span>
+            <Switch checked={theme === 'dark'} onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} />
+          </div>
+        </div>
+      )}
+
+      {/* Profil & Logout */}
       <div className="border-t border-sidebar-border p-3">
         {user && (
-          <div className={cn('mb-3 flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-3', collapsed && 'justify-center p-2')}>
+          <div
+            className={cn(
+              'mb-2 flex items-center gap-2 rounded-lg p-2',
+              collapsed ? 'justify-center' : 'bg-muted/50'
+            )}
+          >
             <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-              {user.first_name[0]}
-              {user.last_name[0]}
+              {user.first_name?.[0]}
+              {user.last_name?.[0]}
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-foreground">
                   {user.first_name} {user.last_name}
                 </p>
-                <p className="truncate text-xs text-sidebar-foreground">{user.role}</p>
+                <p className="truncate text-xs text-muted-foreground">{user.role}</p>
               </div>
             )}
           </div>
         )}
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
+          {!collapsed && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 justify-start gap-2"
+              onClick={() => navigate('/profile')}
+            >
+              <User className="h-4 w-4" />
+              Mon profil
+            </Button>
+          )}
           {collapsed ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -274,7 +300,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   variant="ghost"
                   size="icon"
                   onClick={logout}
-                  className="h-10 w-10 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
                   <LogOut className="h-5 w-5" />
                 </Button>
@@ -284,23 +310,32 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           ) : (
             <Button
               variant="ghost"
+              size="icon"
               onClick={logout}
-              className="w-full justify-start gap-3 text-sidebar-foreground hover:bg-destructive/10 hover:text-destructive"
+              className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
               <LogOut className="h-5 w-5" />
-              Déconnexion
             </Button>
           )}
         </div>
       </div>
 
-      {/* Toggle Button */}
-      <button
-        onClick={onToggle}
-        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background text-muted-foreground shadow-md transition-colors hover:text-foreground"
-      >
-        {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-      </button>
+      {/* Bouton Expand (mode compact) */}
+      {collapsed && (
+        <div className="absolute -right-3 top-20">
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onToggle}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-colors hover:bg-muted"
+              >
+                <PanelLeft className="h-3.5 w-3.5 text-muted-foreground" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Agrandir le menu</TooltipContent>
+            </Tooltip>
+        </div>
+      )}
     </motion.aside>
   );
 }

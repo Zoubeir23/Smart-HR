@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <motion.main
         initial={false}
         animate={{
-          marginLeft: sidebarCollapsed ? 80 : 280,
+          marginLeft: sidebarCollapsed ? 72 : 280,
         }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={cn(
@@ -48,7 +48,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
         style={{
           marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 
-            ? (sidebarCollapsed ? 80 : 280) 
+            ? (sidebarCollapsed ? 72 : 280) 
             : 0
         }}
       >
