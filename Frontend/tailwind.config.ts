@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -73,6 +73,13 @@ export default {
           indigo: "hsl(var(--brand-indigo))",
           purple: "hsl(var(--brand-purple))",
         },
+        chart: {
+          "1": "hsl(var(--primary))",
+          "2": "hsl(var(--success))",
+          "3": "hsl(var(--warning))",
+          "4": "hsl(var(--destructive))",
+          "5": "hsl(var(--brand-blue))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -114,6 +121,7 @@ export default {
         'gradient-primary': 'var(--gradient-primary)',
         'gradient-accent': 'var(--gradient-accent)',
         'gradient-success': 'var(--gradient-success)',
+        'gradient-card': 'var(--gradient-card)',
       },
     },
   },

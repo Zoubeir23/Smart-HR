@@ -11,22 +11,21 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [theme, setThemeState] = useState<Theme>('light');
 
   useEffect(() => {
-    // Vérifier le thème stocké ou la préférence système
     const stored = localStorage.getItem('theme') as Theme | null;
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    
+
     const initialTheme = stored || (prefersDark ? 'dark' : 'light');
     setThemeState(initialTheme);
-    document.documentElement.classList.toggle('light', initialTheme === 'light');
+    document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('light', newTheme === 'light');
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
   const toggleTheme = () => {

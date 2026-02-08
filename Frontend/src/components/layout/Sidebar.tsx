@@ -15,7 +15,8 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
-  Sparkles,
+  MessageSquare,
+  Mic,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
@@ -23,6 +24,7 @@ import { NavGroup, UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import Logo from '@/components/common/Logo';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -103,15 +105,33 @@ const navigationGroups: NavGroup[] = [
         icon: Briefcase,
         roles: ['ADMIN', 'RH', 'CANDIDATE'],
       },
+      {
+        title: 'Mes candidatures',
+        href: '/my-applications',
+        icon: FileText,
+        roles: ['CANDIDATE'],
+      },
     ],
   },
   {
     title: 'Intelligence Artificielle',
     items: [
       {
-        title: 'Analyse IA',
+        title: 'Analyse Churn',
         href: '/ai-insights',
         icon: Brain,
+        roles: ['ADMIN', 'RH'],
+      },
+      {
+        title: 'Chat IA',
+        href: '/ai-chat',
+        icon: MessageSquare,
+        roles: ['ADMIN', 'RH'],
+      },
+      {
+        title: 'Assistant Vocal',
+        href: '/voice-assistant',
+        icon: Mic,
         roles: ['ADMIN', 'RH'],
       },
     ],
@@ -151,20 +171,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar"
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-4">
-        <Link to="/dashboard" className="flex items-center gap-3">
-          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-primary shadow-glow">
-            <Sparkles className="h-5 w-5 text-primary-foreground" />
-          </div>
-          {!collapsed && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="text-lg font-bold text-foreground"
-            >
-              Smart-HR
-            </motion.span>
+      <div className="flex h-16 items-center border-b border-sidebar-border px-4">
+        <Link to="/dashboard" className="flex items-center overflow-hidden">
+          {collapsed ? (
+            <Logo variant="icon" size="sm" />
+          ) : (
+            <Logo variant="full" size="sm" />
           )}
         </Link>
       </div>
@@ -187,13 +199,13 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   <Link
                     to={item.href}
                     className={cn(
-                      'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                      'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150',
                       active
-                        ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-glow'
+                        ? 'bg-primary text-primary-foreground'
                         : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                     )}
                   >
-                    <Icon className={cn('h-5 w-5 flex-shrink-0', active && 'text-sidebar-primary-foreground')} />
+                    <Icon className="h-5 w-5 flex-shrink-0" />
                     {!collapsed && (
                       <motion.span
                         initial={{ opacity: 0, x: -10 }}
@@ -239,7 +251,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       <div className="border-t border-sidebar-border p-3">
         {user && (
           <div className={cn('mb-3 flex items-center gap-3 rounded-lg bg-sidebar-accent/50 p-3', collapsed && 'justify-center p-2')}>
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-gradient-primary text-sm font-medium text-primary-foreground">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
               {user.first_name[0]}
               {user.last_name[0]}
             </div>

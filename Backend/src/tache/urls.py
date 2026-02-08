@@ -1,12 +1,11 @@
-from django.contrib import admin
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+
+from .views import TaskViewSet
+
+router = DefaultRouter()
+router.register('tasks', TaskViewSet, basename='task')
 
 urlpatterns = [
-    path('findall/', views.findAllTache ),
-    path('create', views.createTache ),
-    path('delete/<int:id>', views.deleteTache ),
-    path('update', views.updateTache ),
-    path('updateEtat', views.updateEtat ),
-    
+    path('', include(router.urls)),
 ]

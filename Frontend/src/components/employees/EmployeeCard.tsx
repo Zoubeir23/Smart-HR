@@ -17,9 +17,9 @@ interface EmployeeCardProps {
 }
 
 const statusStyles = {
-  active: 'bg-success/20 text-success border-success/30',
-  inactive: 'bg-destructive/20 text-destructive border-destructive/30',
-  on_leave: 'bg-warning/20 text-warning border-warning/30',
+  active: 'bg-success/10 text-success border-success/20',
+  inactive: 'bg-destructive/10 text-destructive border-destructive/20',
+  on_leave: 'bg-warning/10 text-warning border-warning/20',
 };
 
 const statusLabels = {
@@ -28,8 +28,27 @@ const statusLabels = {
   on_leave: 'En congé',
 };
 
+// Deterministic corporate avatar colors from initials
+const avatarColors = [
+  'bg-blue-600',
+  'bg-indigo-600',
+  'bg-violet-600',
+  'bg-teal-600',
+  'bg-cyan-600',
+  'bg-emerald-600',
+  'bg-sky-600',
+  'bg-slate-600',
+];
+
+function getAvatarColor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  return avatarColors[Math.abs(hash) % avatarColors.length];
+}
+
 export default function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
   const hasHighChurnRisk = employee.churn_risk && employee.churn_risk > 60;
+  const avatarBg = getAvatarColor(`${employee.user.first_name}${employee.user.last_name}`);
 
   return (
     <motion.div
@@ -37,7 +56,7 @@ export default function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
-      className="group relative cursor-pointer rounded-xl border border-border bg-card p-5 transition-shadow hover:shadow-lg"
+      className="group relative cursor-pointer rounded-lg border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
       onClick={onClick}
     >
       {/* Risque de churn badge */}
@@ -51,7 +70,7 @@ export default function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
         <div className="flex items-center gap-4">
           {/* Avatar */}
           <div className="relative">
-            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-primary text-lg font-semibold text-primary-foreground">
+            <div className={cn('flex h-14 w-14 items-center justify-center rounded-full text-lg font-semibold text-white', avatarBg)}>
               {employee.user.first_name[0]}
               {employee.user.last_name[0]}
             </div>

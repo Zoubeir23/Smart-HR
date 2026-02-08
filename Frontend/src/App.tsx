@@ -3,18 +3,68 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
-// Pages
+// Pages Auth
 import LoginPage from "@/pages/auth/LoginPage";
+import RegisterPage from "@/pages/auth/RegisterPage";
+
+// Dashboards
 import HRDashboard from "@/pages/dashboard/HRDashboard";
+import EmployeeDashboard from "@/pages/dashboard/EmployeeDashboard";
+import CandidateDashboard from "@/pages/dashboard/CandidateDashboard";
+
+// Pages RH
 import EmployeeListPage from "@/pages/employees/EmployeeListPage";
+import EmployeeDetailPage from "@/pages/employees/EmployeeDetailPage";
+import LeaveListPage from "@/pages/leaves/LeaveListPage";
+import TaskBoardPage from "@/pages/tasks/TaskBoardPage";
+import AttendancePage from "@/pages/attendance/AttendancePage";
+import PayrollPage from "@/pages/payroll/PayrollPage";
+
+// Documents & Formation
+import DocumentsPage from "@/pages/documents/DocumentsPage";
+import TrainingPage from "@/pages/training/TrainingPage";
+
+// Pages Recrutement
+import JobOfferListPage from "@/pages/recruitment/JobOfferListPage";
+import ApplyPage from "@/pages/recruitment/ApplyPage";
+import ApplicationTrackingPage from "@/pages/recruitment/ApplicationTrackingPage";
+
+// Pages IA
+import ChurnDashboardPage from "@/pages/ai-insights/ChurnDashboardPage";
+import AIChatPage from "@/pages/ai/AIChatPage";
+import VoiceAssistantPage from "@/pages/ai/VoiceAssistantPage";
+
+// Parametres
+import SettingsPage from "@/pages/settings/SettingsPage";
+
+// Pages generales
 import NotFoundPage from "@/pages/NotFoundPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 
 const queryClient = new QueryClient();
+
+// Composant qui redirige vers le bon dashboard selon le role
+function DashboardRedirect() {
+  const { user } = useAuth();
+
+  if (!user) return <Navigate to="/login" replace />;
+
+  switch (user.role) {
+    case 'ADMIN':
+    case 'RH':
+      return <HRDashboard />;
+    case 'EMPLOYEE':
+      return <EmployeeDashboard />;
+    case 'CANDIDATE':
+      return <CandidateDashboard />;
+    default:
+      return <HRDashboard />;
+  }
+}
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -27,21 +77,23 @@ const App = () => (
             <Routes>
               {/* Routes publiques */}
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
               {/* Redirection de la racine */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
-              {/* Routes protégées */}
+              {/* Dashboard adaptatif selon le role */}
               <Route
                 path="/dashboard"
                 element={
                   <ProtectedRoute>
-                    <HRDashboard />
+                    <DashboardRedirect />
                   </ProtectedRoute>
                 }
               />
 
+              {/* Gestion RH */}
               <Route
                 path="/employees"
                 element={
@@ -51,76 +103,132 @@ const App = () => (
                 }
               />
 
-              {/* Placeholder routes - à implémenter */}
+              <Route
+                path="/employees/:id"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <EmployeeDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route
                 path="/leaves"
                 element={
-                  <ProtectedRoute>
-                    <HRDashboard />
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
+                    <LeaveListPage />
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/tasks"
                 element={
-                  <ProtectedRoute>
-                    <HRDashboard />
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
+                    <TaskBoardPage />
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/attendance"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
-                    <HRDashboard />
+                    <AttendancePage />
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/payroll"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
-                    <HRDashboard />
+                    <PayrollPage />
                   </ProtectedRoute>
                 }
               />
+
+              {/* Documents & Formation */}
               <Route
                 path="/documents"
                 element={
-                  <ProtectedRoute>
-                    <HRDashboard />
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
+                    <DocumentsPage />
                   </ProtectedRoute>
                 }
               />
+
               <Route
                 path="/training"
                 element={
-                  <ProtectedRoute>
-                    <HRDashboard />
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
+                    <TrainingPage />
                   </ProtectedRoute>
                 }
               />
+
+              {/* Recrutement */}
               <Route
                 path="/jobs"
                 element={
                   <ProtectedRoute>
-                    <HRDashboard />
+                    <JobOfferListPage />
                   </ProtectedRoute>
                 }
               />
+
+              <Route
+                path="/jobs/:jobId/apply"
+                element={
+                  <ProtectedRoute allowedRoles={['CANDIDATE']}>
+                    <ApplyPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/my-applications"
+                element={
+                  <ProtectedRoute allowedRoles={['CANDIDATE']}>
+                    <ApplicationTrackingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Intelligence Artificielle */}
               <Route
                 path="/ai-insights"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
-                    <HRDashboard />
+                    <ChurnDashboardPage />
                   </ProtectedRoute>
                 }
               />
+
+              <Route
+                path="/ai-chat"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <AIChatPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/voice-assistant"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <VoiceAssistantPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Parametres */}
               <Route
                 path="/settings"
                 element={
                   <ProtectedRoute>
-                    <HRDashboard />
+                    <SettingsPage />
                   </ProtectedRoute>
                 }
               />

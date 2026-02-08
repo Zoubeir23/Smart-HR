@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AuthState, UserRole } from '@/types';
+import { authService } from '@/services/authService';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
@@ -9,54 +10,6 @@ interface AuthContextType extends AuthState {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// Données mock pour démo
-const MOCK_USERS: Record<string, { password: string; user: User }> = {
-  'admin@smarthr.com': {
-    password: 'admin123',
-    user: {
-      id: 1,
-      email: 'admin@smarthr.com',
-      first_name: 'Moussa',
-      last_name: 'Diop',
-      role: 'ADMIN',
-      avatar: undefined,
-    },
-  },
-  'rh@smarthr.com': {
-    password: 'rh123',
-    user: {
-      id: 2,
-      email: 'rh@smarthr.com',
-      first_name: 'Fatou',
-      last_name: 'Ndiaye',
-      role: 'RH',
-      avatar: undefined,
-    },
-  },
-  'employee@smarthr.com': {
-    password: 'employee123',
-    user: {
-      id: 3,
-      email: 'employee@smarthr.com',
-      first_name: 'Amadou',
-      last_name: 'Sow',
-      role: 'EMPLOYEE',
-      avatar: undefined,
-    },
-  },
-  'candidate@smarthr.com': {
-    password: 'candidate123',
-    user: {
-      id: 4,
-      email: 'candidate@smarthr.com',
-      first_name: 'Aïssatou',
-      last_name: 'Ba',
-      role: 'CANDIDATE',
-      avatar: undefined,
-    },
-  },
-};
 
 // Permissions par rôle
 const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
@@ -111,25 +64,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: true,
   });
 
-  // Vérifier le token stocké au démarrage
+  // Verify stored token on startup
   useEffect(() => {
-    const storedToken = localStorage.getItem('accessToken');
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedToken && storedUser) {
-      try {
-        const user = JSON.parse(storedUser);
-        setState({
-          user,
-          accessToken: storedToken,
-          refreshToken: localStorage.getItem('refreshToken'),
-          isAuthenticated: true,
-          isLoading: false,
+    const accessToken = localStorage.getItem('access_token');
+    const refreshToken = localStorage.getItem('refresh_token');
+
+    if (accessToken) {
+      authService.getCurrentUser()
+        .then((user) => {
+          setState({
+            user,
+            accessToken,
+            refreshToken,
+            isAuthenticated: true,
+            isLoading: false,
+          });
+        })
+        .catch(() => {
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          setState(prev => ({ ...prev, isLoading: false }));
         });
-      } catch {
-        localStorage.clear();
-        setState(prev => ({ ...prev, isLoading: false }));
-      }
     } else {
       setState(prev => ({ ...prev, isLoading: false }));
     }
@@ -137,38 +92,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
-    
-    // Simuler un délai réseau
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockUser = MOCK_USERS[email.toLowerCase()];
-    
-    if (!mockUser || mockUser.password !== password) {
+
+    try {
+      const data = await authService.login(email, password);
+
+      localStorage.setItem('access_token', data.access);
+      localStorage.setItem('refresh_token', data.refresh);
+
+      setState({
+        user: data.user,
+        accessToken: data.access,
+        refreshToken: data.refresh,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (error: unknown) {
       setState(prev => ({ ...prev, isLoading: false }));
-      throw new Error('Email ou mot de passe incorrect');
+      const message =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Email ou mot de passe incorrect'
+          : 'Erreur de connexion au serveur';
+      throw new Error(message);
     }
-    
-    const accessToken = `mock_access_${Date.now()}`;
-    const refreshToken = `mock_refresh_${Date.now()}`;
-    
-    localStorage.setItem('accessToken', accessToken);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(mockUser.user));
-    
-    setState({
-      user: mockUser.user,
-      accessToken,
-      refreshToken,
-      isAuthenticated: true,
-      isLoading: false,
-    });
   }, []);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('user');
-    
+  const logout = useCallback(async () => {
+    const refreshToken = localStorage.getItem('refresh_token');
+    if (refreshToken) {
+      try {
+        await authService.logout(refreshToken);
+      } catch {
+        // Ignore logout errors
+      }
+    }
+
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+
     setState({
       user: null,
       accessToken: null,

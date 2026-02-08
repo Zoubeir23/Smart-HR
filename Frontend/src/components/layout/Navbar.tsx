@@ -88,7 +88,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="flex items-center gap-2 pl-2 pr-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-primary text-sm font-medium text-primary-foreground">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
                 {user?.first_name?.[0]}
                 {user?.last_name?.[0]}
               </div>

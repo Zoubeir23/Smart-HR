@@ -1,31 +1,44 @@
 from django.db import models
-from personnel.models import Personnel
+from personnel.models import Employee
 
-class Salaire(models.Model):
-    """Modèle représentant le salaire d'un employé"""
-    personnel = models.ForeignKey(Personnel, on_delete=models.CASCADE)
-    mois = models.CharField(max_length=20)  # Exemple : "Janvier 2024"
-    salaire_brut = models.DecimalField(max_digits=10, decimal_places=2)
-    primes = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    salaire_net = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
-    date_paiement = models.DateField(auto_now_add=True)
 
-    def calculer_salaire_net(self):
-        """Calcule le salaire net (brut + primes)"""
-        self.salaire_net = float(self.salaire_brut) + float(self.primes)
-        self.save()
-        
+class Payroll(models.Model):
+    """Modèle représentant une fiche de paie mensuelle."""
+
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'En attente'
+        PROCESSED = 'processed', 'Traité'
+        PAID = 'paid', 'Payé'
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name='payrolls',
+    )
+    month = models.CharField(
+        max_length=7,
+        help_text='Format YYYY-MM, ex: 2026-01',
+    )
+    base_salary = models.DecimalField(max_digits=12, decimal_places=2)
+    bonuses = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    deductions = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    net_salary = models.DecimalField(max_digits=12, decimal_places=2, editable=False)
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Fiche de paie'
+        verbose_name_plural = 'Fiches de paie'
+        ordering = ['-month', 'employee']
+        unique_together = ['employee', 'month']
+
+    def save(self, *args, **kwargs):
+        self.net_salary = self.base_salary + self.bonuses - self.deductions
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"Salaire de {self.personnel.nom} pour {self.mois} - {self.salaire_net}€ - {self.date_paiement} - {self.salaire_brut}€ - {self.primes}€"
-
-class Paiement(models.Model):
-    """Modèle pour enregistrer les paiements des salaires"""
-    personnel = models.ForeignKey(Personnel, on_delete=models.CASCADE)
-    salaire = models.ForeignKey(Salaire, on_delete=models.CASCADE)
-    mode_paiement = models.CharField(max_length=50, choices=[('Virement', 'Virement'), ('Chèque', 'Chèque'), ('Espèces', 'Espèces')])
-    statut = models.CharField(max_length=20, choices=[('En attente', 'En attente'), ('Effectué', 'Effectué')], default='En attente')
-    date_paiement = models.DateField(auto_now_add=True)
-    
-    def __str__(self):
-        return f"Paiement de {self.salaire.salaire_net}€ pour {self.personnel.nom} - {self.date_paiement} - {self.mode_paiement} - {self.statut}"
-
+        return f"{self.employee} — {self.month} ({self.get_status_display()})"

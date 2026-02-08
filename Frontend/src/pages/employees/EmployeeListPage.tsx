@@ -35,98 +35,8 @@ import {
 } from '@/components/ui/table';
 import { Employee } from '@/types';
 import { cn } from '@/lib/utils';
-
-// Données de démo
-const mockEmployees: Employee[] = [
-  {
-    id: 1,
-    user: { id: 1, email: 'amadou.sow@company.com', first_name: 'Amadou', last_name: 'Sow', role: 'EMPLOYEE' },
-    department: 'Développement',
-    position: 'Développeur Senior',
-    hire_date: '2022-03-15',
-    salary: 85000,
-    status: 'active',
-    phone: '+221 77 123 45 67',
-    churn_risk: 72,
-  },
-  {
-    id: 2,
-    user: { id: 2, email: 'fatou.ndiaye@company.com', first_name: 'Fatou', last_name: 'Ndiaye', role: 'EMPLOYEE' },
-    department: 'Marketing',
-    position: 'Chef de projet',
-    hire_date: '2021-08-20',
-    salary: 65000,
-    status: 'active',
-    phone: '+221 78 234 56 78',
-    churn_risk: 25,
-  },
-  {
-    id: 3,
-    user: { id: 3, email: 'moussa.diop@company.com', first_name: 'Moussa', last_name: 'Diop', role: 'EMPLOYEE' },
-    department: 'Commercial',
-    position: 'Commercial',
-    hire_date: '2023-01-10',
-    salary: 55000,
-    status: 'on_leave',
-    phone: '+221 76 345 67 89',
-    churn_risk: 45,
-  },
-  {
-    id: 4,
-    user: { id: 4, email: 'aissatou.ba@company.com', first_name: 'Aïssatou', last_name: 'Ba', role: 'EMPLOYEE' },
-    department: 'Finance',
-    position: 'Comptable',
-    hire_date: '2020-11-05',
-    salary: 60000,
-    status: 'active',
-    phone: '+221 70 456 78 90',
-    churn_risk: 15,
-  },
-  {
-    id: 5,
-    user: { id: 5, email: 'ousmane.fall@company.com', first_name: 'Ousmane', last_name: 'Fall', role: 'EMPLOYEE' },
-    department: 'RH',
-    position: 'Responsable RH',
-    hire_date: '2019-05-22',
-    salary: 75000,
-    status: 'active',
-    phone: '+221 77 567 89 01',
-    churn_risk: 8,
-  },
-  {
-    id: 6,
-    user: { id: 6, email: 'mariama.diallo@company.com', first_name: 'Mariama', last_name: 'Diallo', role: 'EMPLOYEE' },
-    department: 'Développement',
-    position: 'Designer UI/UX',
-    hire_date: '2023-06-01',
-    salary: 70000,
-    status: 'active',
-    phone: '+221 78 678 90 12',
-    churn_risk: 35,
-  },
-  {
-    id: 7,
-    user: { id: 7, email: 'ibrahima.sy@company.com', first_name: 'Ibrahima', last_name: 'Sy', role: 'EMPLOYEE' },
-    department: 'IT',
-    position: 'Administrateur Système',
-    hire_date: '2021-02-14',
-    salary: 68000,
-    status: 'inactive',
-    phone: '+221 76 789 01 23',
-    churn_risk: 0,
-  },
-  {
-    id: 8,
-    user: { id: 8, email: 'khady.gueye@company.com', first_name: 'Khady', last_name: 'Gueye', role: 'EMPLOYEE' },
-    department: 'Commercial',
-    position: 'Directrice Commerciale',
-    hire_date: '2018-09-10',
-    salary: 95000,
-    status: 'active',
-    phone: '+221 70 890 12 34',
-    churn_risk: 18,
-  },
-];
+import { employeeService } from '@/services/employeeService';
+import { useQuery } from '@tanstack/react-query';
 
 const departments = ['Tous', 'Développement', 'Marketing', 'Commercial', 'Finance', 'RH', 'IT'];
 const statuses = [
@@ -154,8 +64,14 @@ export default function EmployeeListPage() {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  const { data: employeesData, isLoading } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => employeeService.getAll(),
+  });
+  const employees: Employee[] = employeesData?.results || employeesData || [];
+
   // Filtrer les employés
-  const filteredEmployees = mockEmployees.filter((employee) => {
+  const filteredEmployees = employees.filter((employee) => {
     const matchesSearch =
       employee.user.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       employee.user.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -172,10 +88,10 @@ export default function EmployeeListPage() {
 
   // Stats rapides
   const stats = {
-    total: mockEmployees.length,
-    active: mockEmployees.filter((e) => e.status === 'active').length,
-    inactive: mockEmployees.filter((e) => e.status === 'inactive').length,
-    onLeave: mockEmployees.filter((e) => e.status === 'on_leave').length,
+    total: employees.length,
+    active: employees.filter((e) => e.status === 'active').length,
+    inactive: employees.filter((e) => e.status === 'inactive').length,
+    onLeave: employees.filter((e) => e.status === 'on_leave').length,
   };
 
   return (
@@ -205,6 +121,16 @@ export default function EmployeeListPage() {
           </div>
         </div>
 
+        {isLoading && (
+          <div className="flex items-center justify-center py-16">
+            <div className="text-center space-y-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
+              <p className="text-muted-foreground">Chargement...</p>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && <>
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {statuses.map((status) => {
@@ -409,6 +335,7 @@ export default function EmployeeListPage() {
             </Button>
           </div>
         )}
+        </>}
       </motion.div>
     </DashboardLayout>
   );

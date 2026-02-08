@@ -1,7 +1,13 @@
 from django.contrib import admin
-from .models import Paiement, Salaire
+from .models import Payroll
 
-# Register your models here.
 
-admin.site.register(Paiement)
-admin.site.register(Salaire)
+@admin.register(Payroll)
+class PayrollAdmin(admin.ModelAdmin):
+    list_display = ['employee', 'month', 'base_salary', 'net_salary', 'status']
+    list_filter = ['status', 'month']
+    search_fields = [
+        'employee__user__first_name',
+        'employee__user__last_name',
+        'employee__user__email',
+    ]
