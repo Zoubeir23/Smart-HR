@@ -30,7 +30,8 @@
       "Bash(venv/Scripts/python.exe src/manage.py runserver 8000)",
       "Bash(venv/Scripts/pip.exe install:*)",
       "Bash(ls \"c:\\\\projet\\\\Smart-HR\\\\Backend\\\\src\\\\ai_engine\\\\services\"\" 2>nul && ls \"c:projetSmart-HRBackendsrcai_engineml_models\"\")",
-      "Bash(..venvScriptspython manage.py makemigrations)"
+      "Bash(..venvScriptspython manage.py makemigrations)",
+      "Bash(git add:*)"
     ]
   }
 }

@@ -35,10 +35,10 @@ npm run dev
 
 | Email | Password | Rôle |
 |-------|----------|------|
-| `admin@smarthr.com` | `admin123` | ADMIN |
-| `rh@smarthr.com` | `rh123` | RH |
-| `employee@smarthr.com` | `emp123` | EMPLOYEE |
-| `candidate@smarthr.com` | `cand123` | CANDIDATE |
+| `<ADMIN_EMAIL>` | `<ADMIN_PASSWORD>` | ADMIN |
+| `<RH_EMAIL>` | `<RH_PASSWORD>` | RH |
+| `<EMPLOYEE_EMAIL>` | `<EMPLOYEE_PASSWORD>` | EMPLOYEE |
+| `<CANDIDATE_EMAIL>` | `<CANDIDATE_PASSWORD>` | CANDIDATE |
 
 ---
 
@@ -127,7 +127,7 @@ npm run build
 ### Actions Requises
 ⚠️ **IMPORTANT :** Révoquer clé ZHIPU exposée
 1. Aller sur https://open.bigmodel.cn/usercenter/apikeys
-2. Révoquer : `***REMOVED-ZHIPU-API-KEY***..`
+2. Révoquer : `<ZHIPU_API_KEY_EXPOSED>`
 3. Générer nouvelle clé
 4. Ajouter dans `.env.docker` (ligne 33)
 

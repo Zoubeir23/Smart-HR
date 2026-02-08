@@ -27,8 +27,8 @@ npm run dev
 **But :** Vérifier que les données mockées sont remplacées
 
 1. **Login :**
-   - Email: `admin@smarthr.com`
-   - Password: `admin123`
+   - Email: `<ADMIN_EMAIL>`
+   - Password: `<ADMIN_PASSWORD>`
 
 2. **Vérifications :**
    - [ ] Section "Activité récente" affiche des connexions avec timestamps réels
@@ -65,8 +65,8 @@ npm run dev
 
 1. **Logout puis Login RH :**
    - Cliquer profil → Déconnexion
-   - Email: `rh@smarthr.com`
-   - Password: `rh123`
+   - Email: `<RH_EMAIL>`
+   - Password: `<RH_PASSWORD>`
 
 2. **Vérifications :**
    - [ ] Graphique "Taux de rétention" affiche 12 mois de données
@@ -110,8 +110,8 @@ npm run dev
 
 1. **Logout puis Login Employé :**
    - Cliquer profil → Déconnexion
-   - Email: `employee@smarthr.com`
-   - Password: `emp123`
+   - Email: `<EMPLOYEE_EMAIL>`
+   - Password: `<EMPLOYEE_PASSWORD>`
 
 2. **Navigation :**
    - Menu → Congés

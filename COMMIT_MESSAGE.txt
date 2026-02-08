@@ -1,0 +1,55 @@
+feat: corrections MVP pour démo + sécurité renforcée
+
+🔒 SÉCURITÉ (CRITIQUE)
+- Ajout .gitignore à la racine avec patterns complets
+- Retrait .env.docker du tracking Git (git rm --cached)
+- Création .env.docker.example comme template sécurisé
+- Remplacement clé API ZHIPU exposée par placeholder
+- Documentation incident sécurité (SECURITY_INCIDENT.md)
+
+⚠️ ACTION REQUISE : Révoquer clé ***REMOVED-ZHIPU-API-KEY***...
+   sur https://open.bigmodel.cn/usercenter/apikeys
+
+✨ BACKEND (Django)
+- Ajout endpoint /api/personnel/employees/retention_stats/
+  Retourne données mensuelles de rétention (12 mois)
+- Amélioration /api/personnel/employees/stats/
+  Ajout: pending_leaves, open_positions, new_applications, churn_risk_high
+
+🎨 FRONTEND (React)
+HRDashboard (Frontend/src/pages/dashboard/HRDashboard.tsx)
+  ✅ RetentionChart connecté à l'API (plus de données mockées)
+  ✅ ChurnGauge utilise stats?.high_churn_risk (données réelles)
+  ✅ Stats de risque calculées dynamiquement
+  ✅ Approve/Reject congés avec mutations + toasts
+  ✅ Guards RBAC : boutons masqués pour non-RH/Admin
+
+TaskBoardPage (Frontend/src/pages/tasks/TaskBoardPage.tsx)
+  ✅ Dialog création de tâche complètement fonctionnel
+  ✅ Formulaire contrôlé avec state newTask
+  ✅ Select assigné charge employés depuis API
+  ✅ Mutation avec toasts de feedback
+  ✅ Validation (bouton désactivé si champs manquants)
+
+LeaveListPage (Frontend/src/pages/leaves/LeaveListPage.tsx)
+  ✅ Dialog création de congé complètement fonctionnel
+  ✅ Formulaire contrôlé avec state newLeave
+  ✅ Types de congés corrects (vacation, sick, personal, etc.)
+  ✅ Mutation avec toasts de feedback
+  ✅ Validation (bouton désactivé si champs manquants)
+
+📚 DOCUMENTATION
+- DEPLOYMENT_READY.md : Statut complet du projet
+- QUICKSTART.md : Guide de démarrage rapide
+- SECURITY_INCIDENT.md : Documentation de l'incident
+- Backend/check_health.py : Script de vérification santé
+
+🧪 TESTS RECOMMANDÉS
+1. Login avec admin@smarthr.com / admin123
+2. Vérifier Dashboard RH (vraies données, pas mocks)
+3. Créer une tâche (dialog fonctionnel)
+4. Créer un congé (dialog fonctionnel)
+5. Approuver/Rejeter un congé (toasts affichés)
+6. Vérifier RBAC (boutons masqués pour employés)
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>

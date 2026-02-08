@@ -17,7 +17,7 @@
 
 ⚠️ **ACTION UTILISATEUR REQUISE :**
 1. Aller sur https://open.bigmodel.cn/usercenter/apikeys
-2. Révoquer la clé `***REMOVED-ZHIPU-API-KEY***`
+2. Révoquer la clé `<ZHIPU_API_KEY_EXPOSED>`
 3. Générer une nouvelle clé API
 4. L'ajouter dans votre `.env.docker` local (ligne 33)
 
@@ -117,10 +117,10 @@ npm run dev
 
 | **Email** | **Mot de passe** | **Rôle** | **Tests à Effectuer** |
 |-----------|------------------|----------|------------------------|
-| `admin@smarthr.com` | `admin123` | ADMIN | Voir tous les employés, créer tâches, approuver congés |
-| `rh@smarthr.com` | `rh123` | RH | Voir dashboard RH, gérer congés, voir stats churn |
-| `employee@smarthr.com` | `emp123` | EMPLOYEE | Voir son profil, demander congé, voir ses tâches |
-| `candidate@smarthr.com` | `cand123` | CANDIDATE | Voir offres, postuler |
+| `<ADMIN_EMAIL>` | `<ADMIN_PASSWORD>` | ADMIN | Voir tous les employés, créer tâches, approuver congés |
+| `<RH_EMAIL>` | `<RH_PASSWORD>` | RH | Voir dashboard RH, gérer congés, voir stats churn |
+| `<EMPLOYEE_EMAIL>` | `<EMPLOYEE_PASSWORD>` | EMPLOYEE | Voir son profil, demander congé, voir ses tâches |
+| `<CANDIDATE_EMAIL>` | `<CANDIDATE_PASSWORD>` | CANDIDATE | Voir offres, postuler |
 
 **Vérifications :**
 - ✅ Admin/RH voient le bouton "Nouvel employé" dans HRDashboard

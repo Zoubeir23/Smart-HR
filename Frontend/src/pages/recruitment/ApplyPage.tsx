@@ -66,10 +66,11 @@ const ApplyPage = () => {
       });
       setTimeout(() => navigate('/my-applications'), 3000);
     },
-    onError: (err: Error) => {
+    onError: (err: Error & { response?: { data?: { detail?: string } } }) => {
+      const apiMessage = err?.response?.data?.detail;
       toast({
         title: 'Erreur',
-        description: err.message || 'Impossible d\'envoyer la candidature.',
+        description: apiMessage || err.message || 'Impossible d\'envoyer la candidature.',
         variant: 'destructive',
       });
     },
