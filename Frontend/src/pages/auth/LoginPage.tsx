@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Mail, Lock, ArrowRight } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,10 +16,11 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
   
   const from = (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
 
@@ -36,6 +38,26 @@ export default function LoginPage() {
     } catch (error) {
       toast({
         title: 'Erreur de connexion',
+        description: error instanceof Error ? error.message : 'Une erreur est survenue',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSuccess = async (token: string) => {
+    setIsLoading(true);
+    try {
+      await loginWithGoogle(token);
+      toast({
+        title: 'Connexion réussie',
+        description: 'Bienvenue sur Smart-HR !',
+      });
+      navigate(from, { replace: true });
+    } catch (error) {
+      toast({
+        title: 'Connexion Google échouée',
         description: error instanceof Error ? error.message : 'Une erreur est survenue',
         variant: 'destructive',
       });
@@ -215,6 +237,47 @@ export default function LoginPage() {
               )}
             </Button>
           </form>
+
+          {/* Google SSO */}
+          <div className="space-y-3">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">SSO Google</span>
+              </div>
+            </div>
+
+            {googleClientId ? (
+              <div className="flex justify-center">
+                <GoogleLogin
+                  onSuccess={(credentialResponse) => {
+                    if (credentialResponse.credential) {
+                      handleGoogleSuccess(credentialResponse.credential);
+                    } else {
+                      toast({
+                        title: 'Connexion Google échouée',
+                        description: 'ID token manquant.',
+                        variant: 'destructive',
+                      });
+                    }
+                  }}
+                  onError={() =>
+                    toast({
+                      title: 'Connexion Google échouée',
+                      description: 'Une erreur est survenue.',
+                      variant: 'destructive',
+                    })
+                  }
+                />
+              </div>
+            ) : (
+              <p className="text-center text-xs text-muted-foreground">
+                SSO Google indisponible (VITE_GOOGLE_CLIENT_ID manquant)
+              </p>
+            )}
+          </div>
 
           {/* Demo Accounts */}
           <div className="space-y-4">
