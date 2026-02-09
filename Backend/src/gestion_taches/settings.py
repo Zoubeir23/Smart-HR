@@ -15,10 +15,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
+    'dj_rest_auth',
+    'dj_rest_auth.registration',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'allauth.socialaccount.providers.google',
     # Local apps
     'utilisateur',
     'personnel',
@@ -145,10 +152,41 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Sites (django-allauth)
+SITE_ID = 1
+
+# dj-rest-auth / allauth
+REST_USE_JWT = True
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+ACCOUNT_AUTHENTICATION_METHOD = 'email'
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_USERNAME_REQUIRED = False
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
+
 # Zoom
 ZOOM_CLIENT_ID = config('ZOOM_CLIENT_ID', default='')
 ZOOM_CLIENT_SECRET = config('ZOOM_CLIENT_SECRET', default='')
 ZOOM_REDIRECT_URI = config('ZOOM_REDIRECT_URI', default='http://127.0.0.1:8000/api/training/zoom/callback/')
+
+# Google OAuth (SSO)
+GOOGLE_CLIENT_ID = config('GOOGLE_CLIENT_ID', default='')
+GOOGLE_CLIENT_SECRET = config('GOOGLE_CLIENT_SECRET', default='')
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'},
+        'APP': {
+            'client_id': GOOGLE_CLIENT_ID,
+            'secret': GOOGLE_CLIENT_SECRET,
+            'key': ''
+        },
+    }
+}
 
 # Session
 SESSION_ENGINE = 'django.contrib.sessions.backends.db'

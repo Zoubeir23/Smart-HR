@@ -4,6 +4,7 @@ import { authService } from '@/services/authService';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: (accessToken: string) => Promise<void>;
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
   hasPermission: (permission: string) => boolean;
@@ -116,6 +117,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const loginWithGoogle = useCallback(async (accessToken: string) => {
+    setState(prev => ({ ...prev, isLoading: true }));
+
+    try {
+      const data = await authService.googleLogin(accessToken);
+
+      localStorage.setItem('access_token', data.access);
+      localStorage.setItem('refresh_token', data.refresh);
+
+      setState({
+        user: data.user,
+        accessToken: data.access,
+        refreshToken: data.refresh,
+        isAuthenticated: true,
+        isLoading: false,
+      });
+    } catch (error: unknown) {
+      setState(prev => ({ ...prev, isLoading: false }));
+      const message =
+        error && typeof error === 'object' && 'response' in error
+          ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Connexion Google échouée'
+          : 'Erreur de connexion au serveur';
+      throw new Error(message);
+    }
+  }, []);
+
   const logout = useCallback(async () => {
     const refreshToken = localStorage.getItem('refresh_token');
     if (refreshToken) {
@@ -150,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [state.user]);
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, hasRole, hasPermission }}>
+    <AuthContext.Provider value={{ ...state, login, loginWithGoogle, logout, hasRole, hasPermission }}>
       {children}
     </AuthContext.Provider>
   );
