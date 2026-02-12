@@ -18,6 +18,7 @@ INSTALLED_APPS = [
     'django.contrib.sites',
     # Third-party
     'rest_framework',
+    'rest_framework.authtoken',  # Required by dj-rest-auth
     'rest_framework_simplejwt',
     'corsheaders',
     'dj_rest_auth',
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',  # Required by django-allauth
 ]
 
 ROOT_URLCONF = 'gestion_taches.urls'
