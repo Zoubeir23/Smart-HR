@@ -1,11 +1,28 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Bot, User, Sparkles } from 'lucide-react';
+import {
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  RotateCcw,
+  Copy,
+  Check,
+  Lightbulb,
+  BarChart3,
+  Users,
+  Calendar,
+  ArrowDown,
+} from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import { aiService } from '@/services/aiService';
+import { cn } from '@/lib/utils';
+
+/* ─────────── Types ─────────── */
 
 interface Message {
   id: string;
@@ -14,253 +31,369 @@ interface Message {
   timestamp: Date;
 }
 
-const AIChatPage = () => {
+/* ─────────── Suggestion Chips ─────────── */
+
+const suggestions = [
+  { text: "Combien d'employés sont à risque de départ ?", icon: BarChart3 },
+  { text: 'Résumé des congés en attente', icon: Calendar },
+  { text: 'Statistiques globales des effectifs', icon: Users },
+  { text: 'Comment fonctionne le recrutement IA ?', icon: Lightbulb },
+];
+
+/* ─────────── Helpers ─────────── */
+
+function formatTime(date: Date) {
+  return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+/* ─────────── Typing Indicator ─────────── */
+
+function TypingBubble() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      className="flex items-start gap-3"
+    >
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+        <Bot className="h-4 w-4 text-primary" />
+      </div>
+      <div className="rounded-2xl rounded-tl-sm border border-border bg-card px-4 py-3">
+        <div className="flex items-center gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              className="h-1.5 w-1.5 rounded-full bg-muted-foreground/50"
+              animate={{ opacity: [0.3, 1, 0.3] }}
+              transition={{ duration: 1, repeat: Infinity, delay: i * 0.2 }}
+            />
+          ))}
+          <span className="ml-2 text-xs text-muted-foreground">Réflexion en cours...</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════ */
+
+export default function AIChatPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
-      text: 'Bonjour! Je suis l\'assistant IA Smart-HR. Comment puis-je vous aider?',
+      id: 'welcome',
+      text: `Bonjour ${user?.first_name ?? ''} ! Je suis l'assistant IA de Smart-HR. Je peux vous aider avec les données RH, les statistiques, les congés et bien plus. Que souhaitez-vous savoir ?`,
       sender: 'ai',
-      timestamp: new Date()
-    }
+      timestamp: new Date(),
+    },
   ]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
+  // ─── Auto-scroll ──────────────────────
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+  }, []);
 
-  // Focus input on mount
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isTyping, scrollToBottom]);
+
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
 
+  // Track scroll position for "scroll to bottom" button
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      setShowScrollBtn(scrollHeight - scrollTop - clientHeight > 100);
+    };
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // ─── Chat Mutation ────────────────────
   const chatMutation = useMutation({
     mutationFn: (question: string) => aiService.chat(question),
     onSuccess: (data) => {
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: data?.response || data?.answer || data?.message || JSON.stringify(data),
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, aiMessage]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          text: data?.response || data?.answer || data?.message || JSON.stringify(data),
+          sender: 'ai',
+          timestamp: new Date(),
+        },
+      ]);
       setIsTyping(false);
     },
     onError: () => {
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        text: 'Désolé, une erreur est survenue. Veuillez réessayer.',
-        sender: 'ai',
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          text: "Désolé, une erreur est survenue. Le service est peut-être temporairement indisponible. Veuillez réessayer.",
+          sender: 'ai',
+          timestamp: new Date(),
+        },
+      ]);
       setIsTyping(false);
     },
   });
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // ─── Send Message ─────────────────────
+  const handleSend = (text?: string) => {
+    const msg = (text ?? inputValue).trim();
+    if (!msg || isTyping) return;
 
-    if (!inputValue.trim()) return;
-
-    // Add user message
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      text: inputValue,
-      sender: 'user',
-      timestamp: new Date()
-    };
-
-    setMessages(prev => [...prev, userMessage]);
-    const question = inputValue;
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now().toString(), text: msg, sender: 'user', timestamp: new Date() },
+    ]);
     setInputValue('');
     setIsTyping(true);
+    chatMutation.mutate(msg);
 
-    chatMutation.mutate(question);
+    // Reset textarea height
+    if (inputRef.current) inputRef.current.style.height = 'auto';
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('fr-FR', {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
+
+  // ─── Copy Message ─────────────────────
+  const copyToClipboard = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+    toast({ title: 'Copié', description: 'Message copié dans le presse-papier.' });
+  };
+
+  // ─── Clear Chat ───────────────────────
+  const clearChat = () => {
+    setMessages([
+      {
+        id: 'welcome-' + Date.now(),
+        text: 'Conversation réinitialisée. Comment puis-je vous aider ?',
+        sender: 'ai',
+        timestamp: new Date(),
+      },
+    ]);
+  };
+
+  // ─── Auto-resize textarea ─────────────
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputValue(e.target.value);
+    e.target.style.height = 'auto';
+    e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+  };
+
+  const showSuggestions = messages.length <= 1 && !isTyping;
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-4rem)] flex flex-col">
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 border-b border-border bg-card"
-        >
+      <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden rounded-lg border border-border bg-card">
+        {/* ────── HEADER ────── */}
+        <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-primary to-purple-600 rounded-lg">
-              <Sparkles className="w-6 h-6 text-white" />
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-lg"
+              style={{ background: 'var(--gradient-primary)' }}
+            >
+              <Sparkles className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">
-                Assistant IA Smart-HR
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Propulsé par Z.ai GLM-4.7
-              </p>
+              <h1 className="text-base font-semibold">Assistant IA Smart-HR</h1>
+              <div className="flex items-center gap-1.5">
+                <div className="h-1.5 w-1.5 rounded-full bg-success" />
+                <span className="text-xs text-muted-foreground">En ligne — Propulsé par IA Générative</span>
+              </div>
             </div>
           </div>
-        </motion.div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 text-xs text-muted-foreground"
+              onClick={clearChat}
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              Effacer
+            </Button>
+          </div>
+        </div>
 
-        {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-muted/30">
-          <AnimatePresence initial={false}>
-            {messages.map((message, index) => (
-              <motion.div
-                key={message.id}
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                className={`flex ${
-                  message.sender === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                <div
-                  className={`flex gap-3 max-w-[80%] ${
-                    message.sender === 'user' ? 'flex-row-reverse' : 'flex-row'
-                  }`}
+        {/* ────── MESSAGES ────── */}
+        <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-3xl space-y-5 px-5 py-6">
+            <AnimatePresence initial={false}>
+              {messages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={cn('flex items-start gap-3', message.sender === 'user' && 'flex-row-reverse')}
                 >
                   {/* Avatar */}
                   <div
-                    className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center ${
-                      message.sender === 'user'
-                        ? 'bg-primary'
-                        : 'bg-gradient-to-br from-purple-500 to-primary'
-                    }`}
+                    className={cn(
+                      'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                      message.sender === 'user' ? 'bg-primary' : 'bg-primary/10'
+                    )}
                   >
                     {message.sender === 'user' ? (
-                      <User className="w-5 h-5 text-white" />
+                      <User className="h-4 w-4 text-primary-foreground" />
                     ) : (
-                      <Bot className="w-5 h-5 text-white" />
+                      <Bot className="h-4 w-4 text-primary" />
                     )}
                   </div>
 
-                  {/* Message Bubble */}
-                  <div
-                    className={`flex flex-col ${
-                      message.sender === 'user' ? 'items-end' : 'items-start'
-                    }`}
-                  >
+                  {/* Bubble */}
+                  <div className={cn('group max-w-[75%]', message.sender === 'user' && 'text-right')}>
                     <div
-                      className={`px-4 py-3 rounded-2xl ${
+                      className={cn(
+                        'inline-block rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
                         message.sender === 'user'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-card border border-border text-foreground'
-                      }`}
+                          ? 'rounded-tr-sm bg-primary text-primary-foreground'
+                          : 'rounded-tl-sm border border-border bg-muted/40 text-foreground'
+                      )}
                     >
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap">
-                        {message.text}
-                      </p>
+                      <p className="whitespace-pre-wrap">{message.text}</p>
                     </div>
-                    <span className="text-xs text-muted-foreground mt-1 px-1">
-                      {formatTime(message.timestamp)}
-                    </span>
+                    <div
+                      className={cn(
+                        'mt-1 flex items-center gap-2 px-1',
+                        message.sender === 'user' ? 'justify-end' : 'justify-start'
+                      )}
+                    >
+                      <span className="text-[11px] text-muted-foreground/60">{formatTime(message.timestamp)}</span>
+                      {message.sender === 'ai' && (
+                        <button
+                          onClick={() => copyToClipboard(message.id, message.text)}
+                          className="opacity-0 transition-opacity group-hover:opacity-100"
+                          title="Copier"
+                        >
+                          {copiedId === message.id ? (
+                            <Check className="h-3 w-3 text-success" />
+                          ) : (
+                            <Copy className="h-3 w-3 text-muted-foreground/50 hover:text-muted-foreground" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {/* Typing Indicator */}
+            <AnimatePresence>{isTyping && <TypingBubble />}</AnimatePresence>
+
+            {/* ── Suggestion Cards (shown only at start) ── */}
+            {showSuggestions && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="pt-4"
+              >
+                <p className="mb-3 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  <Lightbulb className="h-3.5 w-3.5" />
+                  Suggestions
+                </p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {suggestions.map(({ text, icon: Icon }) => (
+                    <motion.button
+                      key={text}
+                      whileHover={{ scale: 1.01, y: -1 }}
+                      whileTap={{ scale: 0.99 }}
+                      onClick={() => handleSend(text)}
+                      disabled={isTyping}
+                      className="flex items-center gap-3 rounded-lg border border-border bg-card p-3.5 text-left text-sm transition-colors hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50"
+                    >
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                        <Icon className="h-4 w-4 text-primary" />
+                      </div>
+                      <span className="text-foreground">{text}</span>
+                    </motion.button>
+                  ))}
                 </div>
               </motion.div>
-            ))}
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Scroll-to-bottom FAB */}
+          <AnimatePresence>
+            {showScrollBtn && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={scrollToBottom}
+                className="absolute bottom-4 right-4 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card shadow-md transition-colors hover:bg-muted"
+              >
+                <ArrowDown className="h-4 w-4 text-muted-foreground" />
+              </motion.button>
+            )}
           </AnimatePresence>
-
-          {/* Typing Indicator */}
-          {isTyping && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex justify-start"
-            >
-              <div className="flex gap-3 max-w-[80%]">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-gradient-to-br from-purple-500 to-primary">
-                  <Bot className="w-5 h-5 text-white" />
-                </div>
-                <div className="px-4 py-3 rounded-2xl bg-card border border-border">
-                  <div className="flex gap-1">
-                    <motion.div
-                      className="w-2 h-2 bg-muted-foreground rounded-full"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
-                    />
-                    <motion.div
-                      className="w-2 h-2 bg-muted-foreground rounded-full"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
-                    />
-                    <motion.div
-                      className="w-2 h-2 bg-muted-foreground rounded-full"
-                      animate={{ scale: [1, 1.2, 1] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
-                    />
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-
-          <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Area */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 border-t border-border bg-card"
-        >
-          <form onSubmit={handleSendMessage} className="flex gap-3">
-            <div className="flex-1 relative">
-              <input
+        {/* ────── INPUT ────── */}
+        <div className="border-t border-border bg-card px-5 py-4">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSend();
+            }}
+            className="mx-auto flex max-w-3xl items-end gap-3"
+          >
+            <div className="relative flex-1">
+              <textarea
                 ref={inputRef}
-                type="text"
                 value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                placeholder="Posez votre question..."
+                onChange={handleInput}
+                onKeyDown={handleKeyDown}
+                placeholder="Posez votre question sur les RH..."
                 disabled={isTyping}
-                className="w-full px-4 py-3 pr-12 bg-muted border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 disabled:cursor-not-allowed"
+                rows={1}
+                className="w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 pr-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ maxHeight: 120 }}
               />
             </div>
             <Button
               type="submit"
               disabled={!inputValue.trim() || isTyping}
-              className="px-6 flex items-center gap-2 rounded-xl"
+              className="h-[46px] shrink-0 gap-2 rounded-xl px-5"
+              style={{ background: 'var(--gradient-primary)' }}
             >
-              <Send className="w-4 h-4" />
+              <Send className="h-4 w-4" />
               <span className="hidden sm:inline">Envoyer</span>
             </Button>
           </form>
-
-          {/* Suggestions */}
-          <div className="mt-4 flex flex-wrap gap-2">
-            <span className="text-xs text-muted-foreground">Suggestions:</span>
-            {[
-              'Mes congés restants',
-              'Statistiques employés',
-              'Comment fonctionne le recrutement IA?'
-            ].map((suggestion, index) => (
-              <button
-                key={index}
-                onClick={() => setInputValue(suggestion)}
-                disabled={isTyping}
-                className="px-3 py-1 text-xs bg-muted hover:bg-muted/80 text-foreground rounded-full border border-border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {suggestion}
-              </button>
-            ))}
-          </div>
-        </motion.div>
+          <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-muted-foreground/50">
+            L'assistant IA peut commettre des erreurs. Vérifiez les informations importantes.
+          </p>
+        </div>
       </div>
     </DashboardLayout>
   );
-};
-
-export default AIChatPage;
+}

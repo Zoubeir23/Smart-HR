@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom';
 import {
   Users,
   Calendar,
@@ -12,6 +13,13 @@ import {
   Plus,
   Check,
   X,
+  TrendingUp,
+  TrendingDown,
+  Activity,
+  UserCheck,
+  Sparkles,
+  ChevronRight,
+  BarChart3,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -29,6 +37,8 @@ import { employeeService } from '@/services/employeeService';
 import { leaveService } from '@/services/leaveService';
 import { recruitmentService } from '@/services/recruitmentService';
 
+/* ─────────── Helpers ─────────── */
+
 const leaveTypeLabels: Record<string, string> = {
   vacation: 'Vacances',
   sick: 'Maladie',
@@ -37,15 +47,135 @@ const leaveTypeLabels: Record<string, string> = {
   other: 'Autre',
 };
 
+const leaveTypeIcons: Record<string, string> = {
+  vacation: '🏖️',
+  sick: '🤒',
+  personal: '👤',
+  maternity: '👶',
+  other: '📋',
+};
+
 function formatLeaveDate(start: string, end: string): string {
   const startDate = new Date(start);
   const endDate = new Date(end);
-  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short', year: 'numeric' };
-  if (start === end) {
-    return startDate.toLocaleDateString('fr-FR', options);
-  }
-  return `${startDate.toLocaleDateString('fr-FR', { day: 'numeric' })}-${endDate.toLocaleDateString('fr-FR', options)}`;
+  const options: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' };
+  if (start === end) return startDate.toLocaleDateString('fr-FR', options);
+  return `${startDate.toLocaleDateString('fr-FR', options)} — ${endDate.toLocaleDateString('fr-FR', options)}`;
 }
+
+function formatRelativeTime(dateStr: string): string {
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffMins < 1) return "À l'instant";
+  if (diffMins < 60) return `Il y a ${diffMins}min`;
+  if (diffHours < 24) return `Il y a ${diffHours}h`;
+  if (diffDays < 7) return `Il y a ${diffDays}j`;
+  return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+}
+
+function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return 'Bonjour';
+  if (hour < 18) return 'Bon après-midi';
+  return 'Bonsoir';
+}
+
+/* ─────────── Animated Counter ─────────── */
+
+function AnimatedValue({ value, suffix = '' }: { value: number; suffix?: string }) {
+  return (
+    <motion.span
+      key={value}
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+    >
+      {value}{suffix}
+    </motion.span>
+  );
+}
+
+/* ─────────── Risk Distribution Mini-Bar ─────────── */
+
+function RiskDistributionBar({ stats }: { stats: DashboardStats }) {
+  const total = stats.total_employees || 1;
+  const high = stats.churn_risk_high ?? 0;
+  // Estimate medium ~20%, rest is low
+  const medium = Math.round(total * 0.2);
+  const low = total - high - medium;
+  const pctLow = Math.round((low / total) * 100);
+  const pctMed = Math.round((medium / total) * 100);
+  const pctHigh = Math.round((high / total) * 100);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+        <span>Distribution du risque</span>
+        <span>{total} employés analysés</span>
+      </div>
+      <div className="flex h-2.5 overflow-hidden rounded-full bg-muted">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pctLow}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut' }}
+          className="bg-success"
+        />
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pctMed}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut', delay: 0.1 }}
+          className="bg-warning"
+        />
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${pctHigh}%` }}
+          transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
+          className="bg-destructive"
+        />
+      </div>
+      <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-success" />
+          <span className="text-muted-foreground">Faible {pctLow}%</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-warning" />
+          <span className="text-muted-foreground">Modéré {pctMed}%</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="h-2 w-2 rounded-full bg-destructive" />
+          <span className="text-muted-foreground">Élevé {pctHigh}%</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────── Quick-Action Pill ─────────── */
+
+function QuickAction({ icon: Icon, label, href }: { icon: React.ElementType; label: string; href: string }) {
+  return (
+    <Link to={href}>
+      <motion.div
+        whileHover={{ scale: 1.02, y: -1 }}
+        whileTap={{ scale: 0.98 }}
+        className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/5"
+      >
+        <Icon className="h-4 w-4 text-primary" />
+        <span>{label}</span>
+        <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+      </motion.div>
+    </Link>
+  );
+}
+
+/* ═══════════════════════════════════════════
+   MAIN COMPONENT
+   ═══════════════════════════════════════════ */
 
 export default function HRDashboard() {
   const { user } = useAuth();
@@ -53,53 +183,42 @@ export default function HRDashboard() {
   const queryClient = useQueryClient();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
 
-  // Fetch dashboard stats
+  // ─── Data Fetching ─────────────────────
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
     queryKey: ['employee-stats'],
     queryFn: employeeService.getStats,
   });
 
-  // Fetch employees (for "at risk" section)
   const { data: employeesData, isLoading: employeesLoading } = useQuery({
     queryKey: ['employees'],
     queryFn: () => employeeService.getAll(),
   });
 
-  // Fetch pending leaves
   const { data: leavesData, isLoading: leavesLoading } = useQuery({
     queryKey: ['leaves', 'pending'],
     queryFn: () => leaveService.getAll({ status: 'pending' }),
   });
 
-  // Fetch recent applications (for activity feed)
   const { data: applicationsData, isLoading: applicationsLoading } = useQuery({
     queryKey: ['applications-recent'],
     queryFn: () => recruitmentService.getApplications(),
   });
 
-  // Fetch retention stats for chart
   const { data: retentionData } = useQuery({
     queryKey: ['retention-stats'],
     queryFn: () => employeeService.getRetentionStats(),
   });
 
-  // Mutations for leave approval/rejection
+  // ─── Mutations ─────────────────────────
   const approveLeaveMutation = useMutation({
     mutationFn: (id: number) => leaveService.approve(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaves'] });
       queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
-      toast({
-        title: 'Congé approuvé',
-        description: 'La demande de congé a été approuvée avec succès.',
-      });
+      toast({ title: 'Congé approuvé', description: 'La demande de congé a été approuvée avec succès.' });
     },
     onError: () => {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible d\'approuver le congé. Veuillez réessayer.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erreur', description: "Impossible d'approuver le congé. Veuillez réessayer.", variant: 'destructive' });
     },
   });
 
@@ -108,86 +227,76 @@ export default function HRDashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['leaves'] });
       queryClient.invalidateQueries({ queryKey: ['employee-stats'] });
-      toast({
-        title: 'Congé refusé',
-        description: 'La demande de congé a été refusée.',
-      });
+      toast({ title: 'Congé refusé', description: 'La demande de congé a été refusée.' });
     },
     onError: () => {
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de refuser le congé. Veuillez réessayer.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Erreur', description: 'Impossible de refuser le congé. Veuillez réessayer.', variant: 'destructive' });
     },
   });
 
-  // Extract results from DRF paginated responses
+  // ─── Derived Data ──────────────────────
   const employees: Employee[] = employeesData?.results ?? employeesData ?? [];
   const pendingLeaves: LeaveRequest[] = leavesData?.results ?? leavesData ?? [];
   const applications = applicationsData?.results ?? applicationsData ?? [];
 
-  // Sort employees by churn risk descending to show highest risk first
-  const atRiskEmployees = [...employees]
-    .filter((e: Employee) => e.churn_risk != null)
-    .sort((a: Employee, b: Employee) => (b.churn_risk ?? 0) - (a.churn_risk ?? 0))
-    .slice(0, 4);
+  const atRiskEmployees = useMemo(
+    () =>
+      [...employees]
+        .filter((e: Employee) => e.churn_risk != null)
+        .sort((a: Employee, b: Employee) => (b.churn_risk ?? 0) - (a.churn_risk ?? 0))
+        .slice(0, 4),
+    [employees]
+  );
 
-  const isLoading = statsLoading || employeesLoading || leavesLoading;
-
-  const containerVariants = {
+  // ─── Animation Variants ────────────────
+  const container = {
     hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.1 },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+  };
+  const item = {
+    hidden: { opacity: 0, y: 16 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] } },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
+  const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <DashboardLayout>
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-6"
-      >
-        {/* Header */}
-        <motion.div variants={itemVariants} className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold sm:text-3xl">
-              Bonjour, {user?.first_name} 👋
+      <motion.div variants={container} initial="hidden" animate="visible" className="space-y-6">
+
+        {/* ────── HEADER ────── */}
+        <motion.div variants={item} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{today}</p>
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+              {getGreeting()}, {user?.first_name}
             </h1>
-            <p className="text-muted-foreground">
-              Voici un aperçu de votre tableau de bord RH
+            <p className="text-sm text-muted-foreground">
+              Voici un résumé de l'activité RH de votre organisation
             </p>
           </div>
           {(user?.role === 'RH' || user?.role === 'ADMIN') && (
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <FileText className="mr-2 h-4 w-4" />
+              <Button variant="outline" size="sm" className="gap-2">
+                <FileText className="h-4 w-4" />
                 Exporter
               </Button>
-              <Button size="sm" className="bg-gradient-primary hover:opacity-90">
-                <Plus className="mr-2 h-4 w-4" />
-                Nouvel employé
-              </Button>
+              <Link to="/employees">
+                <Button size="sm" className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
+                  <Plus className="h-4 w-4" />
+                  Nouvel employé
+                </Button>
+              </Link>
             </div>
           )}
         </motion.div>
 
-        {/* KPI Cards */}
-        <motion.div variants={itemVariants} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* ────── KPI CARDS ────── */}
+        <motion.div variants={item} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {statsLoading ? (
-            <>
-              {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-32 w-full rounded-xl" />
-              ))}
-            </>
+            Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-[130px] w-full rounded-lg" />
+            ))
           ) : (
             <>
               <KPICard
@@ -222,174 +331,227 @@ export default function HRDashboard() {
           )}
         </motion.div>
 
-        {/* Charts Row */}
-        <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-3">
+        {/* ────── QUICK ACTIONS (RH/Admin only) ────── */}
+        {(user?.role === 'RH' || user?.role === 'ADMIN') && (
+          <motion.div variants={item} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <QuickAction icon={Users} label="Gérer les employés" href="/employees" />
+            <QuickAction icon={BarChart3} label="Analyse Churn IA" href="/ai-insights" />
+            <QuickAction icon={Briefcase} label="Recrutement" href="/jobs" />
+            <QuickAction icon={Sparkles} label="Chat IA" href="/ai-chat" />
+          </motion.div>
+        )}
+
+        {/* ────── CHARTS ROW ────── */}
+        <motion.div variants={item} className="grid gap-6 lg:grid-cols-3">
+          {/* Retention Chart — spans 2 cols */}
           <div className="lg:col-span-2">
             <RetentionChart data={retentionData} />
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Risque de turnover global</CardTitle>
+
+          {/* Churn Gauge Card */}
+          <Card className="flex flex-col">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold">Risque de turnover</CardTitle>
+                <Link to="/ai-insights">
+                  <Badge variant="outline" className="cursor-pointer gap-1 text-xs font-normal hover:bg-muted">
+                    <Activity className="h-3 w-3" />
+                    Détails
+                  </Badge>
+                </Link>
+              </div>
             </CardHeader>
-            <CardContent className="flex flex-col items-center justify-center">
+            <CardContent className="flex flex-1 flex-col items-center justify-center gap-4">
               {statsLoading ? (
-                <Skeleton className="h-48 w-48 rounded-full" />
+                <Skeleton className="h-40 w-40 rounded-full" />
               ) : (
                 <>
-                  <ChurnGauge value={stats?.high_churn_risk ?? 0} size="lg" />
-                  <div className="mt-6 grid w-full grid-cols-3 gap-4 text-center text-sm">
-                    <div>
-                      <p className="text-2xl font-bold text-success">
-                        {Math.round(((stats?.total_employees ?? 0) - (stats?.high_churn_risk ?? 0)) / Math.max(stats?.total_employees ?? 1, 1) * 100)}%
-                      </p>
-                      <p className="text-muted-foreground">Risque faible</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-warning">
-                        {Math.round((stats?.high_churn_risk ?? 0) / Math.max(stats?.total_employees ?? 1, 1) * 50)}%
-                      </p>
-                      <p className="text-muted-foreground">Risque modéré</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-destructive">
-                        {Math.round((stats?.high_churn_risk ?? 0) / Math.max(stats?.total_employees ?? 1, 1) * 100)}%
-                      </p>
-                      <p className="text-muted-foreground">Risque élevé</p>
-                    </div>
-                  </div>
+                  <ChurnGauge value={stats?.churn_risk_high ?? 0} size="lg" />
+                  {stats && <RiskDistributionBar stats={stats} />}
                 </>
               )}
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Employees at Risk & Pending Leaves */}
-        <motion.div variants={itemVariants} className="grid gap-6 lg:grid-cols-2">
-          {/* Employees at Risk */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Employés à risque</CardTitle>
-              <Button variant="ghost" size="sm" className="text-primary">
-                Voir tout
-                <ArrowRight className="ml-1 h-4 w-4" />
-              </Button>
+        {/* ────── BOTTOM ROW: At-Risk + Leaves + Activity ────── */}
+        <motion.div variants={item} className="grid gap-6 lg:grid-cols-5">
+
+          {/* ── Employees at Risk (3/5 width) ── */}
+          <Card className="lg:col-span-3">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
+                  <AlertTriangle className="h-4 w-4 text-destructive" />
+                </div>
+                <div>
+                  <CardTitle className="text-base font-semibold">Employés à risque</CardTitle>
+                  <p className="text-xs text-muted-foreground">Risque de départ le plus élevé</p>
+                </div>
+              </div>
+              <Link to="/ai-insights">
+                <Button variant="ghost" size="sm" className="gap-1 text-primary">
+                  Voir tout
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </Link>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              {employeesLoading ? (
-                Array.from({ length: 4 }).map((_, i) => (
-                  <Skeleton key={i} className="h-24 w-full rounded-lg" />
-                ))
-              ) : atRiskEmployees.length > 0 ? (
-                atRiskEmployees.map((employee: Employee) => (
-                  <EmployeeCard key={employee.id} employee={employee} />
-                ))
-              ) : (
-                <p className="col-span-2 text-center text-muted-foreground">Aucun employé à risque</p>
-              )}
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {employeesLoading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <Skeleton key={i} className="h-[180px] w-full rounded-lg" />
+                  ))
+                ) : atRiskEmployees.length > 0 ? (
+                  atRiskEmployees.map((employee: Employee) => (
+                    <EmployeeCard key={employee.id} employee={employee} />
+                  ))
+                ) : (
+                  <div className="col-span-2 flex flex-col items-center justify-center py-12 text-center">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
+                      <UserCheck className="h-6 w-6 text-success" />
+                    </div>
+                    <p className="font-medium">Aucun employé à risque</p>
+                    <p className="mt-1 text-sm text-muted-foreground">Tous les indicateurs sont au vert</p>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Pending Leaves & Recent Activities */}
-          <div className="space-y-6">
+          {/* ── Right Column: Pending Leaves + Activity (2/5 width) ── */}
+          <div className="space-y-6 lg:col-span-2">
+
             {/* Pending Leaves */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="text-lg">Congés en attente</CardTitle>
-                <Badge variant="secondary">{pendingLeaves.length}</Badge>
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                    <Calendar className="h-4 w-4 text-primary" />
+                  </div>
+                  <CardTitle className="text-base font-semibold">Congés en attente</CardTitle>
+                </div>
+                <Badge
+                  variant="secondary"
+                  className="tabular-nums"
+                >
+                  {pendingLeaves.length}
+                </Badge>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-2">
                 {leavesLoading ? (
                   Array.from({ length: 3 }).map((_, i) => (
                     <Skeleton key={i} className="h-16 w-full rounded-lg" />
                   ))
                 ) : pendingLeaves.length > 0 ? (
-                  pendingLeaves.slice(0, 5).map((leave: LeaveRequest) => (
-                    <div
-                      key={leave.id}
-                      className="flex items-center justify-between rounded-lg bg-muted/50 p-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                          <Calendar className="h-5 w-5 text-primary" />
+                  <AnimatePresence mode="popLayout">
+                    {pendingLeaves.slice(0, 4).map((leave: LeaveRequest) => (
+                      <motion.div
+                        key={leave.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95, height: 0 }}
+                        className="group flex items-center justify-between rounded-lg border border-transparent bg-muted/40 p-3 transition-colors hover:border-border hover:bg-muted/60"
+                      >
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <span className="text-lg leading-none">{leaveTypeIcons[leave.type] ?? '📋'}</span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium">
+                              {leave.employee?.user?.first_name} {leave.employee?.user?.last_name}
+                            </p>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {leaveTypeLabels[leave.type] ?? leave.type} · {formatLeaveDate(leave.start_date, leave.end_date)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium">
-                            {leave.employee?.user?.first_name} {leave.employee?.user?.last_name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {leaveTypeLabels[leave.type] ?? leave.type} • {formatLeaveDate(leave.start_date, leave.end_date)}
-                          </p>
+                        <div className="flex shrink-0 gap-1.5 opacity-80 transition-opacity group-hover:opacity-100">
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => rejectLeaveMutation.mutate(leave.id)}
+                            disabled={rejectLeaveMutation.isPending}
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-7 w-7 text-success hover:bg-success/10 hover:text-success"
+                            onClick={() => approveLeaveMutation.mutate(leave.id)}
+                            disabled={approveLeaveMutation.isPending}
+                          >
+                            <Check className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="h-8"
-                          onClick={() => rejectLeaveMutation.mutate(leave.id)}
-                          disabled={rejectLeaveMutation.isPending}
-                        >
-                          <X className="mr-1 h-3 w-3" />
-                          Refuser
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="h-8"
-                          onClick={() => approveLeaveMutation.mutate(leave.id)}
-                          disabled={approveLeaveMutation.isPending}
-                        >
-                          <Check className="mr-1 h-3 w-3" />
-                          Approuver
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
                 ) : (
-                  <p className="text-center text-muted-foreground">Aucun conge en attente</p>
+                  <div className="flex flex-col items-center py-8 text-center">
+                    <Calendar className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">Aucun congé en attente</p>
+                  </div>
+                )}
+                {pendingLeaves.length > 4 && (
+                  <Link to="/leaves" className="block">
+                    <Button variant="ghost" size="sm" className="mt-1 w-full gap-1 text-xs">
+                      Voir les {pendingLeaves.length - 4} autres
+                      <ArrowRight className="h-3 w-3" />
+                    </Button>
+                  </Link>
                 )}
               </CardContent>
             </Card>
 
-            {/* Recent Activities */}
+            {/* Recent Activity Feed */}
             <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Activités récentes</CardTitle>
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+                    <Clock className="h-4 w-4 text-primary" />
+                  </div>
+                  <CardTitle className="text-base font-semibold">Activité récente</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent>
                 {applicationsLoading ? (
-                  Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-lg" />
-                  ))
+                  <div className="space-y-4">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-14 w-full rounded-lg" />
+                    ))}
+                  </div>
                 ) : applications.length > 0 ? (
-                  applications.slice(0, 5).map((application: any, index: number) => (
-                    <div key={application.id} className="flex gap-3">
-                      <div className="relative flex flex-col items-center">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
-                          <Clock className="h-4 w-4 text-primary" />
+                  <div className="relative space-y-0">
+                    {/* Vertical timeline line */}
+                    <div className="absolute bottom-2 left-[15px] top-2 w-px bg-border" />
+
+                    {applications.slice(0, 5).map((application: any, index: number) => (
+                      <div key={application.id} className="relative flex gap-3 py-2.5">
+                        {/* Timeline dot */}
+                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-primary/10">
+                          <Briefcase className="h-3.5 w-3.5 text-primary" />
                         </div>
-                        {index < Math.min(applications.length, 5) - 1 && (
-                          <div className="mt-2 h-full w-px bg-border" />
-                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-medium">Nouvelle candidature</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {application.job_offer?.title ?? 'Poste'} — {application.candidate?.first_name} {application.candidate?.last_name}
+                          </p>
+                          {application.created_at && (
+                            <p className="mt-0.5 text-[11px] text-muted-foreground/60">
+                              {formatRelativeTime(application.created_at)}
+                            </p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex-1 pb-4">
-                        <p className="font-medium">Nouvelle candidature</p>
-                        <p className="text-sm text-muted-foreground">
-                          {application.job_offer?.title ?? 'Poste'} - {application.candidate?.first_name} {application.candidate?.last_name}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {application.created_at
-                            ? new Date(application.created_at).toLocaleDateString('fr-FR', {
-                                day: 'numeric',
-                                month: 'short',
-                                year: 'numeric',
-                              })
-                            : ''}
-                        </p>
-                      </div>
-                    </div>
-                  ))
+                    ))}
+                  </div>
                 ) : (
-                  <p className="text-center text-muted-foreground">Aucune activite recente</p>
+                  <div className="flex flex-col items-center py-8 text-center">
+                    <Activity className="mb-2 h-8 w-8 text-muted-foreground/40" />
+                    <p className="text-sm text-muted-foreground">Aucune activité récente</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
