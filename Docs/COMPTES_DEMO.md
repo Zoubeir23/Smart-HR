@@ -37,7 +37,7 @@ python manage.py runserver
 cd Frontend
 npm install
 npm run dev
-# UI : http://localhost:5173
+# UI : http://localhost:8080
 ```
 
 ### 3. Variables d'environnement
