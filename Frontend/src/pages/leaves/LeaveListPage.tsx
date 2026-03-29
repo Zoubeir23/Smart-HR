@@ -444,50 +444,15 @@ const LeaveListPage = () => {
                   </div>
                 ))}
 
-                {/* Mock Calendar Days */}
-                <div className="bg-muted/30 h-32 p-3 opacity-50"></div>
-                <div className="bg-card h-32 p-3"><span className="text-xs font-bold text-foreground">01</span></div>
-                <div className="bg-card h-32 p-3">
-                  <span className="text-xs font-bold text-foreground">02</span>
-                  <div className="mt-2 space-y-1">
-                    <div className="bg-primary/20 text-primary text-[9px] font-bold px-2 py-1 rounded border border-primary/30 truncate">Jean D. - Congé</div>
-                  </div>
+                {/* Placeholder calendar content until wired to real leave data */}
+                <div className="col-span-7 h-40 flex flex-col items-center justify-center bg-muted/40 text-center px-4">
+                  <p className="text-xs font-semibold text-muted-foreground tracking-wide uppercase">
+                    Vue calendrier à venir
+                  </p>
+                  <p className="mt-1 text-[11px] text-muted-foreground/80">
+                    Cette vue sera bientôt reliée aux demandes de congés réelles.
+                  </p>
                 </div>
-                <div className="bg-card h-32 p-3">
-                  <span className="text-xs font-bold text-foreground">03</span>
-                  <div className="mt-2 space-y-1">
-                    <div className="bg-primary/20 text-primary text-[9px] font-bold px-2 py-1 rounded border border-primary/30 truncate">Jean D. - Congé</div>
-                  </div>
-                </div>
-                <div className="bg-card h-32 p-3">
-                  <span className="text-xs font-bold text-foreground">04</span>
-                  <div className="mt-2 space-y-1">
-                    <div className="bg-secondary/20 text-secondary text-[9px] font-bold px-2 py-1 rounded border border-secondary/30 truncate">Marie L. - Perso</div>
-                  </div>
-                </div>
-                <div className="bg-muted/30 h-32 p-3 text-muted-foreground font-bold text-xs text-center">05</div>
-                <div className="bg-muted/30 h-32 p-3 text-muted-foreground font-bold text-xs text-center">06</div>
-
-                <div className="bg-card h-32 p-3"><span className="text-xs font-bold text-foreground">07</span></div>
-                <div className="bg-card h-32 p-3">
-                  <span className="text-xs font-bold text-foreground">08</span>
-                  <div className="mt-2">
-                    <div className="bg-destructive/10 text-destructive text-[9px] font-bold px-2 py-1 rounded border border-destructive/20 truncate">Pierre G. - Maladie</div>
-                  </div>
-                </div>
-                <div className="bg-card h-32 p-3">
-                  <span className="text-xs font-bold text-foreground">09</span>
-                  <div className="mt-2">
-                    <div className="bg-destructive/10 text-destructive text-[9px] font-bold px-2 py-1 rounded border border-destructive/20 truncate">Pierre G. - Maladie</div>
-                  </div>
-                </div>
-                <div className="bg-primary/5 h-32 p-3 ring-2 ring-primary ring-inset relative">
-                  <span className="text-xs font-extrabold text-primary">10</span>
-                  <span className="absolute right-3 top-3 text-[8px] font-black text-primary uppercase bg-primary/10 px-1 rounded">Aujourd'hui</span>
-                </div>
-                <div className="bg-card h-32 p-3"><span className="text-xs font-bold text-foreground">11</span></div>
-                <div className="bg-muted/30 h-32 p-3 text-muted-foreground font-bold text-xs text-center">12</div>
-                <div className="bg-muted/30 h-32 p-3 text-muted-foreground font-bold text-xs text-center">13</div>
               </div>
             </div>
             )}
