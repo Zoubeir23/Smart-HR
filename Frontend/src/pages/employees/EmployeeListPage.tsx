@@ -207,7 +207,7 @@ export default function EmployeeListPage() {
                 <p className="text-3xl font-extrabold leading-none mt-1">{stats.total}</p>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold text-success uppercase tracking-widest">Nouveaux Recrues</p>
+                <p className="text-[10px] font-bold text-success uppercase tracking-widest">Nouvelles recrues</p>
                 <p className="text-3xl font-extrabold text-success leading-none mt-1">12</p>
               </div>
             </div>
