@@ -198,21 +198,8 @@ export default function PayrollPage() {
 
         {/* Table Section */}
         <section className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
-          <div className="px-6 py-5 border-b border-border flex flex-col sm:flex-row justify-between items-center gap-4">
+          <div className="px-6 py-5 border-b border-border flex items-center">
             <h3 className="text-lg font-bold text-foreground">Liste des Rémunérations</h3>
-            <div className="flex items-center gap-3 w-full sm:w-auto">
-              <div className="relative flex-1 sm:flex-none">
-                <FileText className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <input
-                  className="pl-9 pr-4 py-2 bg-muted border-none rounded-lg text-sm w-full sm:w-64 focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/60 outline-none text-foreground"
-                  placeholder="Rechercher un employé..."
-                  type="text"
-                />
-              </div>
-              <Button variant="outline" size="icon" className="bg-muted border-none">
-                <FileText className="h-4 w-4" />
-              </Button>
-            </div>
           </div>
           <div className="overflow-x-auto">
             <Table>
