@@ -47,6 +47,7 @@ import ProfilePage from "@/pages/settings/ProfilePage";
 // Pages generales
 import NotFoundPage from "@/pages/NotFoundPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
+import LandingPage from "@/pages/LandingPage";
 
 const queryClient = new QueryClient();
 
@@ -84,8 +85,8 @@ const App = () => (
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-              {/* Redirection de la racine */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              {/* Landing Page à la racine */}
+              <Route path="/" element={<LandingPage />} />
 
               {/* Dashboard adaptatif selon le role */}
               <Route
