@@ -215,7 +215,7 @@ export default function EmployeeListPage() {
               <Download className="h-4 w-4" />
               <span className="hidden sm:inline">Exporter</span>
             </Button>
-            <Button size="sm" className="gap-2 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+            <Button size="sm" className="gap-2 bg-gradient-primary text-primary-foreground shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
               <Plus className="h-4 w-4" />
               <span className="hidden sm:inline">Nouvel employé</span>
             </Button>
