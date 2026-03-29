@@ -1,23 +1,27 @@
 import api from './api';
 
+// Backend: /api/v1/recruitment/job-offers/
+// Backend: /api/v1/recruitment/applications/
+// Backend: PATCH /api/v1/recruitment/applications/{id}/update-status/
+
 export const recruitmentService = {
   getJobs: async (params?: { status?: string }) => {
-    const { data } = await api.get('/recruitment/jobs/', { params });
+    const { data } = await api.get('/recruitment/job-offers/', { params });
     return data;
   },
 
   getJobById: async (id: number) => {
-    const { data } = await api.get(`/recruitment/jobs/${id}/`);
+    const { data } = await api.get(`/recruitment/job-offers/${id}/`);
     return data;
   },
 
   createJob: async (jobData: Record<string, unknown>) => {
-    const { data } = await api.post('/recruitment/jobs/', jobData);
+    const { data } = await api.post('/recruitment/job-offers/', jobData);
     return data;
   },
 
   updateJob: async (id: number, jobData: Record<string, unknown>) => {
-    const { data } = await api.patch(`/recruitment/jobs/${id}/`, jobData);
+    const { data } = await api.patch(`/recruitment/job-offers/${id}/`, jobData);
     return data;
   },
 
@@ -34,17 +38,7 @@ export const recruitmentService = {
   },
 
   updateApplicationStatus: async (id: number, status: string) => {
-    const { data } = await api.patch(`/recruitment/applications/${id}/update_status/`, { status });
-    return data;
-  },
-
-  analyzeCv: async (applicationId: number) => {
-    const { data } = await api.post('/agents/recruitment/analyze-cv/', { application_id: applicationId });
-    return data;
-  },
-
-  processApplication: async (applicationId: number) => {
-    const { data } = await api.post('/agents/recruitment/process-application/', { application_id: applicationId });
+    const { data } = await api.patch(`/recruitment/applications/${id}/update-status/`, { status });
     return data;
   },
 };

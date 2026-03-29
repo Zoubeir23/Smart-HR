@@ -1,36 +1,42 @@
 # Smart-HR Backend
 FROM python:3.13-slim
 
-# System deps for psycopg2
+# Dépendances système pour psycopg et compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc libpq-dev curl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Install Python deps first (cache layer)
-COPY Backend/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+# Installer uv pour une installation rapide des dépendances
+RUN pip install --no-cache-dir uv
 
-# Copy source code
-COPY Backend/src/ .
+# Copier les fichiers de dépendances en premier (optimisation du cache Docker)
+COPY Backend/pyproject.toml Backend/uv.lock ./
 
-# Copy entrypoint
+# Installer les dépendances + gunicorn
+RUN uv pip install --system --no-cache . && \
+    uv pip install --system --no-cache gunicorn
+
+# Copier tout le code source du backend
+COPY Backend/ .
+
+# Copier le script d'entrée
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
-# Create media directories
-RUN mkdir -p media/documents media/audio media/cvs staticfiles
+# Créer les dossiers media nécessaires
+RUN mkdir -p smart_hr/media/documents smart_hr/media/audio smart_hr/media/cvs staticfiles
 
 EXPOSE 8000
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD curl -sf http://localhost:8000/api/auth/login/ -o /dev/null || exit 1
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD curl -sf http://localhost:8000/api/v1/auth/login/ -o /dev/null || exit 1
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
-# Run with gunicorn (4 workers, 120s timeout for AI calls)
-CMD ["gunicorn", "gestion_taches.wsgi:application", \
+# Gunicorn : 4 workers, timeout 120s pour les appels IA
+CMD ["gunicorn", "config.wsgi:application", \
      "--bind", "0.0.0.0:8000", \
      "--workers", "4", \
      "--timeout", "120", \
