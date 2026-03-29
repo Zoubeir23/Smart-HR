@@ -1,32 +1,41 @@
 import api from './api';
 
+// Backend: GET/POST /api/v1/conge/leave-requests/
+// Backend: POST /api/v1/conge/leave-requests/{id}/approve/
+// Backend: POST /api/v1/conge/leave-requests/{id}/reject/
+
 export const leaveService = {
   getAll: async (params?: { status?: string; employee?: number }) => {
-    const { data } = await api.get('/conges/leaves/', { params });
+    const { data } = await api.get('/conge/leave-requests/', { params });
     return data;
   },
 
   getById: async (id: number) => {
-    const { data } = await api.get(`/conges/leaves/${id}/`);
+    const { data } = await api.get(`/conge/leave-requests/${id}/`);
     return data;
   },
 
-  create: async (leaveData: { leave_type: string; start_date: string; end_date: string; reason: string }) => {
-    const { data } = await api.post('/conges/leaves/', leaveData);
+  create: async (leaveData: {
+    leave_type: string;
+    start_date: string;
+    end_date: string;
+    reason: string;
+  }) => {
+    const { data } = await api.post('/conge/leave-requests/', leaveData);
     return data;
   },
 
   approve: async (id: number) => {
-    const { data } = await api.patch(`/conges/leaves/${id}/approve/`);
+    const { data } = await api.post(`/conge/leave-requests/${id}/approve/`);
     return data;
   },
 
   reject: async (id: number) => {
-    const { data } = await api.patch(`/conges/leaves/${id}/reject/`);
+    const { data } = await api.post(`/conge/leave-requests/${id}/reject/`);
     return data;
   },
 
   delete: async (id: number) => {
-    await api.delete(`/conges/leaves/${id}/`);
+    await api.delete(`/conge/leave-requests/${id}/`);
   },
 };

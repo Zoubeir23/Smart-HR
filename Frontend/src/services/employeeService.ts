@@ -36,7 +36,7 @@ export const employeeService = {
   },
 
   getRetentionStats: async () => {
-    const { data } = await api.get('/personnel/employees/retention_stats/');
+    const { data } = await api.get('/personnel/employees/retention-stats/');
     return data;
   },
 
