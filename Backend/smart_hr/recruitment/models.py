@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 
 from smart_hr.core.models import TimeStampedModel
+from smart_hr.core.validators import validate_cv_extension
+from smart_hr.core.validators import validate_file_size
 
 
 class JobOffer(TimeStampedModel):
@@ -60,7 +62,10 @@ class Application(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="applications",
     )
-    cv = models.FileField(upload_to="cvs/")
+    cv = models.FileField(
+        upload_to="cvs/",
+        validators=[validate_cv_extension, validate_file_size],
+    )
     cover_letter = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     matching_score = models.FloatField(null=True, blank=True)

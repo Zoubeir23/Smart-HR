@@ -54,7 +54,7 @@ interface Task {
 
 const columnConfig = {
   todo: { title: 'À faire', color: 'bg-muted' },
-  in_progress: { title: 'En cours', color: 'bg-primary/10' },
+  in_progress: { title: 'En cours', color: 'bg-secondary/10' },
   review: { title: 'En revue', color: 'bg-warning/10' },
   done: { title: 'Terminée', color: 'bg-success/10' },
 };

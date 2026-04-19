@@ -50,7 +50,7 @@ import { useQuery } from '@tanstack/react-query';
 /* ─────────── Constants ─────────── */
 
 const statuses = [
-  { value: 'all', label: 'Tous', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
+  { value: 'all', label: 'Tous', icon: Users, color: 'text-primary', bg: 'bg-secondary/10' },
   { value: 'active', label: 'Actifs', icon: UserCheck, color: 'text-success', bg: 'bg-success/10' },
   { value: 'inactive', label: 'Inactifs', icon: UserX, color: 'text-destructive', bg: 'bg-destructive/10' },
   { value: 'on_leave', label: 'En congé', icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
@@ -257,7 +257,7 @@ export default function EmployeeListPage() {
                     className={cn(
                       'flex items-center gap-3 rounded-lg border p-4 text-left transition-all',
                       isSelected
-                        ? 'border-primary/40 bg-primary/5 shadow-sm'
+                        ? 'border-secondary/40 bg-secondary/5 shadow-sm'
                         : 'border-border bg-card hover:border-border hover:shadow-sm'
                     )}
                   >
