@@ -41,7 +41,7 @@ interface Document {
 const categoryTabs = ['Tous', 'Contrats', 'Attestations', 'Fiches de paie', 'Certificats'] as const;
 
 const categoryBadgeStyles: Record<DocumentCategory, string> = {
-  'Contrat': 'bg-primary/20 text-primary border-primary/30',
+  'Contrat': 'bg-secondary/20 text-primary border-secondary/30',
   'Attestation': 'bg-success/20 text-success border-success/30',
   'Fiche de paie': 'bg-warning/20 text-warning border-warning/30',
   'Certificat': 'bg-destructive/20 text-destructive border-destructive/30',
@@ -109,7 +109,7 @@ export default function DocumentsPage() {
         </div>
 
         {/* Upload Zone */}
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 transition-colors hover:border-primary/50">
+        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 transition-colors hover:border-secondary/50">
           <Upload className="h-10 w-10 text-muted-foreground" />
           <p className="mt-3 text-sm font-medium text-foreground">
             Glissez-deposez vos fichiers ici

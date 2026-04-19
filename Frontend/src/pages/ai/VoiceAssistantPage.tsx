@@ -165,8 +165,8 @@ const VoiceAssistantPage = () => {
                     whileTap={{ scale: 0.98 }}
                     className={`p-4 rounded-lg border-2 transition-all text-left ${
                       selectedVoice === voice.id
-                        ? 'border-primary bg-primary/5'
-                        : 'border-border bg-card hover:border-primary/50'
+                        ? 'border-primary bg-secondary/5'
+                        : 'border-border bg-card hover:border-secondary/50'
                     }`}
                   >
                     <div className="flex items-start justify-between mb-2">
@@ -199,7 +199,7 @@ const VoiceAssistantPage = () => {
                     onKeyDown={handleKeyDown}
                     placeholder="Posez votre question ici..."
                     disabled={isProcessing}
-                    className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+                    className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/50 disabled:opacity-50"
                   />
                 </div>
                 <motion.button
@@ -330,7 +330,7 @@ const VoiceAssistantPage = () => {
             transition={{ delay: 0.5 }}
             className="mt-8"
           >
-            <Card className="bg-primary/5 border-primary/20">
+            <Card className="bg-secondary/5 border-secondary/20">
               <div className="p-6">
                 <h3 className="text-sm font-semibold text-foreground mb-3">
                   Exemples de questions

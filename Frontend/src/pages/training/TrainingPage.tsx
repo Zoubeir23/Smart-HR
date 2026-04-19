@@ -89,7 +89,7 @@ export default function TrainingPage() {
           <Card className="border border-border shadow-sm rounded-lg">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
+                <div className="p-2 bg-secondary/10 rounded-lg">
                   <BookOpen className="h-5 w-5 text-primary" />
                 </div>
                 <div>
@@ -218,7 +218,7 @@ export default function TrainingPage() {
                     transition={{ duration: 0.3 }}
                     className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
                   >
-                    <div className="flex-shrink-0 p-3 bg-primary/10 rounded-lg text-center min-w-[60px]">
+                    <div className="flex-shrink-0 p-3 bg-secondary/10 rounded-lg text-center min-w-[60px]">
                       <p className="text-xs text-muted-foreground">
                         {new Date(reunion.date).toLocaleDateString('fr-FR', { month: 'short' })}
                       </p>

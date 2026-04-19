@@ -83,11 +83,11 @@ export default function AdminDashboard() {
             return (
               <Card
                 key={action.title}
-                className="group cursor-pointer border-border transition-all hover:border-primary/30 hover:shadow-md"
+                className="group cursor-pointer border-border transition-all hover:border-secondary/30 hover:shadow-md"
               >
                 <Link to={action.href} className="block">
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10">
                       <Icon className="h-5 w-5 text-primary" />
                     </div>
                     <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
