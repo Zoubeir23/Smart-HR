@@ -3,7 +3,7 @@ FROM python:3.13-slim
 
 # Dépendances système pour psycopg et compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    gcc libpq-dev curl && \
+    gcc g++ build-essential libpq-dev python3-dev curl && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
