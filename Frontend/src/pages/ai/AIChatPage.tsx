@@ -56,7 +56,7 @@ function TypingBubble() {
       exit={{ opacity: 0, y: -8 }}
       className="flex items-start gap-3"
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary/10">
         <Bot className="h-4 w-4 text-primary" />
       </div>
       <div className="rounded-2xl rounded-tl-sm border border-border bg-card px-4 py-3">
@@ -255,7 +255,7 @@ export default function AIChatPage() {
                   <div
                     className={cn(
                       'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
-                      message.sender === 'user' ? 'bg-primary' : 'bg-primary/10'
+                      message.sender === 'user' ? 'bg-primary' : 'bg-secondary/10'
                     )}
                   >
                     {message.sender === 'user' ? (
@@ -326,9 +326,9 @@ export default function AIChatPage() {
                       whileTap={{ scale: 0.99 }}
                       onClick={() => handleSend(text)}
                       disabled={isTyping}
-                      className="flex items-center gap-3 rounded-lg border border-border bg-card p-3.5 text-left text-sm transition-colors hover:border-primary/30 hover:bg-primary/5 disabled:opacity-50"
+                      className="flex items-center gap-3 rounded-lg border border-border bg-card p-3.5 text-left text-sm transition-colors hover:border-secondary/30 hover:bg-secondary/5 disabled:opacity-50"
                     >
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/10">
                         <Icon className="h-4 w-4 text-primary" />
                       </div>
                       <span className="text-foreground">{text}</span>
@@ -375,7 +375,7 @@ export default function AIChatPage() {
                 placeholder="Posez votre question sur les RH..."
                 disabled={isTyping}
                 rows={1}
-                className="w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 pr-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 pr-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/30 disabled:cursor-not-allowed disabled:opacity-50"
                 style={{ maxHeight: 120 }}
               />
             </div>
