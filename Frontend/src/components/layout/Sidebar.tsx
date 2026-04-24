@@ -22,6 +22,7 @@ import {
   Search,
   Bell,
   Inbox,
+  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -31,7 +32,6 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
-import Logo from '@/components/common/Logo';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -112,7 +112,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       initial={false}
       animate={{ width: collapsed ? 72 : 280 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar"
+      className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar sidebar-grid-overlay"
     >
       {/* Header : Logo + Toggle */}
       <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
@@ -123,16 +123,21 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             collapsed && 'justify-center'
           )}
         >
-          {collapsed ? (
-            <Logo variant="icon" size="sm" />
-          ) : (
-            <>
-              <Logo variant="icon" size="sm" />
-              <span className="ml-2 truncate font-semibold">
-                <span className="text-foreground">Smart</span>
-                <span className="text-primary">-HR</span>
-              </span>
-            </>
+          {/* Logo mark DS : ✦ Sparkles sur carré rouge gradient + glow rouge */}
+          <div
+            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
+            style={{
+              background: 'linear-gradient(135deg, #c41e1e, #D62828)',
+              boxShadow: '0 0 16px rgba(214,40,40,0.45)',
+            }}
+          >
+            <Sparkles className="h-4 w-4 text-white" />
+          </div>
+          {!collapsed && (
+            <span className="ml-1 truncate font-extrabold tracking-tight text-[15px]">
+              <span className="text-white/90">Smart</span>
+              <span className="text-[#fca5a5]">-HR</span>
+            </span>
           )}
         </Link>
         {!collapsed && (
@@ -165,7 +170,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             <input
               type="text"
               placeholder="Rechercher..."
-              className="h-9 w-full rounded-lg border border-border bg-muted/50 pl-8 pr-3 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="h-9 w-full rounded-lg border border-sidebar-border bg-sidebar-accent/60 pl-8 pr-3 text-sm text-sidebar-accent-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-2 focus:ring-sidebar-primary/30"
             />
           </div>
           <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
@@ -186,7 +191,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           {filteredGroups.map((group) => (
             <div key={group.title} className="space-y-1">
               {!collapsed && (
-                <h3 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                <h3 className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/60">
                   {group.title}
                 </h3>
               )}
@@ -201,7 +206,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
                         active
-                          ? 'bg-primary text-primary-foreground'
+                          ? 'bg-[rgba(214,40,40,0.18)] text-white shadow-[inset_3px_0_0_0_#D62828]'
                           : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       )}
                     >
@@ -250,8 +255,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Mode sombre (étendu uniquement) */}
       {!collapsed && (
         <div className="border-t border-sidebar-border px-3 py-3">
-          <div className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2">
-            <span className="text-sm font-medium">Mode sombre</span>
+          <div className="flex items-center justify-between rounded-lg bg-sidebar-accent/60 px-3 py-2">
+            <span className="text-sm font-medium text-sidebar-foreground">Mode sombre</span>
             <Switch checked={theme === 'dark'} onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} />
           </div>
         </div>
@@ -263,19 +268,19 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <div
             className={cn(
               'mb-2 flex items-center gap-2 rounded-lg p-2',
-              collapsed ? 'justify-center' : 'bg-muted/50'
+              collapsed ? 'justify-center' : 'bg-sidebar-accent/60'
             )}
           >
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sm font-medium text-sidebar-primary-foreground">
               {user.first_name?.[0]}
               {user.last_name?.[0]}
             </div>
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-foreground">
+                <p className="truncate text-sm font-medium text-white/90">
                   {user.first_name} {user.last_name}
                 </p>
-                <p className="truncate text-xs text-muted-foreground">{user.role}</p>
+                <p className="truncate text-xs text-sidebar-foreground">{user.role}</p>
               </div>
             )}
           </div>
