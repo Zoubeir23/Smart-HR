@@ -31,7 +31,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
 
   return (
     /* DS Topbar — bg blanc strict, border warm, h-64px */
-    <header className="sticky top-0 z-30 flex h-16 flex-shrink-0 items-center gap-5 border-b border-[hsl(34,30%,86%)] bg-white px-6">
+    <header className="sticky top-0 z-30 flex h-16 flex-shrink-0 items-center gap-5 border-b border-[hsl(34,30%,86%)] bg-card px-6 dark:border-[hsl(20,10%,18%)]">
 
       {/* Bouton menu mobile */}
       {showMenuButton && (
@@ -55,7 +55,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
         <Search className="absolute left-3 top-1/2 h-[14px] w-[14px] -translate-y-1/2 text-muted-foreground/60" />
         <Input
           placeholder="Rechercher employés, documents..."
-          className="h-[38px] rounded-[10px] border-[hsl(34,30%,86%)] bg-[hsl(36,40%,96%)] pl-9 text-[13px] focus-visible:bg-white"
+          className="h-[38px] rounded-[10px] border-[hsl(34,30%,86%)] bg-muted pl-9 text-[13px] focus-visible:bg-card dark:border-[hsl(20,10%,22%)]"
         />
       </div>
 
