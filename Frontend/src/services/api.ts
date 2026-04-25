@@ -1,6 +1,20 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+function normalizeApiUrl(rawApiUrl: string): string {
+  const trimmedApiUrl = rawApiUrl.trim().replace(/\/+$/, '');
+
+  if (!trimmedApiUrl) {
+    return 'http://localhost:8000/api/v1';
+  }
+
+  if (trimmedApiUrl.endsWith('/api')) {
+    return `${trimmedApiUrl}/v1`;
+  }
+
+  return trimmedApiUrl;
+}
+
+const API_URL = normalizeApiUrl(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1');
 
 const api = axios.create({
   baseURL: API_URL,

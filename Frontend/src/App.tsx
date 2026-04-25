@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 // Pages Auth
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
+import EmailVerificationPage from "@/pages/auth/EmailVerificationPage";
 
 // Dashboards
 import AdminDashboard from "@/pages/dashboard/AdminDashboard";
@@ -19,6 +20,7 @@ import CandidateDashboard from "@/pages/dashboard/CandidateDashboard";
 
 // Pages RH
 import EmployeeListPage from "@/pages/employees/EmployeeListPage";
+import EmployeeCreatePage from "@/pages/employees/EmployeeCreatePage";
 import EmployeeDetailPage from "@/pages/employees/EmployeeDetailPage";
 import LeaveListPage from "@/pages/leaves/LeaveListPage";
 import TaskBoardPage from "@/pages/tasks/TaskBoardPage";
@@ -82,6 +84,7 @@ const App = () => (
               {/* Routes publiques */}
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
+              <Route path="/verify-email" element={<EmailVerificationPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
               {/* Redirection de la racine */}
@@ -103,6 +106,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
                     <EmployeeListPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/employees/create"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <EmployeeCreatePage />
                   </ProtectedRoute>
                 }
               />
