@@ -1,0 +1,70 @@
+{% extends "email/email_base.html" %}
+{% load i18n %}
+
+{% block email_title %}Nouvelle demande de congé — Smart-HR{% endblock %}
+
+{% block email_content %}
+  <h1 class="email-title">Nouvelle demande de congé</h1>
+  <p class="email-subtitle">
+    Un employé vient de soumettre une demande de congé en attente de votre validation.
+  </p>
+
+  <div class="divider"></div>
+
+  <div class="credentials-card">
+    <p class="credentials-title">📋 Détails de la demande</p>
+
+    <div class="credential-row">
+      <div class="credential-icon">👤</div>
+      <div>
+        <p class="credential-label">Employé</p>
+        <p class="credential-value">{{ employee_name }}</p>
+      </div>
+    </div>
+
+    <div class="credential-row">
+      <div class="credential-icon">🏖️</div>
+      <div>
+        <p class="credential-label">Type de congé</p>
+        <p class="credential-value">{{ leave_type_label }}</p>
+      </div>
+    </div>
+
+    <div class="credential-row">
+      <div class="credential-icon">📅</div>
+      <div>
+        <p class="credential-label">Période</p>
+        <p class="credential-value">{{ start_date }} → {{ end_date }} <span style="color:#9b9589;">({{ days_count }} jour{{ days_count|pluralize }})</span></p>
+      </div>
+    </div>
+
+    {% if reason %}
+    <div class="credential-row">
+      <div class="credential-icon">💬</div>
+      <div>
+        <p class="credential-label">Motif</p>
+        <p class="credential-value">{{ reason }}</p>
+      </div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 1rem;">
+      <p class="credential-label" style="margin-bottom:0.5rem;">Statut</p>
+      <span class="status-badge" style="background:#fff3cd; color:#856404; border:1px solid #ffc107; border-radius:6px; padding:4px 12px; font-size:0.8rem; font-weight:600;">
+        ⏳ En attente de validation
+      </span>
+    </div>
+  </div>
+
+  <div class="alert alert-neutral">
+    <strong>Action requise :</strong> Connectez-vous à Smart-HR pour approuver ou refuser cette demande.
+  </div>
+
+  <div class="btn-wrapper">
+    <a href="{{ leaves_url }}" class="btn">Gérer les congés →</a>
+  </div>
+
+  <p style="font-size:0.78rem; color:#9b9589; margin-top:1.5rem; line-height:1.65;">
+    Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
+  </p>
+{% endblock %}
