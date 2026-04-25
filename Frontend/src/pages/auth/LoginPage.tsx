@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Logo from '@/components/common/Logo';
+import { getSafePostLoginPath } from '@/lib/authNavigation';
 
 /* ─── Isometric grid node for the branding panel ─── */
 function GridNode({
@@ -111,19 +112,18 @@ export default function LoginPage() {
   const { toast } = useToast();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-  const from =
-    (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(email, password);
+      const authenticatedUser = await login(email, password);
       toast({
         title: 'Connexion réussie',
         description: 'Bienvenue sur Smart-HR !',
       });
-      navigate(from, { replace: true });
+      navigate(getSafePostLoginPath(authenticatedUser.role, from), { replace: true });
     } catch (error) {
       toast({
         title: 'Erreur de connexion',
@@ -139,12 +139,12 @@ export default function LoginPage() {
   const handleGoogleSuccess = async (token: string) => {
     setIsLoading(true);
     try {
-      await loginWithGoogle(token);
+      const authenticatedUser = await loginWithGoogle(token);
       toast({
         title: 'Connexion réussie',
         description: 'Bienvenue sur Smart-HR !',
       });
-      navigate(from, { replace: true });
+      navigate(getSafePostLoginPath(authenticatedUser.role, from), { replace: true });
     } catch (error) {
       toast({
         title: 'Connexion Google échouée',
