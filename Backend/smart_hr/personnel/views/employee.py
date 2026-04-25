@@ -1,15 +1,22 @@
+import logging
+
 from django.db.models import Count
 
 from rest_framework import filters
+from rest_framework import serializers as drf_serializers
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from smart_hr.core.email_service import send_employee_credentials_email
 from smart_hr.personnel.models import Employee
 from smart_hr.personnel.serializers import EmployeeSerializer
+from smart_hr.users.models import User
 from smart_hr.users.permissions import IsRH
+
+logger = logging.getLogger(__name__)
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
@@ -29,6 +36,32 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if self.action in ["list", "retrieve", "me"]:
             return [IsAuthenticated()]
         return [IsRH()]
+
+    def perform_create(self, serializer):
+        """Crée l'employé puis envoie ses identifiants par email."""
+        employee = serializer.save()
+        employee_user = employee.user
+
+        # Le mot de passe en clair n'est plus accessible après hashage —
+        # on envoie un mot de passe temporaire généré ici et on le définit.
+        import secrets
+        temp_password = secrets.token_urlsafe(10)
+        employee_user.set_password(temp_password)
+        employee_user.save(update_fields=["password"])
+
+        try:
+            send_employee_credentials_email(
+                employee_email=employee_user.email,
+                first_name=employee_user.first_name or "",
+                last_name=employee_user.last_name or "",
+                temp_password=temp_password,
+                role=employee_user.role,
+            )
+        except Exception:
+            logger.exception(
+                "Échec de l'envoi de l'email d'identifiants pour %s",
+                employee_user.email,
+            )
 
     @action(detail=False, methods=["get"])
     def me(self, request):
@@ -71,6 +104,30 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 "high_churn_risk": high_churn_risk,
             }
         )
+
+    @action(detail=False, methods=["get"], url_path="available-users")
+    def available_users(self, request):
+        """Retourne les utilisateurs sans profil employé (pour la création d'employé). Réservé RH/Admin."""
+        if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        existing_employee_user_ids = Employee.objects.values_list("user_id", flat=True)
+        users = User.objects.exclude(id__in=existing_employee_user_ids).order_by(
+            "first_name", "last_name"
+        )
+
+        class AvailableUserSerializer(drf_serializers.ModelSerializer):
+            full_name = drf_serializers.SerializerMethodField()
+
+            class Meta:
+                model = User
+                fields = ["id", "email", "first_name", "last_name", "full_name", "role"]
+
+            def get_full_name(self, obj):
+                return obj.get_full_name() or obj.email
+
+        serializer = AvailableUserSerializer(users, many=True)
+        return Response(serializer.data)
 
     @action(detail=False, methods=["get"], url_path="retention-stats")
     def retention_stats(self, request):
