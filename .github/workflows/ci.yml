@@ -1,0 +1,128 @@
+name: CI
+
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore: [docs/**, "*.md"]
+  push:
+    branches: [main]
+    paths-ignore: [docs/**, "*.md"]
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 1 — Linting Backend (pre-commit : ruff, djlint, mypy…)
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  backend-lint:
+    name: Backend — Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 2 — Tests Backend (pytest + check migrations)
+# ─────────────────────────────────────────────────────────────────────────────
+  backend-test:
+    name: Backend — Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Cache Django image layers
+        uses: docker/bake-action@v6
+        with:
+          push: false
+          load: true
+          files: docker-compose.local.yml
+          workdir: Backend
+          targets: django
+          set: |
+            django.cache-from=type=gha,scope=backend-django
+            django.cache-to=type=gha,scope=backend-django,mode=max
+
+      - name: Cache Postgres image layers
+        uses: docker/bake-action@v6
+        with:
+          push: false
+          load: true
+          files: docker-compose.local.yml
+          workdir: Backend
+          targets: postgres
+          set: |
+            postgres.cache-from=type=gha,scope=backend-postgres
+            postgres.cache-to=type=gha,scope=backend-postgres,mode=max
+
+      - name: Check pending migrations
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml run --rm django python manage.py makemigrations --check
+
+      - name: Run migrations
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml run --rm django python manage.py migrate
+
+      - name: Run pytest
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml run --rm django pytest --tb=short -q
+
+      - name: Tear down stack
+        if: always()
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml down --volumes
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 3 — Qualité Frontend (TypeScript + ESLint + tests + build)
+# ─────────────────────────────────────────────────────────────────────────────
+  frontend-quality:
+    name: Frontend — Quality
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript — vérification des types
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Vitest — tests unitaires
+        run: npm run test
+
+      - name: Vite build — vérification du build de production
+        run: npm run build
+        env:
+          VITE_API_URL: https://placeholder.example.com/api/v1
