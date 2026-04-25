@@ -22,12 +22,11 @@ import {
   Search,
   Bell,
   Inbox,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-import { NavGroup, UserRole } from '@/types';
+import { NavGroup, UserRole, USER_ROLES } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -97,6 +96,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { user, logout, hasRole } = useAuth();
   const { theme, setTheme } = useTheme();
 
+  const normalizedRole = typeof user?.role === 'string' ? user.role.toUpperCase() : '';
+  const hasValidRole = USER_ROLES.includes(normalizedRole as UserRole);
+
   const isActive = (href: string) =>
     location.pathname === href || location.pathname.startsWith(href + '/');
 
@@ -119,25 +121,36 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         <Link
           to="/dashboard"
           className={cn(
-            'flex min-w-0 items-center overflow-hidden',
-            collapsed && 'justify-center'
+            'flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md px-1 py-1',
+            collapsed && 'justify-center px-0'
           )}
         >
-          {/* Logo mark DS : ✦ Sparkles sur carré rouge gradient + glow rouge */}
-          <div
-            className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-[10px]"
-            style={{
-              background: 'linear-gradient(135deg, #c41e1e, #D62828)',
-              boxShadow: '0 0 16px rgba(214,40,40,0.45)',
-            }}
-          >
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          {!collapsed && (
-            <span className="ml-1 truncate font-extrabold tracking-tight text-[15px]">
-              <span className="text-white/90">Smart</span>
-              <span className="text-[#fca5a5]">-HR</span>
-            </span>
+          {collapsed ? (
+            <img
+              src="/logo-icon.svg"
+              alt="Smart-HR"
+              className="h-9 w-9 flex-shrink-0"
+            />
+          ) : (
+            theme === 'dark' ? (
+              <div className="flex items-center gap-2">
+                <img
+                  src="/logo-icon.svg"
+                  alt="Smart-HR"
+                  className="h-9 w-9 flex-shrink-0"
+                />
+                <span className="truncate text-[17px] font-extrabold leading-none tracking-tight">
+                  <span className="text-white">Smart</span>
+                  <span className="text-primary">-HR</span>
+                </span>
+              </div>
+            ) : (
+              <img
+                src="/logo-lockup.svg"
+                alt="Smart-HR"
+                className="h-9 w-auto"
+              />
+            )
           )}
         </Link>
         {!collapsed && (
@@ -188,6 +201,19 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-2">
         <nav className="space-y-5">
+          {user && !hasValidRole && !collapsed && (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs text-warning-foreground">
+              Aucun menu charge: le role utilisateur recu est invalide.
+              Deconnecte-toi puis reconnecte-toi pour rafraichir la session.
+            </div>
+          )}
+
+          {hasValidRole && filteredGroups.length === 0 && !collapsed && (
+            <div className="rounded-lg border border-border bg-sidebar-accent/40 p-3 text-xs text-sidebar-foreground">
+              Aucun element de navigation disponible pour ce compte.
+            </div>
+          )}
+
           {filteredGroups.map((group) => (
             <div key={group.title} className="space-y-1">
               {!collapsed && (
@@ -206,7 +232,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       className={cn(
                         'flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
                         active
-                          ? 'bg-[rgba(214,40,40,0.18)] text-white shadow-[inset_3px_0_0_0_#D62828]'
+                          ? 'bg-[#D62828] text-white shadow-[inset_4px_0_0_0_#a4161a,0_6px_14px_rgba(214,40,40,0.38)] hover:bg-[#c61f1f]'
                           : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       )}
                     >
