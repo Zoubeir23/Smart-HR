@@ -224,7 +224,7 @@ const App = () => (
               <Route
                 path="/ai-chat"
                 element={
-                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE']}>
                     <AIChatPage />
                   </ProtectedRoute>
                 }
