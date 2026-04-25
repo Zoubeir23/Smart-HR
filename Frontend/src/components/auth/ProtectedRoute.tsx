@@ -27,7 +27,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && normalizedRole && !allowedRoles.includes(normalizedRole)) {
+  if (allowedRoles && (!normalizedRole || !allowedRoles.includes(normalizedRole))) {
     return <Navigate to="/dashboard" replace />;
   }
 

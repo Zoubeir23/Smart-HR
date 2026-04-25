@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 # ─── Context builders ────────────────────────────────────────────────────────
 
 def _build_rh_admin_context(user) -> list[str]:
+    """Construit le contexte métier RH/Admin à injecter dans le prompt IA."""
     lines = []
     try:
         from smart_hr.personnel.models import Employee
@@ -41,6 +42,7 @@ def _build_rh_admin_context(user) -> list[str]:
 
 
 def _build_employee_context(user) -> list[str]:
+    """Construit un contexte personnalisé pour un employé."""
     lines = []
     try:
         from smart_hr.personnel.models import Employee
@@ -87,6 +89,7 @@ def _build_employee_context(user) -> list[str]:
 
 
 def _build_candidate_context(user) -> list[str]:
+    """Construit un contexte orienté recrutement pour un candidat."""
     lines = []
     try:
         from smart_hr.recruitment.models import Application
@@ -116,6 +119,7 @@ def _build_candidate_context(user) -> list[str]:
 
 
 def _build_system_prompt(user) -> str:
+    """Assemble le prompt système complet selon le rôle de l'utilisateur."""
     role = getattr(user, "role", "EMPLOYEE").upper()
     full_name = user.get_full_name() or user.email
 
@@ -173,7 +177,7 @@ def _build_system_prompt(user) -> str:
 
 
 def _build_gemini_history(user) -> list[dict]:
-    """Return the last 4 exchanges as Gemini-format history."""
+    """Retourne les 4 derniers échanges au format d'historique Gemini."""
     recent = list(
         ChatHistory.objects.filter(user=user).order_by("-created_at")[:4]
     )
@@ -185,7 +189,7 @@ def _build_gemini_history(user) -> list[dict]:
 
 
 def _get_ai_response(question: str, user) -> str:
-    """Call Gemini with role-specific system prompt and conversation history."""
+    """Interroge Gemini avec un prompt système contextualisé selon le rôle utilisateur."""
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         return (
@@ -212,11 +216,14 @@ def _get_ai_response(question: str, user) -> str:
 # ─── ViewSet ─────────────────────────────────────────────────────────────────
 
 class ChatHistoryViewSet(viewsets.ModelViewSet):
+    """Historique des conversations IA d'un utilisateur authentifié."""
+
     serializer_class = ChatHistorySerializer
     permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "delete", "head", "options"]
 
     def get_queryset(self):
+        """Retourne les conversations de l'utilisateur courant, de la plus récente à la plus ancienne."""
         return ChatHistory.objects.filter(user=self.request.user).order_by("-created_at")
 
     def create(self, request, *args, **kwargs):
@@ -229,6 +236,11 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
         if not question:
             return Response(
                 {"detail": "Le champ 'question' est requis."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if len(question) > 1000:
+            return Response(
+                {"detail": "La question ne peut pas dépasser 1000 caractères."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

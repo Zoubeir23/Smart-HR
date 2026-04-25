@@ -1,26 +1,28 @@
-import random
+import secrets
 
 from django.utils import timezone
 
 from smart_hr.users.models import OTPCode
 from smart_hr.users.models import User
 
+LOCKOUT_DURATION_MINUTES = 15
+
 
 def generate_otp_code() -> str:
-    return str(random.randint(100000, 999999))
+    return str(secrets.randbelow(900000) + 100000)
 
 
 def create_otp_for_user(user: User) -> OTPCode:
-    """Crée (ou remplace) un OTP actif pour l'utilisateur donné."""
-    expiry_date = timezone.now() + timezone.timedelta(
-        minutes=OTPCode.OTP_EXPIRY_MINUTES
-    )
+    """Crée (ou remplace) un OTP actif pour l'utilisateur donné. Réinitialise le compteur d'échecs."""
+    expiry_date = timezone.now() + timezone.timedelta(minutes=OTPCode.OTP_EXPIRY_MINUTES)
     otp_code, _ = OTPCode.objects.update_or_create(
         user=user,
         defaults={
             "code": generate_otp_code(),
             "expiry_date": expiry_date,
             "is_used": False,
+            "failed_attempts": 0,
+            "locked_until": None,
         },
     )
     return otp_code
@@ -28,13 +30,16 @@ def create_otp_for_user(user: User) -> OTPCode:
 
 def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:
     """
-    Vérifie un code OTP soumis.
+    Vérifie un code OTP soumis avec protection brute-force.
     Retourne (True, "") si valide, (False, raison) sinon.
     """
     try:
         otp = OTPCode.objects.get(user=user)
     except OTPCode.DoesNotExist:
         return False, "Aucun code OTP trouvé pour cet utilisateur."
+
+    if otp.is_locked:
+        return False, "Trop de tentatives incorrectes. Réessayez dans 15 minutes."
 
     if otp.is_used:
         return False, "Ce code OTP a déjà été utilisé."
@@ -43,7 +48,14 @@ def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:
         return False, "Ce code OTP a expiré. Veuillez en demander un nouveau."
 
     if otp.code != submitted_code:
-        return False, "Code OTP incorrect."
+        otp.failed_attempts += 1
+        if otp.failed_attempts >= OTPCode.MAX_FAILED_ATTEMPTS:
+            otp.locked_until = timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+        otp.save(update_fields=["failed_attempts", "locked_until"])
+        remaining = OTPCode.MAX_FAILED_ATTEMPTS - otp.failed_attempts
+        if remaining <= 0:
+            return False, "Compte verrouillé après trop de tentatives. Réessayez dans 15 minutes."
+        return False, f"Code OTP incorrect. {remaining} tentative(s) restante(s)."
 
     otp.is_used = True
     otp.save(update_fields=["is_used"])

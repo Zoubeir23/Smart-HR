@@ -20,6 +20,8 @@ class PositionSerializer(serializers.ModelSerializer):
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    """Serializer complet : exposé uniquement aux rôles ADMIN et RH."""
+
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_full_name = serializers.CharField(source="user.get_full_name", read_only=True)
     department_name = serializers.CharField(source="department.name", read_only=True)
@@ -59,3 +61,15 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "role": user.role,
         }
         return data
+
+
+class EmployeeSelfSerializer(EmployeeSerializer):
+    """Serializer restreint pour le profil personnel d'un employé.
+
+    Exclut churn_risk (score interne RH non destiné à l'employé).
+    """
+
+    class Meta(EmployeeSerializer.Meta):
+        fields = [
+            f for f in EmployeeSerializer.Meta.fields if f != "churn_risk"
+        ]

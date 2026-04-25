@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from smart_hr.core.email_service import send_employee_credentials_email
 from smart_hr.personnel.models import Employee
 from smart_hr.personnel.serializers import EmployeeSerializer
+from smart_hr.personnel.serializers import EmployeeSelfSerializer
 from smart_hr.users.models import User
 from smart_hr.users.permissions import IsRH
 
@@ -20,19 +21,30 @@ logger = logging.getLogger(__name__)
 
 
 class EmployeeViewSet(viewsets.ModelViewSet):
+    """API CRUD des employés avec règles RBAC et endpoints métier."""
+
     serializer_class = EmployeeSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["user__first_name", "user__last_name", "user__email", "cin"]
     ordering_fields = ["hire_date", "salary"]
 
     def get_queryset(self):
+        """Retourne les employés visibles selon le rôle de l'utilisateur connecté."""
         user = self.request.user
         qs = Employee.objects.select_related("user", "department", "position")
-        if user.role in ["ADMIN", "RH"]:
+        if user.role in [User.Role.ADMIN, User.Role.RH]:
             return qs.all()
         return qs.filter(user=user)
 
+    def get_serializer_class(self):
+        """Utilise le serializer restreint pour les employés non-RH."""
+        user = self.request.user
+        if user.role in [User.Role.ADMIN, User.Role.RH]:
+            return EmployeeSerializer
+        return EmployeeSelfSerializer
+
     def get_permissions(self):
+        """Applique des permissions plus strictes pour les actions d'écriture."""
         if self.action in ["list", "retrieve", "me"]:
             return [IsAuthenticated()]
         return [IsRH()]
@@ -81,7 +93,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def stats(self, request):
         """KPIs globaux sur les employés (réservé RH/Admin)."""
-        if request.user.role not in ["ADMIN", "RH"]:
+        if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         total = Employee.objects.count()
@@ -117,6 +129,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         )
 
         class AvailableUserSerializer(drf_serializers.ModelSerializer):
+            """Serializer local minimal pour exposer les utilisateurs disponibles."""
+
             full_name = drf_serializers.SerializerMethodField()
 
             class Meta:
@@ -124,6 +138,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 fields = ["id", "email", "first_name", "last_name", "full_name", "role"]
 
             def get_full_name(self, obj):
+                """Construit un nom lisible, avec fallback email."""
                 return obj.get_full_name() or obj.email
 
         serializer = AvailableUserSerializer(users, many=True)
@@ -132,7 +147,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"], url_path="retention-stats")
     def retention_stats(self, request):
         """Statistiques de rétention par mois (réservé RH/Admin)."""
-        if request.user.role not in ["ADMIN", "RH"]:
+        if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         from django.db.models.functions import TruncMonth
