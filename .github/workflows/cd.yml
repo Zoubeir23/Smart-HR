@@ -1,0 +1,187 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+
+# Un seul déploiement à la fois, jamais d'annulation mid-deploy
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE: ghcr.io/zoubeir23/smart-hr-backend
+  FRONTEND_IMAGE: ghcr.io/zoubeir23/smart-hr-frontend
+
+# ─────────────────────────────────────────────────────────────────────────────
+# DEPLOY_TARGET (repository variable, pas secret) :
+#   "vps"      → build GHCR + deploy SSH uniquement
+#   "railway"  → deploy Railway uniquement (pas de build GHCR)
+#   "both"     → les deux en parallèle
+# ─────────────────────────────────────────────────────────────────────────────
+
+jobs:
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 1 — Build Docker images → push GHCR  (VPS uniquement)
+# ─────────────────────────────────────────────────────────────────────────────
+  build-and-push:
+    name: Build & Push images (GHCR)
+    if: vars.DEPLOY_TARGET == 'vps' || vars.DEPLOY_TARGET == 'both'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      backend-tag: ${{ steps.meta-backend.outputs.version }}
+      frontend-tag: ${{ steps.meta-frontend.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── Backend ─────────────────────────────────────────────────────────────
+      - name: Metadata — Backend
+        id: meta-backend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.BACKEND_IMAGE }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & Push — Backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Backend
+          dockerfile: ./Backend/compose/production/django/Dockerfile
+          push: true
+          tags: ${{ steps.meta-backend.outputs.tags }}
+          labels: ${{ steps.meta-backend.outputs.labels }}
+          cache-from: type=gha,scope=backend-prod
+          cache-to: type=gha,scope=backend-prod,mode=max
+
+      # ── Frontend ────────────────────────────────────────────────────────────
+      - name: Metadata — Frontend
+        id: meta-frontend
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.FRONTEND_IMAGE }}
+          tags: |
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & Push — Frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./Frontend
+          dockerfile: ./Frontend/Dockerfile
+          push: true
+          tags: ${{ steps.meta-frontend.outputs.tags }}
+          labels: ${{ steps.meta-frontend.outputs.labels }}
+          cache-from: type=gha,scope=frontend-prod
+          cache-to: type=gha,scope=frontend-prod,mode=max
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 2 — Deploy VPS via SSH  (dépend de build-and-push)
+# ─────────────────────────────────────────────────────────────────────────────
+  deploy-vps:
+    name: Deploy → VPS
+    if: vars.DEPLOY_TARGET == 'vps' || vars.DEPLOY_TARGET == 'both'
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: production-vps
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
+          GH_ACTOR: ${{ github.actor }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          envs: REGISTRY,GH_ACTOR,GH_TOKEN,DOMAIN_NAME
+          script: |
+            set -e
+            cd "${{ secrets.SSH_DEPLOY_PATH }}"
+
+            echo "→ git pull..."
+            git pull origin main
+
+            echo "→ Login GHCR..."
+            echo "$GH_TOKEN" | docker login "$REGISTRY" -u "$GH_ACTOR" --password-stdin
+
+            echo "→ Pull images..."
+            DOMAIN_NAME="$DOMAIN_NAME" docker compose -f docker-compose.production.yml pull django frontend
+
+            echo "→ Build images locales (postgres, traefik)..."
+            docker compose -f docker-compose.production.yml build postgres traefik
+
+            echo "→ Up services..."
+            DOMAIN_NAME="$DOMAIN_NAME" docker compose -f docker-compose.production.yml up -d --remove-orphans
+
+            echo "→ Migrations..."
+            docker compose -f docker-compose.production.yml run --rm django python manage.py migrate --no-input
+
+            echo "→ Collectstatic..."
+            docker compose -f docker-compose.production.yml run --rm django python manage.py collectstatic --no-input
+
+            echo "→ Prune images..."
+            docker image prune -f
+
+            echo "✓ VPS deploy done."
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 3 — Deploy Railway via webhooks  (indépendant, pas de build GHCR)
+#
+# Railway reconstruit les images lui-même depuis GitHub.
+# On déclenche juste les deploy hooks des deux services.
+# ─────────────────────────────────────────────────────────────────────────────
+  deploy-railway:
+    name: Deploy → Railway
+    if: vars.DEPLOY_TARGET == 'railway' || vars.DEPLOY_TARGET == 'both'
+    runs-on: ubuntu-latest
+    environment: production-railway
+
+    steps:
+      - name: Trigger Railway — Backend
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.RAILWAY_BACKEND_DEPLOY_HOOK }}")
+          echo "Railway backend hook response: $response"
+          if [ "$response" != "200" ] && [ "$response" != "202" ]; then
+            echo "::error::Railway backend deploy hook failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Trigger Railway — Frontend
+        run: |
+          response=$(curl -s -o /dev/null -w "%{http_code}" \
+            -X POST "${{ secrets.RAILWAY_FRONTEND_DEPLOY_HOOK }}")
+          echo "Railway frontend hook response: $response"
+          if [ "$response" != "200" ] && [ "$response" != "202" ]; then
+            echo "::error::Railway frontend deploy hook failed (HTTP $response)"
+            exit 1
+          fi
+
+      - name: Résumé
+        run: echo "✓ Railway deploys triggered — Railway builds et déploie depuis main."
