@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
   Search,
@@ -18,6 +19,23 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
 
 type ContractType = 'CDI' | 'CDD' | 'Stage';
 
@@ -40,13 +58,63 @@ const contractBadgeStyles: Record<ContractType, string> = {
   Stage: 'bg-primary/20 text-primary border-primary/30',
 };
 
+interface NewOfferForm {
+  title: string;
+  department: string;
+  location: string;
+  job_type: string;
+  description: string;
+  requirements: string;
+  salary_range: string;
+}
+
+const JOB_TYPE_OPTIONS = [
+  { value: 'full_time', label: 'Temps plein' },
+  { value: 'part_time', label: 'Temps partiel' },
+  { value: 'contract', label: 'Contrat' },
+  { value: 'internship', label: 'Stage' },
+];
+
 export default function JobOfferListPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string>('Toutes');
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [newOfferForm, setNewOfferForm] = useState<NewOfferForm>({
+    title: '',
+    department: '',
+    location: '',
+    job_type: 'full_time',
+    description: '',
+    requirements: '',
+    salary_range: '',
+  });
 
   const isRHOrAdmin = user?.role === 'RH' || user?.role === 'ADMIN';
   const isCandidate = user?.role === 'CANDIDATE';
+
+  const createMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => recruitmentService.createJob(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('Offre créée avec succès.');
+      setIsCreateDialogOpen(false);
+      setNewOfferForm({ title: '', department: '', location: '', job_type: 'full_time', description: '', requirements: '', salary_range: '' });
+    },
+    onError: () => {
+      toast.error("Erreur lors de la création de l'offre.");
+    },
+  });
+
+  const handleCreateSubmit = () => {
+    if (!newOfferForm.title || !newOfferForm.department || !newOfferForm.description) {
+      toast.error('Le titre, le département et la description sont obligatoires.');
+      return;
+    }
+    createMutation.mutate({ ...newOfferForm });
+  };
 
   const { data: jobsData, isLoading } = useQuery({
     queryKey: ['jobs'],
@@ -96,7 +164,7 @@ export default function JobOfferListPage() {
             </p>
           </div>
           {isRHOrAdmin && (
-            <Button className="bg-primary text-primary-foreground">
+            <Button className="bg-primary text-primary-foreground" onClick={() => setIsCreateDialogOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Nouvelle offre
             </Button>
@@ -205,11 +273,14 @@ export default function JobOfferListPage() {
 
                 <div className="pt-2">
                   {isCandidate ? (
-                    <Button className="w-full bg-primary text-primary-foreground">
+                    <Button
+                      className="w-full bg-primary text-primary-foreground"
+                      onClick={() => navigate(`/jobs/${offer.id}/apply`)}
+                    >
                       Postuler
                     </Button>
                   ) : (
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full" onClick={() => navigate(`/jobs/${offer.id}/apply`)}>
                       Voir details
                     </Button>
                   )}
@@ -241,6 +312,91 @@ export default function JobOfferListPage() {
             </Button>
           </div>
         )}
+        {/* Create Offer Dialog */}
+        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Nouvelle offre d'emploi</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="grid gap-2">
+                <Label>Titre du poste *</Label>
+                <Input
+                  value={newOfferForm.title}
+                  onChange={(e) => setNewOfferForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Ex: Développeur Backend Senior"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Département *</Label>
+                  <Input
+                    value={newOfferForm.department}
+                    onChange={(e) => setNewOfferForm((prev) => ({ ...prev, department: e.target.value }))}
+                    placeholder="Ex: Informatique"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Localisation</Label>
+                  <Input
+                    value={newOfferForm.location}
+                    onChange={(e) => setNewOfferForm((prev) => ({ ...prev, location: e.target.value }))}
+                    placeholder="Ex: Dakar, Sénégal"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Type de contrat</Label>
+                  <Select
+                    value={newOfferForm.job_type}
+                    onValueChange={(value) => setNewOfferForm((prev) => ({ ...prev, job_type: value }))}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {JOB_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Fourchette salariale</Label>
+                  <Input
+                    value={newOfferForm.salary_range}
+                    onChange={(e) => setNewOfferForm((prev) => ({ ...prev, salary_range: e.target.value }))}
+                    placeholder="Ex: 800 000 - 1 200 000 FCFA"
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Description *</Label>
+                <Textarea
+                  value={newOfferForm.description}
+                  onChange={(e) => setNewOfferForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Décrivez le poste et les missions..."
+                  rows={3}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Prérequis (un par ligne)</Label>
+                <Textarea
+                  value={newOfferForm.requirements}
+                  onChange={(e) => setNewOfferForm((prev) => ({ ...prev, requirements: e.target.value }))}
+                  placeholder="3+ ans d'expérience Django&#10;Maîtrise de PostgreSQL&#10;Connaissance de Docker"
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleCreateSubmit} disabled={createMutation.isPending}>
+                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Publier l'offre
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </DashboardLayout>
   );
