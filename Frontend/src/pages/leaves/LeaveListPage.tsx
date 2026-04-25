@@ -301,7 +301,7 @@ const LeaveListPage = () => {
                       <TableCell>{duration} jour{duration > 1 ? 's' : ''}</TableCell>
                       <TableCell>{getStatusBadge(leave.status)}</TableCell>
                       <TableCell className="text-right">
-                        {user?.role === 'rh' && leave.status === 'pending' && (
+                        {(user?.role === 'RH' || user?.role === 'ADMIN') && leave.status === 'pending' && (
                           <div className="flex justify-end gap-2">
                             <Button
                               size="sm"
