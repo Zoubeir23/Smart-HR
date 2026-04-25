@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
   Plus,
@@ -84,6 +84,7 @@ type SortDir = 'asc' | 'desc';
    ═══════════════════════════════════════════ */
 
 export default function EmployeeListPage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('Tous');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -204,9 +205,11 @@ export default function EmployeeListPage() {
               <Download className="h-4 w-4" />
               Exporter
             </Button>
-            <Button size="sm" className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
-              <Plus className="h-4 w-4" />
-              Nouvel employé
+            <Button asChild size="sm" className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
+              <Link to="/employees/create">
+                <Plus className="h-4 w-4" />
+                Nouvel employé
+              </Link>
             </Button>
           </div>
         </motion.div>
@@ -404,7 +407,7 @@ export default function EmployeeListPage() {
                         const pos = (employee as { position_title?: string }).position_title ?? employee.position;
 
                         return (
-                          <TableRow key={employee.id} className="group cursor-pointer">
+                          <TableRow key={employee.id} className="group cursor-pointer" onClick={() => navigate(`/employees/${employee.id}`)}>
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white', avatarBg)}>

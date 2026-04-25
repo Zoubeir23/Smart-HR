@@ -40,6 +40,11 @@ export const employeeService = {
     return data;
   },
 
+  getAvailableUsers: async () => {
+    const { data } = await api.get('/personnel/employees/available-users/');
+    return data as Array<{ id: number; email: string; first_name: string; last_name: string; full_name: string; role: string }>;
+  },
+
   getDepartments: async () => {
     const { data } = await api.get('/personnel/departments/');
     return data;
