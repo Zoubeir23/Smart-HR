@@ -40,12 +40,16 @@ class OTPCode(models.Model):
 
     OTP_EXPIRY_MINUTES = 10
 
+    MAX_FAILED_ATTEMPTS = 5
+
     id = models.UUIDField(primary_key=True, default=uuid_lib.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="otp_code")
     code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
     expiry_date = models.DateTimeField()
     is_used = models.BooleanField(default=False)
+    failed_attempts = models.PositiveSmallIntegerField(default=0)
+    locked_until = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         verbose_name = "Code OTP"
@@ -57,3 +61,7 @@ class OTPCode(models.Model):
     @property
     def is_expired(self) -> bool:
         return timezone.now() >= self.expiry_date
+
+    @property
+    def is_locked(self) -> bool:
+        return self.locked_until is not None and timezone.now() < self.locked_until

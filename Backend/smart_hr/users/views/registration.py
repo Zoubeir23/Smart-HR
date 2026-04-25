@@ -4,6 +4,8 @@ from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
+from rest_framework.throttling import UserRateThrottle
 from rest_framework.views import APIView
 
 from smart_hr.core.email_service import send_otp_verification_email
@@ -11,6 +13,24 @@ from smart_hr.users.models import User
 from smart_hr.users.otp_utils import create_otp_for_user
 from smart_hr.users.otp_utils import verify_otp_for_user
 from smart_hr.users.serializers import UserRegisterSerializer
+
+
+class OTPVerifyThrottle(UserRateThrottle):
+    """10 tentatives de vérification OTP par heure par utilisateur."""
+    rate = "10/hour"
+    scope = "otp_verify"
+
+
+class OTPResendThrottle(UserRateThrottle):
+    """3 renvois d'OTP par heure par utilisateur."""
+    rate = "3/hour"
+    scope = "otp_resend"
+
+
+class RegistrationThrottle(AnonRateThrottle):
+    """5 inscriptions par heure par IP."""
+    rate = "5/hour"
+    scope = "registration"
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +42,10 @@ class CandidateRegisterView(APIView):
     """
 
     permission_classes = [AllowAny]
+    throttle_classes = [RegistrationThrottle]
 
     def post(self, request):
+        """Crée un compte candidat et déclenche l'envoi du code OTP."""
         data = {**request.data, "role": User.Role.CANDIDATE}
         serializer = UserRegisterSerializer(data=data)
         if not serializer.is_valid():
@@ -59,8 +81,10 @@ class VerifyOTPView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [OTPVerifyThrottle]
 
     def post(self, request):
+        """Valide le code OTP soumis par l'utilisateur connecté."""
         code = request.data.get("code", "").strip()
         if not code:
             return Response(
@@ -84,8 +108,10 @@ class ResendOTPView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [OTPResendThrottle]
 
     def post(self, request):
+        """Génère et renvoie un nouveau code OTP si l'email n'est pas vérifié."""
         user = request.user
         if user.is_email_verified:
             return Response(

@@ -83,6 +83,7 @@ THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework.authtoken",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "dj_rest_auth",
     "dj_rest_auth.registration",
@@ -252,7 +253,8 @@ SITE_URL = env("SITE_URL", default="http://localhost:3000")
 # Django Admin URL.
 ADMIN_URL = "admin/"
 # https://docs.djangoproject.com/en/dev/ref/settings/#admins
-ADMINS = ['"Zoubeir Ibrahima Amed" <Zoubeiribrahima@gmail.com>']
+_admin_email = env("DJANGO_ADMIN_EMAIL", default="")
+ADMINS = [(env("DJANGO_ADMIN_NAME", default="Admin"), _admin_email)] if _admin_email else []
 # https://docs.djangoproject.com/en/dev/ref/settings/#managers
 MANAGERS = ADMINS
 # https://cookiecutter-django.readthedocs.io/en/latest/settings.html#other-environment-settings
@@ -369,6 +371,7 @@ SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
