@@ -7,7 +7,6 @@ import {
   UserX,
   Clock,
   Calendar,
-  Eye,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -23,72 +22,98 @@ import {
 import { cn } from '@/lib/utils';
 import { attendanceService } from '@/services/attendanceService';
 
-type AttendanceStatus = 'present' | 'absent' | 'retard' | 'conge';
+type ApiAttendanceStatus = 'present' | 'absent' | 'late' | 'half_day';
+type StatusFilter = 'all' | ApiAttendanceStatus;
 type DateFilter = 'today' | 'week' | 'month';
-type StatusFilter = 'all' | AttendanceStatus;
 
 interface AttendanceRecord {
-  id: string;
-  employee: string;
-  initials: string;
-  department: string;
-  arrival: string | null;
-  departure: string | null;
-  status: AttendanceStatus;
+  id: number;
+  employee: number;
+  employee_name: string;
+  department_name: string;
+  date: string;
+  check_in: string | null;
+  check_out: string | null;
+  status: ApiAttendanceStatus;
+  note: string;
 }
 
-const statusConfig: Record<AttendanceStatus, { label: string; className: string }> = {
+const STATUS_CONFIG: Record<ApiAttendanceStatus, { label: string; className: string }> = {
   present: { label: 'Présent', className: 'bg-success text-success-foreground' },
   absent: { label: 'Absent', className: 'bg-destructive text-destructive-foreground' },
-  retard: { label: 'En retard', className: 'bg-warning text-warning-foreground' },
-  conge: { label: 'En congé', className: 'bg-muted text-muted-foreground' },
+  late: { label: 'En retard', className: 'bg-warning text-warning-foreground' },
+  half_day: { label: 'Demi-journée', className: 'bg-muted text-muted-foreground' },
 };
 
-const statusFilters: { value: StatusFilter; label: string }[] = [
+const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: 'all', label: 'Tous' },
   { value: 'present', label: 'Présents' },
   { value: 'absent', label: 'Absents' },
-  { value: 'retard', label: 'En retard' },
-  { value: 'conge', label: 'En congé' },
+  { value: 'late', label: 'En retard' },
+  { value: 'half_day', label: 'Demi-journée' },
 ];
+
+const DATE_FILTER_LABELS: Record<DateFilter, string> = {
+  today: "Aujourd'hui",
+  week: 'Cette semaine',
+  month: 'Ce mois',
+};
+
+function buildDateParam(filter: DateFilter): string {
+  const now = new Date();
+  if (filter === 'today') {
+    return now.toISOString().split('T')[0];
+  }
+  return '';
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((part) => part[0] ?? '')
+    .join('')
+    .toUpperCase();
+}
 
 export default function AttendancePage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('today');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
-  const { data, isLoading } = useQuery({ queryKey: ['attendance'], queryFn: () => attendanceService.getAll() });
-  const attendanceRecords: AttendanceRecord[] = data?.results || data || [];
+  const apiDate = buildDateParam(dateFilter);
 
-  const filteredRecords = attendanceRecords.filter((record) => {
-    if (statusFilter === 'all') return true;
-    return record.status === statusFilter;
+  const { data, isLoading } = useQuery({
+    queryKey: ['attendance', dateFilter],
+    queryFn: () =>
+      dateFilter === 'today'
+        ? attendanceService.getToday()
+        : attendanceService.getAll(apiDate ? { date: apiDate } : {}),
   });
 
+  const records: AttendanceRecord[] = data?.results ?? data ?? [];
+
+  const filteredRecords =
+    statusFilter === 'all' ? records : records.filter((r) => r.status === statusFilter);
+
   const stats = {
-    total: attendanceRecords.length,
-    present: attendanceRecords.filter((r) => r.status === 'present').length,
-    absent: attendanceRecords.filter((r) => r.status === 'absent').length,
-    retard: attendanceRecords.filter((r) => r.status === 'retard').length,
+    total: records.length,
+    present: records.filter((r) => r.status === 'present').length,
+    absent: records.filter((r) => r.status === 'absent').length,
+    late: records.filter((r) => r.status === 'late').length,
   };
 
   const statCards = [
-    { label: 'Total employés', value: stats.total, icon: Users, color: 'text-primary' },
+    { label: 'Total', value: stats.total, icon: Users, color: 'text-primary' },
     { label: 'Présents', value: stats.present, icon: UserCheck, color: 'text-success' },
     { label: 'Absents', value: stats.absent, icon: UserX, color: 'text-destructive' },
-    { label: 'En retard', value: stats.retard, icon: Clock, color: 'text-warning' },
+    { label: 'En retard', value: stats.late, icon: Clock, color: 'text-warning' },
   ];
-
-  const dateFilterLabels: Record<DateFilter, string> = {
-    today: "Aujourd'hui",
-    week: 'Cette semaine',
-    month: 'Ce mois',
-  };
 
   if (isLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Chargement...</p>
+          <p className="text-muted-foreground">Chargement…</p>
         </div>
       </DashboardLayout>
     );
@@ -111,22 +136,21 @@ export default function AttendancePage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {(Object.keys(dateFilterLabels) as DateFilter[]).map((filter) => (
+            {(Object.keys(DATE_FILTER_LABELS) as DateFilter[]).map((filter) => (
               <Button
                 key={filter}
                 variant={dateFilter === filter ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setDateFilter(filter)}
-                className={dateFilter === filter ? 'bg-primary text-primary-foreground' : ''}
               >
                 {filter === 'today' && <Calendar className="mr-2 h-4 w-4" />}
-                {dateFilterLabels[filter]}
+                {DATE_FILTER_LABELS[filter]}
               </Button>
             ))}
           </div>
         </div>
 
-        {/* Stats Row */}
+        {/* Stats */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {statCards.map((stat) => {
             const Icon = stat.icon;
@@ -147,16 +171,15 @@ export default function AttendancePage() {
           })}
         </div>
 
-        {/* Status Filter Tabs */}
+        {/* Status Filter */}
         <div className="border border-border bg-card rounded-lg shadow-sm p-4">
           <div className="flex items-center gap-2 flex-wrap">
-            {statusFilters.map((filter) => (
+            {STATUS_FILTERS.map((filter) => (
               <Button
                 key={filter.value}
                 variant={statusFilter === filter.value ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setStatusFilter(filter.value)}
-                className={statusFilter === filter.value ? 'bg-primary text-primary-foreground' : ''}
               >
                 {filter.label}
               </Button>
@@ -172,55 +195,54 @@ export default function AttendancePage() {
                 <TableRow className="bg-muted/50">
                   <TableHead>Employé</TableHead>
                   <TableHead>Département</TableHead>
+                  <TableHead>Date</TableHead>
                   <TableHead>Arrivée</TableHead>
                   <TableHead>Départ</TableHead>
                   <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredRecords.map((record) => (
-                  <TableRow key={record.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-sm font-medium text-primary-foreground">
-                          {record.initials}
+                {filteredRecords.map((record) => {
+                  const config = STATUS_CONFIG[record.status];
+                  return (
+                    <TableRow key={record.id} className="hover:bg-muted/50">
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-primary text-sm font-medium text-primary-foreground">
+                            {getInitials(record.employee_name || 'NN')}
+                          </div>
+                          <span className="font-medium text-foreground">{record.employee_name}</span>
                         </div>
-                        <span className="font-medium text-foreground">{record.employee}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">{record.department}</TableCell>
-                    <TableCell className="text-foreground">
-                      {record.arrival ?? <span className="text-muted-foreground">--:--</span>}
-                    </TableCell>
-                    <TableCell className="text-foreground">
-                      {record.departure ?? <span className="text-muted-foreground">--:--</span>}
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={statusConfig[record.status].className}>
-                        {statusConfig[record.status].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm">
-                        <Eye className="mr-1 h-4 w-4" />
-                        Détails
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{record.department_name || '—'}</TableCell>
+                      <TableCell className="text-foreground">
+                        {new Date(record.date).toLocaleDateString('fr-FR')}
+                      </TableCell>
+                      <TableCell className="text-foreground">
+                        {record.check_in ?? <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell className="text-foreground">
+                        {record.check_out ?? <span className="text-muted-foreground">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={config?.className ?? ''}>
+                          {config?.label ?? record.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
         </div>
 
-        {/* Empty State */}
         {filteredRecords.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
             <Users className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold text-foreground">Aucun enregistrement trouvé</h3>
+            <h3 className="mt-4 text-lg font-semibold text-foreground">Aucun enregistrement</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Aucune présence ne correspond au filtre sélectionné
+              Aucune présence ne correspond au filtre sélectionné.
             </p>
             <Button className="mt-4" onClick={() => setStatusFilter('all')}>
               Réinitialiser les filtres
