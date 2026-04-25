@@ -22,7 +22,7 @@ const badgeVariants = cva(
           "bg-[hsl(36,40%,91%)] text-foreground border-[hsl(34,30%,86%)] tabular-nums min-w-[22px] justify-center",
         /* Outline neutre */
         outline:
-          "bg-white text-muted-foreground border-[hsl(34,30%,86%)]",
+          "bg-card text-muted-foreground border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)]",
         /* Default — rouge plein (badge count rouge, IA badge) */
         default:
           "bg-[#D62828] text-white border-[#D62828]",

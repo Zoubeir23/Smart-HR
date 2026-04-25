@@ -17,10 +17,10 @@ const buttonVariants = cva(
           "bg-[#FFF3E0] text-[#c41e1e] border border-[hsl(34,30%,86%)] hover:bg-[#ffe0b2]",
         /* Outline — action tertiaire */
         outline:
-          "border border-[hsl(34,30%,86%)] bg-white text-foreground hover:border-[hsl(0,69%,50%,0.30)] hover:bg-[hsl(36,40%,96%)]",
+          "border border-[hsl(34,30%,86%)] bg-card text-foreground hover:border-[hsl(0,69%,50%,0.30)] hover:bg-muted dark:border-[hsl(20,10%,22%)]",
         /* Ghost — action contextuelle, très discret */
         ghost:
-          "text-muted-foreground hover:bg-[hsl(36,40%,91%)] hover:text-foreground",
+          "text-muted-foreground hover:bg-muted hover:text-foreground",
         /* Destructive — suppression / refus */
         destructive:
           "bg-[#D62828] text-white hover:bg-[#c41e1e]",
