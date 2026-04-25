@@ -25,12 +25,19 @@ export interface AuthState {
 export interface Employee {
   id: number;
   user: User;
-  department: string;
-  position: string;
+  // FK ids (write)
+  department: number | null;
+  position: number | null;
+  // Computed labels (read)
+  department_name?: string;
+  position_title?: string;
+  user_email?: string;
+  user_full_name?: string;
   hire_date: string;
   salary: number;
   status: 'active' | 'inactive' | 'on_leave';
-  phone?: string;
+  date_of_birth?: string;
+  cin?: string;
   address?: string;
   emergency_contact?: string;
   churn_risk?: number;
