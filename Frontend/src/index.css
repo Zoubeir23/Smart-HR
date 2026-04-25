@@ -62,14 +62,14 @@
 
     --radius: 0.5rem;                   /* 8px base */
 
-    /* ── Sidebar — ALWAYS dark navy, never flips ── */
-    --sidebar-background: 215 58% 7%;   /* #08111e */
-    --sidebar-foreground: 220 12% 60%;  /* muted light text */
-    --sidebar-primary: 0 69% 50%;       /* red #D62828 — active item */
+    /* ── Sidebar (light mode) — aligned with page surface ── */
+    --sidebar-background: 30 60% 97%;   /* same family as background */
+    --sidebar-foreground: 215 16% 47%;
+    --sidebar-primary: 0 69% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 45% 13%;      /* hover bg — slightly lighter navy */
-    --sidebar-accent-foreground: 220 20% 82%;
-    --sidebar-border: 216 45% 11%;
+    --sidebar-accent: 34 45% 92%;       /* subtle hover on light surface */
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 34 30% 86%;
     --sidebar-ring: 0 68% 50%;
 
     /* ── Shadows — warm-tinted, never neutral gray ── */
@@ -177,6 +177,16 @@
   }
   h3, h4 {
     @apply text-foreground font-bold tracking-tight;
+  }
+
+  /* Autofill — empêche Chrome d'injecter un fond blanc qui masque le texte */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: hsl(var(--foreground));
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--card)) inset;
+    box-shadow: 0 0 0 1000px hsl(var(--card)) inset;
+    transition: background-color 5000s ease-in-out 0s;
   }
 
   /* Scrollbar — warm-tinted */
