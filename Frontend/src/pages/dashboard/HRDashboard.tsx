@@ -204,10 +204,18 @@ export default function HRDashboard() {
     queryFn: () => recruitmentService.getApplications(),
   });
 
-  const { data: retentionData } = useQuery({
+  const { data: retentionRaw } = useQuery({
     queryKey: ['retention-stats'],
     queryFn: () => employeeService.getRetentionStats(),
   });
+
+  const retentionData = retentionRaw?.retention_stats?.map(
+    (entry: { month: string; new_hires: number }) => ({
+      month: new Date(entry.month + '-01').toLocaleDateString('fr-FR', { month: 'short' }),
+      retention: Math.max(0, 100 - entry.new_hires),
+      turnover: entry.new_hires,
+    }),
+  );
 
   // ─── Mutations ─────────────────────────
   const approveLeaveMutation = useMutation({
@@ -281,7 +289,7 @@ export default function HRDashboard() {
                 <FileText className="h-4 w-4" />
                 Exporter
               </Button>
-              <Link to="/employees">
+              <Link to="/employees/create">
                 <Button size="sm" className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
                   <Plus className="h-4 w-4" />
                   Nouvel employé

@@ -55,7 +55,7 @@ interface NormalizedEmployee {
 }
 
 /* ─── Normalize API data (handles both snake_case and camelCase) ─── */
-function normalizeEmployee(raw: any): NormalizedEmployee {
+function normalizeEmployee(raw: any, idx = 0): NormalizedEmployee {
   const firstName = raw.employee?.user?.first_name || raw.first_name || '';
   const lastName = raw.employee?.user?.last_name || raw.last_name || '';
   const name = raw.name || `${firstName} ${lastName}`.trim() || 'Inconnu';
@@ -92,7 +92,7 @@ function normalizeEmployee(raw: any): NormalizedEmployee {
   const rawRecs = raw.recommendations ?? (raw.recommendation ? [raw.recommendation] : []);
 
   return {
-    id: String(raw.id ?? Math.random()),
+    id: String(raw.id ?? idx),
     name,
     initials,
     department: dept,
@@ -326,7 +326,7 @@ const ChurnDashboardPage = () => {
 
   const rawEmployees = predictions?.results || predictions || [];
   const employees: NormalizedEmployee[] = useMemo(
-    () => rawEmployees.map(normalizeEmployee),
+    () => rawEmployees.map((raw: any, idx: number) => normalizeEmployee(raw, idx)),
     [rawEmployees]
   );
   const highRiskCount = (highRisk?.results || highRisk || []).length;
