@@ -120,8 +120,14 @@ const VoiceAssistantPage = () => {
     }
   };
 
-  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
-  const baseUrl = apiBaseUrl.replace('/api', '');
+  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+  const baseUrl = (() => {
+    try {
+      return new URL(apiBaseUrl).origin;
+    } catch {
+      return 'http://localhost:8000';
+    }
+  })();
 
   return (
     <DashboardLayout>
