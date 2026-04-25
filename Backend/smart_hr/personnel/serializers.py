@@ -46,3 +46,16 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "churn_risk",
         ]
         read_only_fields = ["churn_risk"]
+
+    def to_representation(self, instance):
+        """Remplace le FK user par un objet imbriqué en lecture."""
+        data = super().to_representation(instance)
+        user = instance.user
+        data["user"] = {
+            "id": user.id,
+            "email": user.email,
+            "first_name": user.first_name or "",
+            "last_name": user.last_name or "",
+            "role": user.role,
+        }
+        return data

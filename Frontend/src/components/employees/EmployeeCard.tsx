@@ -89,7 +89,7 @@ export default function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
             <h3 className="font-semibold">
               {employee.user.first_name} {employee.user.last_name}
             </h3>
-            <p className="text-sm text-muted-foreground">{employee.position}</p>
+            <p className="text-sm text-muted-foreground">{employee.position_title ?? '—'}</p>
             <Badge variant="outline" className={cn('mt-1', statusStyles[employee.status])}>
               {statusLabels[employee.status]}
             </Badge>
@@ -132,7 +132,7 @@ export default function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
         )}
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4" />
-          <span>{employee.department}</span>
+          <span>{employee.department_name ?? '—'}</span>
         </div>
       </div>
 
