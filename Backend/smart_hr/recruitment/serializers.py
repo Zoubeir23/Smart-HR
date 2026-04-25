@@ -44,6 +44,8 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "cover_letter",
             "status",
             "matching_score",
+            "skills_extracted",
+            "ai_summary",
             "created_at",
         ]
-        read_only_fields = ["status", "matching_score", "created_at"]
+        read_only_fields = ["status", "matching_score", "skills_extracted", "ai_summary", "created_at"]
