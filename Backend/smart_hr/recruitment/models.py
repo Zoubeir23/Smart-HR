@@ -64,6 +64,8 @@ class Application(TimeStampedModel):
     cover_letter = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     matching_score = models.FloatField(null=True, blank=True)
+    skills_extracted = models.JSONField(default=list, blank=True)
+    ai_summary = models.TextField(blank=True)
 
     class Meta:
         verbose_name = "Candidature"
