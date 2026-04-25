@@ -1,0 +1,168 @@
+/* ═════════════════════════════════════════════════════════
+   Smart-HR Design System — Colors & Type
+   Source of truth: Frontend/src/index.css + tailwind.config.ts
+   Primary:   Warm Cream  #FFF3E0
+   Secondary: Deep Red    #D62828
+   Sidebar:   Dark Navy   #08111e (always dark)
+   ═════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* ─── Brand anchors ─── */
+  --cream:        #FFF3E0;   /* warm cream */
+  --red:          #D62828;   /* deep red — secondary / action */
+  --red-dark:     #c41e1e;
+  --red-light:    #e86060;
+  --navy-900:     #08111e;   /* sidebar base */
+  --navy-800:     #0a1628;
+  --navy-700:     #07101c;
+
+  /* ─── Surfaces (light) ─── */
+  --bg:           hsl(37 100% 94%);   /* cream page */
+  --card:         #ffffff;
+  --popover:      #ffffff;
+
+  /* ─── Foreground / text ─── */
+  --fg:           hsl(15 20% 12%);    /* warm dark brown */
+  --fg-muted:     hsl(20 12% 45%);
+  --fg-subtle:    hsl(20 10% 62%);
+  --fg-inverse:   #ffffff;
+
+  /* ─── Border / chrome ─── */
+  --border:       hsl(34 30% 86%);
+  --input:        hsl(34 30% 86%);
+  --ring:         hsl(0 68% 50%);
+
+  /* ─── Semantic palette ─── */
+  --primary:            hsl(37 100% 94%);   /* cream */
+  --primary-fg:         hsl(0 72% 38%);     /* dark red on cream */
+  --secondary:          hsl(0 68% 50%);     /* red */
+  --secondary-fg:       #ffffff;
+  --destructive:        hsl(0 68% 50%);
+  --destructive-fg:     #ffffff;
+  --success:            hsl(160 84% 28%);
+  --success-fg:         #ffffff;
+  --warning:            hsl(25 95% 53%);
+  --warning-fg:         #ffffff;
+  --muted:              hsl(36 40% 91%);
+  --muted-fg:           hsl(20 12% 45%);
+  --accent:             hsl(36 40% 91%);
+
+  /* ─── Radii ─── */
+  --radius:       0.5rem;        /* 8px base */
+  --radius-sm:    calc(var(--radius) - 4px);  /* 4px */
+  --radius-md:    calc(var(--radius) - 2px);  /* 6px */
+  --radius-lg:    var(--radius);              /* 8px */
+  --radius-xl:    0.75rem;       /* 12px — kpi/card */
+  --radius-2xl:   1rem;          /* 16px — marketing cards */
+  --radius-3xl:   1.5rem;        /* 24px — hero mockup shells */
+
+  /* ─── Spacing (8pt base, tailwind-compat) ─── */
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem;
+  --space-4: 1rem;    --space-5: 1.25rem; --space-6: 1.5rem;
+  --space-8: 2rem;    --space-10: 2.5rem; --space-12: 3rem;
+  --space-16: 4rem;   --space-24: 6rem;
+
+  /* ─── Shadows (warm-tinted) ─── */
+  --shadow-sm:    0 1px 2px 0 rgb(80 30 10 / 0.06);
+  --shadow-md:    0 4px 8px -1px rgb(80 30 10 / 0.10), 0 2px 4px -2px rgb(80 30 10 / 0.06);
+  --shadow-lg:    0 10px 20px -3px rgb(80 30 10 / 0.12), 0 4px 8px -4px rgb(80 30 10 / 0.06);
+  --shadow-xl:    0 20px 40px -8px rgb(80 30 10 / 0.18);
+  --shadow-glow:  0 0 20px -6px hsl(0 68% 50% / 0.20);
+  --shadow-navy:  0 0 16px rgba(214,40,40,0.45);   /* sidebar logo glow */
+
+  /* ─── Gradients ─── */
+  --gradient-primary: linear-gradient(135deg, #D62828 0%, #e63c3c 100%);
+  --gradient-accent:  linear-gradient(135deg, #D62828 0%, #c41e1e 100%);
+  --gradient-warm:    linear-gradient(135deg, #FFF3E0 0%, #ffe0b2 100%);
+  --gradient-success: linear-gradient(135deg, hsl(160 84% 28%) 0%, hsl(172 66% 35%) 100%);
+  --gradient-card:    linear-gradient(180deg, #ffffff 0%, #FFF3E0 100%);
+  --gradient-sidebar: linear-gradient(180deg, #2a0505 0%, #4a0808 50%, #1f0303 100%);
+
+  /* ─── Glass ─── */
+  --glass-bg:     hsl(0 0% 100% / 0.80);
+  --glass-border: hsl(34 30% 86% / 0.8);
+
+  /* ═════ TYPE ═════ */
+  --font-sans:    'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;  /* same family, heavier weights */
+  --font-mono:    ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* Weights actually used in codebase */
+  --fw-regular:   400;
+  --fw-medium:    500;
+  --fw-semibold:  600;
+  --fw-bold:      700;
+  --fw-extrabold: 800;
+
+  /* Size scale (matches tailwind defaults the app uses) */
+  --fs-xs:   0.75rem;    /* 12 — labels, timestamps */
+  --fs-sm:   0.875rem;   /* 14 — body small, form labels */
+  --fs-base: 1rem;       /* 16 — body */
+  --fs-lg:   1.125rem;   /* 18 — lead */
+  --fs-xl:   1.25rem;    /* 20 */
+  --fs-2xl:  1.5rem;     /* 24 — H3 */
+  --fs-3xl:  1.875rem;   /* 30 — H2 */
+  --fs-4xl:  2.25rem;    /* 36 */
+  --fs-5xl:  3rem;       /* 48 — landing h2 */
+  --fs-6xl:  3.75rem;    /* 60 */
+  --fs-7xl:  4.5rem;     /* 72 — hero */
+
+  /* Line-heights */
+  --lh-tight:   1.05;
+  --lh-snug:    1.2;
+  --lh-normal:  1.5;
+  --lh-relaxed: 1.625;
+
+  /* Letter spacing */
+  --tracking-tighter: -0.03em;  /* hero */
+  --tracking-tight:   -0.015em; /* headings */
+  --tracking-normal:  0;
+  --tracking-wide:    0.025em;
+  --tracking-widest:  0.12em;   /* eyebrows, micro-labels */
+}
+
+.dark {
+  --bg:           hsl(20 12% 7%);
+  --fg:           hsl(36 30% 92%);
+  --fg-muted:     hsl(30 10% 52%);
+  --card:         hsl(20 10% 11%);
+  --border:       hsl(20 10% 18%);
+  --muted:        hsl(20 10% 16%);
+  --primary:      hsl(37 80% 86%);
+  --primary-fg:   hsl(0 72% 35%);
+  --secondary:    hsl(0 68% 55%);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.55);
+  --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.65);
+}
+
+/* ═════ Semantic element styles ═════ */
+html, body { font-family: var(--font-sans); color: var(--fg); background: var(--bg); }
+body { font-feature-settings: "cv02","cv03","cv04","cv11"; -webkit-font-smoothing: antialiased; }
+
+h1 { font-size: var(--fs-5xl); font-weight: var(--fw-extrabold); line-height: var(--lh-tight);
+     letter-spacing: var(--tracking-tighter); color: var(--fg); }
+h2 { font-size: var(--fs-3xl); font-weight: var(--fw-extrabold); line-height: var(--lh-snug);
+     letter-spacing: var(--tracking-tight); color: var(--fg); }
+h3 { font-size: var(--fs-2xl); font-weight: var(--fw-bold); line-height: var(--lh-snug);
+     letter-spacing: var(--tracking-tight); color: var(--fg); }
+h4 { font-size: var(--fs-xl); font-weight: var(--fw-semibold); line-height: var(--lh-snug); color: var(--fg); }
+h5 { font-size: var(--fs-lg); font-weight: var(--fw-semibold); line-height: var(--lh-normal); color: var(--fg); }
+p  { font-size: var(--fs-base); font-weight: var(--fw-medium); line-height: var(--lh-relaxed); color: var(--fg-muted); }
+
+.eyebrow {
+  font-size: 0.6875rem;
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  color: var(--fg-subtle);
+}
+
+small, .text-xs { font-size: var(--fs-xs); line-height: var(--lh-normal); }
+code, .mono { font-family: var(--font-mono); font-size: 0.875em; }
+
+/* Gradient text helper — used for hero accents */
+.text-gradient { background-image: var(--gradient-primary); -webkit-background-clip: text;
+                 background-clip: text; color: transparent; }

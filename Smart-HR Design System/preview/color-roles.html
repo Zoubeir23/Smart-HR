@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Role gradients</title>
+<link rel="stylesheet" href="../colors_and_type.css">
+<style>
+  body{margin:0;padding:20px;background:var(--bg);}
+  .row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+  .card{border:1px solid var(--border);background:#fff;border-radius:12px;padding:16px;text-align:center;}
+  .av{width:48px;height:48px;border-radius:999px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;}
+  .label{font-size:12px;font-weight:700;color:var(--fg);}
+  .sub{font-size:10px;color:var(--fg-muted);margin-top:2px;}
+</style></head><body>
+<div class="row">
+  <div class="card"><div class="av" style="background:linear-gradient(135deg,#f43f5e,#db2777)">A</div><div class="label">ADMIN</div><div class="sub">rose → pink</div></div>
+  <div class="card"><div class="av" style="background:linear-gradient(135deg,#6366f1,#2563eb)">RH</div><div class="label">Responsable RH</div><div class="sub">indigo → blue</div></div>
+  <div class="card"><div class="av" style="background:linear-gradient(135deg,#10b981,#0d9488)">E</div><div class="label">EMPLOYEE</div><div class="sub">emerald → teal</div></div>
+  <div class="card"><div class="av" style="background:linear-gradient(135deg,#f59e0b,#ea580c)">C</div><div class="label">CANDIDATE</div><div class="sub">amber → orange</div></div>
+</div>
+</body></html>
