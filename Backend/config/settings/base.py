@@ -101,6 +101,7 @@ LOCAL_APPS = [
     "smart_hr.ai",
     "smart_hr.recruitment",
     "smart_hr.ai_engine",
+    "smart_hr.ai_agents",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -240,6 +241,11 @@ EMAIL_BACKEND = env(
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-timeout
 EMAIL_TIMEOUT = 5
+DEFAULT_FROM_EMAIL = env("DJANGO_DEFAULT_FROM_EMAIL", default="Smart-HR <noreply@smart-hr.com>")
+EMAIL_SUBJECT_PREFIX = "[Smart-HR] "
+
+# URL publique du frontend (utilisée dans les liens des emails)
+SITE_URL = env("SITE_URL", default="http://localhost:3000")
 
 # ADMIN
 # ------------------------------------------------------------------------------
@@ -323,11 +329,11 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_LOGIN_METHODS = {"username"}
+ACCOUNT_LOGIN_METHODS = {"email"}
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "none"
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_ADAPTER = "smart_hr.users.adapters.AccountAdapter"
 # https://docs.allauth.org/en/latest/account/forms.html
@@ -383,6 +389,7 @@ REST_AUTH = {
     "JWT_AUTH_COOKIE": "smart-hr-auth",
     "JWT_AUTH_REFRESH_COOKIE": "smart-hr-refresh-token",
     "JWT_AUTH_HTTPONLY": False,  # allow JS to read the cookie if needed
+    "USER_DETAILS_SERIALIZER": "smart_hr.users.serializers.UserSerializer",
 }
 
 # Your stuff...
