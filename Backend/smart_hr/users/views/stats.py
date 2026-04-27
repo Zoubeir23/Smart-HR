@@ -50,9 +50,8 @@ class AdminStatsView(APIView):
         ]
 
         active_roles = len(
-            [role for role, count in by_role.items() if count > 0]
+            [role for role, count in by_role.items() if count > 0],
         )
-
 
         return Response(
             {
@@ -63,5 +62,5 @@ class AdminStatsView(APIView):
                 "active_employees": active_employees,
                 "high_risk_employees": high_risk_employees,
                 "recent_activity": recent_activity,
-            }
+            },
         )

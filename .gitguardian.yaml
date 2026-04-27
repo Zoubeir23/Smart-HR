@@ -1,0 +1,5 @@
+version: 2
+ignore-known-secrets: true
+paths-ignore:
+  - ".github/workflows/**"
+  - "Backend/config/settings/test.py"

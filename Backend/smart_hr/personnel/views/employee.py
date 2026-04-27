@@ -1,7 +1,6 @@
 import logging
 
 from django.db.models import Count
-
 from rest_framework import filters
 from rest_framework import serializers as drf_serializers
 from rest_framework import status
@@ -12,8 +11,8 @@ from rest_framework.response import Response
 
 from smart_hr.core.email_service import send_employee_credentials_email
 from smart_hr.personnel.models import Employee
-from smart_hr.personnel.serializers import EmployeeSerializer
 from smart_hr.personnel.serializers import EmployeeSelfSerializer
+from smart_hr.personnel.serializers import EmployeeSerializer
 from smart_hr.users.models import User
 from smart_hr.users.permissions import IsRH
 
@@ -57,6 +56,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         # Le mot de passe en clair n'est plus accessible après hashage —
         # on envoie un mot de passe temporaire généré ici et on le définit.
         import secrets
+
         temp_password = secrets.token_urlsafe(10)
         employee_user.set_password(temp_password)
         employee_user.save(update_fields=["password"])
@@ -80,7 +80,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         """Retourne le profil employé de l'utilisateur connecté."""
         try:
             employee = Employee.objects.select_related(
-                "user", "department", "position"
+                "user",
+                "department",
+                "position",
             ).get(user=request.user)
             serializer = self.get_serializer(employee)
             return Response(serializer.data)
@@ -97,14 +99,9 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_403_FORBIDDEN)
 
         total = Employee.objects.count()
-        by_status = {
-            s: Employee.objects.filter(status=s).count()
-            for s in ["active", "inactive", "on_leave"]
-        }
+        by_status = {s: Employee.objects.filter(status=s).count() for s in ["active", "inactive", "on_leave"]}
         by_department = list(
-            Employee.objects.values("department__name")
-            .annotate(count=Count("id"))
-            .order_by("-count")
+            Employee.objects.values("department__name").annotate(count=Count("id")).order_by("-count"),
         )
         high_churn_risk = Employee.objects.filter(churn_risk__gte=70).count()
 
@@ -114,7 +111,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 "by_status": by_status,
                 "by_department": by_department,
                 "high_churn_risk": high_churn_risk,
-            }
+            },
         )
 
     @action(detail=False, methods=["get"], url_path="available-users")
@@ -125,7 +122,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
 
         existing_employee_user_ids = Employee.objects.values_list("user_id", flat=True)
         users = User.objects.exclude(id__in=existing_employee_user_ids).order_by(
-            "first_name", "last_name"
+            "first_name",
+            "last_name",
         )
 
         class AvailableUserSerializer(drf_serializers.ModelSerializer):

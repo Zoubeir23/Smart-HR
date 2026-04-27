@@ -859,17 +859,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-          
+
       - name: Install Dependencies
         run: |
           cd backend
           pip install -r requirements.txt
-          
+
       - name: Run Django Tests
         run: |
           cd backend
@@ -880,7 +880,7 @@ jobs:
     needs: test-backend
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
-    
+
     steps:
       - uses: actions/checkout@v3
 
@@ -1133,10 +1133,10 @@ Dans le processus de recrutement actuel, les tests techniques en ligne souffrent
 #### 11.1.2 Scénario d'Usage Complet (Révisé)
 
 > **Personnage principal :** Moussa Diop, développeur Django avec 3 ans d'expérience, candidat au poste de "Développeur Backend Django" chez TechSen SARL.
-> 
+>
 
 > **Contexte :** Moussa a postulé via Smart-HR et son CV a été analysé automatiquement par l'Agent de Recrutement IA (score de matching : 87%)
-> 
+>
 
 #### 🎬 ACTE 1 : L'Invitation & Le "SAS" de Sécurité
 

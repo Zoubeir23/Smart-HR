@@ -1,31 +1,35 @@
 {% extends "email/email_base.html" %}
+
 {% load i18n %}
 
 {% block email_title %}
-  {% if is_approved %}Congé approuvé{% else %}Congé refusé{% endif %} — Smart-HR
-{% endblock %}
-
+  {% if is_approved %}
+    Congé approuvé
+  {% else %}
+    Congé refusé
+  {% endif %}
+  — Smart-HR
+{% endblock email_content %}
 {% block email_content %}
   {% if is_approved %}
     <h1 class="email-title">Votre congé a été approuvé ✅</h1>
     <p class="email-subtitle">
-      Bonjour <strong>{{ first_name }}</strong>,<br />
+      Bonjour <strong>{{ first_name }}</strong>,
+      <br />
       Bonne nouvelle ! Votre demande de congé a été examinée et <strong>approuvée</strong>.
     </p>
   {% else %}
     <h1 class="email-title">Demande de congé refusée</h1>
     <p class="email-subtitle">
-      Bonjour <strong>{{ first_name }}</strong>,<br />
+      Bonjour <strong>{{ first_name }}</strong>,
+      <br />
       Votre demande de congé a été examinée. Nous sommes au regret de vous informer qu'elle n'a pas pu être <strong>approuvée</strong> pour le moment.
     </p>
   {% endif %}
-
   <div class="divider"></div>
-
   <!-- Détails du congé -->
   <div class="credentials-card">
     <p class="credentials-title">📋 Détails de votre demande</p>
-
     <!-- Statut -->
     <div style="margin-bottom: 1.25rem;">
       <p class="credential-label" style="margin-bottom:0.5rem;">Statut</p>
@@ -35,7 +39,6 @@
         <span class="status-badge status-rejected">✗ Refusé</span>
       {% endif %}
     </div>
-
     <!-- Type de congé -->
     <div class="credential-row">
       <div class="credential-icon">🏖️</div>
@@ -44,7 +47,6 @@
         <p class="credential-value">{{ leave_type_label }}</p>
       </div>
     </div>
-
     <!-- Période -->
     <div class="credential-row">
       <div class="credential-icon">📅</div>
@@ -53,19 +55,17 @@
         <p class="credential-value">{{ start_date }} → {{ end_date }}</p>
       </div>
     </div>
-
     {% if reviewer_name %}
-    <!-- Validé par -->
-    <div class="credential-row">
-      <div class="credential-icon">👤</div>
-      <div>
-        <p class="credential-label">Traité par</p>
-        <p class="credential-value">{{ reviewer_name }}</p>
+      <!-- Validé par -->
+      <div class="credential-row">
+        <div class="credential-icon">👤</div>
+        <div>
+          <p class="credential-label">Traité par</p>
+          <p class="credential-value">{{ reviewer_name }}</p>
+        </div>
       </div>
-    </div>
     {% endif %}
   </div>
-
   {% if is_approved %}
     <div class="alert alert-success">
       <strong>✅ Bon à savoir :</strong> Votre congé est maintenant enregistré dans le système.
@@ -73,22 +73,23 @@
     </div>
   {% else %}
     {% if reason %}
-    <div class="alert alert-neutral">
-      <strong>Motif :</strong> {{ reason }}
-    </div>
+      <div class="alert alert-neutral">
+        <strong>Motif :</strong> {{ reason }}
+      </div>
     {% else %}
-    <div class="alert alert-neutral">
-      Pour en savoir plus sur cette décision, contactez votre responsable RH directement.
-    </div>
+      <div class="alert alert-neutral">
+        Pour en savoir plus sur cette décision, contactez votre responsable RH directement.
+      </div>
     {% endif %}
   {% endif %}
-
   <!-- Bouton -->
   <div class="btn-wrapper">
     <a href="{{ dashboard_url }}" class="btn">Voir mes congés →</a>
   </div>
-
-  <p style="font-size:0.78rem; color:#9b9589; margin-top:1.5rem; line-height:1.65;">
+  <p style="font-size:0.78rem;
+            color:#9b9589;
+            margin-top:1.5rem;
+            line-height:1.65">
     Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
   </p>
-{% endblock %}
+{% endblock email_content %}

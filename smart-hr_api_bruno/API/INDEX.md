@@ -210,6 +210,6 @@ API/
 - ✅ **[CHECKLIST.md](CHECKLIST.md)** - Validation
 - 📡 **[ENDPOINTS.md](ENDPOINTS.md)** - Liste API
 
-**Date**: 2024-04-25  
-**Version**: 1.0.0  
+**Date**: 2024-04-25
+**Version**: 1.0.0
 **Status**: ✅ Production Ready

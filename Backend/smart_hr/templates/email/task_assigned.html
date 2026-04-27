@@ -1,20 +1,20 @@
 {% extends "email/email_base.html" %}
+
 {% load i18n %}
 
-{% block email_title %}Nouvelle tâche assignée — Smart-HR{% endblock %}
-
+{% block email_title %}
+  Nouvelle tâche assignée — Smart-HR
+{% endblock email_title %}
 {% block email_content %}
   <h1 class="email-title">Une tâche vous a été assignée</h1>
   <p class="email-subtitle">
-    Bonjour <strong>{{ first_name }}</strong>,<br />
+    Bonjour <strong>{{ first_name }}</strong>,
+    <br />
     Une nouvelle tâche vient de vous être assignée par <strong>{{ assigned_by }}</strong>.
   </p>
-
   <div class="divider"></div>
-
   <div class="credentials-card">
     <p class="credentials-title">✅ Détails de la tâche</p>
-
     <div class="credential-row">
       <div class="credential-icon">📌</div>
       <div>
@@ -22,17 +22,15 @@
         <p class="credential-value">{{ task_title }}</p>
       </div>
     </div>
-
     {% if description %}
-    <div class="credential-row">
-      <div class="credential-icon">📝</div>
-      <div>
-        <p class="credential-label">Description</p>
-        <p class="credential-value" style="font-size:0.9rem; color:#6b6560;">{{ description|truncatechars:200 }}</p>
+      <div class="credential-row">
+        <div class="credential-icon">📝</div>
+        <div>
+          <p class="credential-label">Description</p>
+          <p class="credential-value" style="font-size:0.9rem; color:#6b6560;">{{ description|truncatechars:200 }}</p>
+        </div>
       </div>
-    </div>
     {% endif %}
-
     <div class="credential-row">
       <div class="credential-icon">🚦</div>
       <div>
@@ -48,17 +46,15 @@
         </p>
       </div>
     </div>
-
     {% if due_date %}
-    <div class="credential-row">
-      <div class="credential-icon">📅</div>
-      <div>
-        <p class="credential-label">Échéance</p>
-        <p class="credential-value">{{ due_date }}</p>
+      <div class="credential-row">
+        <div class="credential-icon">📅</div>
+        <div>
+          <p class="credential-label">Échéance</p>
+          <p class="credential-value">{{ due_date }}</p>
+        </div>
       </div>
-    </div>
     {% endif %}
-
     <div class="credential-row">
       <div class="credential-icon">👤</div>
       <div>
@@ -67,16 +63,16 @@
       </div>
     </div>
   </div>
-
   <div class="alert alert-neutral">
     <strong>💡 Rappel :</strong> Connectez-vous à Smart-HR pour voir le détail complet de la tâche et mettre à jour son statut.
   </div>
-
   <div class="btn-wrapper">
     <a href="{{ tasks_url }}" class="btn">Voir mes tâches →</a>
   </div>
-
-  <p style="font-size:0.78rem; color:#9b9589; margin-top:1.5rem; line-height:1.65;">
+  <p style="font-size:0.78rem;
+            color:#9b9589;
+            margin-top:1.5rem;
+            line-height:1.65">
     Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
   </p>
-{% endblock %}
+{% endblock email_content %}

@@ -72,7 +72,7 @@ Authorization: Bearer {{authToken}}
 
 ## 🔐 Gestion sécurisée des tokens
 
-⚠️ **Sécurité**: 
+⚠️ **Sécurité**:
 - Ne jamais commiter des tokens réels
 - Utiliser des fichiers `.env` locaux (non versionés)
 - Mettre à jour le token lors de chaque session
@@ -83,7 +83,7 @@ Authorization: Bearer {{authToken}}
 # Développement local
 @baseUrl = http://localhost:8000
 @apiVersion = v1
-@authToken = 
+@authToken =
 @employee_id = 1
 @department_id = 1
 @position_id = 1

@@ -154,11 +154,11 @@ Authorization: Bearer {{authToken}}
 
 ## 📊 Métriques de test
 
-**Collection créée**: 2024-04-25  
-**Endpoints testés**: 26+  
-**Modules couverts**: 10  
-**Requêtes Example**: 26  
-**Documentation**: Complète  
+**Collection créée**: 2024-04-25
+**Endpoints testés**: 26+
+**Modules couverts**: 10
+**Requêtes Example**: 26
+**Documentation**: Complète
 
 ## 🎯 Prochaines étapes
 
@@ -197,7 +197,7 @@ Pour toute question:
 
 ---
 
-**Créé**: 2024-04-25  
-**Dernière mise à jour**: 2024-04-25  
-**Version**: 1.0.0  
+**Créé**: 2024-04-25
+**Dernière mise à jour**: 2024-04-25
+**Version**: 1.0.0
 **Status**: ✅ Production Ready

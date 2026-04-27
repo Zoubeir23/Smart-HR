@@ -4,7 +4,10 @@ from smart_hr.tache.models import Task
 
 
 class TaskSerializer(serializers.ModelSerializer):
-    assignee_name = serializers.CharField(source="assignee.user.get_full_name", read_only=True)
+    assignee_name = serializers.CharField(
+        source="assignee.user.get_full_name",
+        read_only=True,
+    )
 
     class Meta:
         model = Task

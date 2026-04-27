@@ -1,39 +1,181 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Sidebar nav</title>
-<link rel="stylesheet" href="../colors_and_type.css">
-<style>body{margin:0;padding:0;background:var(--bg);font-family:var(--font-sans);}
-  .wrap{display:flex;height:480px;}
-  .side{width:268px;background:linear-gradient(180deg,#08111e 0%,#0a1628 50%,#07101c 100%);padding:14px 10px;position:relative;overflow:hidden;}
-  .side::after{content:"";position:absolute;right:-40px;top:0;width:160px;height:160px;background:rgba(99,102,241,.10);filter:blur(40px);border-radius:999px;}
-  .brand{display:flex;align-items:center;gap:10px;padding:4px 6px 14px;border-bottom:1px solid rgba(255,255,255,.06);margin-bottom:14px;}
-  .logo{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#c41e1e,#D62828);display:flex;align-items:center;justify-content:center;color:#fff;box-shadow:0 0 16px rgba(214,40,40,.45);}
-  .brand span{color:#fff;font-weight:700;font-size:14px;}
-  .brand em{color:#D62828;font-style:normal;font-weight:700;}
-  .lbl{padding:6px 8px;font-size:10px;color:rgba(255,255,255,.22);font-weight:600;letter-spacing:.12em;text-transform:uppercase;}
-  .item{position:relative;display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;color:rgba(255,255,255,.45);font-size:13px;font-weight:500;margin:1px 0;}
-  .item .ic{width:16px;text-align:center;}
-  .item.active{background:rgba(214,40,40,.18);color:#fff;}
-  .item.active::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:linear-gradient(180deg,#D62828,#e63c3c);box-shadow:0 0 8px rgba(214,40,40,.65);}
-  .item.active .ic{color:#fca5a5;}
-  .panel{flex:1;padding:16px 20px;color:var(--fg);}
-  .panel h3{margin:0 0 6px;}
-  .panel p{margin:0;font-size:13px;color:var(--fg-muted);}
-</style></head><body>
-<div class="wrap">
-<aside class="side">
-  <div class="brand"><div class="logo">✦</div><span>Smart<em>-HR</em></span></div>
-  <div class="lbl">Principal</div>
-  <div class="item active"><span class="ic">▦</span>Tableau de bord</div>
-  <div class="lbl">Gestion RH</div>
-  <div class="item"><span class="ic">👥</span>Employés</div>
-  <div class="item"><span class="ic">📅</span>Congés</div>
-  <div class="item"><span class="ic">⏱</span>Présences</div>
-  <div class="item"><span class="ic">💳</span>Paie</div>
-  <div class="lbl">Intelligence IA</div>
-  <div class="item"><span class="ic">📊</span>Analyse Churn</div>
-  <div class="item"><span class="ic">💬</span>Chat IA</div>
-  <div class="item"><span class="ic">🎙</span>Assistant Vocal</div>
-</aside>
-<div class="panel"><h3>Sidebar pattern</h3>
-<p>Always-dark navy gradient. Active item: red left accent + red-tinted background. Group labels in widest-tracking 10 px uppercase.</p></div>
-</div>
-</body></html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Sidebar nav</title>
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: var(--bg);
+        font-family: var(--font-sans);
+      }
+
+      .wrap {
+        display: flex;
+        height: 480px;
+      }
+
+      .side {
+        width: 268px;
+        background: linear-gradient(180deg, #08111e 0%, #0a1628 50%, #07101c 100%);
+        padding: 14px 10px;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .side::after {
+        content: "";
+        position: absolute;
+        right: -40px;
+        top: 0;
+        width: 160px;
+        height: 160px;
+        background: rgba(99, 102, 241, .10);
+        filter: blur(40px);
+        border-radius: 999px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 4px 6px 14px;
+        border-bottom: 1px solid rgba(255, 255, 255, .06);
+        margin-bottom: 14px;
+      }
+
+      .logo {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #c41e1e, #D62828);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        box-shadow: 0 0 16px rgba(214, 40, 40, .45);
+      }
+
+      .brand span {
+        color: #fff;
+        font-weight: 700;
+        font-size: 14px;
+      }
+
+      .brand em {
+        color: #D62828;
+        font-style: normal;
+        font-weight: 700;
+      }
+
+      .lbl {
+        padding: 6px 8px;
+        font-size: 10px;
+        color: rgba(255, 255, 255, .22);
+        font-weight: 600;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+
+      .item {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        color: rgba(255, 255, 255, .45);
+        font-size: 13px;
+        font-weight: 500;
+        margin: 1px 0;
+      }
+
+      .item .ic {
+        width: 16px;
+        text-align: center;
+      }
+
+      .item.active {
+        background: rgba(214, 40, 40, .18);
+        color: #fff;
+      }
+
+      .item.active::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 8px;
+        bottom: 8px;
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: linear-gradient(180deg, #D62828, #e63c3c);
+        box-shadow: 0 0 8px rgba(214, 40, 40, .65);
+      }
+
+      .item.active .ic {
+        color: #fca5a5;
+      }
+
+      .panel {
+        flex: 1;
+        padding: 16px 20px;
+        color: var(--fg);
+      }
+
+      .panel h3 {
+        margin: 0 0 6px;
+      }
+
+      .panel p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--fg-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <aside class="side">
+        <div class="brand">
+          <div class="logo">✦</div>
+          <span>Smart<em>-HR</em></span>
+        </div>
+        <div class="lbl">Principal</div>
+        <div class="item active">
+          <span class="ic">▦</span>Tableau de bord
+        </div>
+        <div class="lbl">Gestion RH</div>
+        <div class="item">
+          <span class="ic">👥</span>Employés
+        </div>
+        <div class="item">
+          <span class="ic">📅</span>Congés
+        </div>
+        <div class="item">
+          <span class="ic">⏱</span>Présences
+        </div>
+        <div class="item">
+          <span class="ic">💳</span>Paie
+        </div>
+        <div class="lbl">Intelligence IA</div>
+        <div class="item">
+          <span class="ic">📊</span>Analyse Churn
+        </div>
+        <div class="item">
+          <span class="ic">💬</span>Chat IA
+        </div>
+        <div class="item">
+          <span class="ic">🎙</span>Assistant Vocal
+        </div>
+      </aside>
+      <div class="panel">
+        <h3>Sidebar pattern</h3>
+        <p>
+          Always-dark navy gradient. Active item: red left accent + red-tinted background. Group labels in widest-tracking 10 px uppercase.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

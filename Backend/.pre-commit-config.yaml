@@ -1,4 +1,4 @@
-exclude: '^docs/|/migrations/|devcontainer.json'
+exclude: '^docs/|/migrations/|devcontainer.json|^Smart-HR Design System/'
 default_stages: [pre-commit]
 minimum_pre_commit_version: "3.2.0"
 
@@ -12,6 +12,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: check-json
+        exclude: 'tsconfig.*\.json$'
       - id: check-toml
       - id: check-xml
       - id: check-yaml
@@ -46,7 +47,11 @@ repos:
     rev: v1.36.4
     hooks:
       - id: djlint-reformat-django
+        exclude: '^Frontend/'
+        args: ['--ignore', 'H006,H021,H030,H031,T002', '--profile', 'django']
       - id: djlint-django
+        exclude: '^Frontend/'
+        args: ['--ignore', 'H006,H021,H030,H031,T002', '--profile', 'django']
 
 # sets up .pre-commit-ci.yaml to ensure pre-commit dependencies stay up to date
 ci:

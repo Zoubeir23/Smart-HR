@@ -69,7 +69,10 @@ def _generate_voice_response(question: str) -> str:
                 "Sujet : ressources humaines, recrutement, congés, formations, salaires.\n\n"
                 f"Question : {question}"
             )
-            response = client.models.generate_content(model=gemini_model_name, contents=prompt)
+            response = client.models.generate_content(
+                model=gemini_model_name,
+                contents=prompt,
+            )
             return response.text
         except Exception as exc:
             logger.error("Erreur Gemini pour voice agent : %s", exc)
@@ -119,5 +122,5 @@ class VoiceAskView(APIView):
                 "sources": ["Smart-HR FAQ RH"],
                 "mode": "simulated",
                 "voice": voice,
-            }
+            },
         )

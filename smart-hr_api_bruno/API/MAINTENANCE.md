@@ -33,7 +33,7 @@ get {
      type: http
      seq: 3  # Numéro de séquence dans le dossier
    }
-   
+
    [METHOD] {
      url: URL complète
      auth: bearer {
@@ -153,7 +153,7 @@ tests {
   test("Status code is 200", function() {
     expect(res.getStatus()).to.equal(200);
   });
-  
+
   test("Response has data", function() {
     expect(res.getBody().results).to.exist;
   });
@@ -166,7 +166,7 @@ tests {
 pre-request {
   // Définir variables dynamiques
   bru.setVar('timestamp', Date.now());
-  
+
   // Générer UUID
   const uuid = generateUUID();
   bru.setVar('requestId', uuid);
@@ -221,16 +221,16 @@ API/
    ```bash
    # Lister
    smart-hr/API/NewModule/01_List.bru
-   
+
    # Créer
    smart-hr/API/NewModule/02_Create.bru
-   
+
    # Détail
    smart-hr/API/NewModule/03_Detail.bru
-   
+
    # Mettre à jour
    smart-hr/API/NewModule/04_Update.bru
-   
+
    # Supprimer
    smart-hr/API/NewModule/05_Delete.bru
    ```
@@ -338,7 +338,7 @@ tests {
   test("Status code is 201", function() {
     expect(res.getStatus()).to.equal(201);
   });
-  
+
   test("Response has id", function() {
     const body = res.getBody();
     expect(body.id).to.exist;
@@ -360,5 +360,5 @@ pre-request {
 
 ---
 
-**Dernière mise à jour**: 2024-04-25  
+**Dernière mise à jour**: 2024-04-25
 **Responsable**: Équipe développement

@@ -6,6 +6,7 @@ Extrait le texte du PDF, puis appelle Google Gemini pour :
 - calculer un score de matching avec l'offre d'emploi
 - générer un résumé de la candidature
 """
+
 from __future__ import annotations
 
 import io
@@ -63,7 +64,11 @@ def analyze_cv_against_job_offer(
 
     candidate_content = f"CV :\n{cv_text}\n\nLettre de motivation :\n{cover_letter}"
 
-    prompt = f"""Tu es un expert RH en analyse de CV. Analyse ce candidat pour le poste suivant et retourne UNIQUEMENT un JSON valide, sans texte avant ou après.
+    intro = (
+        "Tu es un expert RH en analyse de CV. Analyse ce candidat pour le poste suivant "
+        "et retourne UNIQUEMENT un JSON valide, sans texte avant ou après."
+    )
+    prompt = f"""{intro}
 
 OFFRE D'EMPLOI :
 Titre : {job_title}
@@ -89,7 +94,10 @@ Retourne ce JSON exact (sans markdown, sans backticks) :
 
         gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(model=gemini_model_name, contents=prompt)
+        response = client.models.generate_content(
+            model=gemini_model_name,
+            contents=prompt,
+        )
         raw_text = response.text.strip()
 
         # Nettoyer les balises markdown si présentes

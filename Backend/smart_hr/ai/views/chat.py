@@ -14,18 +14,22 @@ logger = logging.getLogger(__name__)
 
 # ─── Context builders ────────────────────────────────────────────────────────
 
+
 def _build_rh_admin_context(user) -> list[str]:
     """Construit le contexte métier RH/Admin à injecter dans le prompt IA."""
     lines = []
     try:
-        from smart_hr.personnel.models import Employee
         from smart_hr.conge.models import LeaveRequest
+        from smart_hr.personnel.models import Employee
         from smart_hr.recruitment.models import Application
 
         total_employees = Employee.objects.count()
         active_employees = Employee.objects.filter(status="active").count()
         high_risk_count = Employee.objects.filter(churn_risk__gte=70).count()
-        medium_risk_count = Employee.objects.filter(churn_risk__gte=40, churn_risk__lt=70).count()
+        medium_risk_count = Employee.objects.filter(
+            churn_risk__gte=40,
+            churn_risk__lt=70,
+        ).count()
         pending_leaves = LeaveRequest.objects.filter(status="pending").count()
         total_applications = Application.objects.count()
         pending_applications = Application.objects.filter(status="pending").count()
@@ -45,14 +49,10 @@ def _build_employee_context(user) -> list[str]:
     """Construit un contexte personnalisé pour un employé."""
     lines = []
     try:
-        from smart_hr.personnel.models import Employee
         from smart_hr.conge.models import LeaveRequest
+        from smart_hr.personnel.models import Employee
 
-        employee = (
-            Employee.objects.filter(user=user)
-            .select_related("department", "position")
-            .first()
-        )
+        employee = Employee.objects.filter(user=user).select_related("department", "position").first()
         if employee:
             lines += [
                 f"Département : {employee.department.name if employee.department else 'Non assigné'}",
@@ -70,8 +70,7 @@ def _build_employee_context(user) -> list[str]:
                 lines.append(f"Niveau d'engagement estimé par l'IA : {engagement}")
 
         recent_leaves = list(
-            LeaveRequest.objects.filter(employee__user=user)
-            .order_by("-created_at")[:5]
+            LeaveRequest.objects.filter(employee__user=user).order_by("-created_at")[:5],
         )
         if recent_leaves:
             pending = sum(1 for l in recent_leaves if l.status == "pending")
@@ -79,7 +78,7 @@ def _build_employee_context(user) -> list[str]:
             rejected = sum(1 for l in recent_leaves if l.status == "rejected")
             lines.append(
                 f"Dernières demandes de congé : {len(recent_leaves)} "
-                f"(en attente : {pending}, approuvées : {approved}, refusées : {rejected})"
+                f"(en attente : {pending}, approuvées : {approved}, refusées : {rejected})",
             )
         else:
             lines.append("Aucune demande de congé enregistrée.")
@@ -95,9 +94,7 @@ def _build_candidate_context(user) -> list[str]:
         from smart_hr.recruitment.models import Application
 
         applications = list(
-            Application.objects.filter(candidate=user)
-            .select_related("job_offer")
-            .order_by("-created_at")[:5]
+            Application.objects.filter(candidate=user).select_related("job_offer").order_by("-created_at")[:5],
         )
         if applications:
             lines.append(f"Nombre de candidatures soumises : {len(applications)}")
@@ -107,7 +104,7 @@ def _build_candidate_context(user) -> list[str]:
                     f"  - Poste : {app.job_offer.title} | "
                     f"Département : {app.job_offer.department} | "
                     f"Statut : {app.get_status_display()} | "
-                    f"Score IA : {score}"
+                    f"Score IA : {score}",
                 )
                 if app.ai_summary:
                     lines.append(f"    Résumé IA : {app.ai_summary[:200]}...")
@@ -181,12 +178,22 @@ def _build_gemini_history(user) -> list:
     from google.genai import types as genai_types
 
     recent = list(
-        ChatHistory.objects.filter(user=user).order_by("-created_at")[:4]
+        ChatHistory.objects.filter(user=user).order_by("-created_at")[:4],
     )
     history = []
     for past in reversed(recent):
-        history.append(genai_types.Content(role="user", parts=[genai_types.Part(text=past.question)]))
-        history.append(genai_types.Content(role="model", parts=[genai_types.Part(text=past.response)]))
+        history.append(
+            genai_types.Content(
+                role="user",
+                parts=[genai_types.Part(text=past.question)],
+            ),
+        )
+        history.append(
+            genai_types.Content(
+                role="model",
+                parts=[genai_types.Part(text=past.response)],
+            ),
+        )
     return history
 
 
@@ -194,10 +201,7 @@ def _get_ai_response(question: str, user) -> str:
     """Interroge Gemini avec un prompt système contextualisé selon le rôle utilisateur."""
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
-        return (
-            "L'assistant IA n'est pas configuré. "
-            "Veuillez définir la variable d'environnement GEMINI_API_KEY."
-        )
+        return "L'assistant IA n'est pas configuré. Veuillez définir la variable d'environnement GEMINI_API_KEY."
     try:
         from google import genai
         from google.genai import types as genai_types
@@ -221,6 +225,7 @@ def _get_ai_response(question: str, user) -> str:
 
 # ─── ViewSet ─────────────────────────────────────────────────────────────────
 
+
 class ChatHistoryViewSet(viewsets.ModelViewSet):
     """Historique des conversations IA d'un utilisateur authentifié."""
 
@@ -230,7 +235,9 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         """Retourne les conversations de l'utilisateur courant, de la plus récente à la plus ancienne."""
-        return ChatHistory.objects.filter(user=self.request.user).order_by("-created_at")
+        return ChatHistory.objects.filter(user=self.request.user).order_by(
+            "-created_at",
+        )
 
     def create(self, request, *args, **kwargs):
         """

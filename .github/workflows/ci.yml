@@ -49,31 +49,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create local env files for CI
+        working-directory: Backend
+        env:
+          CI_DJANGO_SECRET_KEY: ${{ secrets.CI_DJANGO_SECRET_KEY || 'ci-only-insecure-key-not-used-in-production' }}
+          CI_POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'ci-only-postgres-password' }}
+        run: |
+          mkdir -p .envs/.local
+          printf '%s\n' \
+            'DJANGO_SETTINGS_MODULE=config.settings.local' \
+            "DJANGO_SECRET_KEY=${CI_DJANGO_SECRET_KEY}" \
+            'USE_DOCKER=yes' \
+            'REDIS_URL=redis://redis:6379/0' \
+            'EMAIL_HOST=localhost' \
+            'EMAIL_PORT=25' \
+            'EMAIL_USE_TLS=False' \
+            'EMAIL_HOST_USER=' \
+            'EMAIL_HOST_PASSWORD=' \
+            'GOOGLE_API_KEY=' \
+            > .envs/.local/.django
+          printf '%s\n' \
+            'POSTGRES_HOST=postgres' \
+            'POSTGRES_PORT=5432' \
+            'POSTGRES_DB=smart_hr' \
+            'POSTGRES_USER=smart_hr_ci' \
+            "POSTGRES_PASSWORD=${CI_POSTGRES_PASSWORD}" \
+            "DATABASE_URL=postgres://smart_hr_ci:${CI_POSTGRES_PASSWORD}@postgres:5432/smart_hr" \
+            > .envs/.local/.postgres
+
       - uses: docker/setup-buildx-action@v3
 
-      - name: Cache Django image layers
-        uses: docker/bake-action@v6
-        with:
-          push: false
-          load: true
-          files: docker-compose.local.yml
-          workdir: Backend
-          targets: django
-          set: |
-            django.cache-from=type=gha,scope=backend-django
-            django.cache-to=type=gha,scope=backend-django,mode=max
-
-      - name: Cache Postgres image layers
-        uses: docker/bake-action@v6
-        with:
-          push: false
-          load: true
-          files: docker-compose.local.yml
-          workdir: Backend
-          targets: postgres
-          set: |
-            postgres.cache-from=type=gha,scope=backend-postgres
-            postgres.cache-to=type=gha,scope=backend-postgres,mode=max
+      - name: Build Docker images
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml build --no-cache django postgres
 
       - name: Check pending migrations
         working-directory: Backend

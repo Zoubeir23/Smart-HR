@@ -1,9 +1,9 @@
-from datetime import date, timedelta
-
-from django.core.management.base import BaseCommand
-from django.utils import timezone
+from datetime import date
+from datetime import timedelta
 
 from allauth.account.models import EmailAddress
+from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from smart_hr.conge.models import LeaveRequest
 from smart_hr.formation.models import Formation
@@ -16,7 +16,6 @@ from smart_hr.presence.models import Attendance
 from smart_hr.recruitment.models import JobOffer
 from smart_hr.tache.models import Task
 from smart_hr.users.models import User
-
 
 DEMO_USERS = [
     {
@@ -93,10 +92,19 @@ class Command(BaseCommand):
 
     def _seed_departments_and_positions(self):
         departments_with_positions = [
-            ("Informatique", ["Développeur Backend", "Développeur Frontend", "DevOps Engineer"]),
-            ("Ressources Humaines", ["Responsable RH", "Assistant RH", "Chargé de Recrutement"]),
+            (
+                "Informatique",
+                ["Développeur Backend", "Développeur Frontend", "DevOps Engineer"],
+            ),
+            (
+                "Ressources Humaines",
+                ["Responsable RH", "Assistant RH", "Chargé de Recrutement"],
+            ),
             ("Finance", ["Directeur Financier", "Analyste Financier", "Comptable"]),
-            ("Commercial", ["Directeur Commercial", "Chargé d'Affaires", "Account Manager"]),
+            (
+                "Commercial",
+                ["Directeur Commercial", "Chargé d'Affaires", "Account Manager"],
+            ),
             ("Direction", ["Directeur Général", "Assistant de Direction"]),
         ]
 
@@ -291,7 +299,9 @@ class Command(BaseCommand):
                 status=spec["status"],
                 approved_by=spec["approved_by"],
             )
-            self.stdout.write(f"  Congé créé : {spec['employee']} ({spec['leave_type']})")
+            self.stdout.write(
+                f"  Congé créé : {spec['employee']} ({spec['leave_type']})",
+            )
 
     # ------------------------------------------------------------------
     # Tasks
@@ -384,13 +394,15 @@ class Command(BaseCommand):
                 else:
                     status = Attendance.Status.PRESENT
 
-                attendance_specs.append({
-                    "employee": employee,
-                    "date": record_date,
-                    "check_in": "08:30:00" if status != Attendance.Status.ABSENT else None,
-                    "check_out": "17:30:00" if status != Attendance.Status.ABSENT else None,
-                    "status": status,
-                })
+                attendance_specs.append(
+                    {
+                        "employee": employee,
+                        "date": record_date,
+                        "check_in": "08:30:00" if status != Attendance.Status.ABSENT else None,
+                        "check_out": "17:30:00" if status != Attendance.Status.ABSENT else None,
+                        "status": status,
+                    },
+                )
 
         for spec in attendance_specs:
             _, created = Attendance.objects.get_or_create(
@@ -403,7 +415,9 @@ class Command(BaseCommand):
                 },
             )
             if created:
-                self.stdout.write(f"  Présence créée : {spec['employee']} - {spec['date']}")
+                self.stdout.write(
+                    f"  Présence créée : {spec['employee']} - {spec['date']}",
+                )
 
     # ------------------------------------------------------------------
     # Payroll
@@ -569,36 +583,30 @@ class Command(BaseCommand):
                     "des requêtes avec DRF. Inclut des exercices pratiques sur un projet réel."
                 ),
                 "start_date": timezone.make_aware(
-                    timezone.datetime(today.year, today.month, today.day, 9, 0)
-                    - timedelta(days=14)
+                    timezone.datetime(today.year, today.month, today.day, 9, 0) - timedelta(days=14),
                 ),
                 "end_date": timezone.make_aware(
-                    timezone.datetime(today.year, today.month, today.day, 17, 0)
-                    - timedelta(days=12)
+                    timezone.datetime(today.year, today.month, today.day, 17, 0) - timedelta(days=12),
                 ),
                 "instructor": "Dr. Ibrahima Sow",
                 "meetings": [
                     {
                         "title": "Introduction et ViewSets",
                         "start_time": timezone.make_aware(
-                            timezone.datetime(today.year, today.month, today.day, 9, 0)
-                            - timedelta(days=14)
+                            timezone.datetime(today.year, today.month, today.day, 9, 0) - timedelta(days=14),
                         ),
                         "end_time": timezone.make_aware(
-                            timezone.datetime(today.year, today.month, today.day, 12, 0)
-                            - timedelta(days=14)
+                            timezone.datetime(today.year, today.month, today.day, 12, 0) - timedelta(days=14),
                         ),
                         "status": Meeting.Status.COMPLETED,
                     },
                     {
                         "title": "Authentification JWT et Permissions",
                         "start_time": timezone.make_aware(
-                            timezone.datetime(today.year, today.month, today.day, 14, 0)
-                            - timedelta(days=14)
+                            timezone.datetime(today.year, today.month, today.day, 14, 0) - timedelta(days=14),
                         ),
                         "end_time": timezone.make_aware(
-                            timezone.datetime(today.year, today.month, today.day, 17, 0)
-                            - timedelta(days=14)
+                            timezone.datetime(today.year, today.month, today.day, 17, 0) - timedelta(days=14),
                         ),
                         "status": Meeting.Status.COMPLETED,
                     },
@@ -611,24 +619,20 @@ class Command(BaseCommand):
                     "Focus sur les hooks, React Query et l'intégration avec une API REST."
                 ),
                 "start_date": timezone.make_aware(
-                    timezone.datetime(today.year, today.month, today.day, 9, 0)
-                    + timedelta(days=7)
+                    timezone.datetime(today.year, today.month, today.day, 9, 0) + timedelta(days=7),
                 ),
                 "end_date": timezone.make_aware(
-                    timezone.datetime(today.year, today.month, today.day, 17, 0)
-                    + timedelta(days=9)
+                    timezone.datetime(today.year, today.month, today.day, 17, 0) + timedelta(days=9),
                 ),
                 "instructor": "Mme Aïssatou Diallo",
                 "meetings": [
                     {
                         "title": "React Hooks et State Management",
                         "start_time": timezone.make_aware(
-                            timezone.datetime(today.year, today.month, today.day, 9, 0)
-                            + timedelta(days=7)
+                            timezone.datetime(today.year, today.month, today.day, 9, 0) + timedelta(days=7),
                         ),
                         "end_time": timezone.make_aware(
-                            timezone.datetime(today.year, today.month, today.day, 12, 0)
-                            + timedelta(days=7)
+                            timezone.datetime(today.year, today.month, today.day, 12, 0) + timedelta(days=7),
                         ),
                         "status": Meeting.Status.SCHEDULED,
                         "meeting_link": "https://zoom.us/j/demo123456",
@@ -642,24 +646,20 @@ class Command(BaseCommand):
                     "Authentification sécurisée, protection CSRF, XSS, injection SQL."
                 ),
                 "start_date": timezone.make_aware(
-                    timezone.datetime(today.year, today.month, today.day, 9, 0)
-                    + timedelta(days=21)
+                    timezone.datetime(today.year, today.month, today.day, 9, 0) + timedelta(days=21),
                 ),
                 "end_date": timezone.make_aware(
-                    timezone.datetime(today.year, today.month, today.day, 17, 0)
-                    + timedelta(days=22)
+                    timezone.datetime(today.year, today.month, today.day, 17, 0) + timedelta(days=22),
                 ),
                 "instructor": "M. Omar Ba",
                 "meetings": [
                     {
                         "title": "OWASP Top 10 et bonnes pratiques",
                         "start_time": timezone.make_aware(
-                            timezone.datetime(today.year, today.month, today.day, 9, 0)
-                            + timedelta(days=21)
+                            timezone.datetime(today.year, today.month, today.day, 9, 0) + timedelta(days=21),
                         ),
                         "end_time": timezone.make_aware(
-                            timezone.datetime(today.year, today.month, today.day, 17, 0)
-                            + timedelta(days=21)
+                            timezone.datetime(today.year, today.month, today.day, 17, 0) + timedelta(days=21),
                         ),
                         "status": Meeting.Status.SCHEDULED,
                         "meeting_link": "https://zoom.us/j/demo789012",

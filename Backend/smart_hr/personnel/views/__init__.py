@@ -4,6 +4,6 @@ from smart_hr.personnel.views.position import PositionViewSet
 
 __all__ = [
     "DepartmentViewSet",
-    "PositionViewSet",
     "EmployeeViewSet",
+    "PositionViewSet",
 ]

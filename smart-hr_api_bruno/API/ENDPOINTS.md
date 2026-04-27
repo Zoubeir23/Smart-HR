@@ -175,5 +175,5 @@ smart-hr/API/Personnel/04_List_Positions.bru            → Positions
 
 ---
 
-**Dernière mise à jour**: 2024-04-25  
+**Dernière mise à jour**: 2024-04-25
 **Status**: ✅ Prêt pour testing

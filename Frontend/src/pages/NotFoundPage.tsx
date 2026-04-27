@@ -22,12 +22,12 @@ export default function NotFoundPage() {
           </h1>
           <div className="absolute inset-0 blur-3xl opacity-30 bg-gradient-primary" />
         </div>
-        
+
         <h2 className="mt-4 text-2xl font-bold sm:text-3xl">Page non trouvée</h2>
         <p className="mt-2 max-w-md text-muted-foreground">
           Désolé, la page que vous recherchez n'existe pas ou a été déplacée.
         </p>
-        
+
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <Button asChild variant="outline">
             <Link to="/" className="gap-2">

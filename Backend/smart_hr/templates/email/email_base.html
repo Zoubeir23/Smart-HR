@@ -4,10 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>{% block email_title %}Smart-HR{% endblock %}</title>
+    <title>
+      {% block email_title %}
+        Smart-HR
+      {% endblock email_title %}
+    </title>
     <style>
       /* ── Reset email-safe ── */
-      * { margin: 0; padding: 0; box-sizing: border-box; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -111,7 +119,7 @@
       .logo-tagline {
         display: block;
         font-size: 0.7rem;
-        color: rgba(255,255,255,0.45);
+        color: rgba(255, 255, 255, 0.45);
         text-transform: uppercase;
         letter-spacing: 0.08em;
         margin-top: 0.6rem;
@@ -176,7 +184,9 @@
         margin-bottom: 0.75rem;
       }
 
-      .credential-row:last-child { margin-bottom: 0; }
+      .credential-row:last-child {
+        margin-bottom: 0;
+      }
 
       .credential-icon {
         width: 34px;
@@ -227,7 +237,9 @@
         color: #7f1d1d;
       }
 
-      .alert-warning strong { color: #D62828; }
+      .alert-warning strong {
+        color: #D62828;
+      }
 
       .alert-success {
         background: #f0fdf4;
@@ -235,7 +247,9 @@
         color: #14532d;
       }
 
-      .alert-success strong { color: #16a34a; }
+      .alert-success strong {
+        color: #16a34a;
+      }
 
       .alert-neutral {
         background: #f8f7f4;
@@ -292,7 +306,9 @@
         margin-bottom: 0.9rem;
       }
 
-      .feature-item:last-child { margin-bottom: 0; }
+      .feature-item:last-child {
+        margin-bottom: 0;
+      }
 
       .feature-dot {
         width: 22px;
@@ -331,7 +347,10 @@
       }
 
       /* ── Bouton CTA ── */
-      .btn-wrapper { text-align: center; margin: 2rem 0; }
+      .btn-wrapper {
+        text-align: center;
+        margin: 2rem 0;
+      }
 
       .btn {
         display: inline-block;
@@ -356,36 +375,45 @@
       .footer-brand {
         font-size: 0.8rem;
         font-weight: 700;
-        color: rgba(255,255,255,0.7);
+        color: rgba(255, 255, 255, 0.7);
         letter-spacing: 0.03em;
         margin-bottom: 0.5rem;
       }
 
-      .footer-brand span { color: #D62828; }
+      .footer-brand span {
+        color: #D62828;
+      }
 
       .footer-text {
         font-size: 0.72rem;
-        color: rgba(255,255,255,0.3);
+        color: rgba(255, 255, 255, 0.3);
         line-height: 1.6;
       }
 
       .footer-text a {
-        color: rgba(255,255,255,0.4);
+        color: rgba(255, 255, 255, 0.4);
         text-decoration: none;
       }
 
       /* ── Responsive ── */
       @media only screen and (max-width: 600px) {
-        .email-wrapper { border-radius: 0; }
-        .email-content { padding: 1.5rem; }
-        .credentials-card { padding: 1.25rem; }
+        .email-wrapper {
+          border-radius: 0;
+        }
+
+        .email-content {
+          padding: 1.5rem;
+        }
+
+        .credentials-card {
+          padding: 1.25rem;
+        }
       }
     </style>
   </head>
   <body>
     <div class="email-outer">
       <div class="email-wrapper">
-
         <!-- ── En-tête ── -->
         <div class="email-header">
           <div class="logo-container">
@@ -397,22 +425,22 @@
           <span class="logo-tagline">{{ company_tagline }}</span>
           <div class="red-divider"></div>
         </div>
-
         <!-- ── Contenu ── -->
         <div class="email-content">
-          {% block email_content %}{% endblock %}
+          {% block email_content %}
+          {% endblock email_content %}
         </div>
-
         <!-- ── Pied de page ── -->
         <div class="email-footer">
-          <div class="footer-brand">Smart<span>-HR</span></div>
+          <div class="footer-brand">
+            Smart<span>-HR</span>
+          </div>
           <div class="footer-text">
             © {% now "Y" %} Smart-HR · Votre SIRH Intelligent
             <br />
             <a href="{{ site_url }}">{{ site_url }}</a>
           </div>
         </div>
-
       </div>
     </div>
   </body>
