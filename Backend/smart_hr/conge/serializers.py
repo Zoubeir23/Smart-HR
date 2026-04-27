@@ -22,4 +22,4 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
             "duration_days",
             "created_at",
         ]
-        read_only_fields = ["status", "approved_by", "created_at"]
+        read_only_fields = ["status", "approved_by", "employee", "created_at"]

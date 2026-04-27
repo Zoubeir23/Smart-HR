@@ -2,10 +2,12 @@ import logging
 
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.conge.models import LeaveRequest
+from smart_hr.personnel.models import Employee
 from smart_hr.conge.serializers import LeaveRequestSerializer
 from smart_hr.core.email_service import send_leave_request_notification_to_rh
 from smart_hr.core.email_service import send_leave_status_email
@@ -43,9 +45,6 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Crée la demande après vérification d'absence de chevauchement, puis notifie le RH."""
-        from rest_framework.exceptions import ValidationError
-        from smart_hr.personnel.models import Employee
-
         user = self.request.user
         start_date = serializer.validated_data.get("start_date")
         end_date = serializer.validated_data.get("end_date")
@@ -53,9 +52,11 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         try:
             employee = Employee.objects.get(user=user)
         except Employee.DoesNotExist:
-            employee = None
+            raise ValidationError(
+                "Aucun profil employé trouvé pour cet utilisateur. Contactez le service RH."
+            )
 
-        if employee and start_date and end_date:
+        if start_date and end_date:
             overlap_exists = LeaveRequest.objects.filter(
                 employee=employee,
                 status__in=[LeaveRequest.Status.PENDING, LeaveRequest.Status.APPROVED],
@@ -67,7 +68,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                     "Une demande de congé active existe déjà pour cette période."
                 )
 
-        leave = serializer.save()
+        leave = serializer.save(employee=employee)
         self._notify_rh_new_leave_request(leave)
 
     def _notify_rh_new_leave_request(self, leave: LeaveRequest) -> None:

@@ -48,4 +48,4 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "ai_summary",
             "created_at",
         ]
-        read_only_fields = ["status", "matching_score", "skills_extracted", "ai_summary", "created_at"]
+        read_only_fields = ["candidate", "status", "matching_score", "skills_extracted", "ai_summary", "created_at"]
