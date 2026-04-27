@@ -47,10 +47,13 @@ def _employee_to_features(employee: Employee) -> dict:
 
 
 class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
+    """Expose les prédictions de churn et les actions de scoring IA."""
+
     serializer_class = ChurnPredictionSerializer
     permission_classes = [IsRH]
 
     def get_queryset(self):
+        """Retourne l'historique des prédictions avec les relations utiles préchargées."""
         return ChurnPrediction.objects.select_related("employee__user").all()
 
     @action(detail=False, methods=["get"], url_path="high-risk")

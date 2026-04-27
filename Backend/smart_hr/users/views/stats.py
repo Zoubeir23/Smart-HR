@@ -19,6 +19,7 @@ class AdminStatsView(APIView):
     permission_classes = [IsRH]
 
     def get(self, request):
+        """Retourne un agrégat des indicateurs globaux utiles au pilotage RH."""
         from smart_hr.personnel.models import Employee
 
         total_users = User.objects.count()

@@ -12,11 +12,14 @@ logger = logging.getLogger(__name__)
 
 
 class MeetingViewSet(viewsets.ModelViewSet):
+    """Gestion des réunions de formation et diffusion des invitations."""
+
     queryset = Meeting.objects.select_related("formation").all()
     serializer_class = MeetingSerializer
     permission_classes = [IsRH]
 
     def perform_create(self, serializer):
+        """Crée la réunion puis envoie les invitations aux employés actifs."""
         meeting = serializer.save()
         self._send_invitations_to_all_employees(meeting)
 
