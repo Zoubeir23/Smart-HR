@@ -163,9 +163,9 @@ function QuickAction({ icon: Icon, label, href }: { icon: React.ElementType; lab
       <motion.div
         whileHover={{ scale: 1.02, y: -1 }}
         whileTap={{ scale: 0.98 }}
-        className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition-colors hover:border-primary/30 hover:bg-primary/5"
+        className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition-colors hover:border-secondary/30 hover:bg-secondary/5"
       >
-        <Icon className="h-4 w-4 text-primary" />
+        <Icon className="h-4 w-4 text-secondary" />
         <span>{label}</span>
         <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
       </motion.div>
@@ -313,13 +313,14 @@ export default function HRDashboard() {
                 change={{ value: 3.2, type: 'increase' }}
                 icon={Users}
                 description={`${stats?.active_employees ?? 0} actifs`}
+                color="indigo"
               />
               <KPICard
                 title="Congés en attente"
                 value={stats?.pending_leaves ?? 0}
                 icon={Calendar}
                 description="À valider"
-                variant="gradient"
+                color="amber"
               />
               <KPICard
                 title="Postes ouverts"
@@ -327,6 +328,7 @@ export default function HRDashboard() {
                 change={{ value: 2, type: 'increase' }}
                 icon={Briefcase}
                 description={`${stats?.new_applications ?? 0} candidatures`}
+                color="emerald"
               />
               <KPICard
                 title="Risque élevé"
@@ -334,6 +336,7 @@ export default function HRDashboard() {
                 change={{ value: 8, type: 'decrease' }}
                 icon={AlertTriangle}
                 description="Employés à surveiller"
+                color="rose"
               />
             </>
           )}
@@ -398,7 +401,7 @@ export default function HRDashboard() {
                 </div>
               </div>
               <Link to="/ai-insights">
-                <Button variant="ghost" size="sm" className="gap-1 text-primary">
+                <Button variant="ghost" size="sm" className="gap-1 text-secondary">
                   Voir tout
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -434,8 +437,8 @@ export default function HRDashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Calendar className="h-4 w-4 text-primary" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
+                    <Calendar className="h-4 w-4 text-secondary" />
                   </div>
                   <CardTitle className="text-base font-semibold">Congés en attente</CardTitle>
                 </div>
@@ -517,8 +520,8 @@ export default function HRDashboard() {
             <Card>
               <CardHeader className="pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Clock className="h-4 w-4 text-primary" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
+                    <Clock className="h-4 w-4 text-secondary" />
                   </div>
                   <CardTitle className="text-base font-semibold">Activité récente</CardTitle>
                 </div>
@@ -538,8 +541,8 @@ export default function HRDashboard() {
                     {applications.slice(0, 5).map((application: any, index: number) => (
                       <div key={application.id} className="relative flex gap-3 py-2.5">
                         {/* Timeline dot */}
-                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-primary/10">
-                          <Briefcase className="h-3.5 w-3.5 text-primary" />
+                        <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-secondary/10">
+                          <Briefcase className="h-3.5 w-3.5 text-secondary" />
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium">Nouvelle candidature</p>

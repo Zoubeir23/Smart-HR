@@ -2,6 +2,8 @@ from django.conf import settings
 from django.db import models
 
 from smart_hr.core.models import TimeStampedModel
+from smart_hr.core.validators import validate_document_extension
+from smart_hr.core.validators import validate_file_size
 from smart_hr.personnel.models import Employee
 
 
@@ -24,7 +26,10 @@ class Document(TimeStampedModel):
         choices=DocumentType.choices,
         default=DocumentType.OTHER,
     )
-    file = models.FileField(upload_to="documents/")
+    file = models.FileField(
+        upload_to="documents/",
+        validators=[validate_document_extension, validate_file_size],
+    )
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

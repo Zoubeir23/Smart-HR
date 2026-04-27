@@ -140,7 +140,7 @@ export default function SettingsPage() {
                     <h3 className="text-lg font-semibold text-foreground">
                       {user?.first_name} {user?.last_name}
                     </h3>
-                    <Badge className="bg-primary/10 text-primary mt-1">
+                    <Badge className="bg-secondary/10 text-primary mt-1">
                       {user?.role ? roleLabels[user.role] || user.role : 'Utilisateur'}
                     </Badge>
                   </div>

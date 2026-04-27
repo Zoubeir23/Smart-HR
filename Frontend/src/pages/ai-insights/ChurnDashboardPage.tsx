@@ -188,7 +188,7 @@ function KPI({
               </div>
             )}
           </div>
-          <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10')}>
+          <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10')}>
             <Icon className="h-5 w-5 text-primary" />
           </div>
         </div>
@@ -377,7 +377,7 @@ const ChurnDashboardPage = () => {
         >
           <div className="space-y-1">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
                 <BrainCircuit className="h-5 w-5 text-primary" />
               </div>
               <div>
@@ -416,7 +416,7 @@ const ChurnDashboardPage = () => {
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          <KPI icon={Users} label="Employés analysés" value={stats.total} accentColor="bg-primary" delay={0.05} />
+          <KPI icon={Users} label="Employés analysés" value={stats.total} accentColor="bg-secondary" delay={0.05} />
           <KPI
             icon={ShieldAlert}
             label="Risque élevé"
@@ -480,7 +480,7 @@ const ChurnDashboardPage = () => {
                       className={cn(
                         'inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-all',
                         isActive
-                          ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+                          ? 'bg-secondary/10 text-primary ring-1 ring-secondary/20'
                           : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                       )}
                     >
@@ -550,7 +550,7 @@ const ChurnDashboardPage = () => {
                             <div className="flex items-center gap-3">
                               <div className="relative">
                                 <Avatar className="h-9 w-9">
-                                  <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                                  <AvatarFallback className="bg-secondary/10 text-primary text-xs font-semibold">
                                     {employee.initials}
                                   </AvatarFallback>
                                 </Avatar>
@@ -644,7 +644,7 @@ const ChurnDashboardPage = () => {
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-4">
                         <Avatar className="h-14 w-14">
-                          <AvatarFallback className="bg-primary/10 text-primary text-lg font-bold">
+                          <AvatarFallback className="bg-secondary/10 text-primary text-lg font-bold">
                             {selectedEmployee.initials}
                           </AvatarFallback>
                         </Avatar>
@@ -743,7 +743,7 @@ const ChurnDashboardPage = () => {
                         </div>
                         <div className="space-y-2">
                           {selectedEmployee.recommendations.filter(Boolean).map((rec, i) => (
-                            <div key={i} className="flex items-start gap-2.5 rounded-lg border border-primary/10 bg-primary/5 px-4 py-3">
+                            <div key={i} className="flex items-start gap-2.5 rounded-lg border border-secondary/10 bg-secondary/5 px-4 py-3">
                               <ChevronRight className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
                               <span className="text-sm text-foreground">{rec}</span>
                             </div>

@@ -159,7 +159,7 @@ const ApplicationTrackingPage = () => {
             <Card className="lg:col-span-2">
               <div className="p-6">
                 <div className="flex items-start gap-4 mb-6">
-                  <div className="p-3 bg-primary/10 rounded-lg">
+                  <div className="p-3 bg-secondary/10 rounded-lg">
                     <Briefcase className="w-6 h-6 text-primary" />
                   </div>
                   <div className="flex-1">
@@ -348,7 +348,7 @@ const ApplicationTrackingPage = () => {
                                 {step.title}
                               </h3>
                               {step.status === 'in_progress' && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-secondary/10 text-primary text-xs font-medium rounded-full">
                                   En cours
                                 </span>
                               )}
@@ -373,7 +373,7 @@ const ApplicationTrackingPage = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1 }}
-                className="mt-8 p-4 bg-primary/5 border border-primary/20 rounded-lg"
+                className="mt-8 p-4 bg-secondary/5 border border-secondary/20 rounded-lg"
               >
                 <h4 className="text-sm font-semibold text-foreground mb-2">
                   Prochaines étapes

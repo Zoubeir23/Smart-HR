@@ -1,6 +1,7 @@
 import logging
 
 from django.utils import timezone
+
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -108,7 +109,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=["patch"], url_path="update-status")
     def update_status(self, request, pk=None):
-        """Met à jour le statut d'une candidature (RH seulement)."""
+        """Met à jour le statut d'une candidature et notifie le candidat par email."""
         application = self.get_object()
         new_status = request.data.get("status")
         if new_status not in Application.Status.values:
@@ -123,6 +124,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
         if old_status != new_status and new_status != Application.Status.PENDING:
             self._notify_candidate_status_update(application, new_status)
+
 
         serializer = self.get_serializer(application)
         return Response(serializer.data)

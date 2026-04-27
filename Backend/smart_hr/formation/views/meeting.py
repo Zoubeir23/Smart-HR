@@ -1,6 +1,7 @@
 import logging
 
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated
 
 from smart_hr.core.email_service import send_meeting_invitation_email
 from smart_hr.formation.models import Meeting
@@ -16,7 +17,11 @@ class MeetingViewSet(viewsets.ModelViewSet):
 
     queryset = Meeting.objects.select_related("formation").all()
     serializer_class = MeetingSerializer
-    permission_classes = [IsRH]
+
+    def get_permissions(self):
+        if self.action in ["create", "update", "partial_update", "destroy"]:
+            return [IsRH()]
+        return [IsAuthenticated()]
 
     def perform_create(self, serializer):
         """Crée la réunion puis envoie les invitations aux employés actifs."""
