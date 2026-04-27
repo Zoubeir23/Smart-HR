@@ -12,9 +12,12 @@ logger = logging.getLogger(__name__)
 
 
 class PayrollViewSet(viewsets.ModelViewSet):
+    """Gestion des fiches de paie et notifications de paiement."""
+
     serializer_class = PayrollSerializer
 
     def get_queryset(self):
+        """Retourne toutes les paies pour RH/Admin, sinon celles de l'employé."""
         user = self.request.user
         qs = Payroll.objects.select_related("employee__user")
         if user.role in ["ADMIN", "RH"]:
@@ -22,11 +25,13 @@ class PayrollViewSet(viewsets.ModelViewSet):
         return qs.filter(employee__user=user)
 
     def get_permissions(self):
+        """Protège les actions d'écriture pour RH/Admin uniquement."""
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [IsRH()]
         return [IsAuthenticated()]
 
     def perform_update(self, serializer):
+        """Envoie une notification quand une paie passe à l'état 'paid'."""
         old_status = serializer.instance.status
         payroll = serializer.save()
 
@@ -34,6 +39,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
             self._notify_employee_payslip_paid(payroll)
 
     def _notify_employee_payslip_paid(self, payroll: Payroll) -> None:
+        """Notifie l'employé qu'une fiche de paie vient d'être réglée."""
         employee_user = payroll.employee.user
         try:
             send_payslip_paid_email(

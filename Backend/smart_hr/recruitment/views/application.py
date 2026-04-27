@@ -22,15 +22,19 @@ logger = logging.getLogger(__name__)
 
 
 class ApplicationViewSet(viewsets.ModelViewSet):
+    """Gestion des candidatures avec analyse IA de CV et notifications email."""
+
     serializer_class = ApplicationSerializer
 
     def get_queryset(self):
+        """Retourne toutes les candidatures pour RH/Admin, sinon celles du candidat."""
         user = self.request.user
         if user.role in ["ADMIN", "RH"]:
             return Application.objects.select_related("job_offer", "candidate").all()
         return Application.objects.filter(candidate=user)
 
     def get_permissions(self):
+        """Applique des permissions par action selon le rôle métier."""
         if self.action == "create":
             return [IsCandidate()]
         if self.action in ["list", "retrieve"]:
@@ -38,6 +42,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         return [IsRH()]
 
     def perform_create(self, serializer):
+        """Crée une candidature, lance l'analyse CV puis envoie un accusé de réception."""
         application = serializer.save(candidate=self.request.user)
         self._run_cv_analysis(application)
         self._notify_candidate_application_received(application)
@@ -123,6 +128,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     def _notify_candidate_status_update(self, application: Application, new_status: str) -> None:
+        """Informe le candidat d'un changement de statut de sa candidature."""
         candidate = application.candidate
         try:
             send_application_status_email(

@@ -16,12 +16,15 @@ logger = logging.getLogger(__name__)
 
 
 class TaskViewSet(viewsets.ModelViewSet):
+    """Gestion des tâches RH avec attribution et suivi de statut."""
+
     serializer_class = TaskSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["title", "description"]
     ordering_fields = ["due_date", "priority", "status"]
 
     def get_queryset(self):
+        """Expose toutes les tâches à RH/Admin, sinon celles de l'assigné."""
         user = self.request.user
         qs = Task.objects.select_related("assignee__user", "created_by")
         if user.role in ["ADMIN", "RH"]:
@@ -29,15 +32,18 @@ class TaskViewSet(viewsets.ModelViewSet):
         return qs.filter(assignee__user=user)
 
     def get_permissions(self):
+        """Restreint les opérations d'écriture aux rôles RH/Admin."""
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [IsRH()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
+        """Crée une tâche et envoie un email d'assignation."""
         task = serializer.save(created_by=self.request.user)
         self._notify_assignee_task_created(task)
 
     def _notify_assignee_task_created(self, task: Task) -> None:
+        """Notifie l'employé assigné avec les détails clés de la tâche."""
         assignee_user = task.assignee.user
         assigned_by_name = (
             self.request.user.get_full_name() or self.request.user.email
