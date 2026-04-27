@@ -200,8 +200,9 @@ def _get_ai_response(question: str, user) -> str:
         import google.generativeai as genai
 
         genai.configure(api_key=api_key)
+        gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name=gemini_model_name,
             system_instruction=_build_system_prompt(user),
         )
         history = _build_gemini_history(user)

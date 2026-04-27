@@ -87,8 +87,9 @@ Retourne ce JSON exact (sans markdown, sans backticks) :
     try:
         import google.generativeai as genai
 
+        gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
         genai.configure(api_key=api_key)
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel(gemini_model_name)
         response = model.generate_content(prompt)
         raw_text = response.text.strip()
 
