@@ -19,7 +19,7 @@ Content-Type: application/json
 
 {
   "email": "admin@smarthr.com",
-  "password": "admin123"
+  "password": "<demo_password>"
 }
 ```
 Réponse : `{ "access": "...", "refresh": "..." }` — copier `access` comme token.
@@ -28,10 +28,10 @@ Réponse : `{ "access": "...", "refresh": "..." }` — copier `access` comme tok
 
 | Rôle     | Email                    | Mot de passe  |
 |----------|--------------------------|---------------|
-| Admin    | admin@smarthr.com        | admin123      |
-| RH       | rh@smarthr.com           | rh123         |
-| Employé  | employee@smarthr.com     | employee123   |
-| Candidat | candidate@smarthr.com    | candidate123  |
+| Admin    | admin@smarthr.com        | <demo_password>      |
+| RH       | rh@smarthr.com           | <demo_password>         |
+| Employé  | employee@smarthr.com     | <demo_password>   |
+| Candidat | candidate@smarthr.com    | <demo_password>  |
 
 ### Rafraîchir le token
 ```
