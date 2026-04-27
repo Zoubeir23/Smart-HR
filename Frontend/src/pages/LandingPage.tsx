@@ -305,7 +305,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: CheckSquare, title: 'Gestion des Tâches', desc: 'Vue Kanban temps réel avec statuts automatisés et rappels intelligents.', span: 'lg:col-span-2', card: 'bg-brand-navy', titleClass: 'text-white', descClass: 'text-white/60', iconWrap: 'bg-white/10 text-white' },
+              { icon: CheckSquare, title: 'Gestion des Tâches', desc: 'Vue Kanban temps réel avec statuts automatisés et rappels intelligents.', span: 'lg:col-span-2', card: 'bg-primary dark:bg-brand-navy', titleClass: 'text-white', descClass: 'text-white/70', iconWrap: 'bg-white/20 text-white' },
               { icon: Calendar, title: 'Congés', desc: 'Demande, validation et suivi des soldes en quelques clics.', span: '', card: 'bg-secondary border border-border', titleClass: 'text-foreground', descClass: 'text-muted-foreground', iconWrap: 'bg-primary/12 text-primary ring-1 ring-primary/20' },
               { icon: Users, title: 'Gestion du Personnel', desc: 'Annuaire complet, fiches détaillées, hiérarchies et organigramme.', span: '', card: 'bg-card border border-border shadow-sm', titleClass: 'text-foreground', descClass: 'text-muted-foreground', iconWrap: 'bg-primary text-primary-foreground' },
               { icon: DollarSign, title: 'Paie & Avantages', desc: 'Historique complet, fiches de paie et suivi des salaires.', span: '', card: 'bg-primary', titleClass: 'text-primary-foreground', descClass: 'text-white/70', iconWrap: 'bg-white/20 text-white' },
@@ -323,29 +323,31 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* STATS #solutions — always dark navy */}
-      <section id="solutions" className="bg-brand-navy py-28 relative overflow-hidden">
+      {/* STATS #solutions */}
+      <section id="solutions" className="bg-secondary/40 dark:bg-brand-navy py-28 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-0 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-primary/8 blur-[100px]" />
-          <div className="absolute right-0 top-1/2 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-brand-cream/4 blur-[80px]" />
+          <div className="absolute left-0 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-primary/6 blur-[100px]" />
+          <div className="absolute right-0 top-1/2 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-primary/4 blur-[80px]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-6">
           <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-20 text-center">
             <p className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">Impact mesurable</p>
-            <h2 className="font-display text-4xl text-white lg:text-5xl">Des résultats, <span className="italic text-brand-cream/60">pas des promesses.</span></h2>
+            <h2 className="font-display text-4xl text-foreground dark:text-white lg:text-5xl">
+              Des résultats, <span className="italic text-muted-foreground dark:text-brand-cream/60">pas des promesses.</span>
+            </h2>
           </motion.div>
-          <div className="grid grid-cols-2 gap-px rounded-3xl overflow-hidden border border-white/8 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-px rounded-3xl overflow-hidden border border-border dark:border-white/8 lg:grid-cols-4">
             {[
               { value: 1500, suffix: '+', label: 'PME partenaires', prefix: '' },
               { value: 35, suffix: '%', label: 'Productivité accrue', prefix: '+' },
               { value: 40, suffix: '%', label: 'Temps admin réduit', prefix: '−' },
               { value: 80, suffix: '%', label: 'Précision churn IA', prefix: '' },
             ].map((stat, i) => (
-              <motion.div key={stat.label} initial={{ y: 12 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: i * 0.1 }} className="flex flex-col items-center justify-center bg-white/[0.02] p-10 text-center hover:bg-white/[0.04] transition-colors">
-                <p className="font-display text-5xl text-white lg:text-6xl">
+              <motion.div key={stat.label} initial={{ y: 12 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: i * 0.1 }} className="flex flex-col items-center justify-center bg-background/40 dark:bg-white/[0.02] p-10 text-center hover:bg-background/60 dark:hover:bg-white/[0.04] transition-colors">
+                <p className="font-display text-5xl text-foreground dark:text-white lg:text-6xl">
                   <AnimatedCounter target={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
                 </p>
-                <p className="mt-3 text-xs font-bold uppercase tracking-widest text-white/30">{stat.label}</p>
+                <p className="mt-3 text-xs font-bold uppercase tracking-widest text-muted-foreground dark:text-white/30">{stat.label}</p>
               </motion.div>
             ))}
           </div>
