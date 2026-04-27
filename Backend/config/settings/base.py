@@ -406,7 +406,7 @@ REST_AUTH = {
     "USE_JWT": True,
     "JWT_AUTH_COOKIE": "smart-hr-auth",
     "JWT_AUTH_REFRESH_COOKIE": "smart-hr-refresh-token",
-    "JWT_AUTH_HTTPONLY": True,
+    "JWT_AUTH_HTTPONLY": False,
     "USER_DETAILS_SERIALIZER": "smart_hr.users.serializers.UserSerializer",
 }
 

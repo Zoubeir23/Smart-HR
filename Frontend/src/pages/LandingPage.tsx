@@ -39,7 +39,7 @@ const LandingPage: React.FC = () => {
             <Link to="/login" className="px-4 py-2 text-sm font-semibold text-slate-700 hover:text-primary transition-all">
               Connexion
             </Link>
-            <button className="bg-primary-gradient text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all active:scale-95">
+            <button className="bg-gradient-primary text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-sm hover:shadow-md transition-all active:scale-95">
               Demander une démo
             </button>
           </div>
@@ -65,7 +65,7 @@ const LandingPage: React.FC = () => {
               </p>
 
               <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
-                <button className="bg-primary-gradient text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
+                <button className="bg-gradient-primary text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all">
                   Essayer Gratuitement
                 </button>
                 <button className="bg-white text-slate-700 border border-slate-200 px-8 py-4 rounded-2xl font-bold text-lg shadow-sm hover:bg-slate-50 transition-all flex items-center gap-2">
@@ -298,7 +298,7 @@ const LandingPage: React.FC = () => {
               </div>
 
               {/* Strategic CTA Card */}
-              <div className="lg:col-span-2 bg-primary-gradient rounded-3xl p-12 relative overflow-hidden text-white flex flex-col md:flex-row items-center gap-10">
+              <div className="lg:col-span-2 bg-gradient-primary rounded-3xl p-12 relative overflow-hidden text-white flex flex-col md:flex-row items-center gap-10">
                 <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
                 <div className="relative z-10 flex-1 text-center md:text-left">
                   <h3 className="text-3xl font-extrabold mb-4">Prêt à transformer votre culture d'entreprise ?</h3>
