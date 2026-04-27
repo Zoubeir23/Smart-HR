@@ -108,7 +108,7 @@ export default function EmployeeListPage() {
   // ─── Filtering & Sorting ──────────────
   const filteredEmployees = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    let result = employees.filter((employee) => {
+    const result = employees.filter((employee) => {
       const matchesSearch =
         !query ||
         employee.user.first_name.toLowerCase().includes(query) ||
