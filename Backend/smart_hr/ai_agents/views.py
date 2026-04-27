@@ -58,11 +58,10 @@ def _generate_voice_response(question: str) -> str:
 
     if api_key:
         try:
-            import google.generativeai as genai
+            from google import genai
 
-            genai.configure(api_key=api_key)
             gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-            model = genai.GenerativeModel(gemini_model_name)
+            client = genai.Client(api_key=api_key)
             prompt = (
                 "Tu es un assistant RH vocal pour Smart-HR. "
                 "Réponds de manière concise, claire et bienveillante. "
@@ -70,7 +69,7 @@ def _generate_voice_response(question: str) -> str:
                 "Sujet : ressources humaines, recrutement, congés, formations, salaires.\n\n"
                 f"Question : {question}"
             )
-            response = model.generate_content(prompt)
+            response = client.models.generate_content(model=gemini_model_name, contents=prompt)
             return response.text
         except Exception as exc:
             logger.error("Erreur Gemini pour voice agent : %s", exc)
