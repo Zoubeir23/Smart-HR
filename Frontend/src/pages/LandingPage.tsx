@@ -83,7 +83,7 @@ function Ticker() {
       >
         {doubled.map((item, i) => (
           <span key={i} className="flex items-center gap-3 text-sm font-medium text-white/50">
-            <span className="h-1 w-1 rounded-full bg-[#D62828]" />
+            <span className="h-1 w-1 rounded-full bg-brand-red" />
             {item}
           </span>
         ))}
@@ -98,11 +98,11 @@ function Ticker() {
 function DashboardMockup() {
   return (
     <div className="relative">
-      <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-[#D62828]/20 via-transparent to-[#FFF3E0]/5 blur-2xl" />
-      <div className="relative rounded-2xl border border-white/10 bg-[#0a1628] overflow-hidden shadow-2xl">
+      <div className="absolute -inset-4 rounded-3xl bg-gradient-to-br from-brand-red/20 via-transparent to-brand-cream/5 blur-2xl" />
+      <div className="relative rounded-2xl border border-white/10 bg-brand-navy-800 overflow-hidden shadow-2xl">
         {/* Window chrome */}
         <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
-          <div className="h-2.5 w-2.5 rounded-full bg-[#D62828]/60" />
+          <div className="h-2.5 w-2.5 rounded-full bg-brand-red/60" />
           <div className="h-2.5 w-2.5 rounded-full bg-amber-400/40" />
           <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/40" />
           <div className="ml-auto flex items-center gap-2 rounded-md bg-white/5 px-3 py-1">
@@ -127,12 +127,12 @@ function DashboardMockup() {
           </div>
 
           {/* Churn alert */}
-          <div className="rounded-xl border border-[#D62828]/30 bg-[#D62828]/10 p-3 flex items-start gap-3">
-            <div className="mt-0.5 h-6 w-6 rounded-lg bg-[#D62828]/20 flex items-center justify-center flex-shrink-0">
-              <Zap className="h-3 w-3 text-[#D62828]" />
+          <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 flex items-start gap-3">
+            <div className="mt-0.5 h-6 w-6 rounded-lg bg-brand-red/20 flex items-center justify-center flex-shrink-0">
+              <Zap className="h-3 w-3 text-brand-red" />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-[#e86060]">Alerte IA — Risque élevé</p>
+              <p className="text-[11px] font-bold text-brand-red-light">Alerte IA — Risque élevé</p>
               <p className="text-[10px] text-white/40 mt-0.5">3 collaborateurs identifiés au pôle Tech (+18% vs mois dernier)</p>
             </div>
           </div>
@@ -189,17 +189,17 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="bg-[#08111e] text-white antialiased">
+    <div className="bg-brand-navy text-white antialiased">
 
       {/* ─────── NAVBAR ─────── */}
       <header
         className={`fixed top-0 z-50 w-full transition-all duration-300 ${
-          scrolled ? 'border-b border-white/10 bg-[#08111e]/90 backdrop-blur-xl' : ''
+          scrolled ? 'border-b border-white/10 bg-brand-navy/90 backdrop-blur-xl' : ''
         }`}
       >
         <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
           <Link to="/" className="font-display text-xl font-normal tracking-tight text-white">
-            Smart<span className="text-[#D62828]">-HR</span>
+            Smart<span className="text-brand-red">-HR</span>
           </Link>
 
           {/* Desktop nav */}
@@ -224,7 +224,7 @@ export default function LandingPage() {
             </Link>
             <Link
               to="/register"
-              className="rounded-lg bg-[#D62828] px-5 py-2 text-sm font-bold text-white transition-all hover:bg-[#e63c3c] active:scale-95"
+              className="rounded-lg bg-brand-red px-5 py-2 text-sm font-bold text-white transition-all hover:bg-brand-red-light active:scale-95"
             >
               Démarrer gratuitement
             </Link>
@@ -244,7 +244,7 @@ export default function LandingPage() {
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="border-t border-white/10 bg-[#08111e] px-6 pb-6 lg:hidden"
+            className="border-t border-white/10 bg-brand-navy px-6 pb-6 lg:hidden"
           >
             <div className="space-y-1 pt-4">
               {NAV_LINKS.map((link) => (
@@ -261,7 +261,7 @@ export default function LandingPage() {
               <Link to="/login" className="rounded-lg border border-white/10 px-4 py-2.5 text-center text-sm font-semibold text-white">
                 Connexion
               </Link>
-              <Link to="/register" className="rounded-lg bg-[#D62828] px-4 py-2.5 text-center text-sm font-bold text-white">
+              <Link to="/register" className="rounded-lg bg-brand-red px-4 py-2.5 text-center text-sm font-bold text-white">
                 Démarrer gratuitement
               </Link>
             </div>
@@ -273,8 +273,8 @@ export default function LandingPage() {
       <section className="relative min-h-screen overflow-hidden">
         {/* Background glows */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 left-1/4 h-[600px] w-[600px] rounded-full bg-[#D62828]/8 blur-[120px]" />
-          <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-[#FFF3E0]/4 blur-[100px]" />
+          <div className="absolute -top-32 left-1/4 h-[600px] w-[600px] rounded-full bg-brand-red/8 blur-[120px]" />
+          <div className="absolute bottom-0 right-1/4 h-[400px] w-[400px] rounded-full bg-brand-cream/4 blur-[100px]" />
           {/* Grid */}
           <div
             className="absolute inset-0 opacity-[0.03]"
@@ -294,10 +294,10 @@ export default function LandingPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="inline-flex items-center gap-2 rounded-full border border-[#D62828]/30 bg-[#D62828]/10 px-4 py-1.5"
+                className="inline-flex items-center gap-2 rounded-full border border-brand-red/30 bg-brand-red/10 px-4 py-1.5"
               >
-                <Brain className="h-3.5 w-3.5 text-[#D62828]" />
-                <span className="text-xs font-bold uppercase tracking-widest text-[#e86060]">
+                <Brain className="h-3.5 w-3.5 text-brand-red" />
+                <span className="text-xs font-bold uppercase tracking-widest text-brand-red-light">
                   SIRH propulsé par l'IA
                 </span>
               </motion.div>
@@ -310,9 +310,9 @@ export default function LandingPage() {
               >
                 La gestion RH
                 <br />
-                <span className="italic text-[#FFF3E0]/80">augmentée</span>
+                <span className="italic text-brand-cream/80">augmentée</span>
                 <br />
-                par l'<span className="text-[#D62828]">Intelligence.</span>
+                par l'<span className="text-brand-red">Intelligence.</span>
               </motion.h1>
 
               <motion.p
@@ -333,7 +333,7 @@ export default function LandingPage() {
               >
                 <Link
                   to="/register"
-                  className="group flex items-center gap-2 rounded-xl bg-[#D62828] px-7 py-3.5 text-base font-bold text-white shadow-lg shadow-[#D62828]/25 transition-all hover:bg-[#e63c3c] hover:shadow-[#D62828]/40 active:scale-95"
+                  className="group flex items-center gap-2 rounded-xl bg-brand-red px-7 py-3.5 text-base font-bold text-white shadow-lg shadow-brand-red/25 transition-all hover:bg-brand-red-light hover:shadow-brand-red/40 active:scale-95"
                 >
                   Essayer gratuitement
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
@@ -354,11 +354,11 @@ export default function LandingPage() {
               >
                 <div className="flex -space-x-2">
                   {['A', 'B', 'M', 'S'].map((l) => (
-                    <div key={l} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#08111e] bg-gradient-to-br from-[#D62828] to-[#7a1414] text-[11px] font-bold text-white">
+                    <div key={l} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-brand-navy bg-gradient-to-br from-brand-red to-brand-red-dark text-[11px] font-bold text-white">
                       {l}
                     </div>
                   ))}
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#08111e] bg-white/10 text-[9px] font-bold text-white/60">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-brand-navy bg-white/10 text-[9px] font-bold text-white/60">
                     +1.5k
                   </div>
                 </div>
@@ -400,7 +400,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─────── FEATURES #produit ─────── */}
-      <section id="produit" className="bg-[#FFF3E0] py-28">
+      <section id="produit" className="bg-brand-cream py-28">
         <div className="mx-auto max-w-7xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
@@ -409,10 +409,10 @@ export default function LandingPage() {
             transition={{ duration: 0.6 }}
             className="mb-20 max-w-2xl"
           >
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#D62828]">
+            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-brand-red">
               Fonctionnalités IA
             </p>
-            <h2 className="font-display text-4xl leading-tight text-[#08111e] lg:text-5xl">
+            <h2 className="font-display text-4xl leading-tight text-brand-navy lg:text-5xl">
               Trois piliers qui transforment
               <br />
               <span className="italic">votre quotidien RH.</span>
@@ -452,20 +452,20 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.6, delay: feature.delay }}
-                className="group relative overflow-hidden rounded-3xl border border-[#08111e]/8 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
+                className="group relative overflow-hidden rounded-3xl border border-brand-navy/8 bg-white p-8 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-lg"
               >
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#08111e]">
-                  <feature.icon className="h-5 w-5 text-[#FFF3E0]" />
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-navy">
+                  <feature.icon className="h-5 w-5 text-brand-cream" />
                 </div>
-                <h3 className="mb-3 font-display text-2xl text-[#08111e]">{feature.title}</h3>
-                <p className="mb-6 text-sm leading-relaxed text-[#08111e]/60">{feature.desc}</p>
-                <div className="flex items-baseline gap-1.5 border-t border-[#08111e]/6 pt-5">
-                  <span className="font-display text-3xl text-[#D62828]">{feature.stat}</span>
-                  <span className="text-xs font-semibold uppercase tracking-widest text-[#08111e]/40">{feature.statLabel}</span>
+                <h3 className="mb-3 font-display text-2xl text-brand-navy">{feature.title}</h3>
+                <p className="mb-6 text-sm leading-relaxed text-brand-navy/60">{feature.desc}</p>
+                <div className="flex items-baseline gap-1.5 border-t border-brand-navy/6 pt-5">
+                  <span className="font-display text-3xl text-brand-red">{feature.stat}</span>
+                  <span className="text-xs font-semibold uppercase tracking-widest text-brand-navy/40">{feature.statLabel}</span>
                 </div>
 
                 {/* hover accent */}
-                <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-[#D62828] to-[#e86060] transition-all duration-500 group-hover:w-full" />
+                <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-to-r from-brand-red to-brand-red-light transition-all duration-500 group-hover:w-full" />
               </motion.div>
             ))}
           </div>
@@ -482,10 +482,10 @@ export default function LandingPage() {
             className="mb-20 flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
           >
             <div>
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#D62828]">
+              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-brand-red">
                 Modules opérationnels
               </p>
-              <h2 className="font-display text-4xl leading-tight text-[#08111e] lg:text-5xl">
+              <h2 className="font-display text-4xl leading-tight text-brand-navy lg:text-5xl">
                 Une plateforme,
                 <br />
                 <span className="italic">zéro friction.</span>
@@ -493,7 +493,7 @@ export default function LandingPage() {
             </div>
             <Link
               to="/login"
-              className="group flex items-center gap-2 text-sm font-bold text-[#D62828] transition-all hover:gap-3"
+              className="group flex items-center gap-2 text-sm font-bold text-brand-red transition-all hover:gap-3"
             >
               Accéder à la plateforme <ArrowRight className="h-4 w-4" />
             </Link>
@@ -507,7 +507,7 @@ export default function LandingPage() {
                 title: 'Gestion des Tâches',
                 desc: 'Vue Kanban temps réel avec statuts automatisés et rappels intelligents.',
                 span: 'lg:col-span-2',
-                bg: 'bg-[#08111e]',
+                bg: 'bg-brand-navy',
                 textColor: 'text-white',
                 descColor: 'text-white/50',
                 iconBg: 'bg-white/10',
@@ -518,11 +518,11 @@ export default function LandingPage() {
                 title: 'Congés',
                 desc: 'Demande, validation et suivi des soldes en quelques clics.',
                 span: '',
-                bg: 'bg-[#FFF3E0]',
-                textColor: 'text-[#08111e]',
-                descColor: 'text-[#08111e]/60',
-                iconBg: 'bg-[#08111e]',
-                iconColor: 'text-[#FFF3E0]',
+                bg: 'bg-brand-cream',
+                textColor: 'text-brand-navy',
+                descColor: 'text-brand-navy/60',
+                iconBg: 'bg-brand-navy',
+                iconColor: 'text-brand-cream',
               },
               {
                 icon: Users,
@@ -530,9 +530,9 @@ export default function LandingPage() {
                 desc: 'Annuaire complet, fiches détaillées, hiérarchies et organigramme.',
                 span: '',
                 bg: 'bg-slate-50',
-                textColor: 'text-[#08111e]',
-                descColor: 'text-[#08111e]/60',
-                iconBg: 'bg-[#D62828]',
+                textColor: 'text-brand-navy',
+                descColor: 'text-brand-navy/60',
+                iconBg: 'bg-brand-red',
                 iconColor: 'text-white',
               },
               {
@@ -540,7 +540,7 @@ export default function LandingPage() {
                 title: 'Paie & Avantages',
                 desc: 'Historique complet, fiches de paie et suivi des salaires.',
                 span: '',
-                bg: 'bg-[#D62828]',
+                bg: 'bg-brand-red',
                 textColor: 'text-white',
                 descColor: 'text-white/60',
                 iconBg: 'bg-white/20',
@@ -551,11 +551,11 @@ export default function LandingPage() {
                 title: 'Documents',
                 desc: 'Stockage sécurisé de contrats, attestations et certificats.',
                 span: 'lg:col-span-2',
-                bg: 'bg-[#FFF3E0]',
-                textColor: 'text-[#08111e]',
-                descColor: 'text-[#08111e]/60',
-                iconBg: 'bg-[#08111e]',
-                iconColor: 'text-[#FFF3E0]',
+                bg: 'bg-brand-cream',
+                textColor: 'text-brand-navy',
+                descColor: 'text-brand-navy/60',
+                iconBg: 'bg-brand-navy',
+                iconColor: 'text-brand-cream',
               },
             ].map((module, i) => (
               <motion.div
@@ -578,10 +578,10 @@ export default function LandingPage() {
       </section>
 
       {/* ─────── STATS #solutions ─────── */}
-      <section id="solutions" className="bg-[#08111e] py-28 relative overflow-hidden">
+      <section id="solutions" className="bg-brand-navy py-28 relative overflow-hidden">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute left-0 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-[#D62828]/6 blur-[100px]" />
-          <div className="absolute right-0 top-1/2 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-[#FFF3E0]/3 blur-[80px]" />
+          <div className="absolute left-0 top-1/2 h-[400px] w-[400px] -translate-y-1/2 rounded-full bg-brand-red/6 blur-[100px]" />
+          <div className="absolute right-0 top-1/2 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-brand-cream/3 blur-[80px]" />
         </div>
 
         <div className="relative mx-auto max-w-7xl px-6">
@@ -591,10 +591,10 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="mb-20 text-center"
           >
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-[#D62828]">Impact mesurable</p>
+            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-brand-red">Impact mesurable</p>
             <h2 className="font-display text-4xl text-white lg:text-5xl">
               Des résultats,{' '}
-              <span className="italic text-[#FFF3E0]/60">pas des promesses.</span>
+              <span className="italic text-brand-cream/60">pas des promesses.</span>
             </h2>
           </motion.div>
 
@@ -626,7 +626,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─────── WHY / TRUST ─────── */}
-      <section className="bg-[#FFF3E0] py-28">
+      <section className="bg-brand-cream py-28">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid items-center gap-16 lg:grid-cols-2">
             <motion.div
@@ -635,21 +635,21 @@ export default function LandingPage() {
               viewport={{ once: true }}
               className="space-y-8"
             >
-              <p className="text-xs font-bold uppercase tracking-widest text-[#D62828]">Pourquoi Smart-HR</p>
-              <h2 className="font-display text-4xl leading-tight text-[#08111e] lg:text-5xl">
+              <p className="text-xs font-bold uppercase tracking-widest text-brand-red">Pourquoi Smart-HR</p>
+              <h2 className="font-display text-4xl leading-tight text-brand-navy lg:text-5xl">
                 Conçu pour
                 <br />
                 <span className="italic">les équipes RH</span>
                 <br />
                 modernes.
               </h2>
-              <p className="text-base leading-relaxed text-[#08111e]/60">
+              <p className="text-base leading-relaxed text-brand-navy/60">
                 Smart-HR n'est pas un simple logiciel de paie. C'est un copilote stratégique
                 qui transforme vos données dormantes en insights actionnables, en temps réel.
               </p>
               <Link
                 to="/login"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#08111e] px-7 py-3.5 text-sm font-bold text-[#FFF3E0] transition-all hover:bg-[#0a1628] active:scale-95"
+                className="inline-flex items-center gap-2 rounded-xl bg-brand-navy px-7 py-3.5 text-sm font-bold text-brand-cream transition-all hover:bg-brand-navy-800 active:scale-95"
               >
                 Accéder à la plateforme <ArrowRight className="h-4 w-4" />
               </Link>
@@ -668,13 +668,13 @@ export default function LandingPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.5, delay: i * 0.08 }}
-                  className="rounded-2xl border border-[#08111e]/8 bg-white p-6 shadow-sm"
+                  className="rounded-2xl border border-brand-navy/8 bg-white p-6 shadow-sm"
                 >
-                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#08111e]">
-                    <item.icon className="h-4 w-4 text-[#FFF3E0]" />
+                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-brand-navy">
+                    <item.icon className="h-4 w-4 text-brand-cream" />
                   </div>
-                  <h3 className="mb-2 font-semibold text-[#08111e]">{item.title}</h3>
-                  <p className="text-xs leading-relaxed text-[#08111e]/50">{item.desc}</p>
+                  <h3 className="mb-2 font-semibold text-brand-navy">{item.title}</h3>
+                  <p className="text-xs leading-relaxed text-brand-navy/50">{item.desc}</p>
                 </motion.div>
               ))}
             </div>
@@ -683,13 +683,13 @@ export default function LandingPage() {
       </section>
 
       {/* ─────── CTA #tarifs ─────── */}
-      <section id="tarifs" className="bg-[#08111e] py-28">
+      <section id="tarifs" className="bg-brand-navy py-28">
         <div className="mx-auto max-w-7xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 24 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="relative overflow-hidden rounded-3xl bg-[#D62828] p-16 text-center"
+            className="relative overflow-hidden rounded-3xl bg-brand-red p-16 text-center"
           >
             {/* bg detail */}
             <div className="pointer-events-none absolute inset-0">
@@ -718,7 +718,7 @@ export default function LandingPage() {
               <div className="flex flex-wrap justify-center gap-4 pt-4">
                 <Link
                   to="/register"
-                  className="rounded-2xl bg-white px-10 py-4 text-base font-bold text-[#D62828] transition-all hover:bg-[#FFF3E0] hover:scale-105 active:scale-95 shadow-xl"
+                  className="rounded-2xl bg-white px-10 py-4 text-base font-bold text-brand-red transition-all hover:bg-brand-cream hover:scale-105 active:scale-95 shadow-xl"
                 >
                   Créer un compte gratuit
                 </Link>
@@ -735,14 +735,14 @@ export default function LandingPage() {
       </section>
 
       {/* ─────── FOOTER ─────── */}
-      <footer className="border-t border-white/8 bg-[#08111e] py-16">
+      <footer className="border-t border-white/8 bg-brand-navy py-16">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-2 gap-12 md:grid-cols-5 mb-14">
 
             {/* Brand column */}
             <div className="col-span-2 space-y-5">
               <Link to="/" className="font-display text-2xl text-white">
-                Smart<span className="text-[#D62828]">-HR</span>
+                Smart<span className="text-brand-red">-HR</span>
               </Link>
               <p className="max-w-xs text-sm leading-relaxed text-white/40">
                 Le SIRH intelligent conçu pour les PME qui placent l'humain et la donnée au cœur de leur stratégie.
@@ -810,7 +810,7 @@ export default function LandingPage() {
               <div className="mt-8">
                 <Link
                   to="/login"
-                  className="inline-flex items-center gap-2 rounded-lg bg-[#D62828] px-4 py-2 text-sm font-bold text-white transition-all hover:bg-[#e63c3c]"
+                  className="inline-flex items-center gap-2 rounded-lg bg-brand-red px-4 py-2 text-sm font-bold text-white transition-all hover:bg-brand-red-light"
                 >
                   Connexion <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
