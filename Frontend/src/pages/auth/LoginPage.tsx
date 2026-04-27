@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Logo from '@/components/common/Logo';
+import { getSafePostLoginPath } from '@/lib/authNavigation';
 
 /* ─── Isometric grid node for the branding panel ─── */
 function GridNode({
@@ -111,19 +112,18 @@ export default function LoginPage() {
   const { toast } = useToast();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-  const from =
-    (location.state as { from?: { pathname: string } })?.from?.pathname || '/dashboard';
+  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await login(email, password);
+      const authenticatedUser = await login(email, password);
       toast({
         title: 'Connexion réussie',
         description: 'Bienvenue sur Smart-HR !',
       });
-      navigate(from, { replace: true });
+      navigate(getSafePostLoginPath(authenticatedUser.role, from), { replace: true });
     } catch (error) {
       toast({
         title: 'Erreur de connexion',
@@ -139,12 +139,12 @@ export default function LoginPage() {
   const handleGoogleSuccess = async (token: string) => {
     setIsLoading(true);
     try {
-      await loginWithGoogle(token);
+      const authenticatedUser = await loginWithGoogle(token);
       toast({
         title: 'Connexion réussie',
         description: 'Bienvenue sur Smart-HR !',
       });
-      navigate(from, { replace: true });
+      navigate(getSafePostLoginPath(authenticatedUser.role, from), { replace: true });
     } catch (error) {
       toast({
         title: 'Connexion Google échouée',
@@ -158,10 +158,10 @@ export default function LoginPage() {
   };
 
   const demoAccounts = [
-    { email: 'admin@smarthr.com', password: 'admin123', role: 'Admin', color: 'bg-indigo-500' },
-    { email: 'rh@smarthr.com', password: 'rh123', role: 'RH', color: 'bg-blue-500' },
-    { email: 'employee@smarthr.com', password: 'employee123', role: 'Employé', color: 'bg-emerald-500' },
-    { email: 'candidate@smarthr.com', password: 'candidate123', role: 'Candidat', color: 'bg-amber-500' },
+    { email: 'admin@smarthr.com', password: 'admin123', role: 'Admin', color: 'bg-[#c41e1e]' },
+    { email: 'rh@smarthr.com', password: 'rh123', role: 'RH', color: 'bg-[#D62828]' },
+    { email: 'employee@smarthr.com', password: 'employee123', role: 'Employé', color: 'bg-[hsl(160,84%,28%)]' },
+    { email: 'candidate@smarthr.com', password: 'candidate123', role: 'Candidat', color: 'bg-[hsl(25,95%,45%)]' },
   ];
 
   const features = [
@@ -174,15 +174,14 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen bg-background">
       {/* ─────────────────────────────────────────────
-          LEFT PANEL — Deep indigo branding canvas
+          LEFT PANEL — DS: gradient rouge profond
           ───────────────────────────────────────────── */}
       <div className="relative hidden w-[55%] overflow-hidden lg:block">
-        {/* Base gradient */}
+        {/* Base gradient DS: #4a0808 → #7a1414 → #c41e1e */}
         <div
           className="absolute inset-0"
           style={{
-            background:
-              'linear-gradient(160deg, hsl(226 70% 18%) 0%, hsl(226 70% 30%) 40%, hsl(234 62% 38%) 100%)',
+            background: 'linear-gradient(160deg, #4a0808 0%, #7a1414 40%, #c41e1e 100%)',
           }}
         />
 
@@ -219,9 +218,9 @@ export default function LoginPage() {
         <GridNode x="70%" y="78%" delay={2.4} />
         <GridNode x="30%" y="35%" delay={0.2} />
 
-        {/* Radial glow spots */}
-        <div className="absolute left-1/4 top-1/3 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue-400/[0.06] blur-[100px]" />
-        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full bg-indigo-300/[0.05] blur-[80px]" />
+        {/* Radial glow spots — DS: warm amber + rose */}
+        <div className="absolute left-1/4 top-1/3 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px]" style={{ background: 'rgba(255,180,100,0.10)' }} />
+        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full blur-[80px]" style={{ background: 'rgba(255,120,100,0.08)' }} />
 
         {/* Content layer */}
         <div className="relative z-10 flex h-full flex-col justify-between p-12 xl:p-16">
@@ -235,8 +234,8 @@ export default function LoginPage() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-sm">
                 <Logo variant="icon" size="sm" className="[&_svg]:text-white" />
               </div>
-              <span className="text-xl font-bold tracking-tight text-white">
-                Smart<span className="text-blue-300">-HR</span>
+              <span className="text-xl font-extrabold tracking-tight text-white">
+                Smart<span className="text-[#fecaca]">-HR</span>
               </span>
             </div>
           </motion.div>
@@ -254,15 +253,15 @@ export default function LoginPage() {
                 Plateforme SIRH Intelligent
               </div>
 
-              <h1 className="text-[2.75rem] font-bold leading-[1.1] tracking-tight text-white xl:text-5xl">
+              <h1 className="text-[2.75rem] font-extrabold leading-[1.1] tracking-tight text-white xl:text-5xl">
                 La GRH augmentée
                 <br />
                 par l'
-                <span className="bg-gradient-to-r from-blue-300 to-indigo-200 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#FFF3E0] to-[#fecaca] bg-clip-text text-transparent">
                   Intelligence
                 </span>
                 <br />
-                <span className="bg-gradient-to-r from-blue-300 to-indigo-200 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#FFF3E0] to-[#fecaca] bg-clip-text text-transparent">
                   Artificielle
                 </span>
               </h1>
@@ -335,7 +334,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form card surface */}
-          <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.3)]">
+          <div className="rounded-2xl border border-[hsl(34,30%,86%)] bg-card p-8 shadow-[0_8px_30px_rgb(80,30,10,0.06)]">
             {/* Header */}
             <div className="mb-7 space-y-1.5">
               <h2 className="text-2xl font-bold tracking-tight text-foreground">

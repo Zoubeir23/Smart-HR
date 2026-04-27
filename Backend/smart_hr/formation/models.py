@@ -33,7 +33,7 @@ class Meeting(TimeStampedModel):
     title = models.CharField(max_length=255)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField()
-    meeting_link = models.URLField(null=True, blank=True)
+    meeting_link = models.URLField(null=True, blank=True)  # noqa: DJ001
     status = models.CharField(
         max_length=50,
         choices=Status.choices,

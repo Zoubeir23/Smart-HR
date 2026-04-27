@@ -4,7 +4,10 @@ from smart_hr.conge.models import LeaveRequest
 
 
 class LeaveRequestSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    employee_name = serializers.CharField(
+        source="employee.user.get_full_name",
+        read_only=True,
+    )
     duration_days = serializers.IntegerField(read_only=True)
 
     class Meta:
@@ -22,4 +25,4 @@ class LeaveRequestSerializer(serializers.ModelSerializer):
             "duration_days",
             "created_at",
         ]
-        read_only_fields = ["status", "approved_by", "created_at"]
+        read_only_fields = ["status", "approved_by", "employee", "created_at"]

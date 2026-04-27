@@ -1,4 +1,3 @@
-# ruff: noqa: ERA001, E501
 """Base settings to build other settings files upon."""
 
 import ssl
@@ -49,7 +48,6 @@ LOCALE_PATHS = [str(BASE_DIR / "locale")]
 DATABASES = {"default": env.db("DATABASE_URL")}
 DATABASES["default"]["ATOMIC_REQUESTS"] = True
 # https://docs.djangoproject.com/en/stable/ref/settings/#std:setting-DEFAULT_AUTO_FIELD
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # URLS
 # ------------------------------------------------------------------------------
@@ -102,6 +100,7 @@ LOCAL_APPS = [
     "smart_hr.ai",
     "smart_hr.recruitment",
     "smart_hr.ai_engine",
+    "smart_hr.ai_agents",
 ]
 # https://docs.djangoproject.com/en/dev/ref/settings/#installed-apps
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
@@ -140,7 +139,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator", "OPTIONS": {"min_length": 12}},
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "OPTIONS": {"min_length": 12},
+    },
     {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
@@ -242,13 +244,22 @@ EMAIL_BACKEND = env(
 )
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-timeout
 EMAIL_TIMEOUT = 5
+DEFAULT_FROM_EMAIL = env(
+    "DJANGO_DEFAULT_FROM_EMAIL",
+    default="Smart-HR <noreply@smart-hr.com>",
+)
+EMAIL_SUBJECT_PREFIX = "[Smart-HR] "
+
+# URL publique du frontend (utilisée dans les liens des emails)
+SITE_URL = env("SITE_URL", default="http://localhost:3000")
 
 # ADMIN
 # ------------------------------------------------------------------------------
 # Django Admin URL.
 ADMIN_URL = "admin/"
 # https://docs.djangoproject.com/en/dev/ref/settings/#admins
-ADMINS = ['"Zoubeir Ibrahima Amed" <Zoubeiribrahima@gmail.com>']
+_admin_email = env("DJANGO_ADMIN_EMAIL", default="")
+ADMINS = [(env("DJANGO_ADMIN_NAME", default="Admin"), _admin_email)] if _admin_email else []
 # https://docs.djangoproject.com/en/dev/ref/settings/#managers
 MANAGERS = ADMINS
 # https://cookiecutter-django.readthedocs.io/en/latest/settings.html#other-environment-settings
@@ -332,11 +343,11 @@ CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 # ------------------------------------------------------------------------------
 ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_LOGIN_METHODS = {"username"}
+ACCOUNT_LOGIN_METHODS = {"email"}
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_SIGNUP_FIELDS = ["email*", "username*", "password1*", "password2*"]
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 # https://docs.allauth.org/en/latest/account/configuration.html
-ACCOUNT_EMAIL_VERIFICATION = "mandatory"
+ACCOUNT_EMAIL_VERIFICATION = "none"
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_ADAPTER = "smart_hr.users.adapters.AccountAdapter"
 # https://docs.allauth.org/en/latest/account/forms.html
@@ -350,12 +361,8 @@ SOCIALACCOUNT_FORMS = {"signup": "smart_hr.users.forms.UserSocialSignupForm"}
 # Django REST Framework
 # ------------------------------------------------------------------------------
 REST_FRAMEWORK = {
-    "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
-    ),
-    "DEFAULT_PERMISSION_CLASSES": (
-        "rest_framework.permissions.IsAuthenticated",
-    ),
+    "DEFAULT_AUTHENTICATION_CLASSES": ("rest_framework_simplejwt.authentication.JWTAuthentication",),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.IsAuthenticated",),
     "DEFAULT_FILTER_BACKENDS": [
         "rest_framework.filters.SearchFilter",
         "rest_framework.filters.OrderingFilter",
@@ -367,8 +374,11 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/day",
-        "user": "1000/day",
+        "anon": "100/hour",
+        "user": "1000/hour",
+        "otp_verify": "10/hour",
+        "otp_resend": "3/hour",
+        "registration": "5/hour",
     },
 }
 
@@ -396,7 +406,8 @@ REST_AUTH = {
     "USE_JWT": True,
     "JWT_AUTH_COOKIE": "smart-hr-auth",
     "JWT_AUTH_REFRESH_COOKIE": "smart-hr-refresh-token",
-    "JWT_AUTH_HTTPONLY": False,  # allow JS to read the cookie if needed
+    "JWT_AUTH_HTTPONLY": True,
+    "USER_DETAILS_SERIALIZER": "smart_hr.users.serializers.UserSerializer",
 }
 
 # Your stuff...

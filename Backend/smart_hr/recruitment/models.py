@@ -20,11 +20,19 @@ class JobOffer(TimeStampedModel):
     title = models.CharField(max_length=255)
     department = models.CharField(max_length=150)
     location = models.CharField(max_length=200, blank=True)
-    job_type = models.CharField(max_length=20, choices=JobType.choices, default=JobType.FULL_TIME)
+    job_type = models.CharField(
+        max_length=20,
+        choices=JobType.choices,
+        default=JobType.FULL_TIME,
+    )
     description = models.TextField()
     requirements = models.TextField(blank=True, help_text="One requirement per line")
     salary_range = models.CharField(max_length=100, blank=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -56,7 +64,11 @@ class Application(TimeStampedModel):
         ACCEPTED = "accepted", "Accepté"
         REJECTED = "rejected", "Rejeté"
 
-    job_offer = models.ForeignKey(JobOffer, on_delete=models.CASCADE, related_name="applications")
+    job_offer = models.ForeignKey(
+        JobOffer,
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
     candidate = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -67,8 +79,14 @@ class Application(TimeStampedModel):
         validators=[validate_cv_extension, validate_file_size],
     )
     cover_letter = models.TextField(blank=True)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+    )
     matching_score = models.FloatField(null=True, blank=True)
+    skills_extracted = models.JSONField(default=list, blank=True)
+    ai_summary = models.TextField(blank=True)
 
     class Meta:
         verbose_name = "Candidature"

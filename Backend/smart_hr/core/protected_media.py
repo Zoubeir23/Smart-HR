@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 
 from django.conf import settings
 from django.http import FileResponse
@@ -18,13 +18,15 @@ class ProtectedMediaView(View):
     def get(self, request, path):
         user = self._resolve_user(request)
         if not user or not user.is_authenticated:
-            raise PermissionDenied("Authentification requise pour accéder aux fichiers.")
+            raise PermissionDenied(
+                "Authentification requise pour accéder aux fichiers.",
+            )
 
         full_path = self._safe_path(path)
-        if not os.path.isfile(full_path):
+        if not full_path.is_file():
             raise Http404
 
-        return FileResponse(open(full_path, "rb"))  # noqa: WPS515
+        return FileResponse(full_path.open("rb"))
 
     @staticmethod
     def _resolve_user(request):
@@ -37,9 +39,9 @@ class ProtectedMediaView(View):
             return None
 
     @staticmethod
-    def _safe_path(path: str) -> str:
-        media_root = os.path.realpath(settings.MEDIA_ROOT)
-        full = os.path.realpath(os.path.join(media_root, path))
-        if not full.startswith(media_root + os.sep):
+    def _safe_path(path: str) -> Path:
+        media_root = Path(settings.MEDIA_ROOT).resolve()
+        full = (media_root / path).resolve()
+        if not str(full).startswith(str(media_root) + "/"):
             raise Http404
         return full

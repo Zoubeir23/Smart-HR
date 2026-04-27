@@ -61,12 +61,20 @@ class Employee(TimeStampedModel):
     )
     hire_date = models.DateField(null=True, blank=True)
     salary = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ACTIVE,
+    )
     date_of_birth = models.DateField(null=True, blank=True)
     cin = models.CharField(max_length=50, blank=True)
     address = models.TextField(blank=True)
     emergency_contact = models.CharField(max_length=200, blank=True)
-    churn_risk = models.FloatField(null=True, blank=True, help_text="Score de risque 0-100")
+    churn_risk = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Score de risque 0-100",
+    )
 
     class Meta:
         verbose_name = "Employé"

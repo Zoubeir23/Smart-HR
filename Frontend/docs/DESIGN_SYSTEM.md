@@ -1,6 +1,6 @@
 # Smart-HR Design System
 
-**Version :** 1.0 — Refonte professionnelle SaaS RH  
+**Version :** 1.0 — Refonte professionnelle SaaS RH
 **Objectif :** Interface crédible pour mémoire de licence + publication scientifique
 
 ---

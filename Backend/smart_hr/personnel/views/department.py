@@ -7,6 +7,8 @@ from smart_hr.users.permissions import IsRH
 
 
 class DepartmentViewSet(viewsets.ModelViewSet):
+    """API CRUD des départements de l'entreprise."""
+
     queryset = Department.objects.all()
     serializer_class = DepartmentSerializer
     permission_classes = [IsRH]

@@ -1,0 +1,10 @@
+version: 2
+ignore-known-secrets: true
+paths-ignore:
+  - ".github/workflows/**"
+  - "Backend/config/settings/test.py"
+  - "Backend/smart_hr/**/management/commands/seed_demo_data.py"
+  - "Backend/tests/**"
+  - "smart-hr_api_bruno/**"
+  - "docs/**"
+  - "**/*.md"

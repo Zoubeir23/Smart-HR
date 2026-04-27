@@ -47,14 +47,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           'lg:ml-0' // Reset margin on mobile since sidebar is overlay
         )}
         style={{
-          marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024 
-            ? (sidebarCollapsed ? 72 : 280) 
+          marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024
+            ? (sidebarCollapsed ? 72 : 280)
             : 0
         }}
       >
-        <Navbar 
-          onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
-          showMenuButton 
+        <Navbar
+          onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          showMenuButton
         />
         <div className="flex-1 p-6">
           <motion.div

@@ -9,8 +9,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
-import { User, Palette, Bell, Shield, Mail, Phone, Moon, Sun } from 'lucide-react';
+import { User, Palette, Bell, Shield, Mail, Phone, Moon, Sun, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { authService } from '@/services/authService';
+import { toast } from 'sonner';
 
 type SettingsSection = 'profil' | 'apparence' | 'notifications' | 'securite';
 
@@ -35,7 +37,7 @@ const roleLabels: Record<string, string> = {
 };
 
 export default function SettingsPage() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
   const [activeSection, setActiveSection] = useState<SettingsSection>('profil');
@@ -43,9 +45,70 @@ export default function SettingsPage() {
   const [pushNotifications, setPushNotifications] = useState(false);
   const [churnAlerts, setChurnAlerts] = useState(true);
 
+  const [profileForm, setProfileForm] = useState({
+    first_name: user?.first_name ?? '',
+    last_name: user?.last_name ?? '',
+    email: user?.email ?? '',
+    tel: user?.tel ?? '',
+  });
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+
+  const handleProfileSave = async () => {
+    if (!profileForm.first_name || !profileForm.last_name) {
+      toast.error('Le prénom et le nom sont obligatoires.');
+      return;
+    }
+    setIsSavingProfile(true);
+    try {
+      await updateUser({
+        first_name: profileForm.first_name,
+        last_name: profileForm.last_name,
+        tel: profileForm.tel,
+      });
+      toast.success('Profil mis à jour avec succès.');
+    } catch {
+      toast.error('Erreur lors de la mise à jour du profil.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error('Veuillez remplir tous les champs.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Les nouveaux mots de passe ne correspondent pas.');
+      return;
+    }
+    if (newPassword.length < 8) {
+      toast.error('Le mot de passe doit contenir au moins 8 caractères.');
+      return;
+    }
+    setIsChangingPassword(true);
+    try {
+      await authService.changePassword(currentPassword, newPassword);
+      toast.success('Mot de passe mis à jour avec succès.');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { old_password?: string[]; new_password2?: string[] } } };
+      const detail =
+        err.response?.data?.old_password?.[0] ||
+        err.response?.data?.new_password2?.[0] ||
+        'Erreur lors de la mise à jour du mot de passe.';
+      toast.error(detail);
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
 
   const userInitials = user
     ? `${user.first_name?.charAt(0) || ''}${user.last_name?.charAt(0) || ''}`
@@ -90,7 +153,8 @@ export default function SettingsPage() {
                       <Label htmlFor="first-name">Prénom</Label>
                       <Input
                         id="first-name"
-                        defaultValue={user?.first_name || ''}
+                        value={profileForm.first_name}
+                        onChange={(e) => setProfileForm((prev) => ({ ...prev, first_name: e.target.value }))}
                         placeholder="Votre prénom"
                       />
                     </div>
@@ -98,7 +162,8 @@ export default function SettingsPage() {
                       <Label htmlFor="last-name">Nom</Label>
                       <Input
                         id="last-name"
-                        defaultValue={user?.last_name || ''}
+                        value={profileForm.last_name}
+                        onChange={(e) => setProfileForm((prev) => ({ ...prev, last_name: e.target.value }))}
                         placeholder="Votre nom"
                       />
                     </div>
@@ -113,8 +178,9 @@ export default function SettingsPage() {
                     <Input
                       id="email"
                       type="email"
-                      defaultValue={user?.email || ''}
-                      placeholder="votre@email.com"
+                      value={profileForm.email}
+                      readOnly
+                      className="bg-muted cursor-not-allowed"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -127,7 +193,8 @@ export default function SettingsPage() {
                     <Input
                       id="phone"
                       type="tel"
-                      defaultValue="+221 77 123 45 67"
+                      value={profileForm.tel}
+                      onChange={(e) => setProfileForm((prev) => ({ ...prev, tel: e.target.value }))}
                       placeholder="+221 XX XXX XX XX"
                     />
                   </div>
@@ -143,8 +210,13 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button className="bg-primary text-primary-foreground">
-                    Modifier
+                  <Button
+                    className="bg-primary text-primary-foreground"
+                    onClick={handleProfileSave}
+                    disabled={isSavingProfile}
+                  >
+                    {isSavingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Sauvegarder
                   </Button>
                 </div>
               </CardContent>
@@ -314,7 +386,12 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button className="bg-primary text-primary-foreground">
+                  <Button
+                    className="bg-primary text-primary-foreground"
+                    onClick={handlePasswordChange}
+                    disabled={isChangingPassword}
+                  >
+                    {isChangingPassword && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Mettre à jour le mot de passe
                   </Button>
                 </div>

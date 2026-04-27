@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>
+      {% block email_title %}
+        Smart-HR
+      {% endblock email_title %}
+    </title>
+    <style>
+      /* ── Reset email-safe ── */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        background-color: #f0ede8;
+        margin: 0;
+        padding: 0;
+        -webkit-font-smoothing: antialiased;
+        color: #1c1410;
+      }
+
+      /* ── Wrapper principal ── */
+      .email-outer {
+        background-color: #f0ede8;
+        padding: 2rem 1rem;
+      }
+
+      .email-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        background: #ffffff;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 24px rgba(8, 17, 30, 0.12), 0 1px 4px rgba(8, 17, 30, 0.08);
+      }
+
+      /* ── En-tête Navy ── */
+      .email-header {
+        background: linear-gradient(135deg, #08111e 0%, #0a1628 60%, #0d1f3c 100%);
+        padding: 2.25rem 2rem 1.75rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+      }
+
+      /* Reflet lumineux en haut à gauche */
+      .email-header::before {
+        content: '';
+        position: absolute;
+        top: -80px;
+        left: -80px;
+        width: 300px;
+        height: 300px;
+        background: radial-gradient(circle, rgba(214, 40, 40, 0.12) 0%, transparent 70%);
+        pointer-events: none;
+      }
+
+      /* Reflet rouge en bas à droite */
+      .email-header::after {
+        content: '';
+        position: absolute;
+        bottom: -60px;
+        right: -60px;
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, rgba(214, 40, 40, 0.08) 0%, transparent 70%);
+        pointer-events: none;
+      }
+
+      /* ── Logo texte Smart-HR ── */
+      .logo-container {
+        position: relative;
+        z-index: 10;
+        display: inline-block;
+      }
+
+      .logo-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        padding: 0.6rem 1.25rem;
+      }
+
+      .logo-icon {
+        width: 28px;
+        height: 28px;
+        background: linear-gradient(135deg, #D62828 0%, #c41e1e 100%);
+        border-radius: 7px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        color: white;
+        font-weight: 900;
+        flex-shrink: 0;
+      }
+
+      .logo-text {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #ffffff;
+        letter-spacing: -0.01em;
+      }
+
+      .logo-text span {
+        color: #D62828;
+      }
+
+      .logo-tagline {
+        display: block;
+        font-size: 0.7rem;
+        color: rgba(255, 255, 255, 0.45);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-top: 0.6rem;
+      }
+
+      /* Ligne décorative rouge ── */
+      .red-divider {
+        width: 40px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #D62828, transparent);
+        border-radius: 2px;
+        margin: 1rem auto 0;
+      }
+
+      /* ── Corps de l'email ── */
+      .email-content {
+        padding: 2.5rem 2rem;
+        background: #ffffff;
+      }
+
+      .email-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #08111e;
+        margin-bottom: 0.6rem;
+        line-height: 1.3;
+      }
+
+      .email-subtitle {
+        font-size: 0.9rem;
+        color: #6b7280;
+        margin-bottom: 1.5rem;
+        line-height: 1.65;
+      }
+
+      /* ── Carte identifiants / info ── */
+      .credentials-card {
+        background: #fdfbf7;
+        border: 1.5px solid #e8e3db;
+        border-radius: 12px;
+        padding: 1.75rem;
+        margin: 1.5rem 0;
+      }
+
+      .credentials-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #3d3a34;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 1.25rem;
+      }
+
+      .credential-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.875rem 1rem;
+        background: #ffffff;
+        border: 1px solid #e5e0d8;
+        border-radius: 10px;
+        margin-bottom: 0.75rem;
+      }
+
+      .credential-row:last-child {
+        margin-bottom: 0;
+      }
+
+      .credential-icon {
+        width: 34px;
+        height: 34px;
+        background: rgba(214, 40, 40, 0.08);
+        border: 1px solid rgba(214, 40, 40, 0.2);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        flex-shrink: 0;
+      }
+
+      .credential-label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        color: #9b9589;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 2px;
+      }
+
+      .credential-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1c1410;
+      }
+
+      .credential-value.monospace {
+        font-family: 'Courier New', 'Lucida Console', monospace;
+        color: #D62828;
+        letter-spacing: 0.06em;
+      }
+
+      /* ── Alerte ── */
+      .alert {
+        padding: 1rem 1.25rem;
+        border-radius: 10px;
+        margin: 1.25rem 0;
+        font-size: 0.85rem;
+        line-height: 1.55;
+      }
+
+      .alert-warning {
+        background: #fff5f5;
+        border: 1px solid rgba(214, 40, 40, 0.2);
+        color: #7f1d1d;
+      }
+
+      .alert-warning strong {
+        color: #D62828;
+      }
+
+      .alert-success {
+        background: #f0fdf4;
+        border: 1px solid rgba(22, 163, 74, 0.2);
+        color: #14532d;
+      }
+
+      .alert-success strong {
+        color: #16a34a;
+      }
+
+      .alert-neutral {
+        background: #f8f7f4;
+        border: 1px solid #e5e0d8;
+        color: #4b4845;
+      }
+
+      /* ── Statut congé ── */
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+
+      .status-approved {
+        background: rgba(22, 163, 74, 0.1);
+        color: #15803d;
+        border: 1px solid rgba(22, 163, 74, 0.25);
+      }
+
+      .status-rejected {
+        background: rgba(214, 40, 40, 0.08);
+        color: #b91c1c;
+        border: 1px solid rgba(214, 40, 40, 0.2);
+      }
+
+      /* ── Liste de fonctionnalités ── */
+      .feature-list {
+        background: #fdfbf7;
+        border: 1px solid #e8e3db;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+      }
+
+      .feature-list-title {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #3d3a34;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 1.1rem;
+      }
+
+      .feature-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 0.9rem;
+      }
+
+      .feature-item:last-child {
+        margin-bottom: 0;
+      }
+
+      .feature-dot {
+        width: 22px;
+        height: 22px;
+        min-width: 22px;
+        background: rgba(214, 40, 40, 0.1);
+        border: 1px solid rgba(214, 40, 40, 0.25);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        color: #D62828;
+        font-weight: 700;
+        margin-top: 1px;
+      }
+
+      .feature-text-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #1c1410;
+        margin-bottom: 0.15rem;
+      }
+
+      .feature-text-desc {
+        font-size: 0.8rem;
+        color: #6b7280;
+        line-height: 1.45;
+      }
+
+      /* ── Séparateur ── */
+      .divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent, #e8e3db 30%, #e8e3db 70%, transparent);
+        margin: 1.75rem 0;
+      }
+
+      /* ── Bouton CTA ── */
+      .btn-wrapper {
+        text-align: center;
+        margin: 2rem 0;
+      }
+
+      .btn {
+        display: inline-block;
+        background: linear-gradient(135deg, #D62828 0%, #c41e1e 100%);
+        color: #ffffff !important;
+        font-size: 0.875rem;
+        font-weight: 700;
+        text-decoration: none;
+        padding: 0.875rem 2.25rem;
+        border-radius: 10px;
+        letter-spacing: 0.01em;
+        box-shadow: 0 4px 14px rgba(214, 40, 40, 0.35);
+      }
+
+      /* ── Pied de page ── */
+      .email-footer {
+        padding: 1.5rem 2rem;
+        background: #08111e;
+        text-align: center;
+      }
+
+      .footer-brand {
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.7);
+        letter-spacing: 0.03em;
+        margin-bottom: 0.5rem;
+      }
+
+      .footer-brand span {
+        color: #D62828;
+      }
+
+      .footer-text {
+        font-size: 0.72rem;
+        color: rgba(255, 255, 255, 0.3);
+        line-height: 1.6;
+      }
+
+      .footer-text a {
+        color: rgba(255, 255, 255, 0.4);
+        text-decoration: none;
+      }
+
+      /* ── Responsive ── */
+      @media only screen and (max-width: 600px) {
+        .email-wrapper {
+          border-radius: 0;
+        }
+
+        .email-content {
+          padding: 1.5rem;
+        }
+
+        .credentials-card {
+          padding: 1.25rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-outer">
+      <div class="email-wrapper">
+        <!-- ── En-tête ── -->
+        <div class="email-header">
+          <div class="logo-container">
+            <div class="logo-badge">
+              <div class="logo-icon">S</div>
+              <span class="logo-text">Smart<span>-HR</span></span>
+            </div>
+          </div>
+          <span class="logo-tagline">{{ company_tagline }}</span>
+          <div class="red-divider"></div>
+        </div>
+        <!-- ── Contenu ── -->
+        <div class="email-content">
+          {% block email_content %}
+          {% endblock email_content %}
+        </div>
+        <!-- ── Pied de page ── -->
+        <div class="email-footer">
+          <div class="footer-brand">
+            Smart<span>-HR</span>
+          </div>
+          <div class="footer-text">
+            © {% now "Y" %} Smart-HR · Votre SIRH Intelligent
+            <br />
+            <a href="{{ site_url }}">{{ site_url }}</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

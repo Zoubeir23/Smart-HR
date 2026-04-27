@@ -29,7 +29,7 @@ python manage.py seed
 ```bash
 cd Backend/src
 python manage.py runserver
-# API : http://localhost:8000/api
+# API : http://localhost:8000/api/v1
 ```
 
 ### 2. Frontend (Vite)
@@ -44,7 +44,7 @@ npm run dev
 
 **Frontend** (`.env` dans `Frontend/`) :
 ```
-VITE_API_URL=http://localhost:8000/api
+VITE_API_URL=http://localhost:8000/api/v1
 ```
 
 **Backend** : PostgreSQL configuré dans `gestion_taches/settings.py` (ou `.env`).

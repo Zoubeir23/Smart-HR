@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Search,
   Plus,
@@ -17,9 +17,6 @@ import {
   Mail,
   MapPin,
   AlertTriangle,
-  Sparkles,
-  TrendingUp,
-  MoreVertical
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import EmployeeCard from '@/components/employees/EmployeeCard';
@@ -50,7 +47,7 @@ import { useQuery } from '@tanstack/react-query';
 /* ─────────── Constants ─────────── */
 
 const statuses = [
-  { value: 'all', label: 'Tous', icon: Users, color: 'text-primary', bg: 'bg-secondary/10' },
+  { value: 'all', label: 'Tous', icon: Users, color: 'text-primary', bg: 'bg-primary/10' },
   { value: 'active', label: 'Actifs', icon: UserCheck, color: 'text-success', bg: 'bg-success/10' },
   { value: 'inactive', label: 'Inactifs', icon: UserX, color: 'text-destructive', bg: 'bg-destructive/10' },
   { value: 'on_leave', label: 'En congé', icon: Clock, color: 'text-warning', bg: 'bg-warning/10' },
@@ -87,6 +84,7 @@ type SortDir = 'asc' | 'desc';
    ═══════════════════════════════════════════ */
 
 export default function EmployeeListPage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('Tous');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -110,7 +108,7 @@ export default function EmployeeListPage() {
   // ─── Filtering & Sorting ──────────────
   const filteredEmployees = useMemo(() => {
     const query = searchQuery.toLowerCase();
-    let result = employees.filter((employee) => {
+    const result = employees.filter((employee) => {
       const matchesSearch =
         !query ||
         employee.user.first_name.toLowerCase().includes(query) ||
@@ -194,30 +192,24 @@ export default function EmployeeListPage() {
     <DashboardLayout>
       <motion.div variants={container} initial="hidden" animate="visible" className="space-y-6">
 
-        {/* ────── DASHBOARD EDITORIAL HEADER ────── */}
-        <motion.div variants={item} className="flex flex-col sm:flex-row justify-between sm:items-end gap-4">
-          <div>
-            <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-foreground">Effectifs</h3>
-            <p className="text-muted-foreground font-medium mt-1">Vue d'ensemble de votre capital humain</p>
+        {/* ────── HEADER ────── */}
+        <motion.div variants={item} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Employés</h1>
+            <p className="text-sm text-muted-foreground">
+              Gérez et consultez les informations de vos {stats.total} collaborateurs
+            </p>
           </div>
-          <div className="flex items-center gap-4">
-            <div className="flex gap-6 mr-4 border-r border-border pr-6 hidden md:flex">
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-primary uppercase tracking-widest">Total Employés</p>
-                <p className="text-3xl font-extrabold leading-none mt-1">{stats.total}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-bold text-success uppercase tracking-widest">Nouvelles recrues</p>
-                <p className="text-3xl font-extrabold text-success leading-none mt-1">12</p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="gap-2 bg-background shadow-sm hover:shadow-md transition-shadow">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2">
               <Download className="h-4 w-4" />
-              <span className="hidden sm:inline">Exporter</span>
+              Exporter
             </Button>
-            <Button size="sm" className="gap-2 bg-gradient-primary text-primary-foreground shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">Nouvel employé</span>
+            <Button asChild size="sm" className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
+              <Link to="/employees/create">
+                <Plus className="h-4 w-4" />
+                Nouvel employé
+              </Link>
             </Button>
           </div>
         </motion.div>
@@ -257,7 +249,7 @@ export default function EmployeeListPage() {
                     className={cn(
                       'flex items-center gap-3 rounded-lg border p-4 text-left transition-all',
                       isSelected
-                        ? 'border-secondary/40 bg-secondary/5 shadow-sm'
+                        ? 'border-primary/40 bg-primary/5 shadow-sm'
                         : 'border-border bg-card hover:border-border hover:shadow-sm'
                     )}
                   >
@@ -371,97 +363,109 @@ export default function EmployeeListPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="overflow-hidden rounded-2xl border border-border/50 bg-card shadow-sm"
+                  className="overflow-hidden rounded-lg border border-border bg-card"
                 >
-                  <Table className="w-full">
+                  <Table>
                     <TableHeader>
-                      <TableRow className="bg-muted/40 hover:bg-muted/40 border-b border-border/50">
-                        <TableHead className="px-8 py-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                          <button onClick={() => toggleSort('name')} className="flex items-center gap-1.5 hover:text-foreground">
+                      <TableRow className="hover:bg-transparent">
+                        <TableHead>
+                          <button
+                            onClick={() => toggleSort('name')}
+                            className="flex items-center gap-1.5 font-semibold"
+                          >
                             Employé
-                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'name' ? 'text-primary' : 'opacity-50')} />
+                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'name' ? 'text-primary' : 'text-muted-foreground/50')} />
                           </button>
                         </TableHead>
-                        <TableHead className="px-8 py-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Poste</TableHead>
-                        <TableHead className="px-8 py-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                          <button onClick={() => toggleSort('department')} className="flex items-center gap-1.5 hover:text-foreground">
+                        <TableHead>
+                          <button
+                            onClick={() => toggleSort('department')}
+                            className="flex items-center gap-1.5 font-semibold"
+                          >
                             Département
-                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'department' ? 'text-primary' : 'opacity-50')} />
+                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'department' ? 'text-primary' : 'text-muted-foreground/50')} />
                           </button>
                         </TableHead>
-                        <TableHead className="px-8 py-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Statut</TableHead>
-                        <TableHead className="px-8 py-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground text-right">
-                          <button onClick={() => toggleSort('risk')} className="flex items-center gap-1.5 justify-end w-full hover:text-foreground">
-                            IA : Risque de Départ
-                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'risk' ? 'text-primary' : 'opacity-50')} />
+                        <TableHead>Poste</TableHead>
+                        <TableHead>Statut</TableHead>
+                        <TableHead>
+                          <button
+                            onClick={() => toggleSort('risk')}
+                            className="flex items-center gap-1.5 font-semibold"
+                          >
+                            Risque
+                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'risk' ? 'text-primary' : 'text-muted-foreground/50')} />
                           </button>
                         </TableHead>
-                        <TableHead className="px-8 py-5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground" />
+                        <TableHead className="w-[80px]" />
                       </TableRow>
                     </TableHeader>
-                    <TableBody className="divide-y divide-border/50">
+                    <TableBody>
                       {filteredEmployees.map((employee) => {
                         const avatarBg = getAvatarColor(`${employee.user.first_name}${employee.user.last_name}`);
                         const dept = (employee as { department_name?: string }).department_name ?? employee.department;
                         const pos = (employee as { position_title?: string }).position_title ?? employee.position;
 
-                        let riskLabel = 'Faible';
-                        let riskColor = 'text-success border-success/20 bg-success/10';
-                        if (employee.churn_risk !== undefined) {
-                           if (employee.churn_risk >= 60) { riskLabel = 'Élevé'; riskColor = 'text-destructive border-destructive/20 bg-destructive/10'; }
-                           else if (employee.churn_risk >= 30) { riskLabel = 'Moyen'; riskColor = 'text-warning border-warning/20 bg-warning/10'; }
-                        }
-
                         return (
-                          <TableRow key={employee.id} className="group hover:bg-muted/30 transition-colors duration-200 border-none">
-                            <TableCell className="px-8 py-6">
-                              <div className="flex items-center gap-4">
-                                <div className={cn('flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-bold text-white ring-2 ring-border', avatarBg)}>
+                          <TableRow key={employee.id} className="group cursor-pointer" onClick={() => navigate(`/employees/${employee.id}`)}>
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white', avatarBg)}>
                                   {employee.user.first_name[0]}{employee.user.last_name[0]}
                                 </div>
-                                <div>
-                                  <p className="font-bold text-sm text-foreground">
+                                <div className="min-w-0">
+                                  <p className="truncate font-medium">
                                     {employee.user.first_name} {employee.user.last_name}
                                   </p>
-                                  <p className="text-xs text-muted-foreground">{employee.user.email}</p>
+                                  <p className="truncate text-xs text-muted-foreground">{employee.user.email}</p>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="px-8 py-6">
-                              <p className="text-sm font-semibold text-muted-foreground">{pos}</p>
-                            </TableCell>
-                            <TableCell className="px-8 py-6">
-                              <span className="text-[10px] px-3 py-1 rounded-full bg-primary/10 text-primary font-bold uppercase tracking-tight">
+                            <TableCell>
+                              <div className="flex items-center gap-1.5 text-sm">
+                                <MapPin className="h-3.5 w-3.5 text-muted-foreground/60" />
                                 {dept}
-                              </span>
-                            </TableCell>
-                            <TableCell className="px-8 py-6">
-                              <div className="flex items-center gap-2">
-                                <span className={cn('w-2 h-2 rounded-full',
-                                    employee.status === 'active' ? 'bg-success' :
-                                    employee.status === 'inactive' ? 'bg-destructive' : 'bg-warning'
-                                )}></span>
-                                <span className={cn('text-xs font-bold uppercase tracking-tighter',
-                                    employee.status === 'active' ? 'text-success' :
-                                    employee.status === 'inactive' ? 'text-destructive' : 'text-warning'
-                                )}>
-                                    {statusLabels[employee.status]}
-                                </span>
                               </div>
                             </TableCell>
-                            <TableCell className="px-8 py-6 text-right">
+                            <TableCell className="text-sm">{pos}</TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className={cn('text-xs', statusStyles[employee.status])}>
+                                {statusLabels[employee.status]}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
                               {employee.churn_risk !== undefined ? (
-                                <div className={cn('inline-flex items-center gap-2 px-3 py-1.5 rounded-full border', riskColor)}>
-                                  <Sparkles className="h-3 w-3" />
-                                  <span className="text-xs font-bold uppercase tracking-tighter">{riskLabel}</span>
+                                <div className="flex items-center gap-2">
+                                  <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
+                                    <div
+                                      className={cn(
+                                        'h-full rounded-full transition-all',
+                                        employee.churn_risk < 30 && 'bg-success',
+                                        employee.churn_risk >= 30 && employee.churn_risk < 60 && 'bg-warning',
+                                        employee.churn_risk >= 60 && 'bg-destructive'
+                                      )}
+                                      style={{ width: `${employee.churn_risk}%` }}
+                                    />
+                                  </div>
+                                  <span className={cn(
+                                    'text-xs font-semibold tabular-nums',
+                                    employee.churn_risk < 30 && 'text-success',
+                                    employee.churn_risk >= 30 && employee.churn_risk < 60 && 'text-warning',
+                                    employee.churn_risk >= 60 && 'text-destructive'
+                                  )}>
+                                    {employee.churn_risk}%
+                                  </span>
+                                  {employee.churn_risk >= 60 && (
+                                    <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-xs text-muted-foreground">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="px-8 py-6 text-right">
-                              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted">
-                                <MoreVertical className="h-4 w-4" />
+                            <TableCell>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100">
+                                <ChevronRight className="h-4 w-4" />
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -469,86 +473,9 @@ export default function EmployeeListPage() {
                       })}
                     </TableBody>
                   </Table>
-                  <div className="px-8 py-6 flex items-center justify-between border-t border-border/50 bg-muted/20">
-                    <p className="text-xs text-muted-foreground font-medium">Affichage de 1-{Math.min(filteredEmployees.length, 4)} sur {filteredEmployees.length} employés</p>
-                    <div className="flex gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-lg">
-                        <ChevronRight className="h-4 w-4 rotate-180" />
-                      </Button>
-                      <Button size="icon" className="h-8 w-8 bg-primary text-primary-foreground font-bold text-xs rounded-lg">1</Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted font-bold text-xs rounded-lg">2</Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted font-bold text-xs rounded-lg">3</Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-lg">
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {/* ────── AI INSIGHTS BENTO SECTION ────── */}
-            <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2">
-                <div className="col-span-1 md:col-span-2 bg-gradient-to-br from-indigo-600 to-indigo-800 p-8 rounded-2xl text-white relative overflow-hidden group shadow-lg">
-                    <div className="relative z-10 flex flex-col h-full">
-                        <div className="flex items-center gap-3 mb-6">
-                            <div className="bg-white/10 p-2 rounded-xl">
-                                <Sparkles className="h-5 w-5 text-emerald-300" />
-                            </div>
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-indigo-200">Insight IA du jour</span>
-                        </div>
-                        <h4 className="text-2xl font-extrabold tracking-tight mb-3">Optimisation de la rétention</h4>
-                        <p className="text-sm text-indigo-100 max-w-md leading-relaxed font-medium">
-                            Nos algorithmes ont détecté une corrélation entre le télétravail hybride et la satisfaction dans l'équipe Engineering. Envisagez de formaliser la charte pour stabiliser les scores de fidélité.
-                        </p>
-                        <div className="mt-8">
-                            <Button className="px-6 py-5 bg-white hover:bg-white/90 text-indigo-700 rounded-xl font-bold text-sm shadow-xl transition-all hover:scale-105 active:scale-95">
-                                Voir l'analyse complète
-                            </Button>
-                        </div>
-                    </div>
-                    {/* Abstract AI Shape */}
-                    <div className="absolute -right-10 -bottom-10 w-72 h-72 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
-                </div>
-
-                <div className="bg-card p-8 rounded-2xl shadow-sm border border-border flex flex-col justify-between">
-                    <div>
-                        <div className="flex items-center justify-between mb-6">
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Santé du Département</span>
-                            <TrendingUp className="h-5 w-5 text-primary" />
-                        </div>
-                        <div className="space-y-6">
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-foreground">Produit</p>
-                                    <span className="text-[10px] font-bold text-muted-foreground">80%</span>
-                                </div>
-                                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                    <div className="w-4/5 h-full bg-primary rounded-full"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-foreground">Engineering</p>
-                                    <span className="text-[10px] font-bold text-muted-foreground">60%</span>
-                                </div>
-                                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                    <div className="w-3/5 h-full bg-indigo-500 rounded-full"></div>
-                                </div>
-                            </div>
-                            <div>
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-xs font-bold text-foreground">Ventes</p>
-                                    <span className="text-[10px] font-bold text-muted-foreground">85%</span>
-                                </div>
-                                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                                    <div className="w-[85%] h-full bg-emerald-500 rounded-full"></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
           </>
         )}
       </motion.div>

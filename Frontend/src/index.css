@@ -1,54 +1,52 @@
 /* Smart-HR Design System v2.0
-   Primary:   Warm Cream  #FFF3E0  — HSL 37 100% 94%
-   Secondary: Deep Red    #D62828  — HSL 0 68% 50%
-   Sidebar:   Dark Navy   #08111e  — always dark */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+   Palette: Cream #FFF3E0 · Deep Red #D62828 · Navy Sidebar #08111e
+   Font: Plus Jakarta Sans (500 body, 700–800 headings) */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  /* ─────────────────────────────────────────────
-     LIGHT MODE
-     Background: warm cream  #FFF3E0
-     Cards: pure white — contrast on cream bg
-     Primary: cream  Secondary: deep red
-     ───────────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────
+     LIGHT MODE — Warm cream surface · Deep red action
+     ──────────────────────────────────────────────────── */
   :root {
-    /* Brand tokens */
-    --brand-cream: 37 100% 94%;          /* #FFF3E0 */
-    --brand-red: 0 68% 50%;              /* #D62828 */
-    --brand-red-dark: 0 72% 38%;         /* #c41e1e — darker red */
-    --brand-red-light: 0 80% 65%;        /* #e86060 — lighter red */
+    /* Brand anchors (raw hex — used in arbitrary Tailwind values & gradients) */
+    --brand-cream:    #FFF3E0;
+    --brand-red:      #D62828;
+    --brand-red-dark: #c41e1e;
+    --brand-red-light: #e86060;
+    --brand-navy-900: #08111e;
+    --brand-navy-800: #0a1628;
+    --brand-navy-700: #07101c;
 
-    /* Surfaces */
-    --background: 37 100% 94%;           /* #FFF3E0 — warm cream page */
-    --foreground: 15 20% 12%;            /* #1c1410 — warm dark brown text */
+    /* ── Surfaces ── */
+    --background: 37 100% 94%;          /* cream #FFF3E0 */
+    --foreground: 20 27% 9%;            /* ink #1c1410 */
 
-    --card: 0 0% 100%;                   /* #ffffff — white cards on cream */
-    --card-foreground: 15 20% 12%;
+    --card: 0 0% 100%;                  /* strict white cards */
+    --card-foreground: 20 27% 9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 15 20% 12%;
+    --popover-foreground: 20 27% 9%;
 
-    /* Primary — Warm Cream #FFF3E0 */
-    --primary: 37 100% 94%;              /* #FFF3E0 */
-    --primary-foreground: 0 72% 38%;     /* dark red on cream */
+    /* ── Primary = Deep Red #D62828 (action · CTAs · active nav) ── */
+    --primary: 0 69% 50%;               /* #D62828 */
+    --primary-foreground: 0 0% 100%;    /* white on red */
 
-    /* Secondary — Deep Red #D62828 */
-    --secondary: 0 68% 50%;              /* #D62828 */
-    --secondary-foreground: 0 0% 100%;   /* white on red */
+    /* ── Secondary = muted cream surface (subtle bg · chips) ── */
+    --secondary: 36 40% 91%;
+    --secondary-foreground: 20 27% 9%;
 
-    --muted: 36 40% 91%;                 /* warm light gray */
-    --muted-foreground: 20 12% 45%;      /* warm mid gray text */
+    --muted: 36 40% 91%;
+    --muted-foreground: 20 12% 45%;
 
-    --accent: 36 40% 91%;                /* same as muted */
-    --accent-foreground: 15 20% 12%;
+    --accent: 36 40% 91%;
+    --accent-foreground: 20 27% 9%;
 
-    /* Semantic */
-    --destructive: 0 68% 50%;            /* same as secondary red */
+    /* ── Semantic ── */
+    --destructive: 0 69% 50%;           /* #D62828 */
     --destructive-foreground: 0 0% 100%;
 
     --success: 160 84% 28%;
@@ -57,48 +55,51 @@
     --warning: 25 95% 53%;
     --warning-foreground: 0 0% 100%;
 
-    /* Chrome */
-    --border: 34 30% 86%;                /* warm cream border */
+    /* ── Chrome ── */
+    --border: 34 30% 86%;               /* warm gray border */
     --input: 34 30% 86%;
-    --ring: 0 68% 50%;                   /* red focus rings */
+    --ring: 0 69% 50%;                  /* red focus ring */
 
-    --radius: 0.5rem;
+    --radius: 0.5rem;                   /* 8px base */
 
-    /* Sidebar vars (mostly overridden by hardcoded styles) */
-    --sidebar-background: 220 30% 7%;
-    --sidebar-foreground: 220 15% 55%;
-    --sidebar-primary: 0 68% 50%;
+    /* ── Sidebar (light mode) — aligned with page surface ── */
+    --sidebar-background: 30 60% 97%;   /* same family as background */
+    --sidebar-foreground: 215 16% 47%;
+    --sidebar-primary: 0 69% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 14%;
-    --sidebar-accent-foreground: 220 10% 80%;
-    --sidebar-border: 220 20% 12%;
+    --sidebar-accent: 34 45% 92%;       /* subtle hover on light surface */
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 34 30% 86%;
     --sidebar-ring: 0 68% 50%;
 
-    /* Gradients */
+    /* ── Shadows — warm-tinted, never neutral gray ── */
+    --shadow-sm:   0 1px 2px 0 rgb(80 30 10 / 0.06);
+    --shadow-md:   0 4px 8px -1px rgb(80 30 10 / 0.10), 0 2px 4px -2px rgb(80 30 10 / 0.06);
+    --shadow-lg:   0 10px 20px -3px rgb(80 30 10 / 0.12), 0 4px 8px -4px rgb(80 30 10 / 0.06);
+    --shadow-xl:   0 20px 40px -8px rgb(80 30 10 / 0.18);
+    --shadow-glow: 0 0 20px -6px hsl(0 68% 50% / 0.22);    /* red glow */
+    --shadow-navy: 0 0 16px rgba(214, 40, 40, 0.45);         /* sidebar logo glow */
+
+    /* ── Gradients ── */
     --gradient-primary: linear-gradient(135deg, #D62828 0%, #e63c3c 100%);
     --gradient-accent:  linear-gradient(135deg, #D62828 0%, #c41e1e 100%);
     --gradient-warm:    linear-gradient(135deg, #FFF3E0 0%, #ffe0b2 100%);
     --gradient-success: linear-gradient(135deg, hsl(160 84% 28%) 0%, hsl(172 66% 35%) 100%);
     --gradient-card:    linear-gradient(180deg, #ffffff 0%, #FFF3E0 100%);
+    --gradient-sidebar: linear-gradient(180deg, #08111e 0%, #0a1628 50%, #07101c 100%);
 
-    /* Shadows — warm tones */
-    --shadow-sm: 0 1px 2px 0 rgb(80 30 10 / 0.06);
-    --shadow-md: 0 4px 8px -1px rgb(80 30 10 / 0.10), 0 2px 4px -2px rgb(80 30 10 / 0.06);
-    --shadow-lg: 0 10px 20px -3px rgb(80 30 10 / 0.12), 0 4px 8px -4px rgb(80 30 10 / 0.06);
-    --shadow-glow: 0 0 20px -6px hsl(0 68% 50% / 0.20);
-
-    /* Glass */
-    --glass-bg: hsl(0 0% 100% / 0.80);
+    /* ── Glass ── */
+    --glass-bg:     rgba(255, 255, 255, 0.80);
     --glass-border: hsl(34 30% 86% / 0.8);
   }
 
-  /* ─────────────────────────────────────────────
-     DARK MODE
-     Warm dark  — cream tints on dark surfaces
-     ───────────────────────────────────────────── */
+  /* ────────────────────────────────────────────────────
+     DARK MODE — Warm dark, not cool black
+     Sidebar stays the same navy (it's always dark)
+     ──────────────────────────────────────────────────── */
   .dark {
-    --background: 20 12% 7%;             /* very dark warm brown-black */
-    --foreground: 36 30% 92%;            /* warm cream-white text */
+    --background: 20 12% 7%;            /* warm dark — hsl(20 12% 7%) */
+    --foreground: 36 30% 92%;           /* warm near-white */
 
     --card: 20 10% 11%;
     --card-foreground: 36 30% 92%;
@@ -106,19 +107,19 @@
     --popover: 20 10% 11%;
     --popover-foreground: 36 30% 92%;
 
-    --primary: 37 80% 86%;               /* muted cream for dark bg */
-    --primary-foreground: 0 72% 35%;     /* dark red on muted cream */
+    --primary: 0 68% 55%;               /* slightly lighter red on dark bg */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 68% 55%;              /* brighter red for dark bg */
-    --secondary-foreground: 0 0% 100%;
+    --secondary: 20 10% 16%;
+    --secondary-foreground: 36 30% 92%;
 
     --muted: 20 10% 16%;
     --muted-foreground: 30 10% 52%;
 
     --accent: 20 10% 16%;
-    --accent-foreground: 36 30% 88%;
+    --accent-foreground: 36 30% 92%;
 
-    --destructive: 0 65% 55%;
+    --destructive: 0 68% 55%;
     --destructive-foreground: 0 0% 100%;
 
     --success: 160 60% 42%;
@@ -131,28 +132,25 @@
     --input: 20 10% 16%;
     --ring: 0 68% 55%;
 
-    --sidebar-background: 220 30% 5%;
-    --sidebar-foreground: 220 15% 50%;
+    /* Sidebar stays navy in dark mode */
+    --sidebar-background: 216 58% 7%;
+    --sidebar-foreground: 220 12% 60%;
     --sidebar-primary: 0 68% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 20% 12%;
-    --sidebar-accent-foreground: 220 10% 78%;
-    --sidebar-border: 220 20% 10%;
+    --sidebar-accent: 216 45% 13%;
+    --sidebar-accent-foreground: 220 20% 82%;
+    --sidebar-border: 216 45% 11%;
     --sidebar-ring: 0 68% 55%;
 
-    --gradient-primary: linear-gradient(135deg, #e63c3c 0%, #D62828 100%);
-    --gradient-accent:  linear-gradient(135deg, #D62828 0%, #b01e1e 100%);
-    --gradient-warm:    linear-gradient(135deg, #4a3222 0%, #3d2818 100%);
-    --gradient-success: linear-gradient(135deg, hsl(160 60% 42%) 0%, hsl(172 50% 40%) 100%);
-    --gradient-card:    linear-gradient(180deg, hsl(20 10% 12%) 0%, hsl(20 12% 8%) 100%);
-
-    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4);
+    --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.40);
     --shadow-md: 0 4px 12px -2px rgb(0 0 0 / 0.55);
     --shadow-lg: 0 12px 24px -4px rgb(0 0 0 / 0.65);
-    --shadow-glow: 0 0 24px -8px hsl(0 68% 55% / 0.35);
+    --shadow-glow: 0 0 24px -8px hsl(0 68% 55% / 0.30);
 
-    --glass-bg: hsl(20 10% 11% / 0.85);
-    --glass-border: hsl(20 10% 22% / 0.6);
+    --glass-bg:     hsl(20 10% 11% / 0.85);
+    --glass-border: hsl(20 10% 22% / 0.60);
+
+    --gradient-primary: linear-gradient(135deg, hsl(0 68% 55%) 0%, hsl(0 68% 45%) 100%);
   }
 }
 
@@ -168,36 +166,51 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-weight: 500; /* DS: body is 500, not 400 */
   }
 
-  /* Scrollbar — warm cream style */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
-  ::-webkit-scrollbar-track { @apply bg-transparent; }
+  h1 {
+    @apply text-foreground font-extrabold tracking-tighter;
+  }
+  h2 {
+    @apply text-foreground font-extrabold tracking-tight;
+  }
+  h3, h4 {
+    @apply text-foreground font-bold tracking-tight;
+  }
+
+  /* Autofill — empêche Chrome d'injecter un fond blanc qui masque le texte */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus {
+    -webkit-text-fill-color: hsl(var(--foreground));
+    -webkit-box-shadow: 0 0 0 1000px hsl(var(--card)) inset;
+    box-shadow: 0 0 0 1000px hsl(var(--card)) inset;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  /* Scrollbar — warm-tinted */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
   ::-webkit-scrollbar-thumb {
     @apply rounded-full;
     background: hsl(var(--border));
   }
+
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(0 68% 50% / 0.3);
+    background: hsl(var(--muted-foreground) / 0.4);
   }
 }
 
 @layer components {
-  /* Dashboard Mockup styles from Landing Page */
-  .bg-primary-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
-  }
-  .mesh-gradient {
-    background-color: hsl(var(--background));
-    background-image:
-        radial-gradient(at 0% 0%, hsl(var(--primary) / 0.05) 0px, transparent 50%),
-        radial-gradient(at 100% 0%, hsl(var(--brand-purple) / 0.05) 0px, transparent 50%);
-  }
-  .dashboard-glow {
-    box-shadow: 0 0 50px -10px hsl(var(--primary) / 0.15);
-  }
-
-  /* Gradient Text */
+  /* ── Gradient text — hero accents ── */
   .text-gradient {
     @apply bg-clip-text text-transparent;
     background-image: var(--gradient-primary);
@@ -208,7 +221,16 @@
     background-image: var(--gradient-warm);
   }
 
-  /* Glass */
+  /* ── Eyebrow — DS spec: 10–11px, UPPERCASE, tracking-widest ── */
+  .eyebrow {
+    font-size: 0.6875rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    @apply text-muted-foreground;
+  }
+
+  /* ── Glass card — landing nav, hero mockup shell ── */
   .glass-card {
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
@@ -216,7 +238,7 @@
     -webkit-backdrop-filter: blur(16px);
   }
 
-  /* Gradient Border */
+  /* ── Gradient border — featured cards ── */
   .gradient-border {
     position: relative;
     background: hsl(var(--card));
@@ -237,22 +259,30 @@
     pointer-events: none;
   }
 
-  /* Glow */
+  /* ── Red glow — emphasis + focus ── */
   .glow {
     box-shadow: var(--shadow-glow);
     transition: box-shadow 0.3s ease;
   }
 
   .glow:hover {
-    box-shadow: 0 0 28px -4px hsl(0 68% 50% / 0.28);
+    box-shadow: 0 0 28px -4px hsl(0 68% 50% / 0.30);
   }
 
-  /* Status badges */
-  .status-active   { @apply bg-success/10 text-success border border-success/15; }
-  .status-pending  { @apply bg-warning/10 text-warning border border-warning/15; }
-  .status-inactive { @apply bg-destructive/10 text-destructive border border-destructive/15; }
+  /* ── Status badges — muted, contextual ── */
+  .status-active {
+    @apply bg-success/10 text-success border border-success/20;
+  }
 
-  /* KPI Card */
+  .status-pending {
+    @apply bg-warning/10 text-warning border border-warning/20;
+  }
+
+  .status-inactive {
+    @apply bg-destructive/10 text-destructive border border-destructive/20;
+  }
+
+  /* ── KPI card — white card + 3px red gradient top bar ── */
   .kpi-card {
     @apply relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm;
   }
@@ -260,64 +290,107 @@
   .kpi-card::before {
     content: "";
     position: absolute;
-    top: 0; left: 0; right: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     height: 3px;
     background: var(--gradient-primary);
-    opacity: 0.9;
   }
 
-  /* Card hover */
+  /* ── Card hover — warm lift ── */
   .card-hover {
     @apply border border-border bg-card rounded-xl shadow-sm transition-all duration-200;
   }
+
   .card-hover:hover {
     @apply shadow-md;
-    border-color: hsl(0 68% 50% / 0.3);
+    border-color: hsl(0 68% 50% / 0.30);
+  }
+
+  /* ── Sidebar dot-grid overlay ── */
+  .sidebar-grid-overlay {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 20px 20px;
   }
 }
 
 @layer utilities {
-  .animate-fade-in  { animation: fadeIn 0.5s ease-out forwards; }
-  .animate-slide-up { animation: slideUp 0.5s ease-out forwards; }
-  .animate-scale-in { animation: scaleIn 0.3s ease-out forwards; }
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-mic-pulse {
+    animation: micPulse 1.5s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    animation: shimmer 2s linear infinite;
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.4) 50%, transparent 100%);
+    background-size: 200% 100%;
+  }
 
   @keyframes fadeIn {
     from { opacity: 0; }
-    to   { opacity: 1; }
+    to { opacity: 1; }
   }
 
   @keyframes slideUp {
     from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
+    to { opacity: 1; transform: translateY(0); }
   }
 
   @keyframes scaleIn {
     from { opacity: 0; transform: scale(0.95); }
-    to   { opacity: 1; transform: scale(1); }
+    to { opacity: 1; transform: scale(1); }
   }
 
-  /* Pulse dot */
-  .pulse-dot { @apply relative; }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-10px); }
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Notification pulse dot */
+  .pulse-dot {
+    @apply relative;
+  }
+
   .pulse-dot::after {
     content: "";
     position: absolute;
-    top: -2px; right: -2px;
-    width: 10px; height: 10px;
-    background: hsl(var(--secondary));
+    top: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background: hsl(var(--destructive));
     border-radius: 50%;
-    animation: pulse 2s infinite;
+    animation: pulseDot 2s infinite;
   }
 
-  @keyframes pulse {
-    0%   { box-shadow: 0 0 0 0   hsl(0 68% 50% / 0.6); }
-    70%  { box-shadow: 0 0 0 10px hsl(0 68% 50% / 0);   }
-    100% { box-shadow: 0 0 0 0   hsl(0 68% 50% / 0);   }
+  @keyframes pulseDot {
+    0%   { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0.6); }
+    70%  { box-shadow: 0 0 0 10px hsl(var(--destructive) / 0); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--destructive) / 0); }
   }
 
-  /* Mic pulse */
   @keyframes micPulse {
-    0%, 100% { box-shadow: 0 0 0  0  hsl(0 68% 50% / 0.35); }
-    50%       { box-shadow: 0 0 0 20px hsl(0 68% 50% / 0);  }
+    0%, 100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.35); }
+    50%       { box-shadow: 0 0 0 20px hsl(var(--primary) / 0); }
   }
-  .animate-mic-pulse { animation: micPulse 1.5s ease-in-out infinite; }
 }

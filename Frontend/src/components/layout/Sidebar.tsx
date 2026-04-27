@@ -14,20 +14,19 @@ import {
   MessageSquare,
   Mic,
   Settings,
-  ChevronLeft,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeft,
   LogOut,
   Shield,
   User,
   Search,
   Bell,
   Inbox,
-  Sparkles,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-import { NavGroup, UserRole } from '@/types';
+import { NavGroup, UserRole, USER_ROLES } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -61,7 +60,7 @@ const navigationGroups: NavGroup[] = [
     ],
   },
   {
-    title: 'Documents',
+    title: 'Documents & Formation',
     items: [
       { title: 'Documents', href: '/documents', icon: FileText, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
       { title: 'Formations', href: '/training', icon: GraduationCap, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
@@ -70,20 +69,20 @@ const navigationGroups: NavGroup[] = [
   {
     title: 'Recrutement',
     items: [
-      { title: "Offres d'emploi", href: '/jobs', icon: Briefcase, roles: ['ADMIN', 'RH', 'CANDIDATE'] },
+      { title: 'Offres d\'emploi', href: '/jobs', icon: Briefcase, roles: ['ADMIN', 'RH', 'CANDIDATE'] },
       { title: 'Mes candidatures', href: '/my-applications', icon: FileText, roles: ['CANDIDATE'] },
     ],
   },
   {
-    title: 'Intelligence IA',
+    title: 'Analytics & IA',
     items: [
       { title: 'Analyse Churn', href: '/ai-insights', icon: BarChart3, roles: ['ADMIN', 'RH'] },
-      { title: 'Chat IA', href: '/ai-chat', icon: MessageSquare, roles: ['ADMIN', 'RH'] },
+      { title: 'Chat IA', href: '/ai-chat', icon: MessageSquare, roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'] },
       { title: 'Assistant Vocal', href: '/voice-assistant', icon: Mic, roles: ['ADMIN', 'RH'] },
     ],
   },
   {
-    title: 'Système',
+    title: 'Configuration',
     items: [
       { title: 'Paramètres', href: '/settings', icon: Settings, roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'] },
       { title: 'Sécurité', href: '/security', icon: Shield, roles: ['ADMIN'] },
@@ -91,25 +90,14 @@ const navigationGroups: NavGroup[] = [
   },
 ];
 
-const roleColors: Record<string, string> = {
-  ADMIN: 'from-rose-500 to-pink-600',
-  RH: 'from-indigo-500 to-blue-600',
-  EMPLOYEE: 'from-emerald-500 to-teal-600',
-  CANDIDATE: 'from-amber-500 to-orange-600',
-};
-
-const roleLabels: Record<string, string> = {
-  ADMIN: 'Administrateur',
-  RH: 'Responsable RH',
-  EMPLOYEE: 'Employé',
-  CANDIDATE: 'Candidat',
-};
-
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, hasRole } = useAuth();
   const { theme, setTheme } = useTheme();
+
+  const normalizedRole = typeof user?.role === 'string' ? user.role.toUpperCase() : '';
+  const hasValidRole = USER_ROLES.includes(normalizedRole as UserRole);
 
   const isActive = (href: string) =>
     location.pathname === href || location.pathname.startsWith(href + '/');
@@ -121,240 +109,150 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     }))
     .filter((group) => group.items.length > 0);
 
-  const userInitials = user
-    ? `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`
-    : '?';
-
-  const avatarGradient = roleColors[user?.role ?? ''] ?? 'from-slate-500 to-slate-700';
-
   return (
     <motion.aside
       initial={false}
-      animate={{ width: collapsed ? 72 : 272 }}
-      transition={{ duration: 0.28, ease: [0.4, 0, 0.2, 1] }}
-      className="fixed left-0 top-0 z-40 flex h-screen flex-col overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, #08111e 0%, #0a1628 50%, #07101c 100%)' }}
+      animate={{ width: collapsed ? 72 : 280 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar sidebar-grid-overlay"
     >
-      {/* Subtle grid texture overlay */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Ccircle cx='1' cy='1' r='0.5'/%3E%3C/g%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Glow accent top-right corner */}
-      <div className="pointer-events-none absolute -right-16 top-0 h-48 w-48 rounded-full bg-indigo-600/10 blur-3xl" />
-
-      {/* ── Header ── */}
-      <div
-        className="relative flex h-[60px] shrink-0 items-center border-b px-3"
-        style={{ borderColor: 'rgba(255,255,255,0.06)' }}
-      >
+      {/* Header : Logo + Toggle */}
+      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
         <Link
           to="/dashboard"
           className={cn(
-            'flex min-w-0 flex-1 items-center gap-2.5 overflow-hidden',
-            collapsed && 'justify-center'
+            'flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md px-1 py-1',
+            collapsed && 'justify-center px-0'
           )}
         >
-          {/* Logo mark */}
-          <div
-            className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-            style={{
-              background: 'linear-gradient(135deg, #c41e1e 0%, #D62828 100%)',
-              boxShadow: '0 0 16px rgba(214,40,40,0.45)',
-            }}
-          >
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-
-          <AnimatePresence mode="wait">
-            {!collapsed && (
-              <motion.div
-                key="brand"
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.2 }}
-                className="min-w-0"
-              >
-                <span className="text-[15px] font-bold tracking-tight text-white">
-                  Smart
+          {collapsed ? (
+            <img
+              src="/logo-icon.svg"
+              alt="Smart-HR"
+              className="h-9 w-9 flex-shrink-0"
+            />
+          ) : (
+            theme === 'dark' ? (
+              <div className="flex items-center gap-2">
+                <img
+                  src="/logo-icon.svg"
+                  alt="Smart-HR"
+                  className="h-9 w-9 flex-shrink-0"
+                />
+                <span className="truncate text-[17px] font-extrabold leading-none tracking-tight">
+                  <span className="text-white">Smart</span>
+                  <span className="text-primary">-HR</span>
                 </span>
-                <span
-                  className="text-[15px] font-bold tracking-tight"
-                  style={{ color: '#D62828' }}
-                >
-                  -HR
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+            ) : (
+              <img
+                src="/logo-lockup.svg"
+                alt="Smart-HR"
+                className="h-9 w-auto"
+              />
+            )
+          )}
         </Link>
-
         {!collapsed && (
-          <button
-            onClick={onToggle}
-            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-white/8"
-            style={{ color: 'rgba(255,255,255,0.3)' }}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
+          <Tooltip delayDuration={0}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onToggle}
+                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                <PanelLeftClose className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Réduire le menu</TooltipContent>
+          </Tooltip>
         )}
       </div>
 
-      {/* ── Search + Actions (expanded only) ── */}
-      <AnimatePresence>
-        {!collapsed && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="shrink-0 px-3 py-3"
-          >
-            <div className="flex items-center gap-1.5">
-              <div className="relative flex-1">
-                <Search
-                  className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2"
-                  style={{ color: 'rgba(255,255,255,0.25)' }}
-                />
-                <input
-                  type="text"
-                  placeholder="Rechercher..."
-                  className="h-8 w-full rounded-lg pl-8 pr-3 text-xs transition-all focus:outline-none"
-                  style={{
-                    background: 'rgba(255,255,255,0.06)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: 'rgba(255,255,255,0.7)',
-                  }}
-                  onFocus={(e) => {
-                    e.currentTarget.style.border = '1px solid rgba(214,40,40,0.4)';
-                    e.currentTarget.style.background = 'rgba(214,40,40,0.08)';
-                  }}
-                  onBlur={(e) => {
-                    e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                  }}
-                />
-              </div>
-              <button
-                className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors hover:bg-white/8"
-                style={{ color: 'rgba(255,255,255,0.35)' }}
-              >
-                <Bell className="h-3.5 w-3.5" />
-                <span
-                  className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-rose-500"
-                  style={{ boxShadow: '0 0 6px rgba(239,68,68,0.8)' }}
-                />
-              </button>
+      {/* Utilitaires : Recherche, Notifications (mode étendu) */}
+      {!collapsed && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="flex items-center gap-2 px-3 py-3"
+        >
+          <div className="relative flex-1">
+            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Rechercher..."
+              className="h-9 w-full rounded-lg border border-sidebar-border bg-sidebar-accent/60 pl-8 pr-3 text-sm text-sidebar-accent-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-2 focus:ring-sidebar-primary/30"
+            />
+          </div>
+          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
+            <Inbox className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="relative h-9 w-9 shrink-0">
+            <Bell className="h-4 w-4" />
+            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
+              3
+            </span>
+          </Button>
+        </motion.div>
+      )}
+
+      {/* Navigation */}
+      <ScrollArea className="flex-1 px-3 py-2">
+        <nav className="space-y-5">
+          {user && !hasValidRole && !collapsed && (
+            <div className="rounded-lg border border-warning/40 bg-warning/10 p-3 text-xs text-warning-foreground">
+              Aucun menu charge: le role utilisateur recu est invalide.
+              Deconnecte-toi puis reconnecte-toi pour rafraichir la session.
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
 
-      {/* ── Navigation ── */}
-      <ScrollArea className="flex-1 px-2.5 py-1">
-        <nav className="space-y-4 pb-2">
+          {hasValidRole && filteredGroups.length === 0 && !collapsed && (
+            <div className="rounded-lg border border-border bg-sidebar-accent/40 p-3 text-xs text-sidebar-foreground">
+              Aucun element de navigation disponible pour ce compte.
+            </div>
+          )}
+
           {filteredGroups.map((group) => (
-            <div key={group.title}>
-              {/* Group label */}
+            <div key={group.title} className="space-y-1">
               {!collapsed && (
-                <div className="mb-1 flex items-center gap-2 px-2 py-1">
-                  <span
-                    className="text-[10px] font-semibold uppercase tracking-[0.12em]"
-                    style={{ color: 'rgba(255,255,255,0.22)' }}
-                  >
-                    {group.title}
-                  </span>
-                  <div
-                    className="h-px flex-1"
-                    style={{ background: 'rgba(255,255,255,0.06)' }}
-                  />
-                </div>
+                <h3 className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/60">
+                  {group.title}
+                </h3>
               )}
-
-              {/* Nav items */}
               <div className="space-y-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
 
-                  const content = (
+                  const linkContent = (
                     <Link
                       to={item.href}
                       className={cn(
-                        'group relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-[13px] font-medium transition-all duration-150',
-                        collapsed && 'justify-center px-2'
-                      )}
-                      style={
+                        'flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
                         active
-                          ? {
-                              background: 'rgba(214,40,40,0.18)',
-                              color: '#fff',
-                            }
-                          : {
-                              color: 'rgba(255,255,255,0.45)',
-                            }
-                      }
-                      onMouseEnter={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
-                          e.currentTarget.style.color = 'rgba(255,255,255,0.8)';
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!active) {
-                          e.currentTarget.style.background = '';
-                          e.currentTarget.style.color = 'rgba(255,255,255,0.45)';
-                        }
-                      }}
-                    >
-                      {/* Active left accent */}
-                      {active && (
-                        <span
-                          className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r-full"
-                          style={{
-                            background: 'linear-gradient(180deg, #D62828, #e63c3c)',
-                            boxShadow: '0 0 8px rgba(214,40,40,0.65)',
-                          }}
-                        />
+                          ? 'bg-[#D62828] text-white shadow-[inset_4px_0_0_0_#a4161a,0_6px_14px_rgba(214,40,40,0.38)] hover:bg-[#c61f1f]'
+                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       )}
-
-                      {/* Icon */}
-                      <span
-                        className={cn(
-                          'flex h-[18px] w-[18px] shrink-0 items-center justify-center',
-                          active ? 'text-red-300' : ''
-                        )}
-                      >
-                        <Icon className="h-[15px] w-[15px]" />
-                      </span>
-
+                    >
+                      <Icon className="h-5 w-5 flex-shrink-0" />
                       <AnimatePresence mode="wait">
                         {!collapsed && (
                           <motion.span
-                            key="label"
-                            initial={{ opacity: 0, x: -6 }}
+                            key="text"
+                            initial={{ opacity: 0, x: -8 }}
                             animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -6 }}
-                            transition={{ duration: 0.18 }}
+                            exit={{ opacity: 0, x: -8 }}
+                            transition={{ duration: 0.2 }}
                             className="truncate"
                           >
                             {item.title}
                           </motion.span>
                         )}
                       </AnimatePresence>
-
                       {!collapsed && item.badge !== undefined && (
-                        <span
-                          className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold"
-                          style={{
-                            background: 'rgba(239,68,68,0.2)',
-                            color: '#fca5a5',
-                          }}
-                        >
+                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
                           {item.badge}
                         </span>
                       )}
@@ -364,18 +262,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   if (collapsed) {
                     return (
                       <Tooltip key={item.href} delayDuration={0}>
-                        <TooltipTrigger asChild>{content}</TooltipTrigger>
-                        <TooltipContent
-                          side="right"
-                          className="ml-1 border-0 text-xs"
-                          style={{ background: '#1e2a3a', color: 'rgba(255,255,255,0.9)' }}
-                        >
+                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                        <TooltipContent side="right">
                           {item.title}
+                          {item.badge !== undefined && ` (${item.badge})`}
                         </TooltipContent>
                       </Tooltip>
                     );
                   }
-                  return <div key={item.href}>{content}</div>;
+                  return <div key={item.href}>{linkContent}</div>;
                 })}
               </div>
             </div>
@@ -383,165 +278,93 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </nav>
       </ScrollArea>
 
-      {/* ── Dark Mode Toggle ── */}
-      <AnimatePresence>
-        {!collapsed && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="shrink-0 px-3 pb-2"
-          >
-            <div
-              className="flex items-center justify-between rounded-lg px-3 py-2"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
-            >
-              <span className="text-xs font-medium" style={{ color: 'rgba(255,255,255,0.4)' }}>
-                Mode sombre
-              </span>
-              <Switch
-                checked={theme === 'dark'}
-                onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')}
-                className="scale-75"
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Mode sombre (étendu uniquement) */}
+      {!collapsed && (
+        <div className="border-t border-sidebar-border px-3 py-3">
+          <div className="flex items-center justify-between rounded-lg bg-sidebar-accent/60 px-3 py-2">
+            <span className="text-sm font-medium text-sidebar-foreground">Mode sombre</span>
+            <Switch checked={theme === 'dark'} onCheckedChange={(checked) => setTheme(checked ? 'dark' : 'light')} />
+          </div>
+        </div>
+      )}
 
-      {/* ── User Profile ── */}
-      <div
-        className="shrink-0 border-t p-2.5"
-        style={{ borderColor: 'rgba(255,255,255,0.06)' }}
-      >
+      {/* Profil & Logout */}
+      <div className="border-t border-sidebar-border p-3">
         {user && (
           <div
             className={cn(
-              'mb-1.5 flex items-center rounded-xl p-2 transition-colors',
-              collapsed ? 'justify-center' : 'gap-2.5'
+              'mb-2 flex items-center gap-2 rounded-lg p-2',
+              collapsed ? 'justify-center' : 'bg-sidebar-accent/60'
             )}
-            style={{
-              background: collapsed ? '' : 'rgba(255,255,255,0.04)',
-              border: collapsed ? 'none' : '1px solid rgba(255,255,255,0.06)',
-            }}
           >
-            {/* Avatar with gradient ring */}
-            <div
-              className="relative shrink-0 rounded-full p-[2px]"
-              style={{ background: `linear-gradient(135deg, ${avatarGradient.replace('from-', '').replace(' to-', ', ')})` }}
-            >
-              <div
-                className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-full text-[11px] font-bold text-white',
-                  `bg-gradient-to-br ${avatarGradient}`
-                )}
-              >
-                {userInitials}
-              </div>
+            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sm font-medium text-sidebar-primary-foreground">
+              {user.first_name?.[0]}
+              {user.last_name?.[0]}
             </div>
-
-            <AnimatePresence mode="wait">
-              {!collapsed && (
-                <motion.div
-                  key="user-info"
-                  initial={{ opacity: 0, x: -8 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -8 }}
-                  transition={{ duration: 0.18 }}
-                  className="min-w-0 flex-1"
-                >
-                  <p className="truncate text-[12px] font-semibold text-white">
-                    {user.first_name} {user.last_name}
-                  </p>
-                  <p className="truncate text-[10px]" style={{ color: 'rgba(255,255,255,0.35)' }}>
-                    {roleLabels[user.role] ?? user.role}
-                  </p>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {!collapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-white/90">
+                  {user.first_name} {user.last_name}
+                </p>
+                <p className="truncate text-xs text-sidebar-foreground">{user.role}</p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Action buttons */}
-        <div className={cn('flex gap-1', collapsed ? 'flex-col items-center' : '')}>
+        <div className="flex items-center gap-1">
           {!collapsed && (
-            <button
-              className="flex flex-1 items-center gap-2 rounded-lg px-2.5 py-1.5 text-[12px] font-medium transition-colors hover:bg-white/6"
-              style={{ color: 'rgba(255,255,255,0.35)' }}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="flex-1 justify-start gap-2"
               onClick={() => navigate('/profile')}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.7)')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = 'rgba(255,255,255,0.35)')}
             >
-              <User className="h-3.5 w-3.5" />
+              <User className="h-4 w-4" />
               Mon profil
-            </button>
+            </Button>
           )}
-
           {collapsed ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={logout}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg transition-colors"
-                  style={{ color: 'rgba(255,255,255,0.3)' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = '#fca5a5';
-                    e.currentTarget.style.background = 'rgba(239,68,68,0.12)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'rgba(255,255,255,0.3)';
-                    e.currentTarget.style.background = '';
-                  }}
+                  className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <LogOut className="h-4 w-4" />
-                </button>
+                  <LogOut className="h-5 w-5" />
+                </Button>
               </TooltipTrigger>
-              <TooltipContent side="right" style={{ background: '#1e2a3a', color: 'rgba(255,255,255,0.9)', border: 'none' }}>
-                Déconnexion
-              </TooltipContent>
+              <TooltipContent side="right">Déconnexion</TooltipContent>
             </Tooltip>
           ) : (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={logout}
-              className="flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
-              style={{ color: 'rgba(255,255,255,0.25)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#fca5a5';
-                e.currentTarget.style.background = 'rgba(239,68,68,0.12)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'rgba(255,255,255,0.25)';
-                e.currentTarget.style.background = '';
-              }}
+              className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
             >
-              <LogOut className="h-3.5 w-3.5" />
-            </button>
+              <LogOut className="h-5 w-5" />
+            </Button>
           )}
         </div>
       </div>
 
-      {/* ── Expand button (collapsed state) ── */}
+      {/* Bouton Expand (mode compact) */}
       {collapsed && (
-        <div className="absolute -right-3.5 top-[72px]">
+        <div className="absolute -right-3 top-20">
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <button
                 onClick={onToggle}
-                className="flex h-7 w-7 items-center justify-center rounded-full border shadow-md transition-all hover:scale-110"
-                style={{
-                  background: '#0a1628',
-                  borderColor: 'rgba(214,40,40,0.3)',
-                  color: 'rgba(214,40,40,0.85)',
-                  boxShadow: '0 0 12px rgba(214,40,40,0.2)',
-                }}
+                className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-colors hover:bg-muted"
               >
-                <ChevronRight className="h-3.5 w-3.5" />
+                <PanelLeft className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             </TooltipTrigger>
-            <TooltipContent side="right" style={{ background: '#1e2a3a', color: 'rgba(255,255,255,0.9)', border: 'none' }}>
-              Agrandir le menu
-            </TooltipContent>
-          </Tooltip>
+            <TooltipContent side="right">Agrandir le menu</TooltipContent>
+            </Tooltip>
         </div>
       )}
     </motion.aside>

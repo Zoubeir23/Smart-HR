@@ -18,6 +18,7 @@ class AdminStatsView(APIView):
     permission_classes = [IsRH]
 
     def get(self, request):
+        """Retourne un agrégat des indicateurs globaux utiles au pilotage RH."""
         from smart_hr.personnel.models import Employee
 
         total_users = User.objects.count()
@@ -48,6 +49,10 @@ class AdminStatsView(APIView):
             .only("first_name", "last_name", "username", "role", "last_login")[:10]
         ]
 
+        active_roles = len(
+            [role for role, count in by_role.items() if count > 0],
+        )
+
         return Response(
             {
                 "total_users": total_users,
@@ -57,5 +62,5 @@ class AdminStatsView(APIView):
                 "active_employees": active_employees,
                 "high_risk_employees": high_risk_employees,
                 "recent_activity": recent_activity,
-            }
+            },
         )

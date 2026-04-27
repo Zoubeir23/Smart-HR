@@ -204,10 +204,18 @@ export default function HRDashboard() {
     queryFn: () => recruitmentService.getApplications(),
   });
 
-  const { data: retentionData } = useQuery({
+  const { data: retentionRaw } = useQuery({
     queryKey: ['retention-stats'],
     queryFn: () => employeeService.getRetentionStats(),
   });
+
+  const retentionData = retentionRaw?.retention_stats?.map(
+    (entry: { month: string; new_hires: number }) => ({
+      month: new Date(entry.month + '-01').toLocaleDateString('fr-FR', { month: 'short' }),
+      retention: Math.max(0, 100 - entry.new_hires),
+      turnover: entry.new_hires,
+    }),
+  );
 
   // ─── Mutations ─────────────────────────
   const approveLeaveMutation = useMutation({
@@ -281,7 +289,7 @@ export default function HRDashboard() {
                 <FileText className="h-4 w-4" />
                 Exporter
               </Button>
-              <Link to="/employees">
+              <Link to="/employees/create">
                 <Button size="sm" className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
                   <Plus className="h-4 w-4" />
                   Nouvel employé
@@ -530,7 +538,7 @@ export default function HRDashboard() {
                     {/* Vertical timeline line */}
                     <div className="absolute bottom-2 left-[15px] top-2 w-px bg-border" />
 
-                    {applications.slice(0, 5).map((application: any, index: number) => (
+                    {applications.slice(0, 5).map((application: { id: number; job_offer: { title: string }; candidate: { first_name: string; last_name: string }; created_at: string }, index: number) => (
                       <div key={application.id} className="relative flex gap-3 py-2.5">
                         {/* Timeline dot */}
                         <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-secondary/10">

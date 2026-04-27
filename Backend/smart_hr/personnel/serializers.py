@@ -20,6 +20,8 @@ class PositionSerializer(serializers.ModelSerializer):
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
+    """Serializer complet : exposé uniquement aux rôles ADMIN et RH."""
+
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_full_name = serializers.CharField(source="user.get_full_name", read_only=True)
     department_name = serializers.CharField(source="department.name", read_only=True)
@@ -46,3 +48,26 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "churn_risk",
         ]
         read_only_fields = ["churn_risk"]
+
+    def to_representation(self, instance):
+        """Remplace le FK user par un objet imbriqué en lecture."""
+        data = super().to_representation(instance)
+        user = instance.user
+        data["user"] = {
+            "id": user.id,
+            "email": user.email,
+            "first_name": user.first_name or "",
+            "last_name": user.last_name or "",
+            "role": user.role,
+        }
+        return data
+
+
+class EmployeeSelfSerializer(EmployeeSerializer):
+    """Serializer restreint pour le profil personnel d'un employé.
+
+    Exclut churn_risk (score interne RH non destiné à l'employé).
+    """
+
+    class Meta(EmployeeSerializer.Meta):
+        fields = [f for f in EmployeeSerializer.Meta.fields if f != "churn_risk"]

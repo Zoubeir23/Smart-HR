@@ -31,14 +31,34 @@ interface Message {
   timestamp: Date;
 }
 
-/* ─────────── Suggestion Chips ─────────── */
+/* ─────────── Suggestion Chips par rôle ─────────── */
 
-const suggestions = [
-  { text: "Combien d'employés sont à risque de départ ?", icon: BarChart3 },
-  { text: 'Résumé des congés en attente', icon: Calendar },
-  { text: 'Statistiques globales des effectifs', icon: Users },
-  { text: 'Comment fonctionne le recrutement IA ?', icon: Lightbulb },
-];
+const SUGGESTIONS_BY_ROLE: Record<string, { text: string; icon: React.ElementType }[]> = {
+  ADMIN: [
+    { text: "Combien d'employés sont à risque de départ ?", icon: BarChart3 },
+    { text: 'Résumé des congés en attente de validation', icon: Calendar },
+    { text: 'Statistiques globales des effectifs', icon: Users },
+    { text: 'Quelles actions recommandes-tu pour réduire le churn ?', icon: Lightbulb },
+  ],
+  RH: [
+    { text: "Quels employés présentent un risque de départ élevé ?", icon: BarChart3 },
+    { text: 'Combien de demandes de congés sont en attente ?', icon: Calendar },
+    { text: 'Comment analyser les dernières candidatures reçues ?', icon: Users },
+    { text: 'Comment fonctionne le matching IA des CVs ?', icon: Lightbulb },
+  ],
+  EMPLOYEE: [
+    { text: 'Quel est le statut de mes dernières demandes de congé ?', icon: Calendar },
+    { text: 'Comment poser une demande de congé ?', icon: Lightbulb },
+    { text: 'Comment consulter ma fiche de paie ?', icon: BarChart3 },
+    { text: 'Quelles formations sont disponibles pour moi ?', icon: Users },
+  ],
+  CANDIDATE: [
+    { text: 'Quel est le statut de ma candidature ?', icon: BarChart3 },
+    { text: 'Comment se déroule le processus de recrutement ?', icon: Lightbulb },
+    { text: 'Comment améliorer mon score de compatibilité IA ?', icon: Calendar },
+    { text: 'Que se passe-t-il après l\'analyse IA de mon CV ?', icon: Users },
+  ],
+};
 
 /* ─────────── Helpers ─────────── */
 
@@ -80,13 +100,32 @@ function TypingBubble() {
    MAIN COMPONENT
    ═══════════════════════════════════════════ */
 
+function buildWelcomeMessage(user: { first_name?: string; role?: string } | null): string {
+  const firstName = user?.first_name ?? '';
+  const role = (user?.role ?? '').toUpperCase();
+  const greeting = firstName ? `Bonjour ${firstName} !` : 'Bonjour !';
+
+  const roleMessages: Record<string, string> = {
+    ADMIN: `${greeting} Je suis votre assistant IA Smart-HR. En tant qu'administrateur, je peux vous aider à analyser les statistiques globales, les risques de départ, les congés et le recrutement. Que souhaitez-vous savoir ?`,
+    RH: `${greeting} Je suis votre assistant IA Smart-HR. Je peux vous aider à interpréter les données du personnel, analyser les risques de départ, gérer les congés et optimiser le recrutement. Comment puis-je vous aider ?`,
+    EMPLOYEE: `${greeting} Je suis votre assistant RH personnel. Je peux vous aider avec vos congés, votre fiche de paie, les formations disponibles et les politiques de l'entreprise. Quelle est votre question ?`,
+    CANDIDATE: `${greeting} Je suis votre guide de candidature Smart-HR. Je peux vous informer sur le statut de votre candidature, le déroulement du processus de recrutement et vous aider à maximiser vos chances. Comment puis-je vous aider ?`,
+  };
+
+  return roleMessages[role] ?? `${greeting} Je suis l'assistant IA Smart-HR. Comment puis-je vous aider ?`;
+}
+
 export default function AIChatPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+
+  const userRole = (user?.role ?? '').toUpperCase();
+  const suggestions = SUGGESTIONS_BY_ROLE[userRole] ?? SUGGESTIONS_BY_ROLE['RH'];
+
   const [messages, setMessages] = useState<Message[]>([
     {
       id: 'welcome',
-      text: `Bonjour ${user?.first_name ?? ''} ! Je suis l'assistant IA de Smart-HR. Je peux vous aider avec les données RH, les statistiques, les congés et bien plus. Que souhaitez-vous savoir ?`,
+      text: buildWelcomeMessage(user),
       sender: 'ai',
       timestamp: new Date(),
     },

@@ -5,6 +5,10 @@ from rest_framework.routers import DefaultRouter
 from smart_hr.ai_engine.views import ChurnPredictionViewSet
 
 router = DefaultRouter()
-router.register("churn-predictions", ChurnPredictionViewSet, basename="churn-prediction")
+router.register(
+    "churn-predictions",
+    ChurnPredictionViewSet,
+    basename="churn-prediction",
+)
 
 urlpatterns = [path("", include(router.urls))]

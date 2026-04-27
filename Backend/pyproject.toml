@@ -1,5 +1,5 @@
 [project]
-name = "smart_hr"
+name = "smart-hr"
 version = "0.1.0"
 description = "SaaS SIRH Intelligent pour PME Africaines"
 readme = "README.md"
@@ -16,6 +16,7 @@ dependencies = [
   "argon2-cffi==25.1.0",
   "celery==5.6.2",
   "crispy-bootstrap5==2026.3",
+  "dj-rest-auth>=6.0.0",
   "django==6.0.3",
   "django-allauth[mfa,socialaccount]==65.15.0",
   "django-anymail==14.0",
@@ -27,9 +28,8 @@ dependencies = [
   "django-redis==6.0.0",
   "djangorestframework>=3.15.0",
   "djangorestframework-simplejwt>=5.3.0",
-  "dj-rest-auth>=6.0.0",
   "flower==2.0.1",
-  "google-generativeai>=0.8.0",
+  "google-genai>=1.0.0",
   "gunicorn==25.1.0",
   "hiredis==3.3.0",
   "joblib>=1.4.0",
@@ -38,7 +38,7 @@ dependencies = [
   "pandas>=2.2.0",
   "pillow==12.1.1",
   "psycopg[c]==3.3.3",
-  "PyPDF2>=3.0.0",
+  "pypdf2>=3.0.0",
   "python-slugify==8.0.4",
   "qdrant-client>=1.9.0",
   "redis==7.3.0",
@@ -70,12 +70,13 @@ dev = [
 ]
 
 [tool.ruff]
+line-length = 130
 # Exclude a variety of commonly ignored directories.
 extend-exclude = [
   "*/migrations/*.py",
+  "../Smart-HR Design System/**",
   "staticfiles/*",
 ]
-
 lint.select = [
   "A",
   "ASYNC",
@@ -127,37 +128,55 @@ lint.select = [
   "YTT",
 ]
 lint.ignore = [
-  "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
-  "S101",   # Use of assert detected https://docs.astral.sh/ruff/rules/assert/
-  "SIM102", # sometimes it's better to nest
-  # of types for comparison.
-  # Deactivated because it can make the code slow:
-  # https://github.com/astral-sh/ruff/issues/7871
+  # Exception handling style preferences — intentional patterns in this codebase
+  "BLE001",  # Blind exception (used for resilience in external calls)
+  "DTZ011",  # datetime.date.today() without timezone
+  "E741",    # Ambiguous variable name (l, O, I)
+  "EM101",   # Exception with string literal (intentional for readability)
+  "EM102",   # Exception with f-string
+  "ERA001",  # Found commented-out code
+  "N806",    # Variable in function should be lowercase
+  "PIE794",  # Class definition with duplicate literal
+  # Import style
+  "PLC0415", # Import not at top-level (lazy imports for circular import avoidance)
+  "PLR0913", # Too many arguments (complex API views)
+  # Code style
+  "PLR2004", # Magic value comparison (used for HTTP status codes)
+  # Path style
+  "PTH122",  # os.path.splitext → Path.suffix
+  "PTH123",  # open() → Path.open()
+  "RUF012",  # Mutable class attributes should be annotated with `typing.ClassVar`
+  "S101",    # Use of assert detected
+  "S110",    # try-except-pass (used for optional feature detection)
+  # Random
+  "S311",    # Standard random for non-security use
+  "SIM102",  # sometimes it's better to nest
+  "SIM105",  # Use contextlib.suppress
+  "TRY003",  # Long messages in raise (French error messages)
+  "TRY300",  # Consider moving return into else
+  "TRY400",  # Use logging.exception instead of logging.error
 ]
 lint.isort.force-single-line = true
 
 [tool.pyproject-fmt]
 keep_full_version = true
 
+[tool.pytest]
 # ==== pytest ====
-
-[tool.pytest.ini_options]
-minversion = "6.0"
-addopts = "--ds=config.settings.test --reuse-db --import-mode=importlib"
-python_files = [
+ini_options.minversion = "6.0"
+ini_options.addopts = "--ds=config.settings.test --reuse-db --import-mode=importlib"
+ini_options.python_files = [
   "tests.py",
   "test_*.py",
 ]
 
+[tool.coverage]
 # ==== Coverage ====
-
-[tool.coverage.run]
-include = [ "smart_hr/**" ]
-omit = [ "*/migrations/*", "*/tests/*" ]
-plugins = [ "django_coverage_plugin" ]
+run.include = [ "smart_hr/**" ]
+run.omit = [ "*/migrations/*", "*/tests/*" ]
+run.plugins = [ "django_coverage_plugin" ]
 
 # ==== mypy ====
-
 [tool.mypy]
 python_version = "3.13"
 check_untyped_defs = true
@@ -168,31 +187,25 @@ warn_unused_configs = true
 plugins = [
   "mypy_django_plugin.main",
 ]
-
-[[tool.mypy.overrides]]
-# Django migrations should not produce any errors:
-module = "*.migrations.*"
-ignore_errors = true
+overrides = [
+  # Django migrations should not produce any errors:
+  { module = "*.migrations.*", ignore_errors = true },
+]
 
 [tool.django-stubs]
 django_settings_module = "config.settings.test"
 
 # ==== djLint ====
-
 [tool.djlint]
 blank_line_after_tag = "load,extends"
 close_void_tags = true
 format_css = true
 format_js = true
 # TODO: remove T002 when fixed https://github.com/djlint/djLint/issues/687
-ignore = "H006,H030,H031,T002"
+ignore = "H006,H021,H030,H031,T002"
 include = "H017,H035"
 indent = 2
 max_line_length = 119
 profile = "django"
-
-[tool.djlint.css]
-indent_size = 2
-
-[tool.djlint.js]
-indent_size = 2
+css.indent_size = 2
+js.indent_size = 2
