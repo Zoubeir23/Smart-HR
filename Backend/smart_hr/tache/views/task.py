@@ -45,9 +45,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     def _notify_assignee_task_created(self, task: Task) -> None:
         """Notifie l'employé assigné avec les détails clés de la tâche."""
         assignee_user = task.assignee.user
-        assigned_by_name = (
-            self.request.user.get_full_name() or self.request.user.email
-        )
+        assigned_by_name = self.request.user.get_full_name() or self.request.user.email
         due_date_str = task.due_date.strftime("%d/%m/%Y") if task.due_date else ""
 
         try:
@@ -62,7 +60,8 @@ class TaskViewSet(viewsets.ModelViewSet):
             )
         except Exception:
             logger.exception(
-                "Échec envoi email tâche assignée à %s", assignee_user.email
+                "Échec envoi email tâche assignée à %s",
+                assignee_user.email,
             )
 
     @action(detail=True, methods=["patch"], url_path="update-status")
@@ -72,7 +71,9 @@ class TaskViewSet(viewsets.ModelViewSet):
         new_status = request.data.get("status")
         if new_status not in Task.Status.values:
             return Response(
-                {"detail": f"Statut invalide. Valeurs acceptées : {Task.Status.values}"},
+                {
+                    "detail": f"Statut invalide. Valeurs acceptées : {Task.Status.values}",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
         task.status = new_status

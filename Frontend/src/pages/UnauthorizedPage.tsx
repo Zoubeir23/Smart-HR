@@ -19,13 +19,13 @@ export default function UnauthorizedPage() {
         <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-destructive/10">
           <ShieldX className="h-12 w-12 text-destructive" />
         </div>
-        
+
         <h1 className="mt-6 text-3xl font-bold">Accès non autorisé</h1>
         <p className="mt-2 max-w-md text-muted-foreground">
           Vous n'avez pas les permissions nécessaires pour accéder à cette page.
           Contactez votre administrateur si vous pensez qu'il s'agit d'une erreur.
         </p>
-        
+
         <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
           <Button asChild variant="outline">
             <Link to="/" className="gap-2">

@@ -5,7 +5,6 @@ Architecture inspirée de tchokos_web/tchokos_project/global_data/email.py.
 
 import logging
 import smtplib
-from pathlib import Path
 from typing import Any
 
 from django.conf import settings
@@ -25,7 +24,7 @@ class EmailService:
     COMPANY_NAME = "Smart-HR"
     COMPANY_TAGLINE = "Votre SIRH Intelligent"
 
-    def __init__(self, prod: bool = True) -> None:
+    def __init__(self, *, prod: bool = True) -> None:
         self.prod = prod
         self.site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
@@ -63,13 +62,17 @@ class EmailService:
     ) -> bool:
         if not self.prod:
             logger.info(
-                "[DEV] Email non envoyé — destinataires: %s, sujet: %s", recipients, subject
+                "[DEV] Email non envoyé — destinataires: %s, sujet: %s",
+                recipients,
+                subject,
             )
             return True
 
         try:
             sender = from_email or getattr(
-                settings, "DEFAULT_FROM_EMAIL", "noreply@smart-hr.com"
+                settings,
+                "DEFAULT_FROM_EMAIL",
+                "noreply@smart-hr.com",
             )
             message = EmailMessage(
                 subject=subject,
@@ -85,7 +88,10 @@ class EmailService:
                     try:
                         message.attach_file(file_path)
                     except (OSError, ValueError):
-                        logger.warning("Impossible d'attacher le fichier : %s", file_path)
+                        logger.warning(
+                            "Impossible d'attacher le fichier : %s",
+                            file_path,
+                        )
 
             message.send(fail_silently=False)
             logger.info("Email envoyé avec succès à %s", recipients)
@@ -291,7 +297,10 @@ def send_application_status_email(
         "dashboard_url": f"{site_url}/dashboard",
     }
 
-    subject = status_subjects.get(new_status, f"Mise à jour de votre candidature — {job_title}")
+    subject = status_subjects.get(
+        new_status,
+        f"Mise à jour de votre candidature — {job_title}",
+    )
 
     success = service.send_template_email(
         template="email/application_status_update.html",
@@ -301,7 +310,11 @@ def send_application_status_email(
     )
 
     if success:
-        logger.info("Email statut candidature (%s) envoyé à %s", new_status, candidate_email)
+        logger.info(
+            "Email statut candidature (%s) envoyé à %s",
+            new_status,
+            candidate_email,
+        )
     else:
         logger.error("Échec envoi statut candidature à %s", candidate_email)
 
@@ -366,9 +379,18 @@ def send_payslip_paid_email(
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     month_labels = {
-        "01": "Janvier", "02": "Février", "03": "Mars", "04": "Avril",
-        "05": "Mai", "06": "Juin", "07": "Juillet", "08": "Août",
-        "09": "Septembre", "10": "Octobre", "11": "Novembre", "12": "Décembre",
+        "01": "Janvier",
+        "02": "Février",
+        "03": "Mars",
+        "04": "Avril",
+        "05": "Mai",
+        "06": "Juin",
+        "07": "Juillet",
+        "08": "Août",
+        "09": "Septembre",
+        "10": "Octobre",
+        "11": "Novembre",
+        "12": "Décembre",
     }
     parts = month.split("-")
     month_label = f"{month_labels.get(parts[1], parts[1])} {parts[0]}" if len(parts) == 2 else month
@@ -435,7 +457,11 @@ def send_meeting_invitation_email(
     )
 
     if success:
-        logger.info("Invitations réunion '%s' envoyées à %d destinataires", meeting_title, len(employee_emails))
+        logger.info(
+            "Invitations réunion '%s' envoyées à %d destinataires",
+            meeting_title,
+            len(employee_emails),
+        )
     else:
         logger.error("Échec envoi invitations réunion '%s'", meeting_title)
 
@@ -499,9 +525,7 @@ def send_leave_status_email(
     }
 
     is_approved = status == "approved"
-    subject = (
-        "Congé approuvé — Smart-HR" if is_approved else "Congé refusé — Smart-HR"
-    )
+    subject = "Congé approuvé — Smart-HR" if is_approved else "Congé refusé — Smart-HR"
 
     context = {
         "first_name": first_name,
@@ -522,7 +546,11 @@ def send_leave_status_email(
     )
 
     if success:
-        logger.info("Email statut congé envoyé à %s (status: %s)", employee_email, status)
+        logger.info(
+            "Email statut congé envoyé à %s (status: %s)",
+            employee_email,
+            status,
+        )
     else:
         logger.error("Échec envoi email congé à %s", employee_email)
 

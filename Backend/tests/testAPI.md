@@ -1,6 +1,6 @@
 # Smart-HR — Guide de test des APIs
 
-**Base URL :** `http://localhost:8000`  
+**Base URL :** `http://localhost:8000`
 **Préfixe :** `/api/v1/`
 
 Pour chaque requête protégée, ajouter le header :
@@ -238,7 +238,7 @@ Content-Type: application/json
   "due_date": "2025-04-30"
 }
 ```
-Statuts : `todo` `in_progress` `done`  
+Statuts : `todo` `in_progress` `done`
 Priorités : `low` `medium` `high`
 
 ### Modifier le statut d'une tâche

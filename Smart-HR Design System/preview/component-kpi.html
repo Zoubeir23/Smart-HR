@@ -1,23 +1,145 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Cards</title>
-<link rel="stylesheet" href="../colors_and_type.css">
-<style>body{margin:0;padding:20px;background:var(--bg);font-family:var(--font-sans);}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-  .kpi{position:relative;overflow:hidden;background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow-sm);}
-  .kpi::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(135deg,#D62828,#e63c3c);}
-  .kpi .hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
-  .kpi .lbl{font-size:11px;font-weight:700;color:var(--fg-muted);text-transform:uppercase;letter-spacing:.08em;}
-  .kpi .ico{width:34px;height:34px;border-radius:10px;background:rgba(99,102,241,.10);color:#4f46e5;display:flex;align-items:center;justify-content:center;font-size:16px;}
-  .kpi .v{font-size:32px;font-weight:800;letter-spacing:-.02em;color:var(--fg);}
-  .kpi .sub{font-size:12px;color:var(--fg-muted);margin-top:4px;display:flex;align-items:center;gap:6px;}
-  .up{color:hsl(160 84% 28%);font-weight:700;}
-  .rose .ico{background:rgba(244,63,94,.10);color:#e11d48;}
-  .amb .ico{background:rgba(234,88,12,.10);color:#ea580c;}
-  .em .ico{background:rgba(16,185,129,.10);color:#059669;}
-</style></head><body>
-<div class="grid">
-  <div class="kpi"><div class="hd"><span class="lbl">Total Employés</span><div class="ico">👥</div></div><div class="v">284</div><div class="sub"><span class="up">▲ 3.2%</span> · 271 actifs</div></div>
-  <div class="kpi amb"><div class="hd"><span class="lbl">Congés en attente</span><div class="ico">📅</div></div><div class="v">12</div><div class="sub">À valider</div></div>
-  <div class="kpi em"><div class="hd"><span class="lbl">Postes ouverts</span><div class="ico">💼</div></div><div class="v">8</div><div class="sub"><span class="up">▲ 2</span> · 47 candidatures</div></div>
-  <div class="kpi rose"><div class="hd"><span class="lbl">Risque élevé</span><div class="ico">⚠</div></div><div class="v">6</div><div class="sub" style="color:hsl(0 68% 45%)">▼ 8% · À surveiller</div></div>
-</div>
-</body></html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Cards</title>
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: var(--bg);
+        font-family: var(--font-sans);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+
+      .kpi {
+        position: relative;
+        overflow: hidden;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .kpi::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(135deg, #D62828, #e63c3c);
+      }
+
+      .kpi .hd {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 10px;
+      }
+
+      .kpi .lbl {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--fg-muted);
+        text-transform: uppercase;
+        letter-spacing: .08em;
+      }
+
+      .kpi .ico {
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
+        background: rgba(99, 102, 241, .10);
+        color: #4f46e5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+      }
+
+      .kpi .v {
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: -.02em;
+        color: var(--fg);
+      }
+
+      .kpi .sub {
+        font-size: 12px;
+        color: var(--fg-muted);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .up {
+        color: hsl(160 84% 28%);
+        font-weight: 700;
+      }
+
+      .rose .ico {
+        background: rgba(244, 63, 94, .10);
+        color: #e11d48;
+      }
+
+      .amb .ico {
+        background: rgba(234, 88, 12, .10);
+        color: #ea580c;
+      }
+
+      .em .ico {
+        background: rgba(16, 185, 129, .10);
+        color: #059669;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid">
+      <div class="kpi">
+        <div class="hd">
+          <span class="lbl">Total Employés</span>
+          <div class="ico">👥</div>
+        </div>
+        <div class="v">284</div>
+        <div class="sub">
+          <span class="up">▲ 3.2%</span> · 271 actifs
+        </div>
+      </div>
+      <div class="kpi amb">
+        <div class="hd">
+          <span class="lbl">Congés en attente</span>
+          <div class="ico">📅</div>
+        </div>
+        <div class="v">12</div>
+        <div class="sub">À valider</div>
+      </div>
+      <div class="kpi em">
+        <div class="hd">
+          <span class="lbl">Postes ouverts</span>
+          <div class="ico">💼</div>
+        </div>
+        <div class="v">8</div>
+        <div class="sub">
+          <span class="up">▲ 2</span> · 47 candidatures
+        </div>
+      </div>
+      <div class="kpi rose">
+        <div class="hd">
+          <span class="lbl">Risque élevé</span>
+          <div class="ico">⚠</div>
+        </div>
+        <div class="v">6</div>
+        <div class="sub" style="color:hsl(0 68% 45%)">▼ 8% · À surveiller</div>
+      </div>
+    </div>
+  </body>
+</html>

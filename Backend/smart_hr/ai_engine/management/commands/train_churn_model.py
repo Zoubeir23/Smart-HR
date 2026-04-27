@@ -18,16 +18,15 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
 from sklearn.model_selection import train_test_split
 
-MODEL_PATH: Path = (
-    Path(__file__).resolve().parent.parent.parent / "ml_models" / "churn_model.pkl"
-)
+MODEL_PATH: Path = Path(__file__).resolve().parent.parent.parent / "ml_models" / "churn_model.pkl"
 
 N_SAMPLES = 1_500
 RANDOM_STATE = 42
 
 
 def _generate_synthetic_data(
-    n_samples: int, rng: np.random.Generator
+    n_samples: int,
+    rng: np.random.Generator,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Génère des données synthétiques réalistes pour le churn RH.
 
@@ -58,12 +57,16 @@ def _generate_synthetic_data(
     churn_proba[high_risk] = rng.uniform(0.65, 0.95, high_risk.sum())
     churn_proba[medium_risk] = rng.uniform(0.25, 0.55, medium_risk.sum())
     churn_proba[~high_risk & ~medium_risk] = rng.uniform(
-        0.02, 0.20, (~high_risk & ~medium_risk).sum()
+        0.02,
+        0.20,
+        (~high_risk & ~medium_risk).sum(),
     )
 
     # Inactifs ont un risque légèrement plus élevé
     churn_proba[status_active == 0] = np.clip(
-        churn_proba[status_active == 0] + 0.15, 0.0, 1.0
+        churn_proba[status_active == 0] + 0.15,
+        0.0,
+        1.0,
     )
 
     target = (rng.uniform(0, 1, n_samples) < churn_proba).astype(int)
@@ -76,17 +79,23 @@ class Command(BaseCommand):
     help = "Entraîne le modèle Random Forest de prédiction de churn et sauve le .pkl."
 
     def handle(self, *args: object, **options: object) -> None:
-        self.stdout.write(self.style.MIGRATE_HEADING("=== Entraînement du modèle churn ==="))
+        self.stdout.write(
+            self.style.MIGRATE_HEADING("=== Entraînement du modèle churn ==="),
+        )
 
         rng = np.random.default_rng(RANDOM_STATE)
         X, y = _generate_synthetic_data(N_SAMPLES, rng)
 
         self.stdout.write(
-            f"Données générées : {N_SAMPLES} samples | churn rate = {y.mean():.1%}"
+            f"Données générées : {N_SAMPLES} samples | churn rate = {y.mean():.1%}",
         )
 
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=RANDOM_STATE, stratify=y
+            X,
+            y,
+            test_size=0.2,
+            random_state=RANDOM_STATE,
+            stratify=y,
         )
 
         model = RandomForestClassifier(
@@ -99,7 +108,11 @@ class Command(BaseCommand):
         accuracy = model.score(X_test, y_test)
         self.stdout.write(f"Accuracy (test set) : {accuracy:.4f}")
 
-        report = classification_report(y_test, model.predict(X_test), target_names=["reste", "part"])
+        report = classification_report(
+            y_test,
+            model.predict(X_test),
+            target_names=["reste", "part"],
+        )
         self.stdout.write("\nClassification report :")
         self.stdout.write(report)
 
@@ -107,5 +120,5 @@ class Command(BaseCommand):
         joblib.dump(model, MODEL_PATH)
 
         self.stdout.write(
-            self.style.SUCCESS(f"Modele sauvegarde : {MODEL_PATH}")
+            self.style.SUCCESS(f"Modele sauvegarde : {MODEL_PATH}"),
         )

@@ -15,7 +15,9 @@ def generate_otp_code() -> str:
 
 def create_otp_for_user(user: User) -> OTPCode:
     """Crée (ou remplace) un OTP actif pour l'utilisateur donné. Réinitialise le compteur d'échecs."""
-    expiry_date = timezone.now() + timezone.timedelta(minutes=OTPCode.OTP_EXPIRY_MINUTES)
+    expiry_date = timezone.now() + timezone.timedelta(
+        minutes=OTPCode.OTP_EXPIRY_MINUTES,
+    )
     otp_code, _ = OTPCode.objects.update_or_create(
         user=user,
         defaults={
@@ -29,7 +31,7 @@ def create_otp_for_user(user: User) -> OTPCode:
     return otp_code
 
 
-def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:
+def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:  # noqa: PLR0911
     """
     Vérifie un code OTP soumis avec protection brute-force.
     Retourne (True, "") si valide, (False, raison) sinon.
@@ -49,13 +51,18 @@ def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:
         return False, "Ce code OTP a expiré. Veuillez en demander un nouveau."
 
     if otp.code != submitted_code:
-        OTPCode.objects.filter(pk=otp.pk).update(failed_attempts=F("failed_attempts") + 1)
+        OTPCode.objects.filter(pk=otp.pk).update(
+            failed_attempts=F("failed_attempts") + 1,
+        )
         otp.refresh_from_db()
         if otp.failed_attempts >= OTPCode.MAX_FAILED_ATTEMPTS:
             OTPCode.objects.filter(pk=otp.pk).update(
-                locked_until=timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+                locked_until=timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES),
             )
-            return False, "Compte verrouillé après trop de tentatives. Réessayez dans 15 minutes."
+            return (
+                False,
+                "Compte verrouillé après trop de tentatives. Réessayez dans 15 minutes.",
+            )
         remaining = OTPCode.MAX_FAILED_ATTEMPTS - otp.failed_attempts
         return False, f"Code OTP incorrect. {remaining} tentative(s) restante(s)."
 

@@ -70,6 +70,4 @@ class EmployeeSelfSerializer(EmployeeSerializer):
     """
 
     class Meta(EmployeeSerializer.Meta):
-        fields = [
-            f for f in EmployeeSerializer.Meta.fields if f != "churn_risk"
-        ]
+        fields = [f for f in EmployeeSerializer.Meta.fields if f != "churn_risk"]

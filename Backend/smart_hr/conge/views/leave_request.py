@@ -7,10 +7,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.conge.models import LeaveRequest
-from smart_hr.personnel.models import Employee
 from smart_hr.conge.serializers import LeaveRequestSerializer
 from smart_hr.core.email_service import send_leave_request_notification_to_rh
 from smart_hr.core.email_service import send_leave_status_email
+from smart_hr.personnel.models import Employee
 from smart_hr.users.models import User
 from smart_hr.users.permissions import IsRH
 
@@ -34,8 +34,13 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         """Retourne toutes les demandes pour RH/Admin, sinon celles de l'employé connecté."""
         user = self.request.user
         if user.role in [User.Role.ADMIN, User.Role.RH]:
-            return LeaveRequest.objects.select_related("employee__user", "approved_by").all()
-        return LeaveRequest.objects.select_related("employee__user").filter(employee__user=user)
+            return LeaveRequest.objects.select_related(
+                "employee__user",
+                "approved_by",
+            ).all()
+        return LeaveRequest.objects.select_related("employee__user").filter(
+            employee__user=user,
+        )
 
     def get_permissions(self):
         """Réserve l'approbation/rejet aux profils RH/Admin."""
@@ -51,10 +56,10 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
 
         try:
             employee = Employee.objects.get(user=user)
-        except Employee.DoesNotExist:
+        except Employee.DoesNotExist as exc:
             raise ValidationError(
-                "Aucun profil employé trouvé pour cet utilisateur. Contactez le service RH."
-            )
+                "Aucun profil employé trouvé pour cet utilisateur. Contactez le service RH.",
+            ) from exc
 
         if start_date and end_date:
             overlap_exists = LeaveRequest.objects.filter(
@@ -65,7 +70,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             ).exists()
             if overlap_exists:
                 raise ValidationError(
-                    "Une demande de congé active existe déjà pour cette période."
+                    "Une demande de congé active existe déjà pour cette période.",
                 )
 
         leave = serializer.save(employee=employee)
@@ -74,9 +79,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     def _notify_rh_new_leave_request(self, leave: LeaveRequest) -> None:
         """Notifie tous les RH/Admin qu'une nouvelle demande de congé a été soumise."""
         rh_emails = list(
-            User.objects.filter(role__in=[User.Role.RH, User.Role.ADMIN])
-            .exclude(email="")
-            .values_list("email", flat=True)
+            User.objects.filter(role__in=[User.Role.RH, User.Role.ADMIN]).exclude(email="").values_list("email", flat=True),
         )
         if not rh_emails:
             return
@@ -88,7 +91,10 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             send_leave_request_notification_to_rh(
                 rh_emails=rh_emails,
                 employee_name=employee_name,
-                leave_type_label=LEAVE_TYPE_LABELS.get(leave.leave_type, leave.leave_type),
+                leave_type_label=LEAVE_TYPE_LABELS.get(
+                    leave.leave_type,
+                    leave.leave_type,
+                ),
                 start_date=leave.start_date.strftime("%d/%m/%Y"),
                 end_date=leave.end_date.strftime("%d/%m/%Y"),
                 days_count=leave.duration_days,
@@ -116,7 +122,8 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             )
         except Exception:
             logger.exception(
-                "Échec de l'envoi de la notification congé à %s", employee_user.email
+                "Échec de l'envoi de la notification congé à %s",
+                employee_user.email,
             )
 
     @action(detail=True, methods=["post"])

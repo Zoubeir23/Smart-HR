@@ -105,7 +105,7 @@ function getEmployeeFormErrorMessage(error: unknown): string {
 }
 
 function toNullableNumber(value?: string) {
-  if (!value || value === '') return null;
+  if (!value || value === '' || value === 'none') return null;
   return Number(value);
 }
 
@@ -354,7 +354,7 @@ export default function EmployeeCreatePage() {
                             <SelectValue placeholder="Sélectionner un département…" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">— Aucun département —</SelectItem>
+                            <SelectItem value="none">— Aucun département —</SelectItem>
                             {departments.map((dept) => (
                               <SelectItem key={dept.id} value={String(dept.id)}>
                                 {dept.name}
@@ -379,7 +379,7 @@ export default function EmployeeCreatePage() {
                             <SelectValue placeholder="Sélectionner un poste…" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">— Aucun poste —</SelectItem>
+                            <SelectItem value="none">— Aucun poste —</SelectItem>
                             {filteredPositions.map((position) => (
                               <SelectItem key={position.id} value={String(position.id)}>
                                 {position.title}

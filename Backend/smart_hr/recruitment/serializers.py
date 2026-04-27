@@ -29,7 +29,10 @@ class JobOfferSerializer(serializers.ModelSerializer):
 
 
 class ApplicationSerializer(serializers.ModelSerializer):
-    candidate_name = serializers.CharField(source="candidate.get_full_name", read_only=True)
+    candidate_name = serializers.CharField(
+        source="candidate.get_full_name",
+        read_only=True,
+    )
     job_title = serializers.CharField(source="job_offer.title", read_only=True)
 
     class Meta:
@@ -48,7 +51,14 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "ai_summary",
             "created_at",
         ]
-        read_only_fields = ["candidate", "status", "matching_score", "skills_extracted", "ai_summary", "created_at"]
+        read_only_fields = [
+            "candidate",
+            "status",
+            "matching_score",
+            "skills_extracted",
+            "ai_summary",
+            "created_at",
+        ]
 
     def validate_cv(self, value):
         if value.content_type != "application/pdf":

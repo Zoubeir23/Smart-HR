@@ -1,7 +1,6 @@
 import logging
 
 from django.utils import timezone
-
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -12,10 +11,8 @@ from smart_hr.core.email_service import send_application_received_email
 from smart_hr.core.email_service import send_application_status_email
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.serializers import ApplicationSerializer
-from smart_hr.recruitment.services.cv_analysis_service import (
-    analyze_cv_against_job_offer,
-    extract_text_from_pdf,
-)
+from smart_hr.recruitment.services.cv_analysis_service import analyze_cv_against_job_offer
+from smart_hr.recruitment.services.cv_analysis_service import extract_text_from_pdf
 from smart_hr.users.permissions import IsCandidate
 from smart_hr.users.permissions import IsRH
 
@@ -67,7 +64,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             application.matching_score = result["matching_score"]
             application.skills_extracted = result["skills_extracted"]
             application.ai_summary = result["ai_summary"]
-            application.save(update_fields=["matching_score", "skills_extracted", "ai_summary"])
+            application.save(
+                update_fields=["matching_score", "skills_extracted", "ai_summary"],
+            )
 
             logger.info(
                 "Analyse CV terminée pour application %s — score : %.1f%%",
@@ -76,7 +75,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             )
         except Exception:
             logger.exception(
-                "Erreur lors de l'analyse CV pour application %s", application.pk
+                "Erreur lors de l'analyse CV pour application %s",
+                application.pk,
             )
 
     @action(detail=True, methods=["post"], url_path="analyze-cv")
@@ -104,7 +104,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             )
         except Exception:
             logger.exception(
-                "Échec envoi confirmation candidature à %s", candidate.email
+                "Échec envoi confirmation candidature à %s",
+                candidate.email,
             )
 
     @action(detail=True, methods=["patch"], url_path="update-status")
@@ -114,7 +115,9 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         new_status = request.data.get("status")
         if new_status not in Application.Status.values:
             return Response(
-                {"detail": f"Statut invalide. Valeurs acceptées : {Application.Status.values}"},
+                {
+                    "detail": f"Statut invalide. Valeurs acceptées : {Application.Status.values}",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -122,14 +125,17 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         application.status = new_status
         application.save(update_fields=["status", "updated_at"])
 
-        if old_status != new_status and new_status != Application.Status.PENDING:
+        if old_status != new_status and new_status not in {Application.Status.PENDING}:
             self._notify_candidate_status_update(application, new_status)
-
 
         serializer = self.get_serializer(application)
         return Response(serializer.data)
 
-    def _notify_candidate_status_update(self, application: Application, new_status: str) -> None:
+    def _notify_candidate_status_update(
+        self,
+        application: Application,
+        new_status: str,
+    ) -> None:
         """Informe le candidat d'un changement de statut de sa candidature."""
         candidate = application.candidate
         try:

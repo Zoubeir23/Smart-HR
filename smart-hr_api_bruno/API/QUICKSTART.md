@@ -7,7 +7,7 @@
 ```
 smart-hr/API/
 ├── 📄 bruno.json                    # Configuration collection
-├── 📄 env.bru                       # Variables d'environnement  
+├── 📄 env.bru                       # Variables d'environnement
 ├── 📄 .env                          # Configuration locale
 │
 ├── 📁 Auth/                         # 5 requêtes d'authentification
@@ -59,7 +59,7 @@ python manage.py runserver
 ## 🔐 Test rapide (1 min)
 
 1. **Aller à**: Auth > 01_Login.bru
-2. **Entrer**: 
+2. **Entrer**:
    ```json
    {
      "username": "admin",
@@ -134,7 +134,7 @@ Génère un rapport `api-test-report.md`
 ### ✅ Test simple
 Cliquer sur une requête → Send → Vérifier le statut
 
-### ✅ Test complet  
+### ✅ Test complet
 Utiliser la [CHECKLIST.md](CHECKLIST.md) pour 50+ validations
 
 ### ✅ Test personnalisé
@@ -167,7 +167,7 @@ Conge → 02_Create_Leave_Request.bru → Modifier → Send
 ### ❌ "Connection refused"
 → Démarrer Django: `python manage.py runserver`
 
-### ❌ "401 Unauthorized"  
+### ❌ "401 Unauthorized"
 → Mettre à jour token: Auth > 01_Login
 
 ### ❌ "404 Not Found"
@@ -194,6 +194,6 @@ Conge → 02_Create_Leave_Request.bru → Modifier → Send
 
 ---
 
-**Status**: ✅ Prêt à utiliser  
-**Créé**: 2024-04-25  
+**Status**: ✅ Prêt à utiliser
+**Créé**: 2024-04-25
 **Version**: 1.0.0

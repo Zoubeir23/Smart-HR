@@ -8,7 +8,8 @@ Usage:
 """
 
 import random
-from datetime import date, timedelta
+from datetime import date
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth import get_user_model
@@ -17,8 +18,11 @@ from django.db import transaction
 
 from smart_hr.conge.models import LeaveRequest
 from smart_hr.paiement.models import Payroll
-from smart_hr.personnel.models import Department, Employee, Position
-from smart_hr.recruitment.models import Application, JobOffer
+from smart_hr.personnel.models import Department
+from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import Position
+from smart_hr.recruitment.models import Application
+from smart_hr.recruitment.models import JobOffer
 from smart_hr.tache.models import Task
 
 User = get_user_model()
@@ -63,9 +67,18 @@ DEMO_USERS = [
 ]
 
 DEPARTMENTS = [
-    {"name": "Technologie", "description": "Développement logiciel et infrastructure IT"},
-    {"name": "Ressources Humaines", "description": "Gestion du personnel et recrutement"},
-    {"name": "Commercial", "description": "Ventes, partenariats et développement business"},
+    {
+        "name": "Technologie",
+        "description": "Développement logiciel et infrastructure IT",
+    },
+    {
+        "name": "Ressources Humaines",
+        "description": "Gestion du personnel et recrutement",
+    },
+    {
+        "name": "Commercial",
+        "description": "Ventes, partenariats et développement business",
+    },
 ]
 
 POSITIONS = [
@@ -80,21 +93,141 @@ POSITIONS = [
 
 # 15 Senegalese employee profiles (first_name, last_name, salary, dept, position)
 EMPLOYEES_DATA = [
-    ("Ibrahima", "Diop", 850_000, "Technologie", "Développeur Backend", "1990-03-15", "SN001"),
-    ("Mariama", "Fall", 780_000, "Technologie", "Développeur Frontend", "1993-07-22", "SN002"),
-    ("Ousmane", "Sarr", 920_000, "Technologie", "DevOps Engineer", "1988-11-05", "SN003"),
-    ("Rokhaya", "Mbaye", 1_100_000, "Ressources Humaines", "Responsable RH", "1985-04-30", "SN004"),
-    ("Abdoulaye", "Gueye", 680_000, "Ressources Humaines", "Chargé de Recrutement", "1995-09-18", "SN005"),
-    ("Ndéye", "Diagne", 950_000, "Commercial", "Commercial Senior", "1987-01-12", "SN006"),
-    ("Cheikh", "Toure", 870_000, "Commercial", "Account Manager", "1991-06-25", "SN007"),
-    ("Aminata", "Cisse", 760_000, "Technologie", "Développeur Frontend", "1994-02-08", "SN008"),
-    ("Pape", "Diouf", 840_000, "Technologie", "Développeur Backend", "1992-10-03", "SN009"),
-    ("Seynabou", "Thiaw", 800_000, "Commercial", "Account Manager", "1993-12-17", "SN010"),
-    ("Mame", "Diop", 730_000, "Ressources Humaines", "Chargé de Recrutement", "1996-05-20", "SN011"),
-    ("Lamine", "Niang", 890_000, "Technologie", "Développeur Backend", "1989-08-14", "SN012"),
-    ("Khady", "Faye", 820_000, "Technologie", "Développeur Frontend", "1994-03-29", "SN013"),
-    ("Alioune", "Badji", 960_000, "Commercial", "Commercial Senior", "1986-07-07", "SN014"),
-    ("Coumba", "Dieme", 710_000, "Commercial", "Account Manager", "1997-11-23", "SN015"),
+    (
+        "Ibrahima",
+        "Diop",
+        850_000,
+        "Technologie",
+        "Développeur Backend",
+        "1990-03-15",
+        "SN001",
+    ),
+    (
+        "Mariama",
+        "Fall",
+        780_000,
+        "Technologie",
+        "Développeur Frontend",
+        "1993-07-22",
+        "SN002",
+    ),
+    (
+        "Ousmane",
+        "Sarr",
+        920_000,
+        "Technologie",
+        "DevOps Engineer",
+        "1988-11-05",
+        "SN003",
+    ),
+    (
+        "Rokhaya",
+        "Mbaye",
+        1_100_000,
+        "Ressources Humaines",
+        "Responsable RH",
+        "1985-04-30",
+        "SN004",
+    ),
+    (
+        "Abdoulaye",
+        "Gueye",
+        680_000,
+        "Ressources Humaines",
+        "Chargé de Recrutement",
+        "1995-09-18",
+        "SN005",
+    ),
+    (
+        "Ndéye",
+        "Diagne",
+        950_000,
+        "Commercial",
+        "Commercial Senior",
+        "1987-01-12",
+        "SN006",
+    ),
+    (
+        "Cheikh",
+        "Toure",
+        870_000,
+        "Commercial",
+        "Account Manager",
+        "1991-06-25",
+        "SN007",
+    ),
+    (
+        "Aminata",
+        "Cisse",
+        760_000,
+        "Technologie",
+        "Développeur Frontend",
+        "1994-02-08",
+        "SN008",
+    ),
+    (
+        "Pape",
+        "Diouf",
+        840_000,
+        "Technologie",
+        "Développeur Backend",
+        "1992-10-03",
+        "SN009",
+    ),
+    (
+        "Seynabou",
+        "Thiaw",
+        800_000,
+        "Commercial",
+        "Account Manager",
+        "1993-12-17",
+        "SN010",
+    ),
+    (
+        "Mame",
+        "Diop",
+        730_000,
+        "Ressources Humaines",
+        "Chargé de Recrutement",
+        "1996-05-20",
+        "SN011",
+    ),
+    (
+        "Lamine",
+        "Niang",
+        890_000,
+        "Technologie",
+        "Développeur Backend",
+        "1989-08-14",
+        "SN012",
+    ),
+    (
+        "Khady",
+        "Faye",
+        820_000,
+        "Technologie",
+        "Développeur Frontend",
+        "1994-03-29",
+        "SN013",
+    ),
+    (
+        "Alioune",
+        "Badji",
+        960_000,
+        "Commercial",
+        "Commercial Senior",
+        "1986-07-07",
+        "SN014",
+    ),
+    (
+        "Coumba",
+        "Dieme",
+        710_000,
+        "Commercial",
+        "Account Manager",
+        "1997-11-23",
+        "SN015",
+    ),
 ]
 
 LEAVE_DATA = [
@@ -113,18 +246,102 @@ LEAVE_DATA = [
 
 TASK_DATA = [
     # (title, description, assignee_index, status, priority, due_offset_days)
-    ("Refactoring API authentification", "Migrer vers JWT v2 et simplifier les endpoints", 0, "done", "high", -5),
-    ("Dashboard analytics RH", "Implémenter les graphiques Recharts pour les KPIs", 1, "in_review", "high", 3),
-    ("Intégration agent vocal", "Brancher Qdrant + FastEmbed sur l'app Django", 2, "in_progress", "medium", 10),
-    ("Tests unitaires module congés", "Atteindre 80% de couverture sur l'app conge", 3, "todo", "medium", 15),
-    ("Documentation API Swagger", "Générer la spec OpenAPI via drf-spectacular", 4, "todo", "low", 20),
-    ("Optimisation requêtes PostgreSQL", "Ajouter index sur les champs filtrés fréquemment", 0, "in_progress", "high", 7),
-    ("CI/CD GitHub Actions", "Configurer le pipeline de déploiement automatique", 2, "in_review", "medium", 5),
-    ("Module paiement - fiches de paie PDF", "Générer les bulletins en PDF avec ReportLab", 1, "todo", "medium", 25),
-    ("RBAC - permissions granulaires", "Affiner les permissions par rôle dans DRF", 3, "done", "high", -10),
-    ("Maquette mobile Figma", "Concevoir les écrans employé pour l'app mobile", 4, "todo", "low", 30),
-    ("Churn prediction - batch quotidien", "Celery beat pour recalculer les scores chaque nuit", 0, "in_progress", "high", 12),
-    ("Onboarding candidat - UX", "Améliorer le tunnel de candidature côté frontend", 1, "todo", "medium", 18),
+    (
+        "Refactoring API authentification",
+        "Migrer vers JWT v2 et simplifier les endpoints",
+        0,
+        "done",
+        "high",
+        -5,
+    ),
+    (
+        "Dashboard analytics RH",
+        "Implémenter les graphiques Recharts pour les KPIs",
+        1,
+        "in_review",
+        "high",
+        3,
+    ),
+    (
+        "Intégration agent vocal",
+        "Brancher Qdrant + FastEmbed sur l'app Django",
+        2,
+        "in_progress",
+        "medium",
+        10,
+    ),
+    (
+        "Tests unitaires module congés",
+        "Atteindre 80% de couverture sur l'app conge",
+        3,
+        "todo",
+        "medium",
+        15,
+    ),
+    (
+        "Documentation API Swagger",
+        "Générer la spec OpenAPI via drf-spectacular",
+        4,
+        "todo",
+        "low",
+        20,
+    ),
+    (
+        "Optimisation requêtes PostgreSQL",
+        "Ajouter index sur les champs filtrés fréquemment",
+        0,
+        "in_progress",
+        "high",
+        7,
+    ),
+    (
+        "CI/CD GitHub Actions",
+        "Configurer le pipeline de déploiement automatique",
+        2,
+        "in_review",
+        "medium",
+        5,
+    ),
+    (
+        "Module paiement - fiches de paie PDF",
+        "Générer les bulletins en PDF avec ReportLab",
+        1,
+        "todo",
+        "medium",
+        25,
+    ),
+    (
+        "RBAC - permissions granulaires",
+        "Affiner les permissions par rôle dans DRF",
+        3,
+        "done",
+        "high",
+        -10,
+    ),
+    (
+        "Maquette mobile Figma",
+        "Concevoir les écrans employé pour l'app mobile",
+        4,
+        "todo",
+        "low",
+        30,
+    ),
+    (
+        "Churn prediction - batch quotidien",
+        "Celery beat pour recalculer les scores chaque nuit",
+        0,
+        "in_progress",
+        "high",
+        12,
+    ),
+    (
+        "Onboarding candidat - UX",
+        "Améliorer le tunnel de candidature côté frontend",
+        1,
+        "todo",
+        "medium",
+        18,
+    ),
 ]
 
 JOB_OFFERS = [
@@ -290,7 +507,9 @@ class Command(BaseCommand):
             self._seed_applications(job_offers)
             self._seed_payrolls(employees)
 
-        self.stdout.write(self.style.SUCCESS("\n Smart-HR demo data seeded successfully!\n"))
+        self.stdout.write(
+            self.style.SUCCESS("\n Smart-HR demo data seeded successfully!\n"),
+        )
         self._print_credentials()
 
     # ------------------------------------------------------------------
@@ -392,7 +611,9 @@ class Command(BaseCommand):
         self.stdout.write("  Creating 15 employees...")
         employees = []
 
-        for i, (first, last, salary, dept_name, pos_title, dob, cin) in enumerate(EMPLOYEES_DATA):
+        for i, (first, last, salary, dept_name, pos_title, dob, cin) in enumerate(
+            EMPLOYEES_DATA,
+        ):
             username = f"{first.lower()}.{last.lower()}"
             email = f"{username}@smarthr.com"
 
@@ -425,7 +646,7 @@ class Command(BaseCommand):
                     "status": Employee.Status.ACTIVE,
                     "date_of_birth": date.fromisoformat(dob),
                     "cin": cin,
-                    "address": f"Dakar, Sénégal",
+                    "address": "Dakar, Sénégal",
                     "churn_risk": churn_risk,
                 },
             )
@@ -444,7 +665,14 @@ class Command(BaseCommand):
         today = date.today()
         created_count = 0
 
-        for emp_idx, leave_type, days_from_today, duration, status, reason in LEAVE_DATA:
+        for (
+            emp_idx,
+            leave_type,
+            days_from_today,
+            duration,
+            status,
+            reason,
+        ) in LEAVE_DATA:
             if emp_idx >= len(employees):
                 continue
 
@@ -539,7 +767,11 @@ class Command(BaseCommand):
         candidate_user = User.objects.filter(role="CANDIDATE").first()
 
         if not candidate_user:
-            self.stdout.write(self.style.WARNING("    No CANDIDATE user found, skipping applications."))
+            self.stdout.write(
+                self.style.WARNING(
+                    "    No CANDIDATE user found, skipping applications.",
+                ),
+            )
             return
 
         created_count = 0
@@ -588,7 +820,7 @@ class Command(BaseCommand):
             for month in months:
                 bonus = Decimal("50000") if random.random() > 0.6 else Decimal("0")
                 deduction = Decimal("75000")  # cotisations sociales
-                paid_months = months[:2]  # 2 oldest are paid, current is processed
+                # 2 oldest are paid, current is processed — status logic below
                 if month == months[0]:
                     status = Payroll.Status.PENDING
                 elif month == months[1]:
@@ -617,13 +849,15 @@ class Command(BaseCommand):
 
     def _print_credentials(self) -> None:
         self.stdout.write(self.style.SUCCESS("=" * 60))
-        self.stdout.write(self.style.SUCCESS("  DEMO CREDENTIALS  (password: SmartHR2026!)"))
+        self.stdout.write(
+            self.style.SUCCESS("  DEMO CREDENTIALS  (password: SmartHR2026!)"),
+        )
         self.stdout.write(self.style.SUCCESS("=" * 60))
         rows = [
-            ("Admin",     "admin@smarthr.com",     "Acces complet + Django admin"),
-            ("RH",        "rh@smarthr.com",         "Dashboard, congés, recrutement"),
-            ("Employé",   "employee@smarthr.com",   "Profil, congés, tâches"),
-            ("Candidat",  "candidate@smarthr.com",  "Offres, candidatures"),
+            ("Admin", "admin@smarthr.com", "Acces complet + Django admin"),
+            ("RH", "rh@smarthr.com", "Dashboard, congés, recrutement"),
+            ("Employé", "employee@smarthr.com", "Profil, congés, tâches"),
+            ("Candidat", "candidate@smarthr.com", "Offres, candidatures"),
         ]
         for role, email, desc in rows:
             self.stdout.write(f"  {role:<12} {email:<30} {desc}")

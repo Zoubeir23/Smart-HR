@@ -17,20 +17,24 @@ from smart_hr.users.serializers import UserRegisterSerializer
 
 class OTPVerifyThrottle(UserRateThrottle):
     """10 tentatives de vérification OTP par heure par utilisateur."""
+
     rate = "10/hour"
     scope = "otp_verify"
 
 
 class OTPResendThrottle(UserRateThrottle):
     """3 renvois d'OTP par heure par utilisateur."""
+
     rate = "3/hour"
     scope = "otp_resend"
 
 
 class RegistrationThrottle(AnonRateThrottle):
     """5 inscriptions par heure par IP."""
+
     rate = "5/hour"
     scope = "registration"
+
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +66,8 @@ class CandidateRegisterView(APIView):
             )
         except Exception:
             logger.exception(
-                "Échec envoi OTP lors de l'inscription du candidat %s", user.email
+                "Échec envoi OTP lors de l'inscription du candidat %s",
+                user.email,
             )
 
         return Response(
@@ -133,4 +138,6 @@ class ResendOTPView(APIView):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        return Response({"detail": "Un nouveau code a été envoyé à votre adresse email."})
+        return Response(
+            {"detail": "Un nouveau code a été envoyé à votre adresse email."},
+        )

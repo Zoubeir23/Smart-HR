@@ -158,8 +158,7 @@ Document à partager:
 
 ---
 
-**Date de vérification**: _______________  
-**Vérifié par**: _______________  
-**Résultat global**: ✅ PASS / ❌ FAIL / ⚠️ PARTIAL  
+**Date de vérification**: _______________
+**Vérifié par**: _______________
+**Résultat global**: ✅ PASS / ❌ FAIL / ⚠️ PARTIAL
 **Commentaires**: _________________________________________________________________
-

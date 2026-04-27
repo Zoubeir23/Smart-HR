@@ -4,8 +4,15 @@ from smart_hr.paiement.models import Payroll
 
 
 class PayrollSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
-    department_name = serializers.CharField(source="employee.department.name", read_only=True, default="")
+    employee_name = serializers.CharField(
+        source="employee.user.get_full_name",
+        read_only=True,
+    )
+    department_name = serializers.CharField(
+        source="employee.department.name",
+        read_only=True,
+        default="",
+    )
 
     class Meta:
         model = Payroll

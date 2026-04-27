@@ -1,22 +1,113 @@
-<!doctype html><html><head><meta charset="utf-8"><title>Semantic</title>
-<link rel="stylesheet" href="../colors_and_type.css">
-<style>
-  body{margin:0;padding:20px;background:var(--bg);}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
-  .card{border:1px solid var(--border);background:#fff;border-radius:12px;padding:14px;}
-  .dot{width:28px;height:28px;border-radius:8px;margin-bottom:10px;}
-  .name{font-size:12px;font-weight:700;color:var(--fg);}
-  .val{font-size:10px;color:var(--fg-muted);font-family:ui-monospace,Menlo,monospace;margin-top:2px;}
-  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:600;margin-top:8px;}
-  .active{background:rgba(22,163,74,.10);color:hsl(160,84%,28%);border:1px solid rgba(22,163,74,.15);}
-  .pending{background:rgba(234,88,12,.10);color:hsl(25,95%,38%);border:1px solid rgba(234,88,12,.15);}
-  .inactive{background:rgba(214,40,40,.10);color:hsl(0,68%,45%);border:1px solid rgba(214,40,40,.15);}
-  .muted-pill{background:hsl(36 40% 91%);color:hsl(20 12% 45%);border:1px solid var(--border);}
-</style></head><body>
-<div class="grid">
-  <div class="card"><div class="dot" style="background:hsl(160 84% 28%)"></div><div class="name">Success</div><div class="val">hsl(160 84% 28%)</div><span class="pill active">● Actif</span></div>
-  <div class="card"><div class="dot" style="background:hsl(25 95% 53%)"></div><div class="name">Warning</div><div class="val">hsl(25 95% 53%)</div><span class="pill pending">● En attente</span></div>
-  <div class="card"><div class="dot" style="background:hsl(0 68% 50%)"></div><div class="name">Destructive</div><div class="val">hsl(0 68% 50%)</div><span class="pill inactive">● Inactif</span></div>
-  <div class="card"><div class="dot" style="background:hsl(36 40% 91%);border:1px solid var(--border)"></div><div class="name">Muted</div><div class="val">hsl(36 40% 91%)</div><span class="pill muted-pill">Neutre</span></div>
-</div>
-</body></html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Semantic</title>
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        background: var(--bg);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+      }
+
+      .card {
+        border: 1px solid var(--border);
+        background: #fff;
+        border-radius: 12px;
+        padding: 14px;
+      }
+
+      .dot {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        margin-bottom: 10px;
+      }
+
+      .name {
+        font-size: 12px;
+        font-weight: 700;
+        color: var(--fg);
+      }
+
+      .val {
+        font-size: 10px;
+        color: var(--fg-muted);
+        font-family: ui-monospace, Menlo, monospace;
+        margin-top: 2px;
+      }
+
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 600;
+        margin-top: 8px;
+      }
+
+      .active {
+        background: rgba(22, 163, 74, .10);
+        color: hsl(160, 84%, 28%);
+        border: 1px solid rgba(22, 163, 74, .15);
+      }
+
+      .pending {
+        background: rgba(234, 88, 12, .10);
+        color: hsl(25, 95%, 38%);
+        border: 1px solid rgba(234, 88, 12, .15);
+      }
+
+      .inactive {
+        background: rgba(214, 40, 40, .10);
+        color: hsl(0, 68%, 45%);
+        border: 1px solid rgba(214, 40, 40, .15);
+      }
+
+      .muted-pill {
+        background: hsl(36 40% 91%);
+        color: hsl(20 12% 45%);
+        border: 1px solid var(--border);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid">
+      <div class="card">
+        <div class="dot" style="background:hsl(160 84% 28%)"></div>
+        <div class="name">Success</div>
+        <div class="val">hsl(160 84% 28%)</div>
+        <span class="pill active">● Actif</span>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:hsl(25 95% 53%)"></div>
+        <div class="name">Warning</div>
+        <div class="val">hsl(25 95% 53%)</div>
+        <span class="pill pending">● En attente</span>
+      </div>
+      <div class="card">
+        <div class="dot" style="background:hsl(0 68% 50%)"></div>
+        <div class="name">Destructive</div>
+        <div class="val">hsl(0 68% 50%)</div>
+        <span class="pill inactive">● Inactif</span>
+      </div>
+      <div class="card">
+        <div class="dot"
+             style="background:hsl(36 40% 91%);
+                    border:1px solid var(--border)"></div>
+        <div class="name">Muted</div>
+        <div class="val">hsl(36 40% 91%)</div>
+        <span class="pill muted-pill">Neutre</span>
+      </div>
+    </div>
+  </body>
+</html>

@@ -27,20 +27,20 @@ test_endpoint() {
     local endpoint=$2
     local name=$3
     local token=$4
-    
+
     local url="$BASE_URL/api/$API_VERSION$endpoint"
-    
+
     echo -n "Testing $name... "
-    
+
     if [ -z "$token" ]; then
         response=$(curl -s -w "\n%{http_code}" -X $method "$url" -H "Content-Type: application/json")
     else
         response=$(curl -s -w "\n%{http_code}" -X $method "$url" -H "Content-Type: application/json" -H "Authorization: Bearer $token")
     fi
-    
+
     http_code=$(echo "$response" | tail -n1)
     body=$(echo "$response" | sed '$d')
-    
+
     if [ "$http_code" -ge 200 ] && [ "$http_code" -lt 300 ]; then
         echo -e "${GREEN}✓ OK${NC} (HTTP $http_code)"
         echo "- ✓ $name: HTTP $http_code" >> "$OUTPUT_FILE"

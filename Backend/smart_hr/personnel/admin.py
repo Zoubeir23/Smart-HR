@@ -20,7 +20,14 @@ class PositionAdmin(admin.ModelAdmin):
 
 @admin.register(Employee)
 class EmployeeAdmin(admin.ModelAdmin):
-    list_display = ["user", "department", "position", "status", "hire_date", "churn_risk"]
+    list_display = [
+        "user",
+        "department",
+        "position",
+        "status",
+        "hire_date",
+        "churn_risk",
+    ]
     list_filter = ["status", "department"]
     search_fields = ["user__first_name", "user__last_name", "user__email", "cin"]
     raw_id_fields = ["user"]

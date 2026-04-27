@@ -30,9 +30,14 @@ class MeetingViewSet(viewsets.ModelViewSet):
 
     def _send_invitations_to_all_employees(self, meeting: Meeting) -> None:
         """Envoie une invitation à tous les employés actifs."""
-        active_employees = Employee.objects.select_related("user").filter(
-            status="active", user__email__isnull=False
-        ).exclude(user__email="")
+        active_employees = (
+            Employee.objects.select_related("user")
+            .filter(
+                status="active",
+                user__email__isnull=False,
+            )
+            .exclude(user__email="")
+        )
 
         employee_emails = [e.user.email for e in active_employees]
         if not employee_emails:
@@ -53,5 +58,6 @@ class MeetingViewSet(viewsets.ModelViewSet):
             )
         except Exception:
             logger.exception(
-                "Échec envoi invitations pour la réunion '%s'", meeting.title
+                "Échec envoi invitations pour la réunion '%s'",
+                meeting.title,
             )

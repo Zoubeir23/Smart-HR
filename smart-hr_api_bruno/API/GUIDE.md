@@ -288,7 +288,7 @@ tests {
   test("Status code is 200", function() {
     expect(res.getStatus()).to.equal(200);
   });
-  
+
   test("Response has user data", function() {
     expect(res.getBody().user).to.exist;
   });

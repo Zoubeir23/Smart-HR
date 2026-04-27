@@ -22,6 +22,9 @@ class SecurityHeadersMiddleware:
         response.setdefault("X-Content-Type-Options", "nosniff")
         response.setdefault("X-XSS-Protection", "1; mode=block")
         response.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
-        response.setdefault("Permissions-Policy", "geolocation=(), microphone=(), camera=()")
+        response.setdefault(
+            "Permissions-Policy",
+            "geolocation=(), microphone=(), camera=()",
+        )
         response.setdefault("Content-Security-Policy", self._CSP)
         return response
