@@ -1,0 +1,94 @@
+volumes:
+  production_postgres_data: {}
+  production_postgres_data_backups: {}
+  production_traefik: {}
+  production_django_media: {}
+  production_redis_data: {}
+
+services:
+  # ─── Backend Django ────────────────────────────────────────────────────────
+  django: &django
+    image: ghcr.io/zoubeir23/smart-hr-backend:latest
+    volumes:
+      - production_django_media:/app/smart_hr/media
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./Backend/.envs/.production/.django
+      - ./Backend/.envs/.production/.postgres
+    command: /start
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.django.rule=Host(`${DOMAIN_NAME}`) && (PathPrefix(`/api`) || PathPrefix(`/admin`) || PathPrefix(`/accounts`))"
+      - "traefik.http.routers.django.entrypoints=web-secure"
+      - "traefik.http.routers.django.tls=true"
+      - "traefik.http.routers.django.tls.certresolver=letsencrypt"
+      - "traefik.http.services.django.loadbalancer.server.port=8000"
+    networks:
+      - default
+
+  # ─── Frontend React ────────────────────────────────────────────────────────
+  frontend:
+    image: ghcr.io/zoubeir23/smart-hr-frontend:latest
+    depends_on:
+      - django
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN_NAME}`)"
+      - "traefik.http.routers.frontend.entrypoints=web-secure"
+      - "traefik.http.routers.frontend.tls=true"
+      - "traefik.http.routers.frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+    networks:
+      - default
+
+  # ─── PostgreSQL ────────────────────────────────────────────────────────────
+  postgres:
+    build:
+      context: ./Backend
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: smart_hr_production_postgres
+    volumes:
+      - production_postgres_data:/var/lib/postgresql/data
+      - production_postgres_data_backups:/backups
+    env_file:
+      - ./Backend/.envs/.production/.postgres
+
+  # ─── Redis ─────────────────────────────────────────────────────────────────
+  redis:
+    image: docker.io/redis:7.2
+    volumes:
+      - production_redis_data:/data
+
+  # ─── Celery Worker ─────────────────────────────────────────────────────────
+  celeryworker:
+    <<: *django
+    image: ghcr.io/zoubeir23/smart-hr-backend:latest
+    labels: []
+    command: /start-celeryworker
+
+  # ─── Celery Beat ───────────────────────────────────────────────────────────
+  celerybeat:
+    <<: *django
+    image: ghcr.io/zoubeir23/smart-hr-backend:latest
+    labels: []
+    command: /start-celerybeat
+
+  # ─── Traefik (reverse proxy + SSL Let's Encrypt) ───────────────────────────
+  traefik:
+    build:
+      context: ./Backend
+      dockerfile: ./compose/production/traefik/Dockerfile
+    image: smart_hr_production_traefik
+    depends_on:
+      - django
+      - frontend
+    volumes:
+      - production_traefik:/etc/traefik/acme
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "0.0.0.0:80:80"
+      - "0.0.0.0:443:443"
+    networks:
+      - default

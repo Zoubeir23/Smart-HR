@@ -77,3 +77,19 @@ services:
     ports:
       - '5555:5555'
     command: /start-flower
+
+  frontend:
+    build:
+      context: ../Frontend
+      dockerfile: Dockerfile.local
+    image: smart_hr_local_frontend
+    container_name: smart_hr_local_frontend
+    volumes:
+      - ../Frontend:/app:z
+      - /app/node_modules
+    ports:
+      - '5173:5173'
+    depends_on:
+      - django
+    environment:
+      - VITE_API_URL=http://localhost:8000

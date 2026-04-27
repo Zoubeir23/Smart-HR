@@ -1,0 +1,10 @@
+name: Local
+variables:
+  - secret: true
+    name: baseUrl
+  - secret: true
+    name: apiVersion
+  - secret: true
+    name: authToken
+  - secret: true
+    name: refreshToken

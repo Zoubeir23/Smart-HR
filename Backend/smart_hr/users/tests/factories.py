@@ -10,7 +10,8 @@ from smart_hr.users.models import User
 class UserFactory(DjangoModelFactory[User]):
     username = Faker("user_name")
     email = Faker("email")
-    name = Faker("name")
+    first_name = Faker("first_name")
+    last_name = Faker("last_name")
 
     @post_generation
     def password(self: User, create: bool, extracted: str | None, **kwargs):  # noqa: FBT001

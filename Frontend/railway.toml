@@ -1,0 +1,11 @@
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "Dockerfile"
+
+# VITE_API_URL doit être injectée comme variable d'env Railway au moment du build
+# (Build Arguments dans Railway dashboard → VITE_API_URL)
+[deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 60
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10

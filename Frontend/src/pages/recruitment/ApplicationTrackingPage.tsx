@@ -46,6 +46,8 @@ const ApplicationTrackingPage = () => {
     email: (latestApp?.email as string) || '',
     phone: (latestApp?.phone as string) || '',
     status: (latestApp?.status as string) || 'pending',
+    aiSummary: (latestApp?.ai_summary as string) || '',
+    skillsExtracted: (latestApp?.skills_extracted as string[]) || [],
   };
 
   const buildTimelineSteps = (): TimelineStep[] => {
@@ -246,6 +248,52 @@ const ApplicationTrackingPage = () => {
               </div>
             </Card>
           </div>
+
+          {/* AI Analysis Section */}
+          {(application.aiSummary || application.skillsExtracted.length > 0) && (
+            <Card className="mb-8">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-5">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Brain className="w-5 h-5 text-primary" />
+                  </div>
+                  <h2 className="text-xl font-bold text-foreground">Analyse IA de votre CV</h2>
+                </div>
+
+                {application.skillsExtracted.length > 0 && (
+                  <div className="mb-5">
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                      Compétences détectées
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {application.skillsExtracted.map((skill, index) => (
+                        <motion.span
+                          key={index}
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: index * 0.05 }}
+                          className="inline-flex items-center px-3 py-1 bg-primary/10 text-primary text-sm font-medium rounded-full border border-primary/20"
+                        >
+                          {skill}
+                        </motion.span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {application.aiSummary && (
+                  <div>
+                    <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                      Résumé de l'analyse
+                    </h3>
+                    <p className="text-sm text-foreground leading-relaxed bg-muted/30 rounded-lg p-4 border border-border">
+                      {application.aiSummary}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </Card>
+          )}
 
           {/* Timeline */}
           <Card>

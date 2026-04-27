@@ -1,83 +1,38 @@
 import logging
 
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.conf import settings
-
+from django.utils import timezone
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from smart_hr.core.email_service import send_application_received_email
+from smart_hr.core.email_service import send_application_status_email
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.serializers import ApplicationSerializer
+from smart_hr.recruitment.services.cv_analysis_service import analyze_cv_against_job_offer
+from smart_hr.recruitment.services.cv_analysis_service import extract_text_from_pdf
 from smart_hr.users.permissions import IsCandidate
 from smart_hr.users.permissions import IsRH
 
 logger = logging.getLogger(__name__)
 
-_STATUS_SUBJECTS = {
-    Application.Status.ACCEPTED: "Félicitations — Votre candidature a été acceptée",
-    Application.Status.REJECTED: "Résultat de votre candidature",
-    Application.Status.INTERVIEW: "Invitation à un entretien",
-}
-
-_STATUS_MESSAGES = {
-    Application.Status.ACCEPTED: (
-        "Nous avons le plaisir de vous informer que votre candidature a été retenue. "
-        "Notre équipe RH vous contactera prochainement pour les prochaines étapes."
-    ),
-    Application.Status.REJECTED: (
-        "Après examen attentif de votre candidature, nous ne sommes pas en mesure "
-        "de donner suite à votre dossier. Nous vous remercions de l'intérêt porté à notre entreprise."
-    ),
-    Application.Status.INTERVIEW: (
-        "Votre profil a retenu notre attention. Nous souhaitons vous rencontrer "
-        "pour un entretien. Notre équipe RH vous contactera pour convenir d'un rendez-vous."
-    ),
-}
-
-
-def _notify_candidate(application: Application) -> None:
-    """Envoie un email au candidat si le statut mérite une notification."""
-    subject = _STATUS_SUBJECTS.get(application.status)
-    if not subject:
-        return
-
-    candidate_email = application.candidate.email
-    if not candidate_email:
-        return
-
-    body = (
-        f"Bonjour {application.candidate.get_full_name() or application.candidate.username},\n\n"
-        f"{_STATUS_MESSAGES[application.status]}\n\n"
-        f"Poste : {application.job_offer.title}\n\n"
-        "Cordialement,\nL'équipe Smart-HR"
-    )
-
-    try:
-        send_mail(
-            subject=subject,
-            message=body,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[candidate_email],
-            fail_silently=False,
-        )
-    except Exception as exc:
-        logger.warning("Impossible d'envoyer l'email au candidat %s : %s", candidate_email, exc)
-
 
 class ApplicationViewSet(viewsets.ModelViewSet):
+    """Gestion des candidatures avec analyse IA de CV et notifications email."""
+
     serializer_class = ApplicationSerializer
 
     def get_queryset(self):
+        """Retourne toutes les candidatures pour RH/Admin, sinon celles du candidat."""
         user = self.request.user
         if user.role in ["ADMIN", "RH"]:
             return Application.objects.select_related("job_offer", "candidate").all()
         return Application.objects.filter(candidate=user)
 
     def get_permissions(self):
+        """Applique des permissions par action selon le rôle métier."""
         if self.action == "create":
             return [IsCandidate()]
         if self.action in ["list", "retrieve"]:
@@ -85,7 +40,73 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         return [IsRH()]
 
     def perform_create(self, serializer):
-        serializer.save(candidate=self.request.user)
+        """Crée une candidature, lance l'analyse CV puis envoie un accusé de réception."""
+        application = serializer.save(candidate=self.request.user)
+        self._run_cv_analysis(application)
+        self._notify_candidate_application_received(application)
+
+    # ─── Analyse NLP ─────────────────────────────────────────────────────────
+
+    def _run_cv_analysis(self, application: Application) -> None:
+        """Analyse le CV par IA et met à jour matching_score, skills_extracted, ai_summary."""
+        try:
+            job_offer = application.job_offer
+            cv_text = extract_text_from_pdf(application.cv)
+
+            result = analyze_cv_against_job_offer(
+                cv_text=cv_text,
+                cover_letter=application.cover_letter or "",
+                job_title=job_offer.title,
+                job_requirements=job_offer.requirements or "",
+                job_description=job_offer.description or "",
+            )
+
+            application.matching_score = result["matching_score"]
+            application.skills_extracted = result["skills_extracted"]
+            application.ai_summary = result["ai_summary"]
+            application.save(
+                update_fields=["matching_score", "skills_extracted", "ai_summary"],
+            )
+
+            logger.info(
+                "Analyse CV terminée pour application %s — score : %.1f%%",
+                application.pk,
+                result["matching_score"],
+            )
+        except Exception:
+            logger.exception(
+                "Erreur lors de l'analyse CV pour application %s",
+                application.pk,
+            )
+
+    @action(detail=True, methods=["post"], url_path="analyze-cv")
+    def analyze_cv(self, request, pk=None):
+        """
+        POST /api/v1/recruitment/applications/{id}/analyze-cv/
+        Relance l'analyse IA du CV pour une candidature existante (RH uniquement).
+        """
+        application = self.get_object()
+        self._run_cv_analysis(application)
+        serializer = self.get_serializer(application)
+        return Response(serializer.data)
+
+    # ─── Notifications ───────────────────────────────────────────────────────
+
+    def _notify_candidate_application_received(self, application: Application) -> None:
+        candidate = application.candidate
+        try:
+            send_application_received_email(
+                candidate_email=candidate.email,
+                first_name=candidate.first_name or "",
+                job_title=application.job_offer.title,
+                department=application.job_offer.department,
+                applied_on=timezone.now().strftime("%d/%m/%Y"),
+            )
+        except Exception:
+            logger.exception(
+                "Échec envoi confirmation candidature à %s",
+                candidate.email,
+            )
 
     @action(detail=True, methods=["patch"], url_path="update-status")
     def update_status(self, request, pk=None):
@@ -94,11 +115,39 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         new_status = request.data.get("status")
         if new_status not in Application.Status.values:
             return Response(
-                {"detail": f"Statut invalide. Valeurs acceptées : {Application.Status.values}"},
+                {
+                    "detail": f"Statut invalide. Valeurs acceptées : {Application.Status.values}",
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        old_status = application.status
         application.status = new_status
         application.save(update_fields=["status", "updated_at"])
-        _notify_candidate(application)
+
+        if old_status != new_status and new_status not in {Application.Status.PENDING}:
+            self._notify_candidate_status_update(application, new_status)
+
         serializer = self.get_serializer(application)
         return Response(serializer.data)
+
+    def _notify_candidate_status_update(
+        self,
+        application: Application,
+        new_status: str,
+    ) -> None:
+        """Informe le candidat d'un changement de statut de sa candidature."""
+        candidate = application.candidate
+        try:
+            send_application_status_email(
+                candidate_email=candidate.email,
+                first_name=candidate.first_name or "",
+                job_title=application.job_offer.title,
+                new_status=new_status,
+            )
+        except Exception:
+            logger.exception(
+                "Échec envoi email statut candidature (%s) à %s",
+                new_status,
+                candidate.email,
+            )

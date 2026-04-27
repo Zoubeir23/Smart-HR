@@ -30,7 +30,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if data["password"] != data["password2"]:
             raise serializers.ValidationError(
-                {"password": "Les mots de passe ne correspondent pas."}
+                {"password": "Les mots de passe ne correspondent pas."},
             )
         return data
 

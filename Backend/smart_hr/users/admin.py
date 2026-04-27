@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .forms import UserAdminChangeForm
 from .forms import UserAdminCreationForm
+from .models import OTPCode
 from .models import User
 
 if settings.DJANGO_ADMIN_FORCE_ALLAUTH:
@@ -22,7 +23,7 @@ class UserAdmin(auth_admin.UserAdmin):
     fieldsets = (
         (None, {"fields": ("username", "password")}),
         (_("Personal info"), {"fields": ("first_name", "last_name", "email", "tel")}),
-        (_("Smart-HR"), {"fields": ("role",)}),
+        (_("Smart-HR"), {"fields": ("role", "is_email_verified")}),
         (
             _("Permissions"),
             {
@@ -37,6 +38,31 @@ class UserAdmin(auth_admin.UserAdmin):
         ),
         (_("Important dates"), {"fields": ("last_login", "date_joined")}),
     )
-    list_display = ["username", "email", "first_name", "last_name", "role", "is_superuser"]
+    list_display = [
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "role",
+        "is_superuser",
+    ]
     search_fields = ["username", "email", "first_name", "last_name"]
-    list_filter = ["role", "is_active", "is_staff"]
+    list_display = [
+        "username",
+        "email",
+        "first_name",
+        "last_name",
+        "role",
+        "is_email_verified",
+        "is_superuser",
+    ]
+    search_fields = ["username", "email", "first_name", "last_name"]
+    list_filter = ["role", "is_active", "is_staff", "is_email_verified"]
+
+
+@admin.register(OTPCode)
+class OTPCodeAdmin(admin.ModelAdmin):
+    list_display = ["user", "code", "expiry_date", "is_used", "created_at"]
+    list_filter = ["is_used"]
+    search_fields = ["user__email"]
+    readonly_fields = ["created_at"]

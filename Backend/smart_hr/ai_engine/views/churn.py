@@ -23,6 +23,7 @@ def _load_model():
         return None
     try:
         import joblib
+
         return joblib.load(MODEL_PATH)
     except Exception as exc:
         logger.error("Impossible de charger le modèle churn : %s", exc)
@@ -47,17 +48,20 @@ def _employee_to_features(employee: Employee) -> dict:
 
 
 class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
+    """Expose les prédictions de churn et les actions de scoring IA."""
+
     serializer_class = ChurnPredictionSerializer
     permission_classes = [IsRH]
 
     def get_queryset(self):
+        """Retourne l'historique des prédictions avec les relations utiles préchargées."""
         return ChurnPrediction.objects.select_related("employee__user").all()
 
     @action(detail=False, methods=["get"], url_path="high-risk")
     def high_risk(self, request):
         """Retourne uniquement les prédictions à risque ÉLEVÉ."""
         qs = ChurnPrediction.objects.filter(
-            risk_level=ChurnPrediction.RiskLevel.HIGH
+            risk_level=ChurnPrediction.RiskLevel.HIGH,
         ).select_related("employee__user")
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
@@ -67,7 +71,9 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
         """Lance une prédiction churn pour un employé donné."""
         try:
             employee = Employee.objects.select_related(
-                "user", "department", "position"
+                "user",
+                "department",
+                "position",
             ).get(pk=employee_id)
         except Employee.DoesNotExist:
             return Response(
@@ -84,6 +90,7 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
 
         try:
             import numpy as np
+
             features = _employee_to_features(employee)
             X = np.array([list(features.values())])
             proba = model.predict_proba(X)[0][1]
@@ -128,11 +135,14 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
             )
 
         employees = Employee.objects.filter(status="active").select_related(
-            "user", "department", "position"
+            "user",
+            "department",
+            "position",
         )
         results = []
         try:
             import numpy as np
+
             for employee in employees:
                 features = _employee_to_features(employee)
                 X = np.array([list(features.values())])

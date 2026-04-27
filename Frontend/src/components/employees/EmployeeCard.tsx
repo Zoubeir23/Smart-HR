@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { MoreVertical, Mail, Building2, AlertTriangle, ShieldAlert, TrendingDown } from 'lucide-react';
+import { MoreVertical, Mail, Phone, MapPin, AlertTriangle } from 'lucide-react';
 import { Employee } from '@/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,185 +16,157 @@ interface EmployeeCardProps {
   onClick?: () => void;
 }
 
-const statusConfig = {
-  active: {
-    label: 'Actif',
-    dot: 'bg-emerald-500',
-    badge: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-  },
-  inactive: {
-    label: 'Inactif',
-    dot: 'bg-rose-500',
-    badge: 'bg-rose-500/10 text-rose-600 border-rose-500/20',
-  },
-  on_leave: {
-    label: 'En congé',
-    dot: 'bg-amber-500',
-    badge: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
-  },
+const statusStyles = {
+  active: 'bg-success/10 text-success border-success/20',
+  inactive: 'bg-destructive/10 text-destructive border-destructive/20',
+  on_leave: 'bg-warning/10 text-warning border-warning/20',
 };
 
-const avatarGradients = [
-  'linear-gradient(135deg, #4f46e5, #6366f1)',
-  'linear-gradient(135deg, #7c3aed, #8b5cf6)',
-  'linear-gradient(135deg, #0891b2, #06b6d4)',
-  'linear-gradient(135deg, #059669, #10b981)',
-  'linear-gradient(135deg, #d97706, #f59e0b)',
-  'linear-gradient(135deg, #dc2626, #ef4444)',
-  'linear-gradient(135deg, #0d9488, #14b8a6)',
-  'linear-gradient(135deg, #7c3aed, #a855f7)',
+const statusLabels = {
+  active: 'Actif',
+  inactive: 'Inactif',
+  on_leave: 'En congé',
+};
+
+// Deterministic corporate avatar colors from initials
+const avatarColors = [
+  'bg-blue-600',
+  'bg-indigo-600',
+  'bg-violet-600',
+  'bg-teal-600',
+  'bg-cyan-600',
+  'bg-emerald-600',
+  'bg-sky-600',
+  'bg-slate-600',
 ];
 
-function getAvatarGradient(name: string) {
+function getAvatarColor(name: string) {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return avatarGradients[Math.abs(hash) % avatarGradients.length];
-}
-
-function getRiskLevel(risk: number) {
-  if (risk < 30) return { label: 'Faible', color: '#10b981', bg: 'rgba(16,185,129,0.12)', bar: '#10b981' };
-  if (risk < 60) return { label: 'Modéré', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', bar: '#f59e0b' };
-  return { label: 'Élevé', color: '#f43f5e', bg: 'rgba(244,63,94,0.12)', bar: '#f43f5e' };
+  return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
 export default function EmployeeCard({ employee, onClick }: EmployeeCardProps) {
-  const hasHighChurnRisk = employee.churn_risk != null && employee.churn_risk > 60;
-  const gradient = getAvatarGradient(`${employee.user.first_name}${employee.user.last_name}`);
-  const status = statusConfig[employee.status] ?? statusConfig.active;
-  const risk = employee.churn_risk != null ? getRiskLevel(employee.churn_risk) : null;
+  const hasHighChurnRisk = employee.churn_risk && employee.churn_risk > 60;
+  const avatarBg = getAvatarColor(`${employee.user.first_name}${employee.user.last_name}`);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, transition: { duration: 0.18 } }}
-      transition={{ duration: 0.25 }}
+      whileHover={{ y: -4 }}
+      transition={{ duration: 0.2 }}
+      className="group relative cursor-pointer rounded-lg border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow-md"
       onClick={onClick}
-      className="group relative cursor-pointer overflow-hidden rounded-xl border bg-card transition-all"
-      style={{
-        borderColor: hasHighChurnRisk ? 'rgba(244,63,94,0.3)' : 'hsl(var(--border))',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-      }}
-      onMouseEnter={(e) => {
-        const el = e.currentTarget as HTMLElement;
-        el.style.boxShadow = hasHighChurnRisk
-          ? '0 8px 24px rgba(244,63,94,0.12), 0 0 0 1px rgba(244,63,94,0.2)'
-          : '0 8px 24px rgba(0,0,0,0.08), 0 0 0 1px hsl(var(--border))';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = '0 1px 3px rgba(0,0,0,0.05)';
-      }}
     >
-      {/* Risk stripe at top */}
+      {/* Risque de churn badge */}
       {hasHighChurnRisk && (
-        <div
-          className="absolute left-0 right-0 top-0 h-[2px]"
-          style={{ background: 'linear-gradient(90deg, #f43f5e, #fb7185)' }}
-        />
+        <div className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-destructive shadow-lg">
+          <AlertTriangle className="h-4 w-4 text-destructive-foreground" />
+        </div>
       )}
 
-      <div className="p-4">
-        {/* Header row */}
-        <div className="flex items-start gap-3">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-4">
           {/* Avatar */}
-          <div className="relative shrink-0">
-            <div
-              className="flex h-[42px] w-[42px] items-center justify-center rounded-xl text-sm font-bold text-white shadow-sm"
-              style={{ background: gradient }}
-            >
+          <div className="relative">
+            <div className={cn('flex h-14 w-14 items-center justify-center rounded-full text-lg font-semibold text-white', avatarBg)}>
               {employee.user.first_name[0]}
               {employee.user.last_name[0]}
             </div>
-            {/* Status dot */}
-            <span
+            <div
               className={cn(
-                'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-[2px] border-card',
-                status.dot
+                'absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card',
+                employee.status === 'active' && 'bg-success',
+                employee.status === 'inactive' && 'bg-destructive',
+                employee.status === 'on_leave' && 'bg-warning'
               )}
             />
           </div>
 
-          {/* Name / Role */}
-          <div className="min-w-0 flex-1">
-            <h3 className="truncate text-[14px] font-semibold leading-tight">
+          {/* Info */}
+          <div>
+            <h3 className="font-semibold">
               {employee.user.first_name} {employee.user.last_name}
             </h3>
-            <p className="mt-0.5 truncate text-[12px] text-muted-foreground">
-              {employee.position}
-            </p>
-          </div>
-
-          {/* Actions menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                <MoreVertical className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="text-[13px]">
-              <DropdownMenuItem>Voir le profil</DropdownMenuItem>
-              <DropdownMenuItem>Modifier</DropdownMenuItem>
-              <DropdownMenuItem>Envoyer un email</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive focus:text-destructive">
-                Désactiver
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
-        {/* Meta info */}
-        <div className="mt-3 space-y-1.5">
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
-            <Mail className="h-3 w-3 shrink-0" />
-            <span className="truncate">{employee.user.email}</span>
-          </div>
-          <div className="flex items-center gap-2 text-[12px] text-muted-foreground">
-            <Building2 className="h-3 w-3 shrink-0" />
-            <span className="truncate">{employee.department}</span>
+            <p className="text-sm text-muted-foreground">{employee.position_title ?? '—'}</p>
+            <Badge variant="outline" className={cn('mt-1', statusStyles[employee.status])}>
+              {statusLabels[employee.status]}
+            </Badge>
           </div>
         </div>
 
-        {/* Status + Risk row */}
-        <div className="mt-3 flex items-center justify-between">
-          <span
-            className={cn(
-              'inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium',
-              status.badge
-            )}
-          >
-            {status.label}
-          </span>
-
-          {risk && employee.churn_risk != null && (
-            <span
-              className="flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold"
-              style={{ background: risk.bg, color: risk.color }}
+        {/* Actions */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100"
             >
-              {hasHighChurnRisk && <ShieldAlert className="h-3 w-3" />}
-              {employee.churn_risk}% churn
-            </span>
-          )}
-        </div>
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>Voir le profil</DropdownMenuItem>
+            <DropdownMenuItem>Modifier</DropdownMenuItem>
+            <DropdownMenuItem>Envoyer un email</DropdownMenuItem>
+            <DropdownMenuItem className="text-destructive focus:text-destructive">
+              Désactiver
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-        {/* Churn risk bar */}
-        {employee.churn_risk != null && risk && (
-          <div className="mt-3">
-            <div className="h-1 overflow-hidden rounded-full bg-muted">
-              <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: `${employee.churn_risk}%` }}
-                transition={{ duration: 0.9, ease: 'easeOut' }}
-                className="h-full rounded-full"
-                style={{ background: risk.bar }}
-              />
-            </div>
+      {/* Details */}
+      <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <Mail className="h-4 w-4" />
+          <span className="truncate">{employee.user.email}</span>
+        </div>
+        {employee.phone && (
+          <div className="flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            <span>{employee.phone}</span>
           </div>
         )}
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4" />
+          <span>{employee.department_name ?? '—'}</span>
+        </div>
       </div>
+
+      {/* Churn Risk Bar */}
+      {employee.churn_risk !== undefined && (
+        <div className="mt-4 space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">Risque de départ</span>
+            <span
+              className={cn(
+                'font-medium',
+                employee.churn_risk < 30 && 'text-success',
+                employee.churn_risk >= 30 && employee.churn_risk < 60 && 'text-warning',
+                employee.churn_risk >= 60 && 'text-destructive'
+              )}
+            >
+              {employee.churn_risk}%
+            </span>
+          </div>
+          <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${employee.churn_risk}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+              className={cn(
+                'h-full rounded-full',
+                employee.churn_risk < 30 && 'bg-success',
+                employee.churn_risk >= 30 && employee.churn_risk < 60 && 'bg-warning',
+                employee.churn_risk >= 60 && 'bg-destructive'
+              )}
+            />
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

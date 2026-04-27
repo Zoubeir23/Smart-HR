@@ -1,93 +1,95 @@
+volumes:
+  smart_hr_local_postgres_data: {}
+  smart_hr_local_postgres_data_backups: {}
+  smart_hr_local_redis_data: {}
+
 services:
-  # ── PostgreSQL ──────────────────────────────────────────────────────────
-  db:
-    image: postgres:16-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-smart_hr}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ── Django Backend ──────────────────────────────────────────────────────
-  backend:
+  django: &django
     build:
-      context: .
-      dockerfile: Dockerfile.backend
-    restart: unless-stopped
-    env_file: .env.docker
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smart_hr}
-      DJANGO_SETTINGS_MODULE: config.settings.production
-      REDIS_URL: redis://redis:6379/0
-    volumes:
-      - media_data:/app/smart_hr/media
+      context: ./Backend
+      dockerfile: ./compose/local/django/Dockerfile
+    image: smart_hr_local_django
+    container_name: smart_hr_local_django
     depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
-      qdrant:
-        condition: service_started
-    expose:
-      - "8000"
-
-  # ── Redis (Celery broker + cache) ───────────────────────────────────────
-  redis:
-    image: redis:7.2-alpine
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
-
-  # ── Celery Worker ────────────────────────────────────────────────────────
-  celeryworker:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-    restart: unless-stopped
-    env_file: .env.docker
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-smart_hr}
-      DJANGO_SETTINGS_MODULE: config.settings.production
-      REDIS_URL: redis://redis:6379/0
-    depends_on:
-      - backend
+      - postgres
       - redis
-    command: ["celery", "-A", "config.celery_app", "worker", "--loglevel=info"]
-
-  # ── Qdrant Vector DB (Agent Vocal) ──────────────────────────────────────
-  qdrant:
-    image: qdrant/qdrant:v1.9.5
-    restart: unless-stopped
+      - mailpit
     volumes:
-      - qdrant_data:/qdrant/storage
+      - /app/.venv
+      - ./Backend:/app:z
+    env_file:
+      - ./Backend/.envs/.local/.django
+      - ./Backend/.envs/.local/.postgres
     ports:
-      - "6333:6333"
+      - '8000:8000'
+    command: /start
 
-  # ── React Frontend + Nginx ─────────────────────────────────────────────
+  postgres:
+    build:
+      context: ./Backend
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: smart_hr_production_postgres
+    container_name: smart_hr_local_postgres
+    volumes:
+      - smart_hr_local_postgres_data:/var/lib/postgresql/data
+      - smart_hr_local_postgres_data_backups:/backups
+    env_file:
+      - ./Backend/.envs/.local/.postgres
+
+  mailpit:
+    image: docker.io/axllent/mailpit:latest
+    container_name: smart_hr_local_mailpit
+    ports:
+      - "8025:8025"
+
+  redis:
+    image: docker.io/redis:7.2
+    container_name: smart_hr_local_redis
+    volumes:
+      - smart_hr_local_redis_data:/data
+
+  celeryworker:
+    <<: *django
+    image: smart_hr_local_celeryworker
+    container_name: smart_hr_local_celeryworker
+    depends_on:
+      - redis
+      - postgres
+      - mailpit
+    ports: []
+    command: /start-celeryworker
+
+  celerybeat:
+    <<: *django
+    image: smart_hr_local_celerybeat
+    container_name: smart_hr_local_celerybeat
+    depends_on:
+      - redis
+      - postgres
+      - mailpit
+    ports: []
+    command: /start-celerybeat
+
+  flower:
+    <<: *django
+    image: smart_hr_local_flower
+    container_name: smart_hr_local_flower
+    ports:
+      - '5555:5555'
+    command: /start-flower
+
   frontend:
     build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        VITE_API_URL: /api
-        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
-    restart: unless-stopped
+      context: ./Frontend
+      dockerfile: Dockerfile.local
+    image: smart_hr_local_frontend
+    container_name: smart_hr_local_frontend
+    volumes:
+      - ./Frontend:/app:z
+      - /app/node_modules
     ports:
-      - "${APP_PORT:-80}:80"
+      - '5173:8080'
     depends_on:
-      - backend
-
-volumes:
-  postgres_data:
-  media_data:
-  redis_data:
-  qdrant_data:
+      - django
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1

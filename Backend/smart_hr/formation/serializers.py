@@ -15,5 +15,14 @@ class FormationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Formation
-        fields = ["id", "title", "description", "start_date", "end_date", "instructor", "meetings", "created_at"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "start_date",
+            "end_date",
+            "instructor",
+            "meetings",
+            "created_at",
+        ]
         read_only_fields = ["created_at"]

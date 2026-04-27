@@ -54,8 +54,11 @@ interface NormalizedEmployee {
   recommendations?: string[];
 }
 
+type RawEmployeeData = Record<string, unknown>;
+type RawFactor = string | { factor?: string; name?: string; impact?: string; level?: string };
+
 /* ─── Normalize API data (handles both snake_case and camelCase) ─── */
-function normalizeEmployee(raw: any): NormalizedEmployee {
+function normalizeEmployee(raw: RawEmployeeData, idx = 0): NormalizedEmployee {
   const firstName = raw.employee?.user?.first_name || raw.first_name || '';
   const lastName = raw.employee?.user?.last_name || raw.last_name || '';
   const name = raw.name || `${firstName} ${lastName}`.trim() || 'Inconnu';
@@ -77,7 +80,7 @@ function normalizeEmployee(raw: any): NormalizedEmployee {
 
   const factors = raw.riskFactors ?? raw.risk_factors ?? raw.factors ?? [];
   const normalizedFactors = Array.isArray(factors)
-    ? factors.map((f: any) =>
+    ? (factors as RawFactor[]).map((f) =>
         typeof f === 'string'
           ? { factor: f, impact: 'moyen' }
           : { factor: f.factor ?? f.name ?? String(f), impact: f.impact ?? f.level ?? 'moyen' }
@@ -92,7 +95,7 @@ function normalizeEmployee(raw: any): NormalizedEmployee {
   const rawRecs = raw.recommendations ?? (raw.recommendation ? [raw.recommendation] : []);
 
   return {
-    id: String(raw.id ?? Math.random()),
+    id: String(raw.id ?? idx),
     name,
     initials,
     department: dept,
@@ -324,9 +327,9 @@ const ChurnDashboardPage = () => {
     queryFn: churnService.getHighRisk,
   });
 
-  const rawEmployees = predictions?.results || predictions || [];
+  const rawEmployees: RawEmployeeData[] = predictions?.results || predictions || [];
   const employees: NormalizedEmployee[] = useMemo(
-    () => rawEmployees.map(normalizeEmployee),
+    () => rawEmployees.map((raw, idx) => normalizeEmployee(raw, idx)),
     [rawEmployees]
   );
   const highRiskCount = (highRisk?.results || highRisk || []).length;

@@ -1,0 +1,65 @@
+{% extends "email/email_base.html" %}
+
+{% load i18n %}
+
+{% block email_title %}
+  Candidature reçue — Smart-HR
+{% endblock email_title %}
+{% block email_content %}
+  <h1 class="email-title">Votre candidature a bien été reçue ✅</h1>
+  <p class="email-subtitle">
+    Bonjour <strong>{{ first_name }}</strong>,
+    <br />
+    Nous avons bien reçu votre candidature pour le poste ci-dessous. Notre équipe RH l'examinera dans les meilleurs délais.
+  </p>
+  <div class="divider"></div>
+  <div class="credentials-card">
+    <p class="credentials-title">💼 Votre candidature</p>
+    <div class="credential-row">
+      <div class="credential-icon">🎯</div>
+      <div>
+        <p class="credential-label">Poste</p>
+        <p class="credential-value">{{ job_title }}</p>
+      </div>
+    </div>
+    {% if department %}
+      <div class="credential-row">
+        <div class="credential-icon">🏢</div>
+        <div>
+          <p class="credential-label">Département</p>
+          <p class="credential-value">{{ department }}</p>
+        </div>
+      </div>
+    {% endif %}
+    <div class="credential-row">
+      <div class="credential-icon">📅</div>
+      <div>
+        <p class="credential-label">Date de candidature</p>
+        <p class="credential-value">{{ applied_on }}</p>
+      </div>
+    </div>
+    <div style="margin-top: 1rem;">
+      <p class="credential-label" style="margin-bottom:0.5rem;">Statut</p>
+      <span class="status-badge"
+            style="background:#fff3cd;
+                   color:#856404;
+                   border:1px solid #ffc107;
+                   border-radius:6px;
+                   padding:4px 12px;
+                   font-size:0.8rem;
+                   font-weight:600">⏳ En cours d'examen</span>
+    </div>
+  </div>
+  <div class="alert alert-neutral">
+    Vous serez notifié par email à chaque changement de statut de votre candidature. Assurez-vous de consulter régulièrement votre boîte email.
+  </div>
+  <div class="btn-wrapper">
+    <a href="{{ dashboard_url }}" class="btn">Suivre ma candidature →</a>
+  </div>
+  <p style="font-size:0.78rem;
+            color:#9b9589;
+            margin-top:1.5rem;
+            line-height:1.65">
+    Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
+  </p>
+{% endblock email_content %}

@@ -4,7 +4,10 @@ from smart_hr.ai_engine.models import ChurnPrediction
 
 
 class ChurnPredictionSerializer(serializers.ModelSerializer):
-    employee_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    employee_name = serializers.CharField(
+        source="employee.user.get_full_name",
+        read_only=True,
+    )
 
     class Meta:
         model = ChurnPrediction

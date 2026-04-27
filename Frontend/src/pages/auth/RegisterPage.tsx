@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { UserPlus, Mail, Phone, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { UserPlus, Mail, Phone, Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import Logo from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import api from '@/services/api';
 
 interface RegisterFormData {
   prenom: string;
@@ -13,7 +14,6 @@ interface RegisterFormData {
   telephone: string;
   password: string;
   confirmPassword: string;
-  role: 'CANDIDATE';
 }
 
 const RegisterPage = () => {
@@ -21,6 +21,7 @@ const RegisterPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const [formData, setFormData] = useState<RegisterFormData>({
     prenom: '',
     nom: '',
@@ -28,48 +29,72 @@ const RegisterPage = () => {
     telephone: '',
     password: '',
     confirmPassword: '',
-    role: 'CANDIDATE'
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    if (errorMessage) setErrorMessage('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // Validation
-    if (!formData.prenom || !formData.nom || !formData.email || !formData.telephone || !formData.password || !formData.confirmPassword) {
-      alert('Veuillez remplir tous les champs');
-      return;
-    }
+    setErrorMessage('');
 
     if (formData.password !== formData.confirmPassword) {
-      alert('Les mots de passe ne correspondent pas');
+      setErrorMessage('Les mots de passe ne correspondent pas.');
       return;
     }
 
     if (formData.password.length < 8) {
-      alert('Le mot de passe doit contenir au moins 8 caractères');
+      setErrorMessage('Le mot de passe doit contenir au moins 8 caractères.');
       return;
     }
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
-      // Redirect to login page after successful registration
-      navigate('/login', {
-        state: { message: 'Inscription réussie ! Connectez-vous pour continuer.' }
+    try {
+      const username = `${formData.prenom.toLowerCase()}.${formData.nom.toLowerCase()}`.replace(/\s+/g, '');
+      await api.post('/auth/register/candidate/', {
+        username,
+        email: formData.email,
+        first_name: formData.prenom,
+        last_name: formData.nom,
+        tel: formData.telephone,
+        password: formData.password,
+        password2: formData.confirmPassword,
+        role: 'CANDIDATE',
       });
-    }, 1500);
+
+      navigate('/verify-email', { state: { email: formData.email } });
+    } catch (error: unknown) {
+      if (
+        error &&
+        typeof error === 'object' &&
+        'response' in error &&
+        error.response &&
+        typeof error.response === 'object' &&
+        'data' in error.response
+      ) {
+        const responseData = error.response.data as Record<string, unknown>;
+        const firstError = Object.values(responseData)[0];
+        if (Array.isArray(firstError)) {
+          setErrorMessage(firstError[0] as string);
+        } else if (typeof firstError === 'string') {
+          setErrorMessage(firstError);
+        } else {
+          setErrorMessage("Une erreur est survenue lors de l'inscription.");
+        }
+      } else {
+        setErrorMessage("Impossible de contacter le serveur. Vérifiez votre connexion.");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-purple-500/5 to-background p-4">
-      {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-secondary/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
@@ -81,7 +106,6 @@ const RegisterPage = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
       >
-        {/* Logo and Title */}
         <div className="text-center mb-8">
           <motion.div
             initial={{ scale: 0 }}
@@ -109,7 +133,6 @@ const RegisterPage = () => {
           </motion.p>
         </div>
 
-        {/* Registration Form */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -117,7 +140,13 @@ const RegisterPage = () => {
           className="glass-card p-8 rounded-2xl shadow-xl"
         >
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name Fields */}
+            {errorMessage && (
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2">
@@ -160,7 +189,6 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            {/* Email */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Email <span className="text-red-500">*</span>
@@ -181,10 +209,9 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            {/* Phone */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
-                Téléphone <span className="text-red-500">*</span>
+                Téléphone
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -197,12 +224,10 @@ const RegisterPage = () => {
                   onChange={handleInputChange}
                   placeholder="+221 77 123 45 67"
                   className="pl-10"
-                  required
                 />
               </div>
             </div>
 
-            {/* Password */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Mot de passe <span className="text-red-500">*</span>
@@ -232,12 +257,9 @@ const RegisterPage = () => {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Minimum 8 caractères
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Minimum 8 caractères</p>
             </div>
 
-            {/* Confirm Password */}
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">
                 Confirmer le mot de passe <span className="text-red-500">*</span>
@@ -269,7 +291,6 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
             <Button
               type="submit"
               disabled={isSubmitting}
@@ -288,14 +309,10 @@ const RegisterPage = () => {
               )}
             </Button>
 
-            {/* Login Link */}
             <div className="text-center pt-4">
               <p className="text-sm text-muted-foreground">
                 Déjà un compte ?{' '}
-                <Link
-                  to="/login"
-                  className="text-primary font-semibold hover:underline"
-                >
+                <Link to="/login" className="text-primary font-semibold hover:underline">
                   Se connecter
                 </Link>
               </p>
@@ -303,7 +320,6 @@ const RegisterPage = () => {
           </form>
         </motion.div>
 
-        {/* Footer */}
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

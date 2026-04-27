@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from 'react';
 import {
   ArrowLeft,
   Mail,
@@ -11,6 +12,7 @@ import {
   Star,
   AlertTriangle,
   Loader2,
+  Pencil,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -18,6 +20,23 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
 
 // Deterministic corporate avatar colors from name
 const avatarColors = [
@@ -65,14 +84,94 @@ function getRiskLevel(score: number) {
   return { label: 'Élevé', color: 'text-destructive', bgColor: 'bg-destructive' };
 }
 
+interface EditEmployeeForm {
+  department: string;
+  position: string;
+  salary: string;
+  status: string;
+  address: string;
+}
+
 export default function EmployeeDetailPage() {
   const { id } = useParams();
+  const queryClient = useQueryClient();
+
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editForm, setEditForm] = useState<EditEmployeeForm>({
+    department: '',
+    position: '',
+    salary: '',
+    status: '',
+    address: '',
+  });
 
   const { data: employee, isLoading } = useQuery({
     queryKey: ['employee', id],
     queryFn: () => employeeService.getById(Number(id)),
     enabled: !!id,
   });
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ['departments'],
+    queryFn: employeeService.getDepartments,
+    enabled: isEditDialogOpen,
+  });
+
+  const { data: positions = [] } = useQuery({
+    queryKey: ['positions'],
+    queryFn: employeeService.getPositions,
+    enabled: isEditDialogOpen,
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => employeeService.update(Number(id), data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Employé mis à jour avec succès.');
+      setIsEditDialogOpen(false);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la mise à jour.');
+    },
+  });
+
+  const disableMutation = useMutation({
+    mutationFn: () => employeeService.update(Number(id), { status: 'inactive' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      toast.success('Employé désactivé.');
+    },
+    onError: () => {
+      toast.error('Erreur lors de la désactivation.');
+    },
+  });
+
+  useEffect(() => {
+    if (employee && isEditDialogOpen) {
+      setEditForm({
+        department: String(employee.department ?? ''),
+        position: String(employee.position ?? ''),
+        salary: String(employee.salary ?? ''),
+        status: employee.status ?? 'active',
+        address: employee.address ?? '',
+      });
+    }
+  }, [employee, isEditDialogOpen]);
+
+  const handleEditSubmit = () => {
+    if (!editForm.salary || isNaN(Number(editForm.salary))) {
+      toast.error('Le salaire doit être un nombre valide.');
+      return;
+    }
+    updateMutation.mutate({
+      department: Number(editForm.department),
+      position: Number(editForm.position),
+      salary: Number(editForm.salary),
+      status: editForm.status,
+      address: editForm.address,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -126,14 +225,112 @@ export default function EmployeeDetailPage() {
             </Button>
           </Link>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
               Modifier
             </Button>
-            <Button variant="destructive" size="sm">
+            <Button
+              variant="destructive"
+              size="sm"
+              disabled={disableMutation.isPending || employee?.status === 'inactive'}
+              onClick={() => disableMutation.mutate()}
+            >
+              {disableMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Désactiver
             </Button>
           </div>
         </div>
+
+        {/* Edit Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Modifier l'employé</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid gap-2">
+                <Label>Département</Label>
+                <Select
+                  value={editForm.department}
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, department: value, position: '' }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un département" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(departments as Array<{ id: number; name: string }>).map((dept) => (
+                      <SelectItem key={dept.id} value={String(dept.id)}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Poste</Label>
+                <Select
+                  value={editForm.position}
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, position: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un poste" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(positions as Array<{ id: number; title: string; department: number }>)
+                      .filter((pos) => !editForm.department || String(pos.department) === editForm.department)
+                      .map((pos) => (
+                        <SelectItem key={pos.id} value={String(pos.id)}>
+                          {pos.title}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Salaire (FCFA)</Label>
+                <Input
+                  type="number"
+                  value={editForm.salary}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, salary: e.target.value }))}
+                  placeholder="Ex: 1500000"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Statut</Label>
+                <Select
+                  value={editForm.status}
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Actif</SelectItem>
+                    <SelectItem value="inactive">Inactif</SelectItem>
+                    <SelectItem value="on_leave">En congé</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label>Adresse</Label>
+                <Input
+                  value={editForm.address}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, address: e.target.value }))}
+                  placeholder="Ex: Dakar, Sénégal"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                Annuler
+              </Button>
+              <Button onClick={handleEditSubmit} disabled={updateMutation.isPending}>
+                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sauvegarder
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Main Layout */}
         <div className="grid gap-6 lg:grid-cols-3">

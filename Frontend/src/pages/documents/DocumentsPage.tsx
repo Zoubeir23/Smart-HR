@@ -1,15 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Search,
   FileText,
   Download,
   Trash2,
   Upload,
-  Filter,
   Grid,
   List,
+  Loader2,
+  X,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -24,65 +25,165 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { documentService } from '@/services/documentService';
+import { employeeService } from '@/services/employeeService';
+import { toast } from 'sonner';
 
-type DocumentCategory = 'Contrat' | 'Attestation' | 'Fiche de paie' | 'Certificat';
+type DocumentType = 'contract' | 'certificate' | 'attestation' | 'id_card' | 'other';
 
-interface Document {
+interface ApiDocument {
   id: number;
+  employee: number;
+  employee_name: string;
   name: string;
-  category: DocumentCategory;
-  date: string;
-  size: string;
-  employee: string;
+  document_type: DocumentType;
+  file: string;
+  uploaded_by: number | null;
+  created_at: string;
 }
 
-const categoryTabs = ['Tous', 'Contrats', 'Attestations', 'Fiches de paie', 'Certificats'] as const;
-
-const categoryBadgeStyles: Record<DocumentCategory, string> = {
-  'Contrat': 'bg-secondary/20 text-primary border-secondary/30',
-  'Attestation': 'bg-success/20 text-success border-success/30',
-  'Fiche de paie': 'bg-warning/20 text-warning border-warning/30',
-  'Certificat': 'bg-destructive/20 text-destructive border-destructive/30',
+const DOCUMENT_TYPE_LABELS: Record<DocumentType, string> = {
+  contract: 'Contrat',
+  certificate: 'Certificat',
+  attestation: 'Attestation',
+  id_card: "Carte d'identité",
+  other: 'Autre',
 };
 
-const tabToCategoryMap: Record<string, DocumentCategory | null> = {
-  'Tous': null,
-  'Contrats': 'Contrat',
-  'Attestations': 'Attestation',
-  'Fiches de paie': 'Fiche de paie',
-  'Certificats': 'Certificat',
+const DOCUMENT_TYPE_BADGE_STYLES: Record<DocumentType, string> = {
+  contract: 'bg-primary/20 text-primary border-primary/30',
+  certificate: 'bg-destructive/20 text-destructive border-destructive/30',
+  attestation: 'bg-success/20 text-success border-success/30',
+  id_card: 'bg-warning/20 text-warning border-warning/30',
+  other: 'bg-muted text-muted-foreground',
 };
+
+const CATEGORY_TABS = [
+  { label: 'Tous', value: null },
+  { label: 'Contrats', value: 'contract' },
+  { label: 'Attestations', value: 'attestation' },
+  { label: 'Certificats', value: 'certificate' },
+  { label: "Cartes d'identité", value: 'id_card' },
+  { label: 'Autres', value: 'other' },
+] as const;
 
 export default function DocumentsPage() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<string>('Tous');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data, isLoading } = useQuery({ queryKey: ['documents'], queryFn: () => documentService.getAll() });
-  const documents: Document[] = data?.results || data || [];
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadForm, setUploadForm] = useState({
+    name: '',
+    document_type: 'other' as DocumentType,
+    employee: '',
+  });
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['documents'],
+    queryFn: () => documentService.getAll(),
+  });
+  const documents: ApiDocument[] = data?.results ?? data ?? [];
+
+  const { data: employeesData } = useQuery({
+    queryKey: ['employees'],
+    queryFn: () => employeeService.getAll(),
+    enabled: isUploadDialogOpen,
+  });
+  const employees = employeesData?.results ?? employeesData ?? [];
+
+  const uploadMutation = useMutation({
+    mutationFn: (formData: FormData) => documentService.upload(formData),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast.success('Document téléversé avec succès.');
+      setIsUploadDialogOpen(false);
+      setSelectedFile(null);
+      setUploadForm({ name: '', document_type: 'other', employee: '' });
+    },
+    onError: () => {
+      toast.error('Erreur lors du téléversement.');
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => documentService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast.success('Document supprimé.');
+      setDeleteConfirmId(null);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la suppression.');
+    },
+  });
+
+  const handleFileSelect = (file: File) => {
+    setSelectedFile(file);
+    if (!uploadForm.name) {
+      setUploadForm((prev) => ({ ...prev, name: file.name.replace(/\.[^.]+$/, '') }));
+    }
+    setIsUploadDialogOpen(true);
+  };
+
+  const handleUploadSubmit = () => {
+    if (!selectedFile || !uploadForm.name || !uploadForm.employee) {
+      toast.error('Veuillez remplir tous les champs et sélectionner un fichier.');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+    formData.append('name', uploadForm.name);
+    formData.append('document_type', uploadForm.document_type);
+    formData.append('employee', uploadForm.employee);
+    uploadMutation.mutate(formData);
+  };
+
+  const handleDownload = (doc: ApiDocument) => {
+    if (!doc.file) {
+      toast.error('Fichier non disponible.');
+      return;
+    }
+    window.open(doc.file, '_blank');
+  };
+
+  const filteredDocuments = documents.filter((doc) => {
+    const matchesSearch =
+      doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (doc.employee_name ?? '').toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = activeTab === null || doc.document_type === activeTab;
+    return matchesSearch && matchesCategory;
+  });
 
   if (isLoading) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Chargement...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       </DashboardLayout>
     );
   }
-
-  const filteredDocuments = documents.filter((doc) => {
-    const matchesSearch =
-      doc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      doc.employee.toLowerCase().includes(searchQuery.toLowerCase());
-
-    const mappedCategory = tabToCategoryMap[activeTab];
-    const matchesCategory = mappedCategory === null || doc.category === mappedCategory;
-
-    return matchesSearch && matchesCategory;
-  });
 
   return (
     <DashboardLayout>
@@ -99,101 +200,104 @@ export default function DocumentsPage() {
               Gestion des Documents
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Gerez et organisez les documents de vos collaborateurs
+              Gérez et organisez les documents de vos collaborateurs
             </p>
           </div>
-          <Button className="bg-primary text-primary-foreground">
+          <Button
+            className="bg-primary text-primary-foreground"
+            onClick={() => {
+              setIsUploadDialogOpen(true);
+              setSelectedFile(null);
+            }}
+          >
             <Upload className="mr-2 h-4 w-4" />
             Ajouter un document
           </Button>
         </div>
 
-        {/* Upload Zone */}
-        <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 transition-colors hover:border-secondary/50">
+        {/* Upload Drop Zone */}
+        <div
+          className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 transition-colors hover:border-primary/50 cursor-pointer"
+          onClick={() => fileInputRef.current?.click()}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            const file = e.dataTransfer.files[0];
+            if (file) handleFileSelect(file);
+          }}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            className="hidden"
+            accept=".pdf,.doc,.docx,.png,.jpg"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleFileSelect(file);
+              e.target.value = '';
+            }}
+          />
           <Upload className="h-10 w-10 text-muted-foreground" />
           <p className="mt-3 text-sm font-medium text-foreground">
-            Glissez-deposez vos fichiers ici
+            Glissez-déposez vos fichiers ici
           </p>
           <p className="mt-1 text-xs text-muted-foreground">
-            ou cliquez pour parcourir (PDF, DOC, DOCX - max 10 Mo)
+            ou cliquez pour parcourir (PDF, DOC, DOCX — max 10 Mo)
           </p>
-          <Button variant="outline" size="sm" className="mt-4">
+          <Button variant="outline" size="sm" className="mt-4" onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
             Parcourir
           </Button>
         </div>
 
-        {/* Search + Category Tabs + View Mode */}
+        {/* Search + View Mode */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-1 items-center gap-3">
-            <div className="relative flex-1 sm:max-w-sm">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un document..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
+          <div className="relative flex-1 sm:max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher un document..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setViewMode('grid')}
-            >
+            <Button variant={viewMode === 'grid' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('grid')}>
               <Grid className="h-4 w-4" />
             </Button>
-            <Button
-              variant={viewMode === 'list' ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={() => setViewMode('list')}
-            >
+            <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="icon" onClick={() => setViewMode('list')}>
               <List className="h-4 w-4" />
             </Button>
           </div>
         </div>
 
         {/* Category Tabs */}
-        <div className="flex items-center gap-2 overflow-x-auto">
-          {categoryTabs.map((tab) => (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1">
+          {CATEGORY_TABS.map((tab) => (
             <Button
-              key={tab}
-              variant={activeTab === tab ? 'default' : 'outline'}
+              key={tab.label}
+              variant={activeTab === tab.value ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setActiveTab(tab)}
-              className={
-                activeTab === tab ? 'bg-primary text-primary-foreground' : ''
-              }
+              onClick={() => setActiveTab(tab.value)}
             >
-              {tab}
+              {tab.label}
             </Button>
           ))}
         </div>
 
-        {/* Results count */}
         <p className="text-sm text-muted-foreground">
-          {filteredDocuments.length} document{filteredDocuments.length > 1 ? 's' : ''}{' '}
-          trouve{filteredDocuments.length > 1 ? 's' : ''}
+          {filteredDocuments.length} document{filteredDocuments.length !== 1 ? 's' : ''} trouvé{filteredDocuments.length !== 1 ? 's' : ''}
         </p>
 
-        {/* Documents List View */}
+        {/* List View */}
         {viewMode === 'list' ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="rounded-lg border border-border"
-          >
+          <div className="rounded-lg border border-border">
             <Table>
               <TableHeader>
                 <TableRow className="bg-muted/50">
                   <TableHead>Document</TableHead>
-                  <TableHead>Employe</TableHead>
-                  <TableHead>Categorie</TableHead>
+                  <TableHead>Employé</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Taille</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -205,34 +309,29 @@ export default function DocumentsPage() {
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
                           <FileText className="h-5 w-5 text-muted-foreground" />
                         </div>
-                        <span className="font-medium text-foreground">
-                          {doc.name}
-                        </span>
+                        <span className="font-medium text-foreground">{doc.name}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {doc.employee}
-                    </TableCell>
+                    <TableCell className="text-muted-foreground">{doc.employee_name || '—'}</TableCell>
                     <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={categoryBadgeStyles[doc.category]}
-                      >
-                        {doc.category}
+                      <Badge variant="outline" className={cn(DOCUMENT_TYPE_BADGE_STYLES[doc.document_type])}>
+                        {DOCUMENT_TYPE_LABELS[doc.document_type] ?? doc.document_type}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-muted-foreground">
-                      {new Date(doc.date).toLocaleDateString('fr-FR')}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {doc.size}
+                      {new Date(doc.created_at).toLocaleDateString('fr-FR')}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)} title="Télécharger">
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setDeleteConfirmId(doc.id)}
+                          title="Supprimer"
+                        >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -241,86 +340,164 @@ export default function DocumentsPage() {
                 ))}
               </TableBody>
             </Table>
-          </motion.div>
+          </div>
         ) : (
-          /* Documents Grid View */
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-          >
+          /* Grid View */
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredDocuments.map((doc) => (
-              <Card
-                key={doc.id}
-                className="border border-border shadow-sm transition-all hover:border-primary"
-              >
+              <Card key={doc.id} className="border border-border shadow-sm transition-all hover:border-primary">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
                     <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-muted">
                       <FileText className="h-6 w-6 text-muted-foreground" />
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-foreground">
-                        {doc.name}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {doc.employee}
-                      </p>
+                      <p className="truncate text-sm font-medium text-foreground">{doc.name}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{doc.employee_name || '—'}</p>
                     </div>
                   </div>
-
                   <div className="mt-3 flex items-center justify-between">
-                    <Badge
-                      variant="outline"
-                      className={categoryBadgeStyles[doc.category]}
-                    >
-                      {doc.category}
+                    <Badge variant="outline" className={cn(DOCUMENT_TYPE_BADGE_STYLES[doc.document_type])}>
+                      {DOCUMENT_TYPE_LABELS[doc.document_type] ?? doc.document_type}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {doc.size}
+                      {new Date(doc.created_at).toLocaleDateString('fr-FR')}
                     </span>
                   </div>
-
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {new Date(doc.date).toLocaleDateString('fr-FR')}
-                  </p>
-
                   <div className="mt-3 flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleDownload(doc)}>
                       <Download className="mr-1 h-3 w-3" />
-                      Telecharger
+                      Télécharger
                     </Button>
-                    <Button variant="ghost" size="icon" className="shrink-0">
+                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setDeleteConfirmId(doc.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </CardContent>
               </Card>
             ))}
-          </motion.div>
+          </div>
         )}
 
         {/* Empty State */}
         {filteredDocuments.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-16">
             <FileText className="h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-4 text-lg font-semibold text-foreground">
-              Aucun document trouve
-            </h3>
+            <h3 className="mt-4 text-lg font-semibold text-foreground">Aucun document trouvé</h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              Essayez de modifier vos criteres de recherche
+              Essayez de modifier vos critères de recherche
             </p>
-            <Button
-              className="mt-4"
-              onClick={() => {
-                setSearchQuery('');
-                setActiveTab('Tous');
-              }}
-            >
-              Reinitialiser les filtres
+            <Button className="mt-4" onClick={() => { setSearchQuery(''); setActiveTab(null); }}>
+              Réinitialiser les filtres
             </Button>
           </div>
         )}
+
+        {/* Upload Dialog */}
+        <Dialog open={isUploadDialogOpen} onOpenChange={(open) => { if (!open) { setIsUploadDialogOpen(false); setSelectedFile(null); } }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Ajouter un document</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              {/* File selector */}
+              <div className="grid gap-2">
+                <Label>Fichier</Label>
+                {selectedFile ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 p-3">
+                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="flex-1 truncate text-sm text-foreground">{selectedFile.name}</span>
+                    <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => setSelectedFile(null)}>
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Choisir un fichier
+                  </Button>
+                )}
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Nom du document</Label>
+                <Input
+                  value={uploadForm.name}
+                  onChange={(e) => setUploadForm((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Ex: Contrat CDI 2025"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Type</Label>
+                <Select
+                  value={uploadForm.document_type}
+                  onValueChange={(value) => setUploadForm((prev) => ({ ...prev, document_type: value as DocumentType }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid gap-2">
+                <Label>Employé</Label>
+                <Select
+                  value={uploadForm.employee}
+                  onValueChange={(value) => setUploadForm((prev) => ({ ...prev, employee: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un employé" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(employees as Array<{ id: number; user: { first_name: string; last_name: string } }>).map((emp) => (
+                      <SelectItem key={emp.id} value={String(emp.id)}>
+                        {emp.user?.first_name} {emp.user?.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => { setIsUploadDialogOpen(false); setSelectedFile(null); }}>
+                Annuler
+              </Button>
+              <Button onClick={handleUploadSubmit} disabled={uploadMutation.isPending || !selectedFile}>
+                {uploadMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Téléverser
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={deleteConfirmId !== null} onOpenChange={() => setDeleteConfirmId(null)}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Supprimer le document</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-muted-foreground">
+              Cette action est irréversible. Le document sera définitivement supprimé.
+            </p>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>Annuler</Button>
+              <Button
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                onClick={() => deleteConfirmId !== null && deleteMutation.mutate(deleteConfirmId)}
+              >
+                {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Supprimer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     </DashboardLayout>
   );

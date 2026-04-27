@@ -1,0 +1,185 @@
+name: CI
+
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore: [docs/**, "*.md"]
+  push:
+    branches: [main]
+    paths-ignore: [docs/**, "*.md"]
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Permissions minimales (least-privilege)
+# ─────────────────────────────────────────────────────────────────────────────
+permissions:
+  contents: read
+  security-events: write
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 1 — Linting Backend (pre-commit : ruff, djlint, mypy…)
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  backend-lint:
+    name: Backend — Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install pre-commit
+        run: pip install pre-commit
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 2 — Tests Backend (pytest + check migrations)
+# ─────────────────────────────────────────────────────────────────────────────
+  backend-test:
+    name: Backend — Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create local env files for CI
+        working-directory: Backend
+        run: |
+          # Génération aléatoire au runtime — aucune valeur sensible dans le code source
+          DJANGO_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))")
+          POSTGRES_PASSWORD=$(python3 -c "import secrets; print(secrets.token_hex(16))")
+          mkdir -p .envs/.local
+          printf '%s\n' \
+            'DJANGO_SETTINGS_MODULE=config.settings.local' \
+            "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" \
+            'USE_DOCKER=yes' \
+            'REDIS_URL=redis://redis:6379/0' \
+            'EMAIL_HOST=localhost' \
+            'EMAIL_PORT=25' \
+            'EMAIL_USE_TLS=False' \
+            'EMAIL_HOST_USER=' \
+            'EMAIL_HOST_PASSWORD=' \
+            'GOOGLE_API_KEY=' \
+            > .envs/.local/.django
+          printf '%s\n' \
+            'POSTGRES_HOST=postgres' \
+            'POSTGRES_PORT=5432' \
+            'POSTGRES_DB=smart_hr' \
+            'POSTGRES_USER=smart_hr_ci' \
+            "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" \
+            "DATABASE_URL=postgres://smart_hr_ci:${POSTGRES_PASSWORD}@postgres:5432/smart_hr" \
+            > .envs/.local/.postgres
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker images
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml build --no-cache django postgres
+
+      - name: Check pending migrations
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml run --rm django python manage.py makemigrations --check
+
+      - name: Run migrations
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml run --rm django python manage.py migrate
+
+      - name: Run pytest
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml run --rm django pytest --tb=short -q
+
+      - name: Tear down stack
+        if: always()
+        working-directory: Backend
+        run: docker compose -f docker-compose.local.yml down --volumes
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 3 — Qualité Frontend (TypeScript + ESLint + tests + build)
+# ─────────────────────────────────────────────────────────────────────────────
+  frontend-quality:
+    name: Frontend — Quality
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: Frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: TypeScript — vérification des types
+        run: npx tsc --noEmit
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Vitest — tests unitaires
+        run: npm run test
+
+      - name: Vite build — vérification du build de production
+        run: npm run build
+        env:
+          VITE_API_URL: https://placeholder.example.com/api/v1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 4 — Trivy Security Scan (filesystem + dépendances)
+# ─────────────────────────────────────────────────────────────────────────────
+  security-scan:
+    name: Security — Trivy Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy — scan filesystem (CRITICAL & HIGH)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: 0
+          ignore-unfixed: true
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        continue-on-error: true
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs
+
+      - name: Trivy — résumé table (affiché dans les logs)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: 0
+          ignore-unfixed: true
