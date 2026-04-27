@@ -118,7 +118,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Trivy — scan image Backend
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
           format: sarif
@@ -136,7 +136,7 @@ jobs:
           category: trivy-backend-image
 
       - name: Trivy — scan image Frontend
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
           format: sarif
@@ -154,7 +154,7 @@ jobs:
           category: trivy-frontend-image
 
       - name: Trivy — résumé table Backend (logs)
-        uses: aquasecurity/trivy-action@0.31.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
           format: table
