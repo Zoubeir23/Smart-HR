@@ -17,6 +17,13 @@ concurrency:
   cancel-in-progress: true
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Permissions minimales (least-privilege)
+# ─────────────────────────────────────────────────────────────────────────────
+permissions:
+  contents: read
+  security-events: write
+
+# ─────────────────────────────────────────────────────────────────────────────
 # JOB 1 — Linting Backend (pre-commit : ruff, djlint, mypy…)
 # ─────────────────────────────────────────────────────────────────────────────
 jobs:
@@ -134,3 +141,44 @@ jobs:
         run: npm run build
         env:
           VITE_API_URL: https://placeholder.example.com/api/v1
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 4 — Trivy Security Scan (filesystem + dépendances)
+# ─────────────────────────────────────────────────────────────────────────────
+  security-scan:
+    name: Security — Trivy Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy — scan filesystem (CRITICAL & HIGH)
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: sarif
+          output: trivy-results.sarif
+          severity: CRITICAL,HIGH
+          exit-code: 0
+          ignore-unfixed: true
+
+      - name: Upload Trivy results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+          category: trivy-fs
+
+      - name: Trivy — résumé table (affiché dans les logs)
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: 0
+          ignore-unfixed: true

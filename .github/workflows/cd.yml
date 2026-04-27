@@ -95,12 +95,81 @@ jobs:
             VITE_API_URL=${{ secrets.VITE_API_URL }}
 
 # ─────────────────────────────────────────────────────────────────────────────
-# JOB 2 — Deploy VPS via SSH  (dépend de build-and-push)
+# JOB 2 — Trivy — scan des images Docker (après build, avant deploy)
+# ─────────────────────────────────────────────────────────────────────────────
+  trivy-image-scan:
+    name: Security — Trivy Image Scan
+    if: vars.DEPLOY_TARGET == 'vps' || vars.DEPLOY_TARGET == 'both'
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+      packages: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trivy — scan image Backend
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+          format: sarif
+          output: trivy-backend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: 0
+          ignore-unfixed: true
+          vuln-type: os,library
+
+      - name: Upload résultats Backend → GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-backend.sarif
+          category: trivy-backend-image
+
+      - name: Trivy — scan image Frontend
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+          format: sarif
+          output: trivy-frontend.sarif
+          severity: CRITICAL,HIGH
+          exit-code: 0
+          ignore-unfixed: true
+          vuln-type: os,library
+
+      - name: Upload résultats Frontend → GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-frontend.sarif
+          category: trivy-frontend-image
+
+      - name: Trivy — résumé table Backend (logs)
+        uses: aquasecurity/trivy-action@0.31.0
+        with:
+          image-ref: ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: 0
+          ignore-unfixed: true
+          vuln-type: os,library
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOB 3 — Deploy VPS via SSH  (dépend de trivy-image-scan)
 # ─────────────────────────────────────────────────────────────────────────────
   deploy-vps:
     name: Deploy → VPS
     if: vars.DEPLOY_TARGET == 'vps' || vars.DEPLOY_TARGET == 'both'
-    needs: build-and-push
+    needs: trivy-image-scan
     runs-on: ubuntu-latest
     environment: production-vps
 
@@ -151,7 +220,7 @@ jobs:
             echo "✓ VPS deploy done."
 
 # ─────────────────────────────────────────────────────────────────────────────
-# JOB 3 — Deploy Railway via webhooks  (indépendant, pas de build GHCR)
+# JOB 4 — Deploy Railway via webhooks  (indépendant, pas de build GHCR)
 #
 # Railway reconstruit les images lui-même depuis GitHub.
 # On déclenche juste les deploy hooks des deux services.
