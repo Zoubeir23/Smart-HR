@@ -35,13 +35,13 @@ CACHES = {
 # ------------------------------------------------------------------------------
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
-# When DJANGO_SECURE_SSL_REDIRECT=False (HTTP-only VPS), disable all HTTPS-only cookies
+# When DJANGO_SECURE_SSL_REDIRECT=False (HTTP-only VPS), disable HTTPS-only cookies
 _ssl_enabled = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
 SESSION_COOKIE_SECURE = _ssl_enabled
 CSRF_COOKIE_SECURE = _ssl_enabled
 SESSION_COOKIE_NAME = "__Secure-sessionid" if _ssl_enabled else "sessionid"
 CSRF_COOKIE_NAME = "__Secure-csrftoken" if _ssl_enabled else "csrftoken"
-SECURE_HSTS_SECONDS = env.int("DJANGO_SECURE_HSTS_SECONDS", default=60)
+SECURE_HSTS_SECONDS = env.int("DJANGO_SECURE_HSTS_SECONDS", default=31536000)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
     "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS",
     default=True,

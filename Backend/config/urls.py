@@ -6,6 +6,7 @@ from django.urls import path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
 
+from smart_hr.core.protected_media import ProtectedMediaView
 from smart_hr.users.views import AdminStatsView
 from smart_hr.users.views.registration import CandidateRegisterView
 from smart_hr.users.views.registration import ResendOTPView
@@ -42,8 +43,9 @@ urlpatterns = [
     path("api/v1/ai/", include("smart_hr.ai.urls")),
     path("api/v1/ai-engine/", include("smart_hr.ai_engine.urls")),
     path("api/v1/agents/", include("smart_hr.ai_agents.urls")),
-    # Media files
-    *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),
+    # Media files — accès protégé par JWT
+    path("media/<path:path>", ProtectedMediaView.as_view(), name="protected-media"),
+
 ]
 
 

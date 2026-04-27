@@ -55,7 +55,7 @@ const contractTabs = ['Toutes', 'CDI', 'CDD', 'Stage'] as const;
 const contractBadgeStyles: Record<ContractType, string> = {
   CDI: 'bg-success/20 text-success border-success/30',
   CDD: 'bg-warning/20 text-warning border-warning/30',
-  Stage: 'bg-primary/20 text-primary border-primary/30',
+  Stage: 'bg-secondary/20 text-primary border-secondary/30',
 };
 
 interface NewOfferForm {

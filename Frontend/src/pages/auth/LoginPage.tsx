@@ -375,7 +375,7 @@ export default function LoginPage() {
                     </Label>
                     <Link
                       to="/forgot-password"
-                      className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                      className="text-xs font-medium text-primary hover:text-secondary/80 transition-colors"
                     >
                       Oublié ?
                     </Link>
@@ -522,7 +522,7 @@ export default function LoginPage() {
             Pas encore de compte ?{' '}
             <Link
               to="/register"
-              className="inline-flex items-center gap-0.5 font-semibold text-primary transition-colors hover:text-primary/80"
+              className="inline-flex items-center gap-0.5 font-semibold text-primary transition-colors hover:text-secondary/80"
             >
               Créer un compte
               <ChevronRight className="h-3.5 w-3.5" />

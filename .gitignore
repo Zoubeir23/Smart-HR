@@ -10,6 +10,8 @@
 .env.production
 .env.*.local
 *.env
+.envs/
+**/.envs/
 
 # ── Python ─────────────────────────────────────────────────────────
 __pycache__/

@@ -297,7 +297,7 @@ export default function CandidateDashboard() {
               <CardContent className="p-6">
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary/10">
                       <Calendar className="h-6 w-6 text-primary" />
                     </div>
                     <div className="space-y-1">
