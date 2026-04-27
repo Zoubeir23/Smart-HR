@@ -58,14 +58,14 @@ jobs:
 
       - name: Create local env files for CI
         working-directory: Backend
-        env:
-          CI_DJANGO_SECRET_KEY: ${{ secrets.CI_DJANGO_SECRET_KEY || 'ci-only-insecure-key-not-used-in-production' }}
-          CI_POSTGRES_PASSWORD: ${{ secrets.CI_POSTGRES_PASSWORD || 'ci-only-postgres-password' }}
         run: |
+          # Génération aléatoire au runtime — aucune valeur sensible dans le code source
+          DJANGO_SECRET_KEY=$(python3 -c "import secrets; print(secrets.token_urlsafe(50))")
+          POSTGRES_PASSWORD=$(python3 -c "import secrets; print(secrets.token_hex(16))")
           mkdir -p .envs/.local
           printf '%s\n' \
             'DJANGO_SETTINGS_MODULE=config.settings.local' \
-            "DJANGO_SECRET_KEY=${CI_DJANGO_SECRET_KEY}" \
+            "DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}" \
             'USE_DOCKER=yes' \
             'REDIS_URL=redis://redis:6379/0' \
             'EMAIL_HOST=localhost' \
@@ -80,8 +80,8 @@ jobs:
             'POSTGRES_PORT=5432' \
             'POSTGRES_DB=smart_hr' \
             'POSTGRES_USER=smart_hr_ci' \
-            "POSTGRES_PASSWORD=${CI_POSTGRES_PASSWORD}" \
-            "DATABASE_URL=postgres://smart_hr_ci:${CI_POSTGRES_PASSWORD}@postgres:5432/smart_hr" \
+            "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" \
+            "DATABASE_URL=postgres://smart_hr_ci:${POSTGRES_PASSWORD}@postgres:5432/smart_hr" \
             > .envs/.local/.postgres
 
       - uses: docker/setup-buildx-action@v3
