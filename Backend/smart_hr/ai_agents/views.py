@@ -61,7 +61,8 @@ def _generate_voice_response(question: str) -> str:
             import google.generativeai as genai
 
             genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
+            gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+            model = genai.GenerativeModel(gemini_model_name)
             prompt = (
                 "Tu es un assistant RH vocal pour Smart-HR. "
                 "Réponds de manière concise, claire et bienveillante. "
@@ -97,6 +98,7 @@ class VoiceAskView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
+        """Valide la question utilisateur et retourne une réponse RH textuelle."""
         question = request.data.get("question", "").strip()
         voice = request.data.get("voice", "nova")
 
