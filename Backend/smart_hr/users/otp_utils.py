@@ -1,5 +1,6 @@
 import secrets
 
+from django.db.models import F
 from django.utils import timezone
 
 from smart_hr.users.models import OTPCode
@@ -48,13 +49,14 @@ def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:
         return False, "Ce code OTP a expiré. Veuillez en demander un nouveau."
 
     if otp.code != submitted_code:
-        otp.failed_attempts += 1
+        OTPCode.objects.filter(pk=otp.pk).update(failed_attempts=F("failed_attempts") + 1)
+        otp.refresh_from_db()
         if otp.failed_attempts >= OTPCode.MAX_FAILED_ATTEMPTS:
-            otp.locked_until = timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES)
-        otp.save(update_fields=["failed_attempts", "locked_until"])
-        remaining = OTPCode.MAX_FAILED_ATTEMPTS - otp.failed_attempts
-        if remaining <= 0:
+            OTPCode.objects.filter(pk=otp.pk).update(
+                locked_until=timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES)
+            )
             return False, "Compte verrouillé après trop de tentatives. Réessayez dans 15 minutes."
+        remaining = OTPCode.MAX_FAILED_ATTEMPTS - otp.failed_attempts
         return False, f"Code OTP incorrect. {remaining} tentative(s) restante(s)."
 
     otp.is_used = True

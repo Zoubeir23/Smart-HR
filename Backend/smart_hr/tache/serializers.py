@@ -20,4 +20,4 @@ class TaskSerializer(serializers.ModelSerializer):
             "due_date",
             "created_at",
         ]
-        read_only_fields = ["created_at"]
+        read_only_fields = ["created_by", "created_at"]

@@ -108,15 +108,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
 
+      // dj-rest-auth renvoie l'utilisateur dans data.user.
+      // Si absent (réponse minimale), on le récupère via GET /auth/user/.
+      const user = data.user ?? await authService.getCurrentUser();
+
       setState({
-        user: data.user,
+        user,
         accessToken: data.access,
         refreshToken: data.refresh,
         isAuthenticated: true,
         isLoading: false,
       });
 
-      return data.user;
+      return user;
     } catch (error: unknown) {
       setState(prev => ({ ...prev, isLoading: false }));
       const message =

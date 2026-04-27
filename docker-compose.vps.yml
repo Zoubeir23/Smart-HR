@@ -1,0 +1,63 @@
+volumes:
+  vps_postgres_data: {}
+  vps_redis_data: {}
+  vps_django_media: {}
+
+services:
+  # ─── PostgreSQL ─────────────────────────────────────────────────────────────
+  postgres:
+    build:
+      context: ./Backend
+      dockerfile: ./compose/production/postgres/Dockerfile
+    image: smart_hr_vps_postgres
+    volumes:
+      - vps_postgres_data:/var/lib/postgresql/data
+    env_file:
+      - ./Backend/.envs/.production/.postgres
+    restart: unless-stopped
+
+  # ─── Redis ──────────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7.2-alpine
+    volumes:
+      - vps_redis_data:/data
+    restart: unless-stopped
+
+  # ─── Backend Django (Gunicorn on port 5000) ──────────────────────────────────
+  django: &django
+    build:
+      context: ./Backend
+      dockerfile: ./compose/production/django/Dockerfile
+    image: smart_hr_vps_django
+    volumes:
+      - vps_django_media:/app/smart_hr/media
+    depends_on:
+      - postgres
+      - redis
+    env_file:
+      - ./Backend/.envs/.production/.django
+      - ./Backend/.envs/.production/.postgres
+    command: /start
+    restart: unless-stopped
+
+  # ─── Celery Worker ──────────────────────────────────────────────────────────
+  celeryworker:
+    <<: *django
+    image: smart_hr_vps_celeryworker
+    command: /start-celeryworker
+
+  # ─── Frontend React + nginx (proxies /api → django:5000) ────────────────────
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: ./Dockerfile
+      args:
+        VITE_API_URL: /api/v1
+    image: smart_hr_vps_frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./Frontend/nginx.vps.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - django
+    restart: unless-stopped
