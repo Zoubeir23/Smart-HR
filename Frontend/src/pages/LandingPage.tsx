@@ -258,7 +258,7 @@ export default function LandingPage() {
       {/* FEATURES #produit */}
       <section id="produit" className="bg-secondary/30 py-28">
         <div className="mx-auto max-w-7xl px-6">
-          <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6 }} className="mb-20 max-w-2xl">
+          <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6 }} className="mb-20 max-w-2xl">
             <p className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">Fonctionnalités IA</p>
             <h2 className="font-display text-4xl leading-tight text-foreground lg:text-5xl">
               Trois piliers qui transforment<br /><span className="italic text-foreground/70">votre quotidien RH.</span>
@@ -271,9 +271,9 @@ export default function LandingPage() {
               { icon: FileSearch, title: 'Analyse NLP des CVs', desc: "Gemini 2.5 Flash extrait compétences, expériences et compatibilité en moins de 3 secondes. Plus jamais de tri manuel de CVs.", stat: '< 3s', statLabel: "d'analyse", delay: 0.1 },
               { icon: Bot, title: 'Assistant IA Conversationnel', desc: "Posez vos questions RH en langage naturel. L'assistant accède aux données réelles pour des réponses précises et contextualisées.", stat: '24/7', statLabel: 'disponible', delay: 0.2 },
             ].map((feature) => (
-              <motion.div key={feature.title} initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: feature.delay }} className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-foreground">
-                  <feature.icon className="h-5 w-5 text-background" />
+              <motion.div key={feature.title} initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: feature.delay }} className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
+                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/12 ring-1 ring-primary/20">
+                  <feature.icon className="h-5 w-5 text-primary" />
                 </div>
                 <h3 className="mb-3 font-display text-2xl text-foreground">{feature.title}</h3>
                 <p className="mb-6 text-sm leading-relaxed text-muted-foreground">{feature.desc}</p>
@@ -291,7 +291,7 @@ export default function LandingPage() {
       {/* MODULES #modules */}
       <section id="modules" className="bg-background py-28">
         <div className="mx-auto max-w-7xl px-6">
-          <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-20 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-20 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">Modules opérationnels</p>
               <h2 className="font-display text-4xl leading-tight text-foreground lg:text-5xl">
@@ -306,12 +306,12 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
             {[
               { icon: CheckSquare, title: 'Gestion des Tâches', desc: 'Vue Kanban temps réel avec statuts automatisés et rappels intelligents.', span: 'lg:col-span-2', card: 'bg-brand-navy', titleClass: 'text-white', descClass: 'text-white/60', iconWrap: 'bg-white/10 text-white' },
-              { icon: Calendar, title: 'Congés', desc: 'Demande, validation et suivi des soldes en quelques clics.', span: '', card: 'bg-secondary border border-border', titleClass: 'text-foreground', descClass: 'text-muted-foreground', iconWrap: 'bg-foreground text-background' },
+              { icon: Calendar, title: 'Congés', desc: 'Demande, validation et suivi des soldes en quelques clics.', span: '', card: 'bg-secondary border border-border', titleClass: 'text-foreground', descClass: 'text-muted-foreground', iconWrap: 'bg-primary/12 text-primary ring-1 ring-primary/20' },
               { icon: Users, title: 'Gestion du Personnel', desc: 'Annuaire complet, fiches détaillées, hiérarchies et organigramme.', span: '', card: 'bg-card border border-border shadow-sm', titleClass: 'text-foreground', descClass: 'text-muted-foreground', iconWrap: 'bg-primary text-primary-foreground' },
               { icon: DollarSign, title: 'Paie & Avantages', desc: 'Historique complet, fiches de paie et suivi des salaires.', span: '', card: 'bg-primary', titleClass: 'text-primary-foreground', descClass: 'text-white/70', iconWrap: 'bg-white/20 text-white' },
-              { icon: FileText, title: 'Documents', desc: 'Stockage sécurisé de contrats, attestations et certificats.', span: 'lg:col-span-2', card: 'bg-secondary border border-border', titleClass: 'text-foreground', descClass: 'text-muted-foreground', iconWrap: 'bg-foreground text-background' },
+              { icon: FileText, title: 'Documents', desc: 'Stockage sécurisé de contrats, attestations et certificats.', span: 'lg:col-span-2', card: 'bg-secondary border border-border', titleClass: 'text-foreground', descClass: 'text-muted-foreground', iconWrap: 'bg-primary/12 text-primary ring-1 ring-primary/20' },
             ].map((module, i) => (
-              <motion.div key={module.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.5, delay: i * 0.07 }} className={`group rounded-3xl p-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${module.card} ${module.span}`}>
+              <motion.div key={module.title} initial={{ y: 16 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.5, delay: i * 0.07 }} className={`group rounded-3xl p-8 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${module.card} ${module.span}`}>
                 <div className={`mb-6 inline-flex h-11 w-11 items-center justify-center rounded-xl ${module.iconWrap}`}>
                   <module.icon className="h-5 w-5" />
                 </div>
@@ -330,7 +330,7 @@ export default function LandingPage() {
           <div className="absolute right-0 top-1/2 h-[300px] w-[300px] -translate-y-1/2 rounded-full bg-brand-cream/4 blur-[80px]" />
         </div>
         <div className="relative mx-auto max-w-7xl px-6">
-          <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-20 text-center">
+          <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-20 text-center">
             <p className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">Impact mesurable</p>
             <h2 className="font-display text-4xl text-white lg:text-5xl">Des résultats, <span className="italic text-brand-cream/60">pas des promesses.</span></h2>
           </motion.div>
@@ -341,7 +341,7 @@ export default function LandingPage() {
               { value: 40, suffix: '%', label: 'Temps admin réduit', prefix: '−' },
               { value: 80, suffix: '%', label: 'Précision churn IA', prefix: '' },
             ].map((stat, i) => (
-              <motion.div key={stat.label} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: i * 0.1 }} className="flex flex-col items-center justify-center bg-white/[0.02] p-10 text-center hover:bg-white/[0.04] transition-colors">
+              <motion.div key={stat.label} initial={{ y: 12 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: i * 0.1 }} className="flex flex-col items-center justify-center bg-white/[0.02] p-10 text-center hover:bg-white/[0.04] transition-colors">
                 <p className="font-display text-5xl text-white lg:text-6xl">
                   <AnimatedCounter target={stat.value} prefix={stat.prefix} suffix={stat.suffix} />
                 </p>
@@ -356,7 +356,7 @@ export default function LandingPage() {
       <section className="bg-secondary/30 py-28">
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid items-center gap-16 lg:grid-cols-2">
-            <motion.div initial={{ opacity: 0, x: -24 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true, amount: 0.2 }} className="space-y-8">
+            <motion.div initial={{ x: -16 }} whileInView={{ x: 0 }} viewport={{ once: true, amount: 0.2 }} className="space-y-8">
               <p className="text-xs font-bold uppercase tracking-widest text-primary">Pourquoi Smart-HR</p>
               <h2 className="font-display text-4xl leading-tight text-foreground lg:text-5xl">
                 Conçu pour<br /><span className="italic text-foreground/70">les équipes RH</span><br />modernes.
@@ -364,7 +364,7 @@ export default function LandingPage() {
               <p className="text-base leading-relaxed text-muted-foreground">
                 Smart-HR n'est pas un simple logiciel de paie. C'est un copilote stratégique qui transforme vos données dormantes en insights actionnables, en temps réel.
               </p>
-              <Link to="/login" className="inline-flex items-center gap-2 rounded-xl bg-foreground px-7 py-3.5 text-sm font-bold text-background transition-all hover:opacity-80 active:scale-95">
+              <Link to="/login" className="inline-flex items-center gap-2 rounded-xl bg-brand-navy px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-brand-navy-800 active:scale-95">
                 Accéder à la plateforme <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
@@ -375,9 +375,9 @@ export default function LandingPage() {
                 { icon: BarChart3, title: 'Data-driven', desc: '40+ indicateurs analysés par notre modèle ML pour des prédictions fiables à 80%.' },
                 { icon: Brain, title: 'IA générative', desc: 'Google Gemini 2.5 Flash pour des analyses textuelles, NLP et un assistant conversationnel.' },
               ].map((item, i) => (
-                <motion.div key={item.title} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.5, delay: i * 0.08 }} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-foreground">
-                    <item.icon className="h-4 w-4 text-background" />
+                <motion.div key={item.title} initial={{ y: 12 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.5, delay: i * 0.08 }} className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                  <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 ring-1 ring-primary/20">
+                    <item.icon className="h-4 w-4 text-primary" />
                   </div>
                   <h3 className="mb-2 font-semibold text-foreground">{item.title}</h3>
                   <p className="text-xs leading-relaxed text-muted-foreground">{item.desc}</p>
@@ -391,7 +391,7 @@ export default function LandingPage() {
       {/* CTA #tarifs — always red */}
       <section id="tarifs" className="bg-background py-28">
         <div className="mx-auto max-w-7xl px-6">
-          <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, amount: 0.2 }} className="relative overflow-hidden rounded-3xl bg-primary p-16 text-center">
+          <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} className="relative overflow-hidden rounded-3xl bg-primary p-16 text-center">
             <div className="pointer-events-none absolute inset-0">
               <div className="absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
               <div className="absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
