@@ -85,12 +85,11 @@ Retourne ce JSON exact (sans markdown, sans backticks) :
 - ai_summary : synthèse concise en français"""
 
     try:
-        import google.generativeai as genai
+        from google import genai
 
         gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-        genai.configure(api_key=api_key)
-        model = genai.GenerativeModel(gemini_model_name)
-        response = model.generate_content(prompt)
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(model=gemini_model_name, contents=prompt)
         raw_text = response.text.strip()
 
         # Nettoyer les balises markdown si présentes

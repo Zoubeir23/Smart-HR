@@ -176,15 +176,17 @@ def _build_system_prompt(user) -> str:
     )
 
 
-def _build_gemini_history(user) -> list[dict]:
-    """Retourne les 4 derniers échanges au format d'historique Gemini."""
+def _build_gemini_history(user) -> list:
+    """Retourne les 4 derniers échanges au format d'historique Gemini (nouveau SDK)."""
+    from google.genai import types as genai_types
+
     recent = list(
         ChatHistory.objects.filter(user=user).order_by("-created_at")[:4]
     )
     history = []
     for past in reversed(recent):
-        history.append({"role": "user", "parts": [past.question]})
-        history.append({"role": "model", "parts": [past.response]})
+        history.append(genai_types.Content(role="user", parts=[genai_types.Part(text=past.question)]))
+        history.append(genai_types.Content(role="model", parts=[genai_types.Part(text=past.response)]))
     return history
 
 
@@ -197,16 +199,19 @@ def _get_ai_response(question: str, user) -> str:
             "Veuillez définir la variable d'environnement GEMINI_API_KEY."
         )
     try:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types as genai_types
 
-        genai.configure(api_key=api_key)
         gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-        model = genai.GenerativeModel(
-            model_name=gemini_model_name,
-            system_instruction=_build_system_prompt(user),
-        )
+        client = genai.Client(api_key=api_key)
         history = _build_gemini_history(user)
-        chat_session = model.start_chat(history=history)
+        chat_session = client.chats.create(
+            model=gemini_model_name,
+            history=history,
+            config=genai_types.GenerateContentConfig(
+                system_instruction=_build_system_prompt(user),
+            ),
+        )
         response = chat_session.send_message(question)
         return response.text
     except Exception as exc:
