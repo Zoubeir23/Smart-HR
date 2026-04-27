@@ -274,7 +274,7 @@ const LeaveListPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaves.map((leave: any) => {
+                  {leaves.map((leave: { id: number; start_date?: string; startDate?: string; end_date?: string; endDate?: string; leave_type?: string; type?: string; employee?: { first_name?: string; last_name?: string } | string; employee_name?: string; duration?: number; status?: string; reason?: string }) => {
                     const startDate = leave.start_date || leave.startDate;
                     const endDate = leave.end_date || leave.endDate;
                     const leaveType = leave.leave_type || leave.type;

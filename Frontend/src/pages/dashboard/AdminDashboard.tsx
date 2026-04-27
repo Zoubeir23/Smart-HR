@@ -125,7 +125,7 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {adminStats?.recent_activity?.slice(0, 5).map((item: any, i: number) => (
+                  {adminStats?.recent_activity?.slice(0, 5).map((item: { action: string; user: string; role: string; time: string | null }, i: number) => (
                     <div
                       key={i}
                       className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2"

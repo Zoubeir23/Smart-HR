@@ -105,12 +105,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await authService.login(email, password);
 
+      // Tokens sauvés avant getCurrentUser() car l'intercepteur axios les lit depuis localStorage
       localStorage.setItem('access_token', data.access);
       localStorage.setItem('refresh_token', data.refresh);
 
-      // dj-rest-auth renvoie l'utilisateur dans data.user.
-      // Si absent (réponse minimale), on le récupère via GET /auth/user/.
-      const user = data.user ?? await authService.getCurrentUser();
+      let user: User;
+      try {
+        user = data.user ?? await authService.getCurrentUser();
+      } catch {
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        throw new Error('Impossible de récupérer le profil utilisateur');
+      }
 
       setState({
         user,

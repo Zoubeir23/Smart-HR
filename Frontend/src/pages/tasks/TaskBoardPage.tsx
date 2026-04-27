@@ -268,7 +268,7 @@ const TaskBoardPage = () => {
                         <SelectValue placeholder="Sélectionner" />
                       </SelectTrigger>
                       <SelectContent>
-                        {employees.map((emp: any) => (
+                        {employees.map((emp: { id: number; user: { first_name: string; last_name: string } }) => (
                           <SelectItem key={emp.id} value={String(emp.id)}>
                             {emp.user?.first_name} {emp.user?.last_name}
                           </SelectItem>

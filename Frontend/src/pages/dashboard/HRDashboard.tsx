@@ -538,7 +538,7 @@ export default function HRDashboard() {
                     {/* Vertical timeline line */}
                     <div className="absolute bottom-2 left-[15px] top-2 w-px bg-border" />
 
-                    {applications.slice(0, 5).map((application: any, index: number) => (
+                    {applications.slice(0, 5).map((application: { id: number; job_offer: { title: string }; candidate: { first_name: string; last_name: string }; created_at: string }, index: number) => (
                       <div key={application.id} className="relative flex gap-3 py-2.5">
                         {/* Timeline dot */}
                         <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-secondary/10">

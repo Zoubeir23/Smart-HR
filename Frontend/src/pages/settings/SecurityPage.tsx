@@ -52,7 +52,7 @@ export default function SecurityPage() {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {adminStats?.recent_activity?.slice(0, 10).map((log: any, i: number) => (
+                  {adminStats?.recent_activity?.slice(0, 10).map((log: { action: string; user: string; role: string; time: string | null }, i: number) => (
                     <div
                       key={i}
                       className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-sm"
