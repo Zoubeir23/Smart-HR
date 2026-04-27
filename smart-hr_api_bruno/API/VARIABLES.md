@@ -88,7 +88,7 @@ Authorization: Bearer {{authToken}}
 @department_id = 1
 @position_id = 1
 @username = admin
-@password = admin123
+@password = <demo_password>
 
 # Pagination
 @page = 1

@@ -113,12 +113,12 @@ authToken = eyJ0eXAiOiJKV1Q...     # Token JWT
 ```bash
 # Via Bruno
 POST {{baseUrl}}/api/{{apiVersion}}/auth/login/
-Body: {"username": "admin", "password": "admin123"}
+Body: {"username": "admin", "password": "<demo_password>"}
 
 # Via curl
 curl -X POST http://localhost:8000/api/v1/auth/login/ \
   -H "Content-Type: application/json" \
-  -d '{"username": "admin", "password": "admin123"}'
+  -d '{"username": "admin", "password": "<demo_password>"}'
 ```
 
 ### Utiliser le token
