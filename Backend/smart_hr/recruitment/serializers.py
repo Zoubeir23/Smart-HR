@@ -49,3 +49,10 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["candidate", "status", "matching_score", "skills_extracted", "ai_summary", "created_at"]
+
+    def validate_cv(self, value):
+        if value.content_type != "application/pdf":
+            raise serializers.ValidationError("Le CV doit être un fichier PDF.")
+        if value.size > 5 * 1024 * 1024:
+            raise serializers.ValidationError("Le CV ne doit pas dépasser 5 Mo.")
+        return value
