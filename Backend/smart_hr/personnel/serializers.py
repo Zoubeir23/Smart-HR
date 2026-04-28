@@ -31,7 +31,7 @@ class DepartmentDetailSerializer(DepartmentSerializer):
     total_salary = serializers.SerializerMethodField()
 
     class Meta(DepartmentSerializer.Meta):
-        fields = DepartmentSerializer.Meta.fields + ["positions", "total_salary"]
+        fields = [*DepartmentSerializer.Meta.fields, "positions", "total_salary"]
 
     def get_positions(self, obj: Department) -> list:
         """Retourne les postes rattachés au département."""
