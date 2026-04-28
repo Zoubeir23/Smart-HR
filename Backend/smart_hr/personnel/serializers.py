@@ -1,22 +1,64 @@
 from rest_framework import serializers
 
-from smart_hr.personnel.models import Department
-from smart_hr.personnel.models import Employee
-from smart_hr.personnel.models import Position
+from smart_hr.personnel.models import Department, Employee, Position
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
+    """Serializer de base pour un département."""
+
+    employee_count = serializers.SerializerMethodField()
+
     class Meta:
         model = Department
-        fields = "__all__"
+        fields = ["id", "name", "description", "employee_count", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def get_employee_count(self, obj: Department) -> int:
+        """Retourne le nombre d'employés actifs dans ce département.
+
+        Note : utilise prefetch_related depuis la vue pour éviter le N+1.
+        """
+        # Optimisé si prefetch_related("employees") est fait dans la vue
+        return obj.employees.filter(status=Employee.Status.ACTIVE).count()
+
+
+class DepartmentDetailSerializer(DepartmentSerializer):
+    """Serializer enrichi avec la liste des postes et la masse salariale."""
+
+    positions = serializers.SerializerMethodField()
+    total_salary = serializers.SerializerMethodField()
+
+    class Meta(DepartmentSerializer.Meta):
+        fields = DepartmentSerializer.Meta.fields + ["positions", "total_salary"]
+
+    def get_positions(self, obj: Department) -> list:
+        """Retourne les postes rattachés au département."""
+        return list(
+            obj.positions.values("id", "title")
+        )
+
+    def get_total_salary(self, obj: Department) -> float:
+        """Masse salariale totale des employés actifs du département."""
+        from django.db.models import Sum
+        result = obj.employees.filter(status=Employee.Status.ACTIVE).aggregate(
+            total=Sum("salary")
+        )
+        return float(result["total"] or 0)
 
 
 class PositionSerializer(serializers.ModelSerializer):
+    """Serializer pour un poste de travail."""
+
     department_name = serializers.CharField(source="department.name", read_only=True)
+    employee_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Position
-        fields = ["id", "title", "department", "department_name"]
+        fields = ["id", "title", "department", "department_name", "employee_count"]
+
+    def get_employee_count(self, obj: Position) -> int:
+        """Nombre d'employés occupant ce poste."""
+        return obj.employees.filter(status=Employee.Status.ACTIVE).count()
 
 
 class EmployeeSerializer(serializers.ModelSerializer):
@@ -46,8 +88,10 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "address",
             "emergency_contact",
             "churn_risk",
+            "created_at",
+            "updated_at",
         ]
-        read_only_fields = ["churn_risk"]
+        read_only_fields = ["churn_risk", "created_at", "updated_at"]
 
     def to_representation(self, instance):
         """Remplace le FK user par un objet imbriqué en lecture."""
