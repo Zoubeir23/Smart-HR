@@ -195,19 +195,26 @@ def _get_ai_response(question: str, user) -> str:
     if not api_key:
         return "L'assistant IA n'est pas configuré. Veuillez définir la variable d'environnement GEMINI_API_KEY."
     try:
-        import google.generativeai as genai
+        from google import genai
+        from google.genai import types
 
-        genai.configure(api_key=api_key)
-        gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-
-        model = genai.GenerativeModel(
-            model_name=gemini_model_name,
-            system_instruction=_build_system_prompt(user),
-        )
+        client = genai.Client(api_key=api_key)
+        gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
 
         history = _build_gemini_history(user)
-        chat_session = model.start_chat(history=history)
-        response = chat_session.send_message(question)
+        contents = []
+        for msg in history:
+            role = "user" if msg["role"] == "user" else "model"
+            contents.append(types.Content(role=role, parts=[types.Part(text=msg["parts"][0])]))
+        contents.append(types.Content(role="user", parts=[types.Part(text=question)]))
+
+        response = client.models.generate_content(
+            model=gemini_model_name,
+            contents=contents,
+            config=types.GenerateContentConfig(
+                system_instruction=_build_system_prompt(user),
+            ),
+        )
 
         return response.text
     except Exception as exc:
