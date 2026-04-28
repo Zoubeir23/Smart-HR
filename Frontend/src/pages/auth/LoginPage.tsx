@@ -157,10 +157,10 @@ export default function LoginPage() {
   };
 
   const demoAccounts = [
-    { email: 'admin@smarthr.com', password: 'admin123', role: 'Admin', color: 'bg-[#c41e1e]' },
-    { email: 'rh@smarthr.com', password: 'rh123', role: 'RH', color: 'bg-[#D62828]' },
-    { email: 'employee@smarthr.com', password: 'employee123', role: 'Employé', color: 'bg-[hsl(160,84%,28%)]' },
-    { email: 'candidate@smarthr.com', password: 'candidate123', role: 'Candidat', color: 'bg-[hsl(25,95%,45%)]' },
+    { email: 'admin@smarthr.com', password: 'SmartHR2026!', role: 'Admin', color: 'bg-[#c41e1e]' },
+    { email: 'rh@smarthr.com', password: 'SmartHR2026!', role: 'RH', color: 'bg-[#D62828]' },
+    { email: 'employee@smarthr.com', password: 'SmartHR2026!', role: 'Employé', color: 'bg-[hsl(160,84%,28%)]' },
+    { email: 'candidate@smarthr.com', password: 'SmartHR2026!', role: 'Candidat', color: 'bg-[hsl(25,95%,45%)]' },
   ];
 
   const features = [
