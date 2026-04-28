@@ -557,7 +557,9 @@ class Command(BaseCommand):
                 user.save()
                 self.stdout.write(f"    + {user.email} ({data['role']})")
             else:
-                self.stdout.write(f"    ~ {user.email} already exists, skipping")
+                user.set_password("SmartHR2026!")
+                user.save()
+                self.stdout.write(f"    ~ {user.email} password reset")
 
             if data["role"] == "RH":
                 rh_user = user
