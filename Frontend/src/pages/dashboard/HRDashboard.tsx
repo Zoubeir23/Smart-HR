@@ -270,28 +270,28 @@ export default function HRDashboard() {
 
   return (
     <DashboardLayout>
-      <motion.div variants={container} initial="hidden" animate="visible" className="space-y-6">
+      <motion.div variants={container} initial="hidden" animate="visible" className="space-y-4 sm:space-y-5 md:space-y-6">
 
         {/* ────── HEADER ────── */}
-        <motion.div variants={item} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="space-y-1">
+        <motion.div variants={item} className="flex flex-col gap-3 sm:gap-4 sm:items-end sm:justify-between">
+          <div className="space-y-0.5 sm:space-y-1">
             <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{today}</p>
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
               {getGreeting()}, {user?.first_name}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Voici un résumé de l'activité RH de votre organisation
             </p>
           </div>
           {(user?.role === 'RH' || user?.role === 'ADMIN') && (
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" className="gap-2">
-                <FileText className="h-4 w-4" />
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm h-9 sm:h-10 flex-1 sm:flex-none">
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
                 Exporter
               </Button>
-              <Link to="/employees/create">
-                <Button size="sm" className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
-                  <Plus className="h-4 w-4" />
+              <Link to="/employees/create" className="flex-1 sm:flex-none">
+                <Button size="sm" className="gap-2 text-xs sm:text-sm h-9 sm:h-10 w-full" style={{ background: 'var(--gradient-primary)' }}>
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                   Nouvel employé
                 </Button>
               </Link>
@@ -300,10 +300,10 @@ export default function HRDashboard() {
         </motion.div>
 
         {/* ────── KPI CARDS ────── */}
-        <motion.div variants={item} className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <motion.div variants={item} className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {statsLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-[130px] w-full rounded-lg" />
+              <Skeleton key={i} className="h-[110px] sm:h-[130px] w-full rounded-lg" />
             ))
           ) : (
             <>
@@ -344,7 +344,7 @@ export default function HRDashboard() {
 
         {/* ────── QUICK ACTIONS (RH/Admin only) ────── */}
         {(user?.role === 'RH' || user?.role === 'ADMIN') && (
-          <motion.div variants={item} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <motion.div variants={item} className="grid gap-2 sm:gap-3 grid-cols-2 sm:grid-cols-4">
             <QuickAction icon={Users} label="Gérer les employés" href="/employees" />
             <QuickAction icon={BarChart3} label="Analyse Churn IA" href="/ai-insights" />
             <QuickAction icon={Briefcase} label="Recrutement" href="/jobs" />
@@ -386,44 +386,44 @@ export default function HRDashboard() {
         </motion.div>
 
         {/* ────── BOTTOM ROW: At-Risk + Leaves + Activity ────── */}
-        <motion.div variants={item} className="grid gap-6 lg:grid-cols-5">
+        <motion.div variants={item} className="grid gap-4 sm:gap-5 md:gap-6 lg:grid-cols-5">
 
           {/* ── Employees at Risk (3/5 width) ── */}
           <Card className="lg:col-span-3">
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
+            <CardHeader className="flex flex-row items-center justify-between pb-3 sm:pb-4 p-3 sm:p-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 flex-shrink-0">
                   <AlertTriangle className="h-4 w-4 text-destructive" />
                 </div>
-                <div>
-                  <CardTitle className="text-base font-semibold">Employés à risque</CardTitle>
-                  <p className="text-xs text-muted-foreground">Risque de départ le plus élevé</p>
+                <div className="min-w-0">
+                  <CardTitle className="text-sm sm:text-base font-semibold truncate">Employés à risque</CardTitle>
+                  <p className="text-xs text-muted-foreground truncate">Risque de départ le plus élevé</p>
                 </div>
               </div>
               <Link to="/ai-insights">
-                <Button variant="ghost" size="sm" className="gap-1 text-secondary">
+                <Button variant="ghost" size="sm" className="gap-1 text-secondary text-xs sm:text-sm h-8 sm:h-9 flex-shrink-0">
                   Voir tout
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </Link>
             </CardHeader>
-            <CardContent>
-              <div className="grid gap-4 sm:grid-cols-2">
+            <CardContent className="p-3 sm:p-4">
+              <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                 {employeesLoading ? (
                   Array.from({ length: 4 }).map((_, i) => (
-                    <Skeleton key={i} className="h-[180px] w-full rounded-lg" />
+                    <Skeleton key={i} className="h-[160px] sm:h-[180px] w-full rounded-lg" />
                   ))
                 ) : atRiskEmployees.length > 0 ? (
                   atRiskEmployees.map((employee: Employee) => (
                     <EmployeeCard key={employee.id} employee={employee} />
                   ))
                 ) : (
-                  <div className="col-span-2 flex flex-col items-center justify-center py-12 text-center">
-                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-success/10">
-                      <UserCheck className="h-6 w-6 text-success" />
+                  <div className="col-span-1 sm:col-span-2 flex flex-col items-center justify-center py-8 sm:py-12 text-center">
+                    <div className="mb-2 sm:mb-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-success/10">
+                      <UserCheck className="h-5 w-5 sm:h-6 sm:w-6 text-success" />
                     </div>
-                    <p className="font-medium">Aucun employé à risque</p>
-                    <p className="mt-1 text-sm text-muted-foreground">Tous les indicateurs sont au vert</p>
+                    <p className="font-medium text-sm sm:text-base">Aucun employé à risque</p>
+                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">Tous les indicateurs sont au vert</p>
                   </div>
                 )}
               </div>
@@ -431,28 +431,28 @@ export default function HRDashboard() {
           </Card>
 
           {/* ── Right Column: Pending Leaves + Activity (2/5 width) ── */}
-          <div className="space-y-6 lg:col-span-2">
+          <div className="space-y-4 sm:space-y-5 md:space-y-6 lg:col-span-2">
 
             {/* Pending Leaves */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 sm:pb-3 p-3 sm:p-4">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10 flex-shrink-0">
                     <Calendar className="h-4 w-4 text-secondary" />
                   </div>
-                  <CardTitle className="text-base font-semibold">Congés en attente</CardTitle>
+                  <CardTitle className="text-sm sm:text-base font-semibold truncate">Congés en attente</CardTitle>
                 </div>
                 <Badge
                   variant="secondary"
-                  className="tabular-nums"
+                  className="tabular-nums text-xs sm:text-sm flex-shrink-0"
                 >
                   {pendingLeaves.length}
                 </Badge>
               </CardHeader>
-              <CardContent className="space-y-2">
+              <CardContent className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
                 {leavesLoading ? (
                   Array.from({ length: 3 }).map((_, i) => (
-                    <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                    <Skeleton key={i} className="h-14 sm:h-16 w-full rounded-lg" />
                   ))
                 ) : pendingLeaves.length > 0 ? (
                   <AnimatePresence mode="popLayout">
@@ -463,12 +463,12 @@ export default function HRDashboard() {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.95, height: 0 }}
-                        className="group flex items-center justify-between rounded-lg border border-transparent bg-muted/40 p-3 transition-colors hover:border-border hover:bg-muted/60"
+                        className="group flex items-center justify-between rounded-lg border border-transparent bg-muted/40 p-2 sm:p-3 transition-colors hover:border-border hover:bg-muted/60"
                       >
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <span className="text-lg leading-none">{leaveTypeIcons[leave.type] ?? '📋'}</span>
+                        <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
+                          <span className="text-base sm:text-lg leading-none flex-shrink-0">{leaveTypeIcons[leave.type] ?? '📋'}</span>
                           <div className="min-w-0">
-                            <p className="truncate text-sm font-medium">
+                            <p className="truncate text-xs sm:text-sm font-medium">
                               {leave.employee?.user?.first_name} {leave.employee?.user?.last_name}
                             </p>
                             <p className="truncate text-xs text-muted-foreground">
@@ -476,24 +476,24 @@ export default function HRDashboard() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex shrink-0 gap-1.5 opacity-80 transition-opacity group-hover:opacity-100">
+                        <div className="flex shrink-0 gap-0.5 sm:gap-1.5 opacity-80 transition-opacity group-hover:opacity-100">
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            className="h-6 w-6 sm:h-7 sm:w-7 text-destructive hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
                             onClick={() => rejectLeaveMutation.mutate(leave.id)}
                             disabled={rejectLeaveMutation.isPending}
                           >
-                            <X className="h-3.5 w-3.5" />
+                            <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </Button>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-7 w-7 text-success hover:bg-success/10 hover:text-success"
+                            className="h-6 w-6 sm:h-7 sm:w-7 text-success hover:bg-success/10 hover:text-success flex-shrink-0"
                             onClick={() => approveLeaveMutation.mutate(leave.id)}
                             disabled={approveLeaveMutation.isPending}
                           >
-                            <Check className="h-3.5 w-3.5" />
+                            <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                           </Button>
                         </div>
                       </motion.div>
