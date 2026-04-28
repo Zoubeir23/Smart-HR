@@ -178,9 +178,8 @@ jobs:
     steps:
       - name: Trigger Dokploy deployment
         run: |
-          response=$(curl -s -L -o /tmp/dokploy_response.txt -w "%{http_code}" \
+          response=$(curl -s -L --max-redirs 10 -o /tmp/dokploy_response.txt -w "%{http_code}" \
             -X GET \
-            -H "x-branch: main" \
             "${{ secrets.DOKPLOY_WEBHOOK_URL }}")
           echo "Dokploy response code: $response"
           cat /tmp/dokploy_response.txt
