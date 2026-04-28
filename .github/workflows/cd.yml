@@ -166,7 +166,9 @@ jobs:
           vuln-type: os,library
 
 # ─────────────────────────────────────────────────────────────────────────────
-# JOB 3 — Deploy via Dokploy webhook  (dépend de trivy-image-scan)
+# JOB 3 — Confirmation deploy VPS  (dépend de trivy-image-scan)
+# Dokploy autodéploie via son intégration GitHub native (Autodeploy activé).
+# Ce job confirme simplement que le pipeline CD est complet.
 # ─────────────────────────────────────────────────────────────────────────────
   deploy-vps:
     name: Deploy → VPS (Dokploy)
@@ -176,18 +178,10 @@ jobs:
     environment: production-vps
 
     steps:
-      - name: Trigger Dokploy deployment
+      - name: Confirm deployment
         run: |
-          response=$(curl -s -L --max-redirs 10 -o /tmp/dokploy_response.txt -w "%{http_code}" \
-            -X GET \
-            "${{ secrets.DOKPLOY_WEBHOOK_URL }}")
-          echo "Dokploy response code: $response"
-          cat /tmp/dokploy_response.txt
-          if [ "$response" != "200" ] && [ "$response" != "201" ] && [ "$response" != "202" ]; then
-            echo "::error::Dokploy webhook failed (HTTP $response)"
-            exit 1
-          fi
-          echo "✓ Dokploy deployment triggered successfully."
+          echo "✓ Images GHCR buildées et scannées."
+          echo "✓ Dokploy autodéploie depuis main via son intégration GitHub."
 
 # ─────────────────────────────────────────────────────────────────────────────
 # JOB 4 — Deploy Railway via webhooks  (indépendant, pas de build GHCR)
