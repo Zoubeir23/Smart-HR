@@ -1,7 +1,7 @@
 # 📱 Améliorations Mobile-First — Documentation Complète
 
-**Date**: Avril 2026  
-**Version**: 1.0  
+**Date**: Avril 2026
+**Version**: 1.0
 **Scope**: Pages principales par rôle (Candidat, Employé, RH, Admin)
 
 ---
@@ -443,6 +443,6 @@ Desktop: 3-4+ colonnes (1024px+)
 
 ---
 
-**Générée le**: Avril 2026  
-**Version**: 1.0  
+**Générée le**: Avril 2026
+**Version**: 1.0
 **Statut**: ✅ Complétée (ApplyPage, EmployeeDashboard, EmployeeListPage, AdminDashboard)
