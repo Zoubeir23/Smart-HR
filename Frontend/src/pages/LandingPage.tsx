@@ -69,16 +69,18 @@ function Ticker() {
 
 /* Dashboard mockup — always dark (shows the app UI) */
 function DashboardMockup() {
+  const { theme } = useTheme();
+
   return (
     <div className="relative">
       <div className="absolute -inset-6 rounded-3xl bg-primary/10 blur-3xl" />
-      <div className="relative rounded-2xl border border-white/10 bg-brand-navy overflow-hidden shadow-2xl">
-        <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3 bg-brand-navy-800">
+      <div className={`relative rounded-2xl overflow-hidden shadow-2xl ${theme === 'dark' ? 'border border-white/10 bg-brand-navy' : 'border border-border bg-card'}`}>
+        <div className={`flex items-center gap-2 px-4 py-3 ${theme === 'dark' ? 'border-b border-white/10 bg-brand-navy-800' : 'border-b border-border bg-secondary/50'}`}>
           <div className="h-2.5 w-2.5 rounded-full bg-brand-red/60" />
           <div className="h-2.5 w-2.5 rounded-full bg-amber-400/40" />
           <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/40" />
-          <div className="ml-auto flex items-center gap-2 rounded-md bg-white/5 px-3 py-1">
-            <span className="text-[10px] font-mono font-bold tracking-widest text-white/30">SMART-HR</span>
+          <div className={`ml-auto flex items-center gap-2 rounded-md px-3 py-1 ${theme === 'dark' ? 'bg-white/5' : 'bg-black/5'}`}>
+            <span className={`text-[10px] font-mono font-bold tracking-widest ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>SMART-HR</span>
           </div>
         </div>
         <div className="p-5 space-y-4">
@@ -88,27 +90,27 @@ function DashboardMockup() {
               { label: 'Risque départ', value: '8,4%', delta: '−2.1%', color: 'text-emerald-400' },
               { label: 'Tâches actives', value: '47', delta: '+5', color: 'text-amber-400' },
             ].map((kpi) => (
-              <div key={kpi.label} className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-white/30">{kpi.label}</p>
-                <p className="mt-1 text-xl font-bold text-white">{kpi.value}</p>
+              <div key={kpi.label} className={`rounded-xl p-3 ${theme === 'dark' ? 'border border-white/[0.06] bg-white/[0.03]' : 'border border-border bg-secondary/30'}`}>
+                <p className={`text-[9px] font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>{kpi.label}</p>
+                <p className={`mt-1 text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-foreground'}`}>{kpi.value}</p>
                 <p className={`text-[10px] font-semibold ${kpi.color}`}>{kpi.delta}</p>
               </div>
             ))}
           </div>
-          <div className="rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 flex items-start gap-3">
-            <div className="mt-0.5 h-6 w-6 rounded-lg bg-brand-red/20 flex items-center justify-center flex-shrink-0">
-              <Zap className="h-3 w-3 text-brand-red-light" />
+          <div className={`rounded-xl p-3 flex items-start gap-3 ${theme === 'dark' ? 'border border-brand-red/30 bg-brand-red/10' : 'border border-destructive/20 bg-destructive/8'}`}>
+            <div className={`mt-0.5 h-6 w-6 rounded-lg flex items-center justify-center flex-shrink-0 ${theme === 'dark' ? 'bg-brand-red/20' : 'bg-destructive/15'}`}>
+              <Zap className={`h-3 w-3 ${theme === 'dark' ? 'text-brand-red-light' : 'text-destructive'}`} />
             </div>
             <div>
-              <p className="text-[11px] font-bold text-brand-red-light">Alerte IA — Risque élevé</p>
-              <p className="text-[10px] text-white/40 mt-0.5">3 collaborateurs identifiés au pôle Tech (+18%)</p>
+              <p className={`text-[11px] font-bold ${theme === 'dark' ? 'text-brand-red-light' : 'text-destructive'}`}>Alerte IA — Risque élevé</p>
+              <p className={`text-[10px] mt-0.5 ${theme === 'dark' ? 'text-white/40' : 'text-muted-foreground'}`}>3 collaborateurs identifiés au pôle Tech (+18%)</p>
             </div>
           </div>
-          <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-4">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-white/30 mb-3">Rétention / 6 mois</p>
+          <div className={`rounded-xl p-4 ${theme === 'dark' ? 'border border-white/[0.06] bg-white/[0.03]' : 'border border-border bg-secondary/30'}`}>
+            <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>Rétention / 6 mois</p>
             <div className="flex items-end gap-1.5 h-16">
               {[65, 72, 68, 85, 79, 92].map((h, i) => (
-                <motion.div key={i} initial={{ height: 0 }} animate={{ height: `${h}%` }} transition={{ duration: 0.8, delay: i * 0.1 }} className="flex-1 rounded-sm" style={{ background: i === 5 ? 'linear-gradient(180deg, #D62828, #e86060)' : 'rgba(255,255,255,0.08)' }} />
+                <motion.div key={i} initial={{ height: 0 }} animate={{ height: `${h}%` }} transition={{ duration: 0.8, delay: i * 0.1 }} className="flex-1 rounded-sm" style={{ background: i === 5 ? 'linear-gradient(180deg, #D62828, #e86060)' : theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
               ))}
             </div>
           </div>
@@ -366,7 +368,9 @@ export default function LandingPage() {
               <p className="text-base leading-relaxed text-muted-foreground">
                 Smart-HR n'est pas un simple logiciel de paie. C'est un copilote stratégique qui transforme vos données dormantes en insights actionnables, en temps réel.
               </p>
-              <Link to="/login" className="inline-flex items-center gap-2 rounded-xl bg-brand-navy px-7 py-3.5 text-sm font-bold text-white transition-all hover:bg-brand-navy-800 active:scale-95">
+              <Link
+                to="/login"
+                className={`inline-flex items-center gap-2 rounded-xl px-7 py-3.5 text-sm font-bold transition-all active:scale-95 ${theme === 'dark' ? 'bg-brand-navy text-white hover:bg-brand-navy-800' : 'bg-primary text-primary-foreground hover:bg-brand-red-dark'}`}>
                 Accéder à la plateforme <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
@@ -419,43 +423,43 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER — always dark navy */}
-      <footer className="border-t border-white/8 bg-brand-navy py-16">
+      {/* FOOTER — dark in dark mode, light surface in light mode */}
+      <footer className={`border-t ${theme === 'dark' ? 'border-white/8 bg-brand-navy' : 'border-border bg-background'} py-16`}>
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid grid-cols-2 gap-12 md:grid-cols-5 mb-14">
             <div className="col-span-2 space-y-5">
-              <Link to="/" className="font-display text-2xl text-white">Smart<span className="text-primary">-HR</span></Link>
-              <p className="max-w-xs text-sm leading-relaxed text-white/40">Le SIRH intelligent conçu pour les PME qui placent l'humain et la donnée au cœur de leur stratégie.</p>
+              <Link to="/" className={`font-display text-2xl ${theme === 'dark' ? 'text-white' : 'text-foreground'}`}>Smart<span className="text-primary">-HR</span></Link>
+              <p className={`max-w-xs text-sm leading-relaxed ${theme === 'dark' ? 'text-white/40' : 'text-muted-foreground'}`}>Le SIRH intelligent conçu pour les PME qui placent l'humain et la donnée au cœur de leur stratégie.</p>
               <div className="flex gap-3">
-                <a href="#" className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 transition-all hover:border-white/20 hover:text-white" aria-label="LinkedIn">
+                <a href="#" className={`flex h-9 w-9 items-center justify-center rounded-lg border ${theme === 'dark' ? 'border-white/10 text-white/40 hover:border-white/20 hover:text-white' : 'border-border text-muted-foreground hover:border-border hover:text-foreground'}`} aria-label="LinkedIn">
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z" /></svg>
                 </a>
-                <a href="#" className="flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 text-white/40 transition-all hover:border-white/20 hover:text-white" aria-label="Twitter/X">
+                <a href="#" className={`flex h-9 w-9 items-center justify-center rounded-lg border ${theme === 'dark' ? 'border-white/10 text-white/40 hover:border-white/20 hover:text-white' : 'border-border text-muted-foreground hover:border-border hover:text-foreground'}`} aria-label="Twitter/X">
                   <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
                 </a>
               </div>
             </div>
             <div>
-              <p className="mb-5 text-xs font-bold uppercase tracking-widest text-white/30">Produit</p>
+              <p className={`mb-5 text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>Produit</p>
               <ul className="space-y-3 text-sm">
                 {['Churn Prediction', 'Analyse CV', 'Assistant IA', 'Tableaux de bord', 'Recrutement'].map((item) => (
-                  <li key={item}><button onClick={() => scrollTo('produit')} className="text-white/50 hover:text-white transition-colors">{item}</button></li>
+                  <li key={item}><button onClick={() => scrollTo('produit')} className={`${theme === 'dark' ? 'text-white/50 hover:text-white' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>{item}</button></li>
                 ))}
               </ul>
             </div>
             <div>
-              <p className="mb-5 text-xs font-bold uppercase tracking-widest text-white/30">Modules</p>
+              <p className={`mb-5 text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>Modules</p>
               <ul className="space-y-3 text-sm">
                 {['Employés', 'Congés', 'Tâches', 'Présences', 'Paie', 'Documents'].map((item) => (
-                  <li key={item}><button onClick={() => scrollTo('modules')} className="text-white/50 hover:text-white transition-colors">{item}</button></li>
+                  <li key={item}><button onClick={() => scrollTo('modules')} className={`${theme === 'dark' ? 'text-white/50 hover:text-white' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>{item}</button></li>
                 ))}
               </ul>
             </div>
             <div>
-              <p className="mb-5 text-xs font-bold uppercase tracking-widest text-white/30">Légal</p>
+              <p className={`mb-5 text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>Légal</p>
               <ul className="space-y-3 text-sm">
                 {['Confidentialité', 'CGU', 'RGPD', 'Mentions légales'].map((item) => (
-                  <li key={item}><a href="#" className="text-white/50 hover:text-white transition-colors">{item}</a></li>
+                  <li key={item}><a href="#" className={`${theme === 'dark' ? 'text-white/50 hover:text-white' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>{item}</a></li>
                 ))}
               </ul>
               <div className="mt-8">
@@ -465,13 +469,13 @@ export default function LandingPage() {
               </div>
             </div>
           </div>
-          <div className="flex flex-col items-center justify-between gap-4 border-t border-white/8 pt-8 md:flex-row">
-            <p className="text-xs text-white/25">© {new Date().getFullYear()} Smart-HR — Tous droits réservés.</p>
+          <div className={`flex flex-col items-center justify-between gap-4 pt-8 md:flex-row ${theme === 'dark' ? 'border-t border-white/8' : 'border-t border-border'}`}>
+            <p className={`${theme === 'dark' ? 'text-xs text-white/25' : 'text-xs text-muted-foreground'}`}>© {new Date().getFullYear()} Smart-HR — Tous droits réservés.</p>
             <div className="flex items-center gap-2">
               <div className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <p className="text-xs text-white/25">Tous les systèmes opérationnels</p>
+              <p className={`${theme === 'dark' ? 'text-xs text-white/25' : 'text-xs text-muted-foreground'}`}>Tous les systèmes opérationnels</p>
             </div>
-            <p className="text-xs text-white/25">SaaS B2B · SIRH · IA Prédictive</p>
+            <p className={`${theme === 'dark' ? 'text-xs text-white/25' : 'text-xs text-muted-foreground'}`}>SaaS B2B · SIRH · IA Prédictive</p>
           </div>
         </div>
       </footer>
