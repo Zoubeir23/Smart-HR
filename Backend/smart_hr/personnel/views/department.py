@@ -1,11 +1,15 @@
-from django.db.models import Count, Q, Sum
-from rest_framework import filters, viewsets
+from django.db.models import Count
+from django.db.models import Q
+from django.db.models import Sum
+from rest_framework import filters
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.personnel.models import Department
-from smart_hr.personnel.serializers import DepartmentDetailSerializer, DepartmentSerializer
+from smart_hr.personnel.serializers import DepartmentDetailSerializer
+from smart_hr.personnel.serializers import DepartmentSerializer
 from smart_hr.users.permissions import IsRH
 
 

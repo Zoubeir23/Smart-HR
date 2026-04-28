@@ -181,10 +181,10 @@ def _build_gemini_history(user) -> list:
     history = []
     for past in reversed(recent):
         history.append(
-            {"role": "user", "parts": [past.question]}
+            {"role": "user", "parts": [past.question]},
         )
         history.append(
-            {"role": "model", "parts": [past.response]}
+            {"role": "model", "parts": [past.response]},
         )
     return history
 
@@ -199,16 +199,16 @@ def _get_ai_response(question: str, user) -> str:
 
         genai.configure(api_key=api_key)
         gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-        
+
         model = genai.GenerativeModel(
             model_name=gemini_model_name,
             system_instruction=_build_system_prompt(user),
         )
-        
+
         history = _build_gemini_history(user)
         chat_session = model.start_chat(history=history)
         response = chat_session.send_message(question)
-        
+
         return response.text
     except Exception as exc:
         logger.error("Erreur Gemini API : %s", exc)

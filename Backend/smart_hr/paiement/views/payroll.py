@@ -1,18 +1,19 @@
 import logging
 
 from django.db import transaction
-from django.db.models import Count, Sum
-from rest_framework import filters, status, viewsets
+from django.db.models import Count
+from django.db.models import Sum
+from rest_framework import filters
+from rest_framework import status
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.core.email_service import send_payslip_paid_email
 from smart_hr.paiement.models import Payroll
-from smart_hr.paiement.serializers import (
-    PayrollBulkGenerateSerializer,
-    PayrollSerializer,
-)
+from smart_hr.paiement.serializers import PayrollBulkGenerateSerializer
+from smart_hr.paiement.serializers import PayrollSerializer
 from smart_hr.personnel.models import Employee
 from smart_hr.users.permissions import IsRH
 
@@ -124,7 +125,8 @@ class PayrollViewSet(viewsets.ModelViewSet):
         dept_id = serializer_input.validated_data.get("department_id")
 
         employees_qs = Employee.objects.filter(status=Employee.Status.ACTIVE).select_related(
-            "user", "department"
+            "user",
+            "department",
         )
         if dept_id:
             employees_qs = employees_qs.filter(department_id=dept_id)
@@ -154,10 +156,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
                 "month": month,
                 "created": created_count,
                 "skipped_already_exists": skipped_count,
-                "detail": (
-                    f"{created_count} fiche(s) créée(s), "
-                    f"{skipped_count} déjà existante(s) pour {month}."
-                ),
+                "detail": (f"{created_count} fiche(s) créée(s), {skipped_count} déjà existante(s) pour {month}."),
             },
             status=status.HTTP_201_CREATED,
         )
@@ -180,15 +179,12 @@ class PayrollViewSet(viewsets.ModelViewSet):
         total = qs.count()
         total_net = qs.aggregate(total=Sum("net_salary"))["total"] or 0
 
-        by_status = {
-            s: qs.filter(status=s).count()
-            for s in ["pending", "processed", "paid"]
-        }
+        by_status = {s: qs.filter(status=s).count() for s in ["pending", "processed", "paid"]}
 
         by_department = list(
             qs.values("employee__department__name")
             .annotate(count=Count("id"), total_net=Sum("net_salary"))
-            .order_by("-total_net")
+            .order_by("-total_net"),
         )
 
         return Response(
@@ -198,5 +194,5 @@ class PayrollViewSet(viewsets.ModelViewSet):
                 "total_net_salary": total_net,
                 "by_status": by_status,
                 "by_department": by_department,
-            }
+            },
         )
