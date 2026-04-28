@@ -120,7 +120,7 @@ jobs:
       - name: Trivy — scan image Backend
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+          image-ref: ${{ env.BACKEND_IMAGE }}:${{ needs.build-and-push.outputs.backend-tag }}
           format: sarif
           output: trivy-backend.sarif
           severity: CRITICAL,HIGH
@@ -139,7 +139,7 @@ jobs:
       - name: Trivy — scan image Frontend
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.FRONTEND_IMAGE }}:sha-${{ github.sha }}
+          image-ref: ${{ env.FRONTEND_IMAGE }}:${{ needs.build-and-push.outputs.frontend-tag }}
           format: sarif
           output: trivy-frontend.sarif
           severity: CRITICAL,HIGH
@@ -158,7 +158,7 @@ jobs:
       - name: Trivy — résumé table Backend (logs)
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: ${{ env.BACKEND_IMAGE }}:sha-${{ github.sha }}
+          image-ref: ${{ env.BACKEND_IMAGE }}:${{ needs.build-and-push.outputs.backend-tag }}
           format: table
           severity: CRITICAL,HIGH
           exit-code: 0
