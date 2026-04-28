@@ -85,14 +85,8 @@ services:
     networks:
       - default
       - dokploy-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.smarthr.rule=Host(`${DOMAIN_NAME}`)"
-      - "traefik.http.routers.smarthr.entrypoints=web,websecure"
-      - "traefik.http.routers.smarthr.tls=true"
-      - "traefik.http.routers.smarthr.tls.certresolver=letsencrypt"
-      - "traefik.http.services.smarthr.loadbalancer.server.port=80"
-      - "traefik.docker.network=dokploy-network"
+    expose:
+      - "80"
     volumes:
       - ./Frontend/nginx.vps.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:

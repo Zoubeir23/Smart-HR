@@ -174,25 +174,17 @@ def _build_system_prompt(user) -> str:
 
 
 def _build_gemini_history(user) -> list:
-    """Retourne les 4 derniers échanges au format d'historique Gemini (nouveau SDK)."""
-    from google.genai import types as genai_types
-
+    """Retourne les 4 derniers échanges au format d'historique Gemini."""
     recent = list(
         ChatHistory.objects.filter(user=user).order_by("-created_at")[:4],
     )
     history = []
     for past in reversed(recent):
         history.append(
-            genai_types.Content(
-                role="user",
-                parts=[genai_types.Part(text=past.question)],
-            ),
+            {"role": "user", "parts": [past.question]},
         )
         history.append(
-            genai_types.Content(
-                role="model",
-                parts=[genai_types.Part(text=past.response)],
-            ),
+            {"role": "model", "parts": [past.response]},
         )
     return history
 
@@ -203,20 +195,20 @@ def _get_ai_response(question: str, user) -> str:
     if not api_key:
         return "L'assistant IA n'est pas configuré. Veuillez définir la variable d'environnement GEMINI_API_KEY."
     try:
-        from google import genai
-        from google.genai import types as genai_types
+        import google.generativeai as genai
 
+        genai.configure(api_key=api_key)
         gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-        client = genai.Client(api_key=api_key)
-        history = _build_gemini_history(user)
-        chat_session = client.chats.create(
-            model=gemini_model_name,
-            history=history,
-            config=genai_types.GenerateContentConfig(
-                system_instruction=_build_system_prompt(user),
-            ),
+
+        model = genai.GenerativeModel(
+            model_name=gemini_model_name,
+            system_instruction=_build_system_prompt(user),
         )
+
+        history = _build_gemini_history(user)
+        chat_session = model.start_chat(history=history)
         response = chat_session.send_message(question)
+
         return response.text
     except Exception as exc:
         logger.error("Erreur Gemini API : %s", exc)

@@ -15,6 +15,8 @@ import {
   ArrowDown,
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -314,7 +316,39 @@ export default function AIChatPage() {
                           : 'rounded-tl-sm border border-border bg-muted/40 text-foreground'
                       )}
                     >
-                      <p className="whitespace-pre-wrap">{message.text}</p>
+                      <ReactMarkdown
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed whitespace-pre-wrap">{children}</p>,
+                          strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+                          em: ({ children }) => <em className="italic">{children}</em>,
+                          ul: ({ children }) => <ul className="mb-2 ml-5 list-outside list-disc space-y-1 marker:text-primary/70">{children}</ul>,
+                          ol: ({ children }) => <ol className="mb-2 ml-5 list-outside list-decimal space-y-1 marker:text-primary/70">{children}</ol>,
+                          li: ({ children }) => <li className="pl-1">{children}</li>,
+                          h1: ({ children }) => <h1 className="mb-2 mt-4 text-lg font-bold">{children}</h1>,
+                          h2: ({ children }) => <h2 className="mb-2 mt-4 text-base font-bold">{children}</h2>,
+                          h3: ({ children }) => <h3 className="mb-2 mt-3 text-sm font-bold">{children}</h3>,
+                          a: ({ href, children }) => (
+                            <a href={href} className="text-primary underline underline-offset-2" target="_blank" rel="noopener noreferrer">
+                              {children}
+                            </a>
+                          ),
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                          code: ({ inline, className, children, ...props }: any) => {
+                            return !inline ? (
+                              <pre className="mb-2 overflow-x-auto rounded-lg bg-black/10 dark:bg-white/10 p-3 text-xs">
+                                <code {...props}>{children}</code>
+                              </pre>
+                            ) : (
+                              <code className="rounded bg-black/10 dark:bg-white/10 px-1.5 py-0.5 text-[0.8em]" {...props}>
+                                {children}
+                              </code>
+                            );
+                          },
+                        }}
+                      >
+                        {message.text}
+                      </ReactMarkdown>
                     </div>
                     <div
                       className={cn(

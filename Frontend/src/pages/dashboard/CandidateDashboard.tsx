@@ -111,39 +111,39 @@ export default function CandidateDashboard() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="space-y-6"
+        className="space-y-4 sm:space-y-5 md:space-y-6"
       >
         {/* Header */}
-        <motion.div variants={itemVariants} className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
+        <motion.div variants={itemVariants} className="space-y-1 sm:space-y-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
             Espace Candidat
           </h1>
-          <p className="text-muted-foreground">
+          <p className="text-xs sm:text-sm text-muted-foreground">
             Bienvenue, {user?.first_name || 'Candidat'}. Suivez vos candidatures et
             découvrez de nouvelles opportunités.
           </p>
         </motion.div>
 
-        {/* Stats Row */}
+        {/* Stats Row - Responsive: 1 col mobile, 3 col desktop */}
         <motion.div
           variants={containerVariants}
-          className="grid gap-4 sm:grid-cols-3"
+          className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3"
         >
           {stats.map((stat, index) => {
             const Icon = stat.icon;
             return (
               <motion.div key={index} variants={itemVariants}>
                 <Card className="border border-border shadow-sm">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4">
+                    <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">
                       {stat.title}
                     </CardTitle>
                     <div className={`${stat.bgColor} rounded-lg p-2`}>
-                      <Icon className={`h-5 w-5 ${stat.color}`} />
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: stat.color.replace('text-', '') }} />
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-foreground">{stat.value}</div>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="text-2xl sm:text-3xl font-bold text-foreground">{stat.value}</div>
                   </CardContent>
                 </Card>
               </motion.div>
@@ -152,13 +152,13 @@ export default function CandidateDashboard() {
         </motion.div>
 
         {/* Mes Candidatures */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-foreground">Mes Candidatures</h2>
-            <Button variant="ghost" size="sm" className="text-primary" asChild>
+        <motion.div variants={itemVariants} className="space-y-3 sm:space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Mes Candidatures</h2>
+            <Button variant="ghost" size="sm" className="text-primary text-xs sm:text-sm h-8 sm:h-9 gap-1" asChild>
               <Link to="/my-applications">
                 Voir tout
-                <ArrowRight className="ml-1 h-4 w-4" />
+                <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4" />
               </Link>
             </Button>
           </div>
@@ -166,22 +166,22 @@ export default function CandidateDashboard() {
           <Card className="border border-border shadow-sm">
             <CardContent className="p-0">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full text-sm">
                   <thead className="border-b bg-muted/50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-foreground">
                         Poste
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-foreground hidden sm:table-cell">
                         Département
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-foreground">
                         Date
                       </th>
-                      <th className="px-6 py-3 text-left text-sm font-semibold text-foreground">
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-left text-xs sm:text-sm font-semibold text-foreground">
                         Statut
                       </th>
-                      <th className="px-6 py-3 text-right text-sm font-semibold text-foreground">
+                      <th className="px-3 sm:px-6 py-2 sm:py-3 text-right text-xs sm:text-sm font-semibold text-foreground">
                         Actions
                       </th>
                     </tr>
@@ -193,26 +193,26 @@ export default function CandidateDashboard() {
                         variants={itemVariants}
                         className="transition-colors hover:bg-muted/50"
                       >
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-2">
-                            <Briefcase className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-foreground">
+                        <td className="px-3 sm:px-6 py-2 sm:py-4">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
+                            <span className="font-medium text-foreground text-xs sm:text-sm truncate">
                               {(candidature.job_title ?? candidature.poste) as string}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-sm text-muted-foreground">
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm text-muted-foreground hidden sm:table-cell">
                           {(candidature.job_department ?? (candidature.job_offer as { department?: string })?.department ?? candidature.departement) ?? '—'}
                         </td>
-                        <td className="px-6 py-4 text-sm text-muted-foreground">
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 text-xs sm:text-sm text-muted-foreground">
                           {new Date((candidature.created_at ?? candidature.date_candidature) as string).toLocaleDateString('fr-FR')}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-3 sm:px-6 py-2 sm:py-4">
                           {getStatusBadge((candidature.status ?? candidature.statut) as string)}
                         </td>
-                        <td className="px-6 py-4 text-right">
-                          <Button variant="ghost" size="sm" asChild>
-                            <Link to="/my-applications">Voir détails</Link>
+                        <td className="px-3 sm:px-6 py-2 sm:py-4 text-right">
+                          <Button variant="ghost" size="sm" className="text-xs sm:text-sm h-8 sm:h-9" asChild>
+                            <Link to="/my-applications">Voir</Link>
                           </Button>
                         </td>
                       </motion.tr>
@@ -225,15 +225,15 @@ export default function CandidateDashboard() {
         </motion.div>
 
         {/* Offres recommandées */}
-        <motion.div variants={itemVariants} className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-foreground">Offres recommandées</h2>
-            <Button variant="outline" size="sm" asChild>
+        <motion.div variants={itemVariants} className="space-y-3 sm:space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-lg sm:text-xl font-bold text-foreground">Offres recommandées</h2>
+            <Button variant="outline" size="sm" className="text-xs sm:text-sm h-8 sm:h-9" asChild>
               <Link to="/jobs">Toutes les offres</Link>
             </Button>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
             {offresRecommandees.map((offre: Record<string, unknown>) => (
               <motion.div
                 key={String(offre.id)}
@@ -242,11 +242,11 @@ export default function CandidateDashboard() {
                 transition={{ type: 'spring', stiffness: 300 }}
               >
                 <Card className="h-full border border-border shadow-sm transition-shadow hover:shadow-md">
-                  <CardHeader>
+                  <CardHeader className="p-3 sm:p-4">
                     <div className="space-y-2">
-                      <CardTitle className="text-lg">{(offre.title ?? offre.titre) as string}</CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Briefcase className="h-4 w-4" />
+                      <CardTitle className="text-base sm:text-lg">{(offre.title ?? offre.titre) as string}</CardTitle>
+                      <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
+                        <Briefcase className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
                         {(offre.department ?? offre.departement) as string}
                       </div>
                     </div>

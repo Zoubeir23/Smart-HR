@@ -61,23 +61,23 @@ export default function AdminDashboard() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="space-y-6"
+        className="space-y-4 sm:space-y-5 md:space-y-6"
       >
         <PageHeader
           title={`Bienvenue, ${user?.first_name} 👋`}
           description="Tableau de bord administrateur — Supervision système et sécurité"
           actions={
-            <Button asChild>
-              <Link to="/employees">
-                <UserPlus className="mr-2 h-4 w-4" />
+            <Button asChild className="text-xs sm:text-sm h-9 sm:h-10">
+              <Link to="/employees" className="gap-2">
+                <UserPlus className="h-4 w-4" />
                 Nouvel employé
               </Link>
             </Button>
           }
         />
 
-        {/* Cartes d'actions rapides */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Quick action cards - Responsive: 1 col on mobile, 2 on tablet, 3 on desktop */}
+        <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {quickActions.map((action) => {
             const Icon = action.icon;
             return (
@@ -86,15 +86,15 @@ export default function AdminDashboard() {
                 className="group cursor-pointer border-border transition-all hover:border-secondary/30 hover:shadow-md"
               >
                 <Link to={action.href} className="block">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10">
-                      <Icon className="h-5 w-5 text-primary" />
+                  <CardHeader className="flex flex-row items-center justify-between pb-2 p-3 sm:p-4">
+                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-secondary/10 flex-shrink-0">
+                      <Icon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary" />
+                    <ArrowRight className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground transition-transform group-hover:translate-x-1 group-hover:text-primary flex-shrink-0" />
                   </CardHeader>
-                  <CardContent>
-                    <CardTitle className="text-base">{action.title}</CardTitle>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                  <CardContent className="p-3 sm:p-4">
+                    <CardTitle className="text-sm sm:text-base">{action.title}</CardTitle>
+                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
                       {action.description}
                     </p>
                   </CardContent>
@@ -104,38 +104,37 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        {/* Alertes système & Statistiques */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {/* Activity & Stats Grid - Responsive: 1 col on mobile, 2 on desktop */}
+        <div className="grid gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Activity className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Activity className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                 Activité récente
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Dernières connexions
               </p>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="space-y-3">
+                <div className="space-y-2 sm:space-y-3">
                   {Array.from({ length: 3 }).map((_, i) => (
                     <Skeleton key={i} className="h-10 w-full" />
                   ))}
                 </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-1 sm:space-y-2">
                   {adminStats?.recent_activity?.slice(0, 5).map((item: { action: string; user: string; role: string; time: string | null }, i: number) => (
                     <div
                       key={i}
-                      className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2"
+                      className="flex items-center justify-between rounded-lg bg-muted/50 px-2 sm:px-3 py-2 gap-2"
                     >
-                      <div>
-                        <span className="text-sm font-medium">{item.action}</span>
-                        <span className="mx-2 text-muted-foreground">—</span>
-                        <span className="text-sm text-muted-foreground">{item.user}</span>
+                      <div className="min-w-0 flex-1">
+                        <span className="text-xs sm:text-sm font-medium truncate block">{item.action}</span>
+                        <span className="text-xs text-muted-foreground truncate block">{item.user}</span>
                       </div>
-                      <span className="text-xs text-muted-foreground">
+                      <span className="text-xs text-muted-foreground flex-shrink-0">
                         {item.time ? new Date(item.time).toLocaleString('fr-FR', {
                           day: '2-digit',
                           month: 'short',
@@ -145,7 +144,7 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                   )) ?? (
-                    <p className="text-center text-sm text-muted-foreground py-4">
+                    <p className="text-center text-xs sm:text-sm text-muted-foreground py-4">
                       Aucune activité récente
                     </p>
                   )}
@@ -156,29 +155,29 @@ export default function AdminDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" />
                 Vue d'ensemble
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Statistiques système
               </p>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <Skeleton className="h-20 w-full" />
                   <Skeleton className="h-20 w-full" />
                 </div>
               ) : (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-lg border border-border p-4">
-                    <p className="text-2xl font-bold">{adminStats?.active_roles ?? 0}</p>
-                    <p className="text-sm text-muted-foreground">Rôles actifs</p>
+                <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                  <div className="rounded-lg border border-border p-3 sm:p-4">
+                    <p className="text-xl sm:text-2xl font-bold">{adminStats?.active_roles ?? 0}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Rôles actifs</p>
                   </div>
-                  <div className="rounded-lg border border-border p-4">
-                    <p className="text-2xl font-bold">{adminStats?.total_users ?? 0}</p>
-                    <p className="text-sm text-muted-foreground">Utilisateurs</p>
+                  <div className="rounded-lg border border-border p-3 sm:p-4">
+                    <p className="text-xl sm:text-2xl font-bold">{adminStats?.total_users ?? 0}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">Utilisateurs</p>
                   </div>
                 </div>
               )}

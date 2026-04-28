@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
@@ -94,6 +94,7 @@ interface EditEmployeeForm {
 
 export default function EmployeeDetailPage() {
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -111,17 +112,20 @@ export default function EmployeeDetailPage() {
     enabled: !!id,
   });
 
-  const { data: departments = [] } = useQuery({
+  const { data: departmentsData } = useQuery({
     queryKey: ['departments'],
     queryFn: employeeService.getDepartments,
     enabled: isEditDialogOpen,
   });
 
-  const { data: positions = [] } = useQuery({
+  const { data: positionsData } = useQuery({
     queryKey: ['positions'],
     queryFn: employeeService.getPositions,
     enabled: isEditDialogOpen,
   });
+
+  const departments = departmentsData?.results ?? departmentsData ?? [];
+  const positions = positionsData?.results ?? positionsData ?? [];
 
   const updateMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) => employeeService.update(Number(id), data),
@@ -146,6 +150,14 @@ export default function EmployeeDetailPage() {
       toast.error('Erreur lors de la désactivation.');
     },
   });
+
+  // Ouvre automatiquement la modale d'édition si l'URL contient ?edit=true
+  // (déclenché depuis le menu EmployeeCard → "Modifier")
+  useEffect(() => {
+    if (searchParams.get('edit') === 'true') {
+      setIsEditDialogOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (employee && isEditDialogOpen) {
@@ -225,6 +237,14 @@ export default function EmployeeDetailPage() {
             </Button>
           </Link>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.href = `mailto:${employee?.user?.email}`}
+            >
+              <Mail className="mr-2 h-4 w-4" />
+              Envoyer un email
+            </Button>
             <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
               <Pencil className="mr-2 h-4 w-4" />
               Modifier

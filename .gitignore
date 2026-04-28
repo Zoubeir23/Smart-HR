@@ -20,6 +20,7 @@ __pycache__/
 *.so
 .Python
 venv/
+.venv/
 env/
 ENV/
 *.egg-info/
@@ -80,3 +81,7 @@ token.json
 # ── OS ─────────────────────────────────────────────────────────────
 Thumbs.db
 .DS_Store
+
+# ── repo .claude ─────────────────────────────────────────────────────────
+.claude/
+graphify-out/
