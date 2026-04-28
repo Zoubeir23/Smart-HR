@@ -37,7 +37,9 @@ class AttendanceSerializer(serializers.ModelSerializer):
     def get_duration_hours(self, obj: Attendance) -> float | None:
         """Calcule la durée en heures entre check_in et check_out."""
         if obj.check_in and obj.check_out:
-            from datetime import datetime, date
+            from datetime import date
+            from datetime import datetime
+
             base = date.today()
             start = datetime.combine(base, obj.check_in)
             end = datetime.combine(base, obj.check_out)
@@ -52,7 +54,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
         check_out = attrs.get("check_out")
         if check_in and check_out and check_out <= check_in:
             raise serializers.ValidationError(
-                {"check_out": "L'heure de sortie doit être après l'heure d'arrivée."}
+                {"check_out": "L'heure de sortie doit être après l'heure d'arrivée."},
             )
         return attrs
 

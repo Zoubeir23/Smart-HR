@@ -3,7 +3,6 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from smart_hr.paiement.models import Payroll
-from smart_hr.personnel.models import Employee
 
 
 class PayrollSerializer(serializers.ModelSerializer):
@@ -45,9 +44,10 @@ class PayrollSerializer(serializers.ModelSerializer):
     def validate_month(self, value: str) -> str:
         """Valide le format YYYY-MM."""
         import re
+
         if not re.match(r"^\d{4}-\d{2}$", value):
             raise serializers.ValidationError(
-                "Le mois doit être au format YYYY-MM (ex: 2026-01)."
+                "Le mois doit être au format YYYY-MM (ex: 2026-01).",
             )
         return value
 
@@ -58,11 +58,11 @@ class PayrollSerializer(serializers.ModelSerializer):
         deductions = attrs.get("deductions", Decimal("0"))
         if base < 0:
             raise serializers.ValidationError(
-                {"base_salary": "Le salaire de base ne peut pas être négatif."}
+                {"base_salary": "Le salaire de base ne peut pas être négatif."},
             )
         if deductions > base + bonuses:
             raise serializers.ValidationError(
-                {"deductions": "Les déductions ne peuvent pas dépasser le salaire brut."}
+                {"deductions": "Les déductions ne peuvent pas dépasser le salaire brut."},
             )
         return attrs
 
@@ -75,6 +75,7 @@ class PayrollBulkGenerateSerializer(serializers.Serializer):
 
     def validate_month(self, value: str) -> str:
         import re
+
         if not re.match(r"^\d{4}-\d{2}$", value):
             raise serializers.ValidationError("Format attendu : YYYY-MM")
         return value

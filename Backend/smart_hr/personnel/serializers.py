@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
-from smart_hr.personnel.models import Department, Employee, Position
+from smart_hr.personnel.models import Department
+from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import Position
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
@@ -34,14 +36,15 @@ class DepartmentDetailSerializer(DepartmentSerializer):
     def get_positions(self, obj: Department) -> list:
         """Retourne les postes rattachés au département."""
         return list(
-            obj.positions.values("id", "title")
+            obj.positions.values("id", "title"),
         )
 
     def get_total_salary(self, obj: Department) -> float:
         """Masse salariale totale des employés actifs du département."""
         from django.db.models import Sum
+
         result = obj.employees.filter(status=Employee.Status.ACTIVE).aggregate(
-            total=Sum("salary")
+            total=Sum("salary"),
         )
         return float(result["total"] or 0)
 

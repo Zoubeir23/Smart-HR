@@ -1,7 +1,10 @@
 from django.contrib import admin
-from django.db.models import Count, Sum
+from django.db.models import Count
+from django.db.models import Sum
 
-from smart_hr.personnel.models import Department, Employee, Position
+from smart_hr.personnel.models import Department
+from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import Position
 
 
 @admin.register(Department)
@@ -25,11 +28,11 @@ class DepartmentAdmin(admin.ModelAdmin):
 
     @admin.display(description="Nb. employés", ordering="_employee_count")
     def employee_count_display(self, obj) -> int:
-        return obj._employee_count
+        return obj._employee_count  # noqa: SLF001
 
     @admin.display(description="Masse salariale", ordering="_total_salary")
     def active_salary_display(self, obj) -> str:
-        return f"{obj._total_salary or 0:,.0f} FCFA"
+        return f"{obj._total_salary or 0:,.0f} FCFA"  # noqa: SLF001
 
 
 @admin.register(Position)
@@ -41,16 +44,11 @@ class PositionAdmin(admin.ModelAdmin):
     search_fields = ["title"]
 
     def get_queryset(self, request):
-        return (
-            super()
-            .get_queryset(request)
-            .select_related("department")
-            .annotate(_employee_count=Count("employees"))
-        )
+        return super().get_queryset(request).select_related("department").annotate(_employee_count=Count("employees"))
 
     @admin.display(description="Nb. employés", ordering="_employee_count")
     def employee_count_display(self, obj) -> int:
-        return obj._employee_count
+        return obj._employee_count  # noqa: SLF001
 
 
 @admin.register(Employee)
@@ -75,8 +73,14 @@ class EmployeeAdmin(admin.ModelAdmin):
     actions = ["mark_active", "mark_inactive"]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related(
-            "user", "department", "position"
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "user",
+                "department",
+                "position",
+            )
         )
 
     @admin.display(description="Nom complet", ordering="user__last_name")

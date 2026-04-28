@@ -76,7 +76,11 @@ const MONTHS = [
   { value: '09', label: 'Septembre' }, { value: '10', label: 'Octobre' },
   { value: '11', label: 'Novembre' }, { value: '12', label: 'Décembre' },
 ];
-const YEARS = ['2024', '2025', '2026'];
+function getYears(rangeBefore = 2, rangeAfter = 2): string[] {
+  const currentYear = new Date().getFullYear();
+  return Array.from({ length: rangeBefore + rangeAfter + 1 }, (_, i) => String(currentYear - rangeBefore + i));
+}
+const YEARS = getYears();
 
 function formatCurrency(amount: string | number): string {
   return new Intl.NumberFormat('fr-FR').format(Number(amount)) + ' FCFA';
@@ -335,18 +339,13 @@ export default function PayrollPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <AnimatePresence>
-                  {payrollRecords.map((record) => {
-                    const sc = STATUS_CONFIG[record.status];
-                    return (
-                      <motion.tr
-                        key={record.id}
-                        layout
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="border-b border-border hover:bg-muted/40 transition-colors"
-                      >
+                {payrollRecords.map((record) => {
+                  const sc = STATUS_CONFIG[record.status];
+                  return (
+                    <TableRow
+                      key={record.id}
+                      className="border-b border-border hover:bg-muted/40 transition-colors animate-in fade-in"
+                    >
                         <TableCell>
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
@@ -408,10 +407,9 @@ export default function PayrollPage() {
                             </div>
                           </TableCell>
                         )}
-                      </motion.tr>
-                    );
-                  })}
-                </AnimatePresence>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
@@ -469,13 +467,39 @@ export default function PayrollPage() {
             </div>
 
             {/* Mois */}
-            <div className="space-y-1.5">
-              <Label>Mois <span className="text-destructive">*</span></Label>
-              <Input
-                type="month"
-                value={form.month}
-                onChange={(e) => setForm((f) => ({ ...f, month: e.target.value }))}
-              />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Mois <span className="text-destructive">*</span></Label>
+                <Select
+                  value={form.month.split('-')[1]}
+                  onValueChange={(m) => setForm((f) => ({ ...f, month: `${f.month.split('-')[0]}-${m}` }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Mois" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MONTHS.map((m) => (
+                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Année <span className="text-destructive">*</span></Label>
+                <Select
+                  value={form.month.split('-')[0]}
+                  onValueChange={(y) => setForm((f) => ({ ...f, month: `${y}-${f.month.split('-')[1]}` }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Année" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {YEARS.map((y) => (
+                      <SelectItem key={y} value={y}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             {/* Salaires */}

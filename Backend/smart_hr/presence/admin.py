@@ -47,6 +47,11 @@ class AttendanceAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         """Optimise avec select_related pour éviter les N+1."""
-        return super().get_queryset(request).select_related(
-            "employee__user", "employee__department"
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "employee__user",
+                "employee__department",
+            )
         )

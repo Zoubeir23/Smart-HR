@@ -1,20 +1,20 @@
 import logging
-from datetime import datetime
 
-from django.db.models import Avg, Count, ExpressionWrapper, F, FloatField, Q
+from django.db.models import Count
+from django.db.models import Q
 from django.utils import timezone
-from rest_framework import filters, status, viewsets
+from rest_framework import filters
+from rest_framework import status
+from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.personnel.models import Employee
 from smart_hr.presence.models import Attendance
-from smart_hr.presence.serializers import (
-    AttendanceCheckInSerializer,
-    AttendanceCheckOutSerializer,
-    AttendanceSerializer,
-)
+from smart_hr.presence.serializers import AttendanceCheckInSerializer
+from smart_hr.presence.serializers import AttendanceCheckOutSerializer
+from smart_hr.presence.serializers import AttendanceSerializer
 from smart_hr.users.permissions import IsRH
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         """Retourne les présences du jour courant (filtrées par rôle)."""
         today = timezone.now().date()
         qs = Attendance.objects.filter(date=today).select_related(
-            "employee__user", "employee__department"
+            "employee__user",
+            "employee__department",
         )
         if request.user.role not in ["ADMIN", "RH"]:
             qs = qs.filter(employee__user=request.user)
@@ -177,10 +178,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         qs = Attendance.objects.filter(date__year=year, date__month=month)
         total = qs.count()
 
-        by_status = {
-            s: qs.filter(status=s).count()
-            for s in ["present", "absent", "late", "half_day"]
-        }
+        by_status = {s: qs.filter(status=s).count() for s in ["present", "absent", "late", "half_day"]}
 
         by_department = list(
             qs.values("employee__department__name")
@@ -190,7 +188,7 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 absent=Count("id", filter=Q(status="absent")),
                 late=Count("id", filter=Q(status="late")),
             )
-            .order_by("-total")
+            .order_by("-total"),
         )
 
         return Response(
@@ -200,5 +198,5 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 "total_records": total,
                 "by_status": by_status,
                 "by_department": by_department,
-            }
+            },
         )
