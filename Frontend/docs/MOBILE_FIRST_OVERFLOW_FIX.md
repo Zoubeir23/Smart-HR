@@ -2,7 +2,7 @@
 
 ## Status: EN COURS DE CORRECTION
 
-**Date**: 27 avril 2026  
+**Date**: 27 avril 2026
 **Objectif**: Corriger les problèmes d'overflow horizontal et d'adaptation mobile
 
 ---
