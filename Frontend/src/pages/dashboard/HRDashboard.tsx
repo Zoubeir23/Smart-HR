@@ -243,9 +243,9 @@ export default function HRDashboard() {
   });
 
   // ─── Derived Data ──────────────────────
-  const employees: Employee[] = employeesData?.results ?? employeesData ?? [];
-  const pendingLeaves: LeaveRequest[] = leavesData?.results ?? leavesData ?? [];
-  const applications = applicationsData?.results ?? applicationsData ?? [];
+  const employees: Employee[] = useMemo(() => employeesData?.results ?? employeesData ?? [], [employeesData]);
+  const pendingLeaves: LeaveRequest[] = useMemo(() => leavesData?.results ?? leavesData ?? [], [leavesData]);
+  const applications = useMemo(() => applicationsData?.results ?? applicationsData ?? [], [applicationsData]);
 
   const atRiskEmployees = useMemo(
     () =>

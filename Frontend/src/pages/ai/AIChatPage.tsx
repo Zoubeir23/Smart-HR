@@ -333,6 +333,7 @@ export default function AIChatPage() {
                               {children}
                             </a>
                           ),
+                          // eslint-disable-next-line @typescript-eslint/no-explicit-any
                           code: ({ inline, className, children, ...props }: any) => {
                             return !inline ? (
                               <pre className="mb-2 overflow-x-auto rounded-lg bg-black/10 dark:bg-white/10 p-3 text-xs">

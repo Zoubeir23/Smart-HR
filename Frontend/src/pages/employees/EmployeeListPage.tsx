@@ -109,9 +109,9 @@ export default function EmployeeListPage() {
     queryFn: () => employeeService.getDepartments(),
   });
 
-  const employees: Employee[] = employeesData?.results || employeesData || [];
-  const departmentsList = departmentsData?.results ?? departmentsData ?? [];
-  const departments = ['Tous', ...departmentsList.map((d: { name: string }) => d.name)];
+  const employees: Employee[] = useMemo(() => employeesData?.results || employeesData || [], [employeesData]);
+  const departmentsList = useMemo(() => departmentsData?.results ?? departmentsData ?? [], [departmentsData]);
+  const departments = useMemo(() => ['Tous', ...departmentsList.map((d: { name: string }) => d.name)], [departmentsList]);
 
   // ─── Filtering & Sorting ──────────────
   const filteredEmployees = useMemo(() => {
