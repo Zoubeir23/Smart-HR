@@ -104,7 +104,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [hoveredDemo, setHoveredDemo] = useState<string | null>(null);
 
   const { login, loginWithGoogle } = useAuth();
   const navigate = useNavigate();
@@ -486,8 +485,7 @@ export default function LoginPage() {
                     setEmail(account.email);
                     setPassword(account.password);
                   }}
-                  onMouseEnter={() => setHoveredDemo(account.email)}
-                  onMouseLeave={() => setHoveredDemo(null)}
+                  title={account.email}
                   className="group relative flex flex-col items-center gap-1.5 rounded-lg border border-transparent px-2 py-2.5 transition-all hover:border-border hover:bg-muted/50"
                 >
                   <div
@@ -498,15 +496,6 @@ export default function LoginPage() {
                   <span className="text-[11px] font-medium text-muted-foreground group-hover:text-foreground">
                     {account.role}
                   </span>
-                  {hoveredDemo === account.email && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="absolute -top-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-md bg-foreground px-2 py-1 text-[10px] text-background shadow-lg"
-                    >
-                      {account.email}
-                    </motion.div>
-                  )}
                 </button>
               ))}
             </div>

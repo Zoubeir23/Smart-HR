@@ -13,8 +13,10 @@ import {
   UserX,
   Clock,
   ArrowUpDown,
-  ChevronRight,
+  MoreVertical,
   Mail,
+  Eye,
+  Pencil,
   MapPin,
   AlertTriangle,
 } from 'lucide-react';
@@ -39,6 +41,12 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Employee } from '@/types';
 import { cn } from '@/lib/utils';
 import { employeeService } from '@/services/employeeService';
@@ -101,9 +109,9 @@ export default function EmployeeListPage() {
     queryFn: () => employeeService.getDepartments(),
   });
 
-  const employees: Employee[] = employeesData?.results || employeesData || [];
-  const departmentsList = departmentsData?.results ?? departmentsData ?? [];
-  const departments = ['Tous', ...departmentsList.map((d: { name: string }) => d.name)];
+  const employees: Employee[] = useMemo(() => employeesData?.results || employeesData || [], [employeesData]);
+  const departmentsList = useMemo(() => departmentsData?.results ?? departmentsData ?? [], [departmentsData]);
+  const departments = useMemo(() => ['Tous', ...departmentsList.map((d: { name: string }) => d.name)], [departmentsList]);
 
   // ─── Filtering & Sorting ──────────────
   const filteredEmployees = useMemo(() => {
@@ -114,7 +122,7 @@ export default function EmployeeListPage() {
         employee.user.first_name.toLowerCase().includes(query) ||
         employee.user.last_name.toLowerCase().includes(query) ||
         employee.user.email.toLowerCase().includes(query) ||
-        ((employee as { position_title?: string }).position_title ?? employee.position ?? '').toLowerCase().includes(query);
+        String((employee as { position_title?: string }).position_title ?? employee.position ?? '').toLowerCase().includes(query);
 
       const deptName = (employee as { department_name?: string }).department_name ?? employee.department;
       const matchesDepartment = selectedDepartment === 'Tous' || deptName === selectedDepartment;
@@ -131,7 +139,7 @@ export default function EmployeeListPage() {
           cmp = `${a.user.first_name} ${a.user.last_name}`.localeCompare(`${b.user.first_name} ${b.user.last_name}`);
           break;
         case 'department':
-          cmp = (a.department ?? '').localeCompare(b.department ?? '');
+          cmp = String((a as { department_name?: string }).department_name ?? a.department ?? '').localeCompare(String((b as { department_name?: string }).department_name ?? b.department ?? ''));
           break;
         case 'risk':
           cmp = (a.churn_risk ?? 0) - (b.churn_risk ?? 0);
@@ -190,24 +198,25 @@ export default function EmployeeListPage() {
 
   return (
     <DashboardLayout>
-      <motion.div variants={container} initial="hidden" animate="visible" className="space-y-6">
+      <motion.div variants={container} initial="hidden" animate="visible" className="space-y-4 sm:space-y-5 md:space-y-6">
 
         {/* ────── HEADER ────── */}
-        <motion.div variants={item} className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <motion.div variants={item} className="flex flex-col gap-3 sm:gap-4 sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Employés</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Employés</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               Gérez et consultez les informations de vos {stats.total} collaborateurs
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
+          {/* Responsive button layout: stack on mobile, row on tablet+ */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm">
+              <Download className="h-3 w-3 sm:h-4 sm:w-4" />
               Exporter
             </Button>
-            <Button asChild size="sm" className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
+            <Button asChild size="sm" className="gap-2 text-xs sm:text-sm" style={{ background: 'var(--gradient-primary)' }}>
               <Link to="/employees/create">
-                <Plus className="h-4 w-4" />
+                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                 Nouvel employé
               </Link>
             </Button>
@@ -216,16 +225,16 @@ export default function EmployeeListPage() {
 
         {/* ────── LOADING STATE ────── */}
         {isLoading && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="space-y-4 sm:space-y-5 md:space-y-6">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
               {Array.from({ length: 4 }).map((_, i) => (
-                <Skeleton key={i} className="h-[76px] w-full rounded-lg" />
+                <Skeleton key={i} className="h-[70px] sm:h-[76px] w-full rounded-lg" />
               ))}
             </div>
-            <Skeleton className="h-10 w-full max-w-sm rounded-lg" />
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <Skeleton className="h-9 sm:h-10 w-full max-w-sm rounded-lg" />
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {Array.from({ length: 8 }).map((_, i) => (
-                <Skeleton key={i} className="h-[200px] w-full rounded-lg" />
+                <Skeleton key={i} className="h-[180px] sm:h-[200px] w-full rounded-lg" />
               ))}
             </div>
           </div>
@@ -234,7 +243,7 @@ export default function EmployeeListPage() {
         {!isLoading && (
           <>
             {/* ────── STATUS FILTER PILLS ────── */}
-            <motion.div variants={item} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <motion.div variants={item} className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
               {statuses.map((status) => {
                 const Icon = status.icon;
                 const count = getStatCount(status.value);
@@ -247,18 +256,18 @@ export default function EmployeeListPage() {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setSelectedStatus(status.value)}
                     className={cn(
-                      'flex items-center gap-3 rounded-lg border p-4 text-left transition-all',
+                      'flex items-center gap-2 sm:gap-3 rounded-lg border p-3 sm:p-4 text-left transition-all',
                       isSelected
                         ? 'border-primary/40 bg-primary/5 shadow-sm'
                         : 'border-border bg-card hover:border-border hover:shadow-sm'
                     )}
                   >
-                    <div className={cn('flex h-10 w-10 items-center justify-center rounded-lg', isSelected ? status.bg : 'bg-muted')}>
-                      <Icon className={cn('h-5 w-5', isSelected ? status.color : 'text-muted-foreground')} />
+                    <div className={cn('flex h-8 w-8 sm:h-10 sm:w-10 items-center justify-center rounded-lg flex-shrink-0', isSelected ? status.bg : 'bg-muted')}>
+                      <Icon className={cn('h-4 w-4 sm:h-5 sm:w-5', isSelected ? status.color : 'text-muted-foreground')} />
                     </div>
-                    <div>
-                      <p className="text-2xl font-bold tabular-nums">{count}</p>
-                      <p className="text-xs text-muted-foreground">{status.label}</p>
+                    <div className="min-w-0">
+                      <p className="text-xl sm:text-2xl font-bold tabular-nums">{count}</p>
+                      <p className="text-xs text-muted-foreground leading-tight">{status.label}</p>
                     </div>
                   </motion.button>
                 );
@@ -266,19 +275,20 @@ export default function EmployeeListPage() {
             </motion.div>
 
             {/* ────── TOOLBAR ────── */}
-            <motion.div variants={item} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-1 items-center gap-3">
-                <div className="relative flex-1 sm:max-w-xs">
+            <motion.div variants={item} className="flex flex-col gap-3 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
+              {/* Search and filters: stack on mobile */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-3 flex-1">
+                <div className="relative w-full sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
-                    placeholder="Rechercher par nom, email, poste..."
+                    placeholder="Rechercher par nom, email..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 text-sm h-9 sm:h-10"
                   />
                 </div>
                 <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                  <SelectTrigger className="w-44">
+                  <SelectTrigger className="w-full sm:w-auto sm:min-w-[160px] h-9 sm:h-10 text-sm">
                     <SelectValue placeholder="Département" />
                   </SelectTrigger>
                   <SelectContent>
@@ -288,13 +298,14 @@ export default function EmployeeListPage() {
                   </SelectContent>
                 </Select>
                 {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={resetFilters}>
+                  <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-9 sm:h-10" onClick={resetFilters}>
                     Réinitialiser
                   </Button>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <p className="mr-2 hidden text-sm text-muted-foreground sm:block">
+              {/* View toggle and count: hidden on mobile, shown on sm+ */}
+              <div className="flex items-center gap-2 justify-between">
+                <p className="text-xs sm:text-sm text-muted-foreground">
                   {filteredEmployees.length} résultat{filteredEmployees.length !== 1 ? 's' : ''}
                 </p>
                 <div className="flex rounded-lg border border-border p-0.5">
@@ -327,16 +338,16 @@ export default function EmployeeListPage() {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-20"
+                  className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12 sm:py-20"
                 >
-                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                    <Users className="h-8 w-8 text-muted-foreground" />
+                  <div className="mb-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-muted">
+                    <Users className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-lg font-semibold">Aucun employé trouvé</h3>
-                  <p className="mt-1 max-w-sm text-center text-sm text-muted-foreground">
+                  <h3 className="text-base sm:text-lg font-semibold">Aucun employé trouvé</h3>
+                  <p className="mt-1 max-w-sm text-center text-xs sm:text-sm text-muted-foreground px-3">
                     Essayez de modifier vos critères de recherche ou réinitialisez les filtres
                   </p>
-                  <Button className="mt-6 gap-2" variant="outline" onClick={resetFilters}>
+                  <Button className="mt-4 sm:mt-6 gap-2 text-sm sm:text-base h-9 sm:h-10" variant="outline" onClick={resetFilters}>
                     Réinitialiser les filtres
                   </Button>
                 </motion.div>
@@ -348,7 +359,7 @@ export default function EmployeeListPage() {
                   initial="hidden"
                   animate="visible"
                   exit={{ opacity: 0 }}
-                  className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+                  className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 >
                   {filteredEmployees.map((employee) => (
                     <motion.div key={employee.id} variants={item}>
@@ -463,10 +474,34 @@ export default function EmployeeListPage() {
                                 <span className="text-xs text-muted-foreground">—</span>
                               )}
                             </TableCell>
-                            <TableCell>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 transition-opacity group-hover:opacity-100">
-                                <ChevronRight className="h-4 w-4" />
-                              </Button>
+                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/employees/${employee.id}`); }}
+                                    className="gap-2 cursor-pointer"
+                                  >
+                                    <Eye className="h-4 w-4" /> Voir le profil
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => { e.preventDefault(); e.stopPropagation(); navigate(`/employees/${employee.id}?edit=true`); }}
+                                    className="gap-2 cursor-pointer"
+                                  >
+                                    <Pencil className="h-4 w-4" /> Modifier
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onSelect={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `mailto:${employee.user.email}`; }}
+                                    className="gap-2 cursor-pointer"
+                                  >
+                                    <Mail className="h-4 w-4" /> Envoyer un email
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </TableCell>
                           </TableRow>
                         );

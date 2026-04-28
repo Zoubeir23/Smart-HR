@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
@@ -11,6 +11,15 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(
+    typeof window !== 'undefined' ? window.innerWidth >= 1024 : true
+  );
+
+  useEffect(() => {
+    const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -29,7 +38,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
             onClick={() => setMobileMenuOpen(false)}
           />
-          <div className="fixed inset-y-0 left-0 z-50 lg:hidden">
+          <div className="fixed inset-y-0 left-0 z-50 w-64 max-w-[80vw] bg-sidebar lg:hidden">
             <Sidebar collapsed={false} onToggle={() => setMobileMenuOpen(false)} />
           </div>
         </>
@@ -39,24 +48,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <motion.main
         initial={false}
         animate={{
-          marginLeft: sidebarCollapsed ? 72 : 280,
+          marginLeft: isDesktop ? (sidebarCollapsed ? 72 : 280) : 0,
         }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className={cn(
           'flex min-h-screen flex-1 flex-col',
-          'lg:ml-0' // Reset margin on mobile since sidebar is overlay
+          'w-full max-w-full overflow-hidden'
         )}
-        style={{
-          marginLeft: typeof window !== 'undefined' && window.innerWidth >= 1024
-            ? (sidebarCollapsed ? 72 : 280)
-            : 0
-        }}
       >
         <Navbar
           onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           showMenuButton
         />
-        <div className="flex-1 p-6">
+        {/* Mobile-first responsive padding: mobile 3, tablet 4, desktop 6 */}
+        <div className="flex-1 w-full max-w-full overflow-x-hidden p-3 sm:p-4 md:p-5 lg:p-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

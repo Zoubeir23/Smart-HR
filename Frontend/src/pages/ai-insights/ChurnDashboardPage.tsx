@@ -327,7 +327,7 @@ const ChurnDashboardPage = () => {
     queryFn: churnService.getHighRisk,
   });
 
-  const rawEmployees: RawEmployeeData[] = predictions?.results || predictions || [];
+  const rawEmployees: RawEmployeeData[] = useMemo(() => predictions?.results || predictions || [], [predictions]);
   const employees: NormalizedEmployee[] = useMemo(
     () => rawEmployees.map((raw, idx) => normalizeEmployee(raw, idx)),
     [rawEmployees]

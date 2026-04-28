@@ -174,35 +174,38 @@ const ApplyPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      {/* Mobile-first responsive max-width and padding */}
+      <div className="mx-auto w-full px-0 sm:px-4 md:px-6 lg:max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
+          className="space-y-4 sm:space-y-6"
         >
-          <Card className="mb-8">
-            <div className="p-6">
-              <div className="mb-4 flex flex-wrap gap-4">
-                <h1 className="text-3xl font-bold text-foreground">{jobOffer.title}</h1>
-                <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+          <Card className="mb-4 sm:mb-6">
+            <div className="p-4 sm:p-5 md:p-6">
+              {/* Job title and metadata: stack on mobile, flex on desktop */}
+              <div className="space-y-3 sm:space-y-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{jobOffer.title}</h1>
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-4 text-sm text-muted-foreground">
                   <span className="flex items-center gap-2">
-                    <Briefcase className="h-4 w-4" />
+                    <Briefcase className="h-4 w-4 flex-shrink-0" />
                     {jobOffer.department}
                   </span>
                   {jobOffer.location && (
                     <span className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4" />
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
                       {jobOffer.location}
                     </span>
                   )}
                   {jobOffer.salary_range && (
                     <span className="flex items-center gap-2">
-                      <DollarSign className="h-4 w-4" />
+                      <DollarSign className="h-4 w-4 flex-shrink-0" />
                       {jobOffer.salary_range}
                     </span>
                   )}
                   {jobOffer.job_type && (
-                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs">
+                    <span className="rounded-md bg-muted px-2 py-0.5 text-xs font-medium">
                       {JOB_TYPE_LABELS[jobOffer.job_type] || jobOffer.job_type}
                     </span>
                   )}
@@ -210,28 +213,28 @@ const ApplyPage = () => {
               </div>
 
               {jobOffer.description && (
-                <div className="mb-6">
-                  <h3 className="mb-2 text-lg font-semibold text-foreground">
+                <div className="mt-4 sm:mt-6">
+                  <h3 className="mb-2 text-base sm:text-lg font-semibold text-foreground">
                     Description du poste
                   </h3>
-                  <p className="leading-relaxed text-muted-foreground">
+                  <p className="leading-relaxed text-sm sm:text-base text-muted-foreground">
                     {jobOffer.description}
                   </p>
                 </div>
               )}
 
               {requirements.length > 0 && (
-                <div>
-                  <h3 className="mb-3 text-lg font-semibold text-foreground">
+                <div className="mt-4 sm:mt-6">
+                  <h3 className="mb-3 text-base sm:text-lg font-semibold text-foreground">
                     Compétences requises
                   </h3>
-                  <ul className="space-y-2">
+                  <ul className="space-y-2 sm:space-y-3">
                     {requirements.map((req: string, index: number) => (
                       <li
                         key={index}
-                        className="flex items-start gap-2 text-muted-foreground"
+                        className="flex items-start gap-2 text-sm sm:text-base text-muted-foreground"
                       >
-                        <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                        <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary flex-shrink-0" />
                         <span>{req}</span>
                       </li>
                     ))}
@@ -242,12 +245,12 @@ const ApplyPage = () => {
           </Card>
 
           <Card>
-            <div className="p-6">
-              <h2 className="mb-6 text-2xl font-bold text-foreground">
+            <div className="p-4 sm:p-5 md:p-6">
+              <h2 className="mb-4 sm:mb-6 text-xl sm:text-2xl font-bold text-foreground">
                 Formulaire de candidature
               </h2>
 
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-foreground">
                     Lettre de motivation <span className="text-red-500">*</span>
@@ -256,8 +259,8 @@ const ApplyPage = () => {
                     name="lettreMotivation"
                     value={formData.lettreMotivation}
                     onChange={handleInputChange}
-                    rows={8}
-                    className="w-full resize-none rounded-lg border border-border bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                    rows={6}
+                    className="w-full resize-none rounded-lg border border-border bg-card px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                     placeholder="Expliquez pourquoi vous êtes le candidat idéal pour ce poste..."
                     required
                   />
@@ -277,22 +280,22 @@ const ApplyPage = () => {
                   />
                   <label
                     htmlFor="cv-upload"
-                    className="group flex cursor-pointer items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border bg-card px-4 py-8 transition-colors hover:border-primary"
+                    className="group flex cursor-pointer flex-col items-center justify-center gap-2 sm:gap-3 rounded-lg border-2 border-dashed border-border bg-card px-3 sm:px-4 py-6 sm:py-8 transition-colors hover:border-primary"
                   >
-                    <Upload className="h-8 w-8 text-muted-foreground transition-colors group-hover:text-primary" />
+                    <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground transition-colors group-hover:text-primary" />
                     <div className="text-center">
                       {fileName ? (
                         <div>
-                          <p className="text-sm font-medium text-foreground">{fileName}</p>
+                          <p className="text-xs sm:text-sm font-medium text-foreground break-words">{fileName}</p>
                           <p className="mt-1 text-xs text-muted-foreground">Cliquez pour changer</p>
                         </div>
                       ) : (
                         <div>
-                          <p className="text-sm font-medium text-foreground">
+                          <p className="text-xs sm:text-sm font-medium text-foreground">
                             Cliquez pour télécharger votre CV
                           </p>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Format PDF uniquement, maximum 5 MB
+                            Format PDF, max 5 MB
                           </p>
                         </div>
                       )}
@@ -300,18 +303,20 @@ const ApplyPage = () => {
                   </label>
                 </div>
 
-                <div className="flex justify-end gap-4 pt-4">
+                {/* Responsive button layout: stack on mobile, flex row on tablet+ */}
+                <div className="flex flex-col gap-2 sm:gap-3 pt-4 sm:pt-6">
                   <Button
                     type="button"
                     variant="outline"
                     onClick={() => navigate('/jobs')}
+                    className="min-h-11 text-sm sm:text-base"
                   >
                     Annuler
                   </Button>
                   <Button
                     type="submit"
                     disabled={applyMutation.isPending}
-                    className="flex items-center gap-2"
+                    className="flex items-center justify-center gap-2 min-h-11 text-sm sm:text-base"
                   >
                     {applyMutation.isPending ? (
                       <>
