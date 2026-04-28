@@ -178,8 +178,10 @@ jobs:
     steps:
       - name: Trigger Dokploy deployment
         run: |
-          response=$(curl -s -o /tmp/dokploy_response.txt -w "%{http_code}" \
-            -X GET "${{ secrets.DOKPLOY_WEBHOOK_URL }}")
+          response=$(curl -s -L -o /tmp/dokploy_response.txt -w "%{http_code}" \
+            -X GET \
+            -H "x-branch: main" \
+            "${{ secrets.DOKPLOY_WEBHOOK_URL }}")
           echo "Dokploy response code: $response"
           cat /tmp/dokploy_response.txt
           if [ "$response" != "200" ] && [ "$response" != "201" ] && [ "$response" != "202" ]; then
