@@ -166,60 +166,27 @@ jobs:
           vuln-type: os,library
 
 # ─────────────────────────────────────────────────────────────────────────────
-# JOB 3 — Deploy VPS via SSH  (dépend de trivy-image-scan)
+# JOB 3 — Deploy via Dokploy webhook  (dépend de trivy-image-scan)
 # ─────────────────────────────────────────────────────────────────────────────
   deploy-vps:
-    name: Deploy → VPS
+    name: Deploy → VPS (Dokploy)
     if: vars.DEPLOY_TARGET == 'vps' || vars.DEPLOY_TARGET == 'both'
     needs: trivy-image-scan
     runs-on: ubuntu-latest
     environment: production-vps
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.0
-        env:
-          REGISTRY: ${{ env.REGISTRY }}
-          GH_ACTOR: ${{ github.actor }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          port: ${{ secrets.SSH_PORT }}
-          envs: REGISTRY,GH_ACTOR,GH_TOKEN,DOMAIN_NAME
-          script: |
-            set -e
-            cd "${{ secrets.SSH_DEPLOY_PATH }}"
-
-            echo "→ git pull..."
-            git pull origin main
-
-            echo "→ Login GHCR..."
-            echo "$GH_TOKEN" | docker login "$REGISTRY" -u "$GH_ACTOR" --password-stdin
-
-            echo "→ Pull images..."
-            DOMAIN_NAME="$DOMAIN_NAME" docker compose -f docker-compose.production.yml pull django frontend
-
-            echo "→ Build images locales (postgres, traefik)..."
-            docker compose -f docker-compose.production.yml build postgres traefik
-
-            echo "→ Up services..."
-            DOMAIN_NAME="$DOMAIN_NAME" docker compose -f docker-compose.production.yml up -d --remove-orphans
-
-            echo "→ Migrations..."
-            docker compose -f docker-compose.production.yml run --rm django python manage.py migrate --no-input
-
-            echo "→ Collectstatic..."
-            docker compose -f docker-compose.production.yml run --rm django python manage.py collectstatic --no-input
-
-            echo "→ Prune images..."
-            docker image prune -f
-
-            echo "✓ VPS deploy done."
+      - name: Trigger Dokploy deployment
+        run: |
+          response=$(curl -s -o /tmp/dokploy_response.txt -w "%{http_code}" \
+            -X GET "${{ secrets.DOKPLOY_WEBHOOK_URL }}")
+          echo "Dokploy response code: $response"
+          cat /tmp/dokploy_response.txt
+          if [ "$response" != "200" ] && [ "$response" != "201" ] && [ "$response" != "202" ]; then
+            echo "::error::Dokploy webhook failed (HTTP $response)"
+            exit 1
+          fi
+          echo "✓ Dokploy deployment triggered successfully."
 
 # ─────────────────────────────────────────────────────────────────────────────
 # JOB 4 — Deploy Railway via webhooks  (indépendant, pas de build GHCR)
