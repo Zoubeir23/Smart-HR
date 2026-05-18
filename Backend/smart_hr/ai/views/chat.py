@@ -300,12 +300,40 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        action_intent = None
+        action_result = {}
+        user_role = getattr(request.user, "role", "").upper()
+        if user_role in ("EMPLOYEE", "RH", "ADMIN"):
+            from smart_hr.ai.actions import detect_action_intent
+            from smart_hr.ai.actions import execute_action
+            from smart_hr.ai.actions import extract_leave_parameters
+
+            action_intent = detect_action_intent(question)
+            if action_intent:
+                params = extract_leave_parameters(question)
+                action_result = execute_action(action_intent, request.user, params)
+
         ai_response = _get_ai_response(question, request.user)
+
+        if action_result.get("success"):
+            leave_data = action_result["data"]
+            ai_response += (
+                f"\n\n✅ Demande de congé créée avec succès : **{leave_data['leave_type']}** "
+                f"du {leave_data['start_date']} au {leave_data['end_date']} "
+                f"({leave_data['duration_days']} jour(s)) — Statut : {leave_data['status']}."
+            )
+        elif action_result.get("error") == "dates_missing":
+            ai_response += (
+                "\n\nPour créer votre demande de congé automatiquement, "
+                "précisez les dates de début et de fin (ex: du 01/06/2026 au 05/06/2026)."
+            )
 
         chat = ChatHistory.objects.create(
             user=request.user,
             question=question,
             response=ai_response,
+            action_type=action_result.get("type", ""),
+            action_data=action_result.get("data", {}),
         )
         serializer = self.get_serializer(chat)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
