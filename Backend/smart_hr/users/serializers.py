@@ -27,6 +27,11 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             "password2",
         ]
 
+    def validate_email(self, value: str) -> str:
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Un compte avec cet email existe déjà.")
+        return value.lower()
+
     def validate(self, data):
         if data["password"] != data["password2"]:
             raise serializers.ValidationError(

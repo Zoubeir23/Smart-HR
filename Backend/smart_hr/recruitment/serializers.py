@@ -49,6 +49,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "matching_score",
             "skills_extracted",
             "ai_summary",
+            "gdpr_consent",
             "created_at",
         ]
         read_only_fields = [

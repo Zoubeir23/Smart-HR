@@ -25,10 +25,34 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     serializer_class = ApplicationSerializer
 
     def get_queryset(self):
-        """Retourne toutes les candidatures pour RH/Admin, sinon celles du candidat."""
+        """Retourne toutes les candidatures pour RH/Admin, sinon celles du candidat.
+
+        Paramètres query supportés (RH/Admin uniquement) :
+        - min_score : float — filtre les candidatures avec matching_score >= min_score
+        - job_offer : int   — filtre par offre d'emploi
+        - status    : str   — filtre par statut
+        """
         user = self.request.user
         if user.role in ["ADMIN", "RH"]:
-            return Application.objects.select_related("job_offer", "candidate").all()
+            queryset = Application.objects.select_related("job_offer", "candidate").all()
+
+            min_score = self.request.query_params.get("min_score")
+            if min_score is not None:
+                try:
+                    queryset = queryset.filter(matching_score__gte=float(min_score))
+                except ValueError:
+                    pass
+
+            job_offer_id = self.request.query_params.get("job_offer")
+            if job_offer_id:
+                queryset = queryset.filter(job_offer_id=job_offer_id)
+
+            application_status = self.request.query_params.get("status")
+            if application_status:
+                queryset = queryset.filter(status=application_status)
+
+            return queryset
+
         return Application.objects.filter(candidate=user)
 
     def get_permissions(self):
@@ -40,7 +64,14 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         return [IsRH()]
 
     def perform_create(self, serializer):
-        """Crée une candidature, lance l'analyse CV puis envoie un accusé de réception."""
+        """Crée une candidature, lance l'analyse CV (si consentement RGPD) puis notifie."""
+        from rest_framework.exceptions import ValidationError
+
+        if not serializer.validated_data.get("gdpr_consent", False):
+            raise ValidationError(
+                {"gdpr_consent": "Vous devez accepter le traitement de vos données par l'IA (RGPD)."},
+            )
+
         application = serializer.save(candidate=self.request.user)
         self._run_cv_analysis(application)
         self._notify_candidate_application_received(application)

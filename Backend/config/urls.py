@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.contrib import admin
+from django.http import JsonResponse
 from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
@@ -7,11 +8,31 @@ from django.views.generic import TemplateView
 
 from smart_hr.core.protected_media import ProtectedMediaView
 from smart_hr.users.views import AdminStatsView
+from smart_hr.users.views import EmailVerifiedLoginView
+from smart_hr.users.views.account import AccountDeleteView
+from smart_hr.users.views.account import PersonalDataExportView
 from smart_hr.users.views.registration import CandidateRegisterView
 from smart_hr.users.views.registration import ResendOTPView
 from smart_hr.users.views.registration import VerifyOTPView
 
+
+def health_check(request):
+    """Endpoint de santé pour monitoring (UptimeRobot, cron)."""
+    from django.db import connection
+
+    try:
+        connection.ensure_connection()
+        db_ok = True
+    except Exception:
+        db_ok = False
+
+    payload = {"status": "ok" if db_ok else "degraded", "database": db_ok}
+    http_status = 200 if db_ok else 503
+    return JsonResponse(payload, status=http_status)
+
+
 urlpatterns = [
+    path("health/", health_check, name="health-check"),
     path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
     path(
         "about/",
@@ -24,6 +45,8 @@ urlpatterns = [
     path("users/", include("smart_hr.users.urls", namespace="users")),
     path("accounts/", include("allauth.urls")),
     # API v1 — Authentification (dj-rest-auth + JWT)
+    # Login avec vérification OTP pour les candidats (remplace le login dj_rest_auth)
+    path("api/v1/auth/login/", EmailVerifiedLoginView.as_view(), name="email-verified-login"),
     path("api/v1/auth/", include("dj_rest_auth.urls")),
     path("api/v1/auth/registration/", include("dj_rest_auth.registration.urls")),
     path("api/v1/auth/admin/stats/", AdminStatsView.as_view(), name="admin-stats"),
@@ -34,6 +57,9 @@ urlpatterns = [
     ),
     path("api/v1/auth/verify-otp/", VerifyOTPView.as_view(), name="verify-otp"),
     path("api/v1/auth/resend-otp/", ResendOTPView.as_view(), name="resend-otp"),
+    # RGPD — Droit à l'oubli et portabilité
+    path("api/v1/auth/account/delete/", AccountDeleteView.as_view(), name="account-delete"),
+    path("api/v1/auth/account/export/", PersonalDataExportView.as_view(), name="account-export"),
     # API v1 — Modules métier
     path("api/v1/personnel/", include("smart_hr.personnel.urls")),
     path("api/v1/conge/", include("smart_hr.conge.urls")),

@@ -10,6 +10,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.core.email_service import send_employee_credentials_email
+from smart_hr.core.models import AuditLog
+from smart_hr.core.models import log_audit_action
 from smart_hr.personnel.models import Employee
 from smart_hr.personnel.serializers import EmployeeSelfSerializer
 from smart_hr.personnel.serializers import EmployeeSerializer
@@ -73,6 +75,42 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             logger.exception(
                 "Échec de l'envoi de l'email d'identifiants pour %s",
                 employee_user.email,
+            )
+
+    def perform_destroy(self, instance: Employee) -> None:
+        """Supprime l'employé et crée un log d'audit traçable."""
+        log_audit_action(
+            performed_by=self.request.user,
+            action=AuditLog.Action.DELETE,
+            model_name="Employee",
+            object_id=str(instance.pk),
+            object_repr=str(instance),
+            details={
+                "email": instance.user.email,
+                "salary": str(instance.salary),
+                "department": instance.department.name if instance.department else None,
+            },
+        )
+        instance.delete()
+
+    def perform_update(self, serializer: EmployeeSerializer) -> None:
+        """Met à jour l'employé et logue les modifications de salaire."""
+        old_salary = serializer.instance.salary
+        updated_employee = serializer.save()
+        new_salary = updated_employee.salary
+
+        if old_salary != new_salary:
+            log_audit_action(
+                performed_by=self.request.user,
+                action=AuditLog.Action.UPDATE,
+                model_name="Employee",
+                object_id=str(updated_employee.pk),
+                object_repr=str(updated_employee),
+                details={
+                    "champ": "salary",
+                    "ancienne_valeur": str(old_salary),
+                    "nouvelle_valeur": str(new_salary),
+                },
             )
 
     @action(detail=False, methods=["get"])
