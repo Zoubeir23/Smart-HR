@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
@@ -182,6 +182,7 @@ export default function HRDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
+  const [minScoreFilter, setMinScoreFilter] = useState<number>(0);
 
   // ─── Data Fetching ─────────────────────
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
@@ -200,9 +201,17 @@ export default function HRDashboard() {
   });
 
   const { data: applicationsData, isLoading: applicationsLoading } = useQuery({
-    queryKey: ['applications-recent'],
-    queryFn: () => recruitmentService.getApplications(),
+    queryKey: ['applications-recent', minScoreFilter],
+    queryFn: () => recruitmentService.getApplications(
+      minScoreFilter > 0
+        ? { min_score: minScoreFilter, ordering: '-matching_score' }
+        : { ordering: '-matching_score' }
+    ),
   });
+
+  const handleMinScoreChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setMinScoreFilter(Number(e.target.value));
+  }, []);
 
   const { data: retentionRaw } = useQuery({
     queryKey: ['retention-stats'],
@@ -519,11 +528,29 @@ export default function HRDashboard() {
             {/* Recent Activity Feed */}
             <Card>
               <CardHeader className="pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
-                    <Clock className="h-4 w-4 text-secondary" />
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
+                      <Clock className="h-4 w-4 text-secondary" />
+                    </div>
+                    <CardTitle className="text-base font-semibold">Candidatures</CardTitle>
                   </div>
-                  <CardTitle className="text-base font-semibold">Activité récente</CardTitle>
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>Score min :</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      step={5}
+                      value={minScoreFilter}
+                      onChange={handleMinScoreChange}
+                      className="w-24 accent-primary"
+                      aria-label="Score minimum de matching"
+                    />
+                    <span className="w-8 font-medium tabular-nums text-foreground">
+                      {minScoreFilter > 0 ? `≥${minScoreFilter}%` : 'Tous'}
+                    </span>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -538,16 +565,30 @@ export default function HRDashboard() {
                     {/* Vertical timeline line */}
                     <div className="absolute bottom-2 left-[15px] top-2 w-px bg-border" />
 
-                    {applications.slice(0, 5).map((application: { id: number; job_offer: { title: string }; candidate: { first_name: string; last_name: string }; created_at: string }, index: number) => (
+                    {applications.slice(0, 5).map((application: { id: number; job_offer: { title: string }; candidate: { first_name: string; last_name: string }; created_at: string; matching_score?: number }) => (
                       <div key={application.id} className="relative flex gap-3 py-2.5">
-                        {/* Timeline dot */}
                         <div className="relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-background bg-secondary/10">
                           <Briefcase className="h-3.5 w-3.5 text-secondary" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium">Nouvelle candidature</p>
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="text-sm font-medium">
+                              {application.candidate?.first_name} {application.candidate?.last_name}
+                            </p>
+                            {application.matching_score != null && (
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                                application.matching_score >= 70
+                                  ? 'bg-success/15 text-success'
+                                  : application.matching_score >= 40
+                                  ? 'bg-warning/15 text-warning'
+                                  : 'bg-destructive/15 text-destructive'
+                              }`}>
+                                {Math.round(application.matching_score)}%
+                              </span>
+                            )}
+                          </div>
                           <p className="truncate text-xs text-muted-foreground">
-                            {application.job_offer?.title ?? 'Poste'} — {application.candidate?.first_name} {application.candidate?.last_name}
+                            {application.job_offer?.title ?? 'Poste'}
                           </p>
                           {application.created_at && (
                             <p className="mt-0.5 text-[11px] text-muted-foreground/60">
