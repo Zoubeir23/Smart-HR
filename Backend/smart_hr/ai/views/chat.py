@@ -1,5 +1,4 @@
 import logging
-import os
 
 from rest_framework import status
 from rest_framework import viewsets
@@ -173,19 +172,20 @@ def _build_system_prompt(user) -> str:
     )
 
 
-def _build_gemini_history(user) -> list:
-    """Retourne les 4 derniers échanges au format d'historique Gemini."""
+def _build_conversation_history(user) -> list[dict]:
+    """
+    Retourne les 4 derniers échanges au format unifié :
+    [{"role": "user"|"assistant", "content": str}, ...]
+
+    Chaque provider se charge ensuite de l'adapter à son propre format.
+    """
     recent = list(
         ChatHistory.objects.filter(user=user).order_by("-created_at")[:4],
     )
     history = []
     for past in reversed(recent):
-        history.append(
-            {"role": "user", "parts": [past.question]},
-        )
-        history.append(
-            {"role": "model", "parts": [past.response]},
-        )
+        history.append({"role": "user", "content": past.question})
+        history.append({"role": "assistant", "content": past.response})
     return history
 
 
@@ -222,47 +222,30 @@ def _count_recent_uncertain_responses(user) -> int:
 
 
 def _get_ai_response(question: str, user) -> str:
-    """Interroge Gemini avec un prompt système contextualisé selon le rôle utilisateur.
+    """
+    Interroge le fournisseur LLM actif (défini par LLM_PROVIDER dans .env)
+    avec un prompt système contextualisé selon le rôle utilisateur.
 
-    Si Gemini indique ne pas pouvoir répondre 2 fois consécutives,
+    Si le modèle indique ne pas pouvoir répondre 2 fois consécutives,
     redirige automatiquement vers le Responsable RH humain.
     """
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-    if not api_key:
-        return "L'assistant IA n'est pas configuré. Veuillez définir la variable d'environnement GEMINI_API_KEY."
-
     if _count_recent_uncertain_responses(user) >= 2:
         return _HUMAN_ESCALATION_MESSAGE
 
     try:
-        from google import genai
-        from google.genai import types
+        from smart_hr.ai.llm_providers import get_llm_provider
 
-        client = genai.Client(api_key=api_key)
-        gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.0-flash")
+        provider = get_llm_provider()
+        system_prompt = _build_system_prompt(user)
+        history = _build_conversation_history(user)
+        response_text = provider.generate_response(system_prompt, history, question)
 
-        history = _build_gemini_history(user)
-        contents = []
-        for msg in history:
-            role = "user" if msg["role"] == "user" else "model"
-            contents.append(types.Content(role=role, parts=[types.Part(text=msg["parts"][0])]))
-        contents.append(types.Content(role="user", parts=[types.Part(text=question)]))
-
-        response = client.models.generate_content(
-            model=gemini_model_name,
-            contents=contents,
-            config=types.GenerateContentConfig(
-                system_instruction=_build_system_prompt(user),
-            ),
-        )
-
-        response_text = response.text
         if _needs_human_escalation(response_text):
             return _HUMAN_ESCALATION_MESSAGE
 
         return response_text
     except Exception as exc:
-        logger.error("Erreur Gemini API : %s", exc)
+        logger.error("Erreur LLM provider : %s", exc)
         return "Désolé, le service IA est temporairement indisponible. Veuillez réessayer."
 
 
