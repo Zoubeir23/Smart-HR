@@ -15,6 +15,7 @@ import {
   ArrowDown,
   Mic,
   MicOff,
+  PhoneForwarded,
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
@@ -139,6 +140,8 @@ export default function AIChatPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [confusedCount, setConfusedCount] = useState(0);
+  const [showEscalation, setShowEscalation] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -170,19 +173,46 @@ export default function AIChatPage() {
   }, []);
 
   // ─── Chat Mutation ────────────────────
+  const CONFUSION_KEYWORDS = [
+    'je ne comprends pas',
+    'je ne peux pas',
+    "je n'ai pas accès",
+    'pourriez-vous reformuler',
+    'je ne dispose pas',
+    'je ne suis pas sûr',
+    "je n'ai pas cette information",
+    'je ne sais pas',
+  ];
+
+  const detectConfusion = (responseText: string): boolean => {
+    const normalized = responseText.toLowerCase();
+    return CONFUSION_KEYWORDS.some((keyword) => normalized.includes(keyword));
+  };
+
   const chatMutation = useMutation({
     mutationFn: (question: string) => aiService.chat(question),
     onSuccess: (data) => {
+      const responseText = data?.response || data?.answer || data?.message || JSON.stringify(data);
       setMessages((prev) => [
         ...prev,
         {
           id: (Date.now() + 1).toString(),
-          text: data?.response || data?.answer || data?.message || JSON.stringify(data),
+          text: responseText,
           sender: 'ai',
           timestamp: new Date(),
         },
       ]);
       setIsTyping(false);
+
+      if (detectConfusion(responseText)) {
+        setConfusedCount((prev) => {
+          const next = prev + 1;
+          if (next >= 2) setShowEscalation(true);
+          return next;
+        });
+      } else {
+        setConfusedCount(0);
+      }
     },
     onError: () => {
       setMessages((prev) => [
@@ -244,6 +274,8 @@ export default function AIChatPage() {
         timestamp: new Date(),
       },
     ]);
+    setConfusedCount(0);
+    setShowEscalation(false);
   };
 
   // ─── Auto-resize textarea ─────────────
@@ -456,6 +488,33 @@ export default function AIChatPage() {
                 </div>
               </motion.div>
             )}
+
+            {/* ── Escalade RH (après 2 réponses confuses) ── */}
+            <AnimatePresence>
+              {showEscalation && (
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 12 }}
+                  className="mx-4 mb-2 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/5 p-3.5"
+                >
+                  <PhoneForwarded className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                  <div className="flex-1 text-sm">
+                    <p className="font-medium text-foreground">Besoin d'aide humaine ?</p>
+                    <p className="text-xs text-muted-foreground">
+                      L'assistant n'a pas pu répondre à vos questions. Contactez directement votre responsable RH.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowEscalation(false)}
+                    className="shrink-0 text-muted-foreground/50 hover:text-muted-foreground"
+                    aria-label="Fermer la suggestion"
+                  >
+                    ✕
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div ref={messagesEndRef} />
           </div>
