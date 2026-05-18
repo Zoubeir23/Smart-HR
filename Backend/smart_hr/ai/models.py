@@ -12,6 +12,8 @@ class ChatHistory(TimeStampedModel):
     )
     question = models.TextField()
     response = models.TextField()
+    action_type = models.CharField(max_length=50, blank=True, default="")
+    action_data = models.JSONField(default=dict)
 
     class Meta:
         verbose_name = "Historique Chat"
