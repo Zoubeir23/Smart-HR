@@ -40,7 +40,7 @@ import ApplicationTrackingPage from "@/pages/recruitment/ApplicationTrackingPage
 // Pages IA
 import ChurnDashboardPage from "@/pages/ai-insights/ChurnDashboardPage";
 import AIChatPage from "@/pages/ai/AIChatPage";
-import VoiceAssistantPage from "@/pages/ai/VoiceAssistantPage";
+import RecruteurIAPage from "@/pages/ai/RecruteurIAPage";
 
 // Parametres
 import SettingsPage from "@/pages/settings/SettingsPage";
@@ -242,10 +242,10 @@ const App = () => (
               />
 
               <Route
-                path="/voice-assistant"
+                path="/recruteur-ia"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
-                    <VoiceAssistantPage />
+                    <RecruteurIAPage />
                   </ProtectedRoute>
                 }
               />

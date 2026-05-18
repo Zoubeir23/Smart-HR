@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
-  MicOff,
   ChevronRight,
   ChevronLeft,
   Loader2,
@@ -17,8 +16,10 @@ import {
   Clock,
   Sparkles,
   RotateCcw,
+  Phone,
   PhoneOff,
 } from 'lucide-react';
+import Vapi from '@vapi-ai/web';
 import { useMutation } from '@tanstack/react-query';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import { aiService } from '@/services/aiService';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
@@ -44,7 +46,7 @@ interface InterviewQuestion {
 }
 
 interface ConversationMessage {
-  role: 'assistant' | 'candidate';
+  role: string;
   content: string;
 }
 
@@ -288,7 +290,7 @@ function QuestionsStep({
           Reconfigurer
         </Button>
         <Button onClick={onStart} className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
-          <Mic className="h-4 w-4" />
+          <Phone className="h-4 w-4" />
           Démarrer l'entretien vocal
         </Button>
       </div>
@@ -297,217 +299,192 @@ function QuestionsStep({
 }
 
 /* ═══════════════════════════════════════════
-   ÉTAPE 3 — SESSION ENTRETIEN VOCAL
+   ÉTAPE 3 — SESSION ENTRETIEN VOCAL (VAPI)
    ═══════════════════════════════════════════ */
 
 function InterviewSessionStep({
   questions,
   jobPosition,
+  userName,
   onComplete,
 }: {
   questions: InterviewQuestion[];
   jobPosition: string;
+  userName: string;
   onComplete: (conversation: ConversationMessage[]) => void;
 }) {
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [conversation, setConversation] = useState<ConversationMessage[]>([]);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const [callActive, setCallActive] = useState(false);
+  const [aiSpeaking, setAiSpeaking] = useState(false);
+  const [userSpeaking, setUserSpeaking] = useState(false);
+  const [callEnded, setCallEnded] = useState(false);
+  const [isGeneratingFeedback, setIsGeneratingFeedback] = useState(false);
+  const conversationRef = useRef<ConversationMessage[]>([]);
+  const vapiRef = useRef<Vapi | null>(null);
   const { toast } = useToast();
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+  const buildQuestionList = () =>
+    questions.map((q, i) => `${i + 1}. ${q.question}`).join('\n');
 
-  const speakQuestion = (text: string) => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'fr-FR';
-    utterance.rate = 0.9;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
+  const startCall = () => {
+    const apiKey = import.meta.env.VITE_VAPI_PUBLIC_KEY as string;
+    if (!apiKey || apiKey === 'your-vapi-public-key') {
+      toast({
+        title: 'Clé Vapi manquante',
+        description: 'Configurez VITE_VAPI_PUBLIC_KEY dans votre .env.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const vapi = new Vapi(apiKey);
+    vapiRef.current = vapi;
+
+    const assistantOptions = {
+      name: 'Smart-HR Recruteur',
+      firstMessage: `Bonjour ${userName}, je suis votre recruteur IA Smart-HR. Êtes-vous prêt(e) pour votre entretien pour le poste de ${jobPosition} ? Commençons dès que vous le souhaitez.`,
+      transcriber: {
+        provider: 'deepgram',
+        model: 'nova-2',
+        language: 'fr',
+      },
+      voice: {
+        provider: 'playht',
+        voiceId: 'jennifer',
+      },
+      model: {
+        provider: 'openai',
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: `Tu es un recruteur IA professionnel et bienveillant de Smart-HR.
+Tu conduis un entretien pour le poste de ${jobPosition}.
+Pose les questions suivantes une par une, dans l'ordre, et attends la réponse du candidat avant de passer à la suivante.
+Après chaque réponse, donne un bref encouragement (une phrase).
+Questions à poser :
+${buildQuestionList()}
+Une fois toutes les questions posées, remercie le candidat chaleureusement et conclus l'entretien.`,
+          },
+        ],
+      },
+    };
+
+    vapi.on('call-start', () => {
+      setCallActive(true);
+      toast({ title: 'Appel connecté', description: 'L\'entretien vocal a démarré.' });
+    });
+
+    vapi.on('speech-start', () => setAiSpeaking(true));
+    vapi.on('speech-end', () => {
+      setAiSpeaking(false);
+      setUserSpeaking(true);
+    });
+
+    vapi.on('message', (message: { conversation?: { role: string; content: string }[] }) => {
+      if (message?.conversation) {
+        conversationRef.current = message.conversation.map((m) => ({
+          role: m.role,
+          content: m.content,
+        }));
+      }
+    });
+
+    vapi.on('call-end', () => {
+      setCallActive(false);
+      setCallEnded(true);
+      setAiSpeaking(false);
+      setUserSpeaking(false);
+      setIsGeneratingFeedback(true);
+      toast({ title: 'Entretien terminé', description: 'Génération du feedback en cours...' });
+      onComplete(conversationRef.current);
+    });
+
+    vapi.start(assistantOptions);
+  };
+
+  const stopCall = () => {
+    vapiRef.current?.stop();
   };
 
   useEffect(() => {
-    const intro = `Question ${currentQuestionIndex + 1} sur ${questions.length} : ${currentQuestion.question}`;
-    speakQuestion(intro);
-    setConversation((prev) => [
-      ...prev,
-      { role: 'assistant', content: currentQuestion.question },
-    ]);
-    setTranscript('');
-  }, [currentQuestionIndex]);
-
-  const startListening = () => {
-    const SpeechRecognitionAPI =
-      (window as Window & { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition ||
-      (window as Window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
-
-    if (!SpeechRecognitionAPI) {
-      toast({ title: 'Non supporté', description: 'Reconnaissance vocale indisponible. Tapez votre réponse.', variant: 'destructive' });
-      return;
-    }
-
-    const recognition = new SpeechRecognitionAPI();
-    recognition.lang = 'fr-FR';
-    recognition.continuous = true;
-    recognition.interimResults = true;
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      const result = Array.from(event.results)
-        .map((r) => r[0].transcript)
-        .join(' ');
-      setTranscript(result);
+    startCall();
+    return () => {
+      vapiRef.current?.stop();
     };
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
+  }, []);
 
-    recognitionRef.current = recognition;
-    recognition.start();
-    setIsListening(true);
-  };
-
-  const stopListening = () => {
-    recognitionRef.current?.stop();
-    setIsListening(false);
-  };
-
-  const handleNextQuestion = () => {
-    if (!transcript.trim()) {
-      toast({ title: 'Réponse vide', description: 'Veuillez répondre avant de passer à la question suivante.', variant: 'destructive' });
-      return;
-    }
-
-    const updatedConversation: ConversationMessage[] = [
-      ...conversation,
-      { role: 'candidate', content: transcript.trim() },
-    ];
-
-    if (isLastQuestion) {
-      window.speechSynthesis.cancel();
-      onComplete(updatedConversation);
-    } else {
-      setConversation(updatedConversation);
-      setCurrentQuestionIndex((prev) => prev + 1);
-    }
-  };
-
-  const progress = ((currentQuestionIndex) / questions.length) * 100;
+  if (isGeneratingFeedback) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-20">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="font-medium">Analyse de votre entretien en cours...</p>
+        <p className="text-sm text-muted-foreground">Le feedback sera prêt dans quelques secondes.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Progress */}
-      <div className="mb-6">
-        <div className="mb-2 flex justify-between text-xs text-muted-foreground">
-          <span>Question {currentQuestionIndex + 1} / {questions.length}</span>
-          <span>{jobPosition}</span>
-        </div>
-        <Progress value={progress} className="h-1.5" />
-      </div>
-
-      {/* AI card */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <div className="flex items-start gap-3">
-          <div
-            className={cn(
-              'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
-              'bg-secondary/10'
+      <div className="grid grid-cols-2 gap-6">
+        {/* Recruteur IA */}
+        <div className="flex h-[340px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card">
+          <div className="relative">
+            {aiSpeaking && (
+              <span className="absolute inset-0 animate-ping rounded-full bg-primary/30" />
             )}
-          >
-            {isSpeaking && (
-              <span className="absolute inset-0 animate-ping rounded-xl bg-primary/20" />
-            )}
-            <Bot className="h-6 w-6 text-primary" />
-          </div>
-          <div className="flex-1">
-            <div className="mb-1 flex items-center gap-2">
-              <span className="text-xs font-semibold text-primary">Recruteur IA</span>
-              {isSpeaking && (
-                <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
-                  <span className="inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-primary" />
-                  Parle...
-                </span>
-              )}
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+              <Bot className="h-8 w-8 text-primary" />
             </div>
-            <p className="text-sm leading-relaxed">{currentQuestion.question}</p>
-            <span className="mt-2 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-              {currentQuestion.type}
-            </span>
           </div>
-        </div>
-      </div>
-
-      {/* Candidate answer */}
-      <div className="mt-4 rounded-xl border border-border bg-muted/30 p-4">
-        <div className="mb-3 flex items-center gap-2">
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span className="text-xs font-medium text-muted-foreground">Votre réponse</span>
+          <p className="font-medium">Recruteur IA</p>
+          {aiSpeaking && (
+            <p className="text-xs text-muted-foreground">Parle...</p>
+          )}
         </div>
 
-        {transcript ? (
-          <p className="min-h-[60px] text-sm leading-relaxed">{transcript}</p>
-        ) : (
-          <p className="min-h-[60px] text-sm italic text-muted-foreground/60">
-            {isListening ? 'Parlez maintenant...' : 'Cliquez sur le micro pour répondre vocalement'}
-          </p>
-        )}
-
-        {/* Mic controls */}
-        <div className="mt-4 flex items-center gap-3">
-          <Button
-            type="button"
-            variant={isListening ? 'destructive' : 'outline'}
-            onClick={isListening ? stopListening : startListening}
-            className="gap-2"
-          >
-            {isListening ? (
-              <>
-                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.6, repeat: Infinity }}>
-                  <MicOff className="h-4 w-4" />
-                </motion.div>
-                Arrêter
-              </>
-            ) : (
-              <>
-                <Mic className="h-4 w-4" />
-                Répondre
-              </>
+        {/* Candidat */}
+        <div className="flex h-[340px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card">
+          <div className="relative">
+            {userSpeaking && (
+              <span className="absolute inset-0 animate-ping rounded-full bg-primary/30" />
             )}
-          </Button>
-
-          {transcript && (
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => setTranscript('')}>
-              <RotateCcw className="mr-1 h-3 w-3" />
-              Recommencer
-            </Button>
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-2xl font-bold text-primary-foreground">
+              {userName?.[0]?.toUpperCase() ?? 'C'}
+            </div>
+          </div>
+          <p className="font-medium">{userName}</p>
+          {userSpeaking && (
+            <p className="text-xs text-muted-foreground">Parle...</p>
           )}
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="mt-5 flex justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="gap-1.5 text-muted-foreground"
-          onClick={() => { window.speechSynthesis.cancel(); onComplete([]); }}
+      {/* Contrôles */}
+      <div className="mt-8 flex items-center justify-center gap-6">
+        <div
+          className={cn(
+            'flex h-14 w-14 items-center justify-center rounded-full',
+            callActive ? 'bg-muted' : 'bg-muted/50'
+          )}
         >
-          <PhoneOff className="h-4 w-4" />
-          Terminer
-        </Button>
+          <Mic className={cn('h-6 w-6', callActive ? 'text-foreground' : 'text-muted-foreground')} />
+        </div>
+
         <Button
-          onClick={handleNextQuestion}
-          disabled={!transcript.trim()}
-          className="gap-2"
-          style={{ background: 'var(--gradient-primary)' }}
+          variant="destructive"
+          size="lg"
+          className="h-14 w-14 rounded-full p-0"
+          onClick={stopCall}
+          disabled={!callActive || callEnded}
+          title="Terminer l'appel"
         >
-          {isLastQuestion ? 'Terminer & Obtenir le feedback' : 'Question suivante'}
-          <ChevronRight className="h-4 w-4" />
+          <PhoneOff className="h-6 w-6" />
         </Button>
       </div>
+
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        {callActive ? 'Entretien en cours — cliquez sur le bouton rouge pour terminer' : 'Connexion en cours...'}
+      </p>
     </div>
   );
 }
@@ -536,18 +513,19 @@ function FeedbackStep({
 
   return (
     <div className="mx-auto max-w-2xl">
-      {/* Score global */}
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         className="mb-6 rounded-xl border border-border bg-card p-6 text-center"
       >
         <p className="mb-1 text-sm text-muted-foreground">Score global</p>
-        <div className="text-5xl font-bold text-primary">{rating.totalRating}<span className="text-2xl text-muted-foreground">/10</span></div>
+        <div className="text-5xl font-bold text-primary">
+          {rating.totalRating}
+          <span className="text-2xl text-muted-foreground">/10</span>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">{jobPosition}</p>
       </motion.div>
 
-      {/* Scores détaillés */}
       <div className="mb-5 grid grid-cols-2 gap-3">
         {scoreItems.map(({ label, value, icon: Icon }, index) => (
           <motion.div
@@ -569,13 +547,13 @@ function FeedbackStep({
         ))}
       </div>
 
-      {/* Résumé */}
       <div className="mb-4 rounded-lg border border-border bg-muted/30 p-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Résumé de performance</p>
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Résumé de performance
+        </p>
         <p className="text-sm leading-relaxed">{summary}</p>
       </div>
 
-      {/* Recommandation */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -593,7 +571,9 @@ function FeedbackStep({
           <XCircle className="mt-0.5 h-5 w-5 shrink-0" />
         )}
         <div>
-          <p className="text-sm font-semibold">{recommendation ? 'Candidat recommandé' : 'Candidat non recommandé'}</p>
+          <p className="text-sm font-semibold">
+            {recommendation ? 'Candidat recommandé' : 'Candidat non recommandé'}
+          </p>
           <p className="text-sm opacity-80">{recommendationMessage}</p>
         </div>
       </motion.div>
@@ -613,11 +593,14 @@ function FeedbackStep({
    ═══════════════════════════════════════════ */
 
 export default function RecruteurIAPage() {
+  const { user } = useAuth();
   const [step, setStep] = useState<PageStep>('form');
   const [jobPosition, setJobPosition] = useState('');
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
   const { toast } = useToast();
+
+  const userName = user?.first_name || user?.email || 'Candidat';
 
   const questionsMutation = useMutation({
     mutationFn: aiService.generateInterviewQuestions,
@@ -631,16 +614,17 @@ export default function RecruteurIAPage() {
       setStep('questions');
     },
     onError: () => {
-      toast({ title: 'Erreur', description: 'Impossible de générer les questions. Réessayez.', variant: 'destructive' });
+      toast({ title: 'Erreur', description: 'Impossible de générer les questions.', variant: 'destructive' });
     },
   });
 
   const feedbackMutation = useMutation({
-    mutationFn: (conversation: ConversationMessage[]) => aiService.generateInterviewFeedback(conversation),
+    mutationFn: (conversation: ConversationMessage[]) =>
+      aiService.generateInterviewFeedback(conversation),
     onSuccess: (data) => {
       const fb = data?.feedback as InterviewFeedback;
       if (!fb) {
-        toast({ title: 'Erreur', description: 'Impossible d\'analyser l\'entretien. Réessayez.', variant: 'destructive' });
+        toast({ title: 'Erreur', description: 'Impossible d\'analyser l\'entretien.', variant: 'destructive' });
         return;
       }
       setFeedback(fb);
@@ -651,14 +635,19 @@ export default function RecruteurIAPage() {
     },
   });
 
-  const handleFormSubmit = (formData: { job_position: string; job_description: string; duration: string; interview_type: string }) => {
+  const handleFormSubmit = (formData: {
+    job_position: string;
+    job_description: string;
+    duration: string;
+    interview_type: string;
+  }) => {
     setJobPosition(formData.job_position);
     questionsMutation.mutate(formData);
   };
 
   const handleInterviewComplete = (conversation: ConversationMessage[]) => {
     if (!conversation.length) {
-      toast({ title: 'Entretien annulé', description: 'Aucune réponse enregistrée.' });
+      toast({ title: 'Entretien annulé', description: 'Aucune conversation enregistrée.' });
       setStep('questions');
       return;
     }
@@ -675,7 +664,6 @@ export default function RecruteurIAPage() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-4xl px-4 py-8">
-        {/* Header */}
         <div className="mb-8 text-center">
           <div
             className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
@@ -719,26 +707,9 @@ export default function RecruteurIAPage() {
               <InterviewSessionStep
                 questions={questions}
                 jobPosition={jobPosition}
+                userName={userName}
                 onComplete={handleInterviewComplete}
               />
-            )}
-
-            {step === 'feedback' && feedback && (
-              <>
-                {feedbackMutation.isPending && (
-                  <div className="flex flex-col items-center gap-3 py-16">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="text-sm text-muted-foreground">Analyse de l'entretien en cours...</p>
-                  </div>
-                )}
-                {!feedbackMutation.isPending && (
-                  <FeedbackStep
-                    feedback={feedback}
-                    jobPosition={jobPosition}
-                    onRestart={handleRestart}
-                  />
-                )}
-              </>
             )}
 
             {step === 'feedback' && feedbackMutation.isPending && (
@@ -746,6 +717,14 @@ export default function RecruteurIAPage() {
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-sm text-muted-foreground">Analyse de l'entretien en cours...</p>
               </div>
+            )}
+
+            {step === 'feedback' && !feedbackMutation.isPending && feedback && (
+              <FeedbackStep
+                feedback={feedback}
+                jobPosition={jobPosition}
+                onRestart={handleRestart}
+              />
             )}
           </motion.div>
         </AnimatePresence>

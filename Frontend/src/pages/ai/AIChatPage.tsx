@@ -13,6 +13,8 @@ import {
   Users,
   Calendar,
   ArrowDown,
+  Mic,
+  MicOff,
 } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
@@ -136,9 +138,11 @@ export default function AIChatPage() {
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
 
   // ─── Auto-scroll ──────────────────────
   const scrollToBottom = useCallback(() => {
@@ -243,6 +247,44 @@ export default function AIChatPage() {
     setInputValue(e.target.value);
     e.target.style.height = 'auto';
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + 'px';
+  };
+
+  // ─── Voice Input (Web Speech API) ────
+  const toggleVoiceInput = () => {
+    const SpeechRecognitionAPI =
+      (window as Window & { SpeechRecognition?: typeof SpeechRecognition; webkitSpeechRecognition?: typeof SpeechRecognition }).SpeechRecognition ||
+      (window as Window & { webkitSpeechRecognition?: typeof SpeechRecognition }).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionAPI) {
+      toast({ title: 'Non supporté', description: 'La reconnaissance vocale n\'est pas disponible dans ce navigateur.', variant: 'destructive' });
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognitionAPI();
+    recognition.lang = 'fr-FR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setInputValue((prev) => (prev ? prev + ' ' + transcript : transcript));
+      if (inputRef.current) {
+        inputRef.current.style.height = 'auto';
+        inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + 'px';
+      }
+    };
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognitionRef.current = recognition;
+    recognition.start();
+    setIsListening(true);
   };
 
   const showSuggestions = messages.length <= 1 && !isTyping;
@@ -452,6 +494,26 @@ export default function AIChatPage() {
                 style={{ maxHeight: 120 }}
               />
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={toggleVoiceInput}
+              className={cn(
+                'h-[46px] w-[46px] shrink-0 rounded-xl p-0 transition-colors',
+                isListening
+                  ? 'bg-red-100 text-red-500 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-400'
+                  : 'text-muted-foreground hover:bg-muted/60'
+              )}
+              title={isListening ? 'Arrêter la dictée' : 'Dicter un message'}
+            >
+              {isListening ? (
+                <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.8, repeat: Infinity }}>
+                  <MicOff className="h-4 w-4" />
+                </motion.div>
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+            </Button>
             <Button
               type="submit"
               disabled={!inputValue.trim() || isTyping}

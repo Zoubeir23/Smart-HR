@@ -15,4 +15,19 @@ export const aiService = {
     const { data } = await api.post('/agents/voice/ask/', { question, voice });
     return data;
   },
+
+  generateInterviewQuestions: async (payload: {
+    job_position: string;
+    job_description: string;
+    duration: string;
+    interview_type: string;
+  }) => {
+    const { data } = await api.post('/ai/interview/questions/', payload);
+    return data;
+  },
+
+  generateInterviewFeedback: async (conversation: { role: string; content: string }[]) => {
+    const { data } = await api.post('/ai/interview/feedback/', { conversation });
+    return data;
+  },
 };
