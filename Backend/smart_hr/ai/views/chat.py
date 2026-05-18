@@ -189,11 +189,51 @@ def _build_gemini_history(user) -> list:
     return history
 
 
+_UNCERTAIN_MARKERS = (
+    "je ne sais pas",
+    "je n'ai pas",
+    "pas suffisamment d'informations",
+    "je ne peux pas répondre",
+    "hors de mes compétences",
+    "je ne comprends pas",
+    "question hors sujet",
+    "je n'ai pas accès",
+)
+
+_HUMAN_ESCALATION_MESSAGE = (
+    "Je ne dispose pas des informations nécessaires pour répondre à cette question. "
+    "Pour une assistance personnalisée, veuillez contacter directement votre Responsable RH. "
+    "Vous pouvez envoyer un email à votre RH ou le/la joindre via la messagerie interne."
+)
+
+
+def _needs_human_escalation(response_text: str) -> bool:
+    """Détecte si la réponse Gemini indique une incapacité à répondre."""
+    lower = response_text.lower()
+    return any(marker in lower for marker in _UNCERTAIN_MARKERS)
+
+
+def _count_recent_uncertain_responses(user) -> int:
+    """Compte les 2 dernières réponses qui ont mené à une escalade humaine."""
+    recent = list(
+        ChatHistory.objects.filter(user=user).order_by("-created_at")[:2],
+    )
+    return sum(1 for chat in recent if _HUMAN_ESCALATION_MESSAGE[:40] in chat.response)
+
+
 def _get_ai_response(question: str, user) -> str:
-    """Interroge Gemini avec un prompt système contextualisé selon le rôle utilisateur."""
+    """Interroge Gemini avec un prompt système contextualisé selon le rôle utilisateur.
+
+    Si Gemini indique ne pas pouvoir répondre 2 fois consécutives,
+    redirige automatiquement vers le Responsable RH humain.
+    """
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     if not api_key:
         return "L'assistant IA n'est pas configuré. Veuillez définir la variable d'environnement GEMINI_API_KEY."
+
+    if _count_recent_uncertain_responses(user) >= 2:
+        return _HUMAN_ESCALATION_MESSAGE
+
     try:
         from google import genai
         from google.genai import types
@@ -216,7 +256,11 @@ def _get_ai_response(question: str, user) -> str:
             ),
         )
 
-        return response.text
+        response_text = response.text
+        if _needs_human_escalation(response_text):
+            return _HUMAN_ESCALATION_MESSAGE
+
+        return response_text
     except Exception as exc:
         logger.error("Erreur Gemini API : %s", exc)
         return "Désolé, le service IA est temporairement indisponible. Veuillez réessayer."

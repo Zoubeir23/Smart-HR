@@ -1,3 +1,4 @@
+from smart_hr.users.views.login import EmailVerifiedLoginView
 from smart_hr.users.views.stats import AdminStatsView
 from smart_hr.users.views.user import UserDetailView
 from smart_hr.users.views.user import UserRedirectView
@@ -8,6 +9,7 @@ from smart_hr.users.views.user import user_update_view
 
 __all__ = [
     "AdminStatsView",
+    "EmailVerifiedLoginView",
     "UserDetailView",
     "UserRedirectView",
     "UserUpdateView",

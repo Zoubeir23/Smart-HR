@@ -87,6 +87,10 @@ class Application(TimeStampedModel):
     matching_score = models.FloatField(null=True, blank=True)
     skills_extracted = models.JSONField(default=list, blank=True)
     ai_summary = models.TextField(blank=True)
+    gdpr_consent = models.BooleanField(
+        default=False,
+        help_text="Le candidat a consenti au traitement de son CV par l'IA (RGPD).",
+    )
 
     class Meta:
         verbose_name = "Candidature"
