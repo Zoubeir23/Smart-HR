@@ -2,9 +2,9 @@
 Moteur d'actions métier du chatbot Smart-HR.
 
 Flux :
-  1. detect_action_intent()   — détecte si le message contient une intention d'action
-  2. extract_action_parameters() — extrait les paramètres via Gemini (dates, type, etc.)
-  3. execute_action()         — exécute l'action Django (crée le congé, etc.)
+  1. detect_action_intent()      — détecte si le message contient une intention d'action
+  2. extract_leave_parameters()  — extrait les paramètres via le LLM actif (dates, type, etc.)
+  3. execute_action()            — exécute l'action Django (crée le congé, etc.)
   4. Retourne un dict structuré {success, type, label, data} pour la réponse API
 """
 
@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from datetime import date
 
@@ -57,7 +56,6 @@ def extract_leave_parameters(question: str) -> dict:
             "reason":     str,
         }
     """
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
     today = date.today().isoformat()
 
     prompt = (
@@ -79,24 +77,19 @@ def extract_leave_parameters(question: str) -> dict:
         "- leave_type 'sick' si maladie/malade/médical, 'personal' si personnel/famille, sinon 'vacation'"
     )
 
-    if api_key:
-        try:
-            from google import genai
+    try:
+        from smart_hr.ai.llm_providers import get_llm_provider
 
-            client = genai.Client(api_key=api_key)
-            response = client.models.generate_content(
-                model=os.environ.get("GEMINI_MODEL", "gemini-2.0-flash"),
-                contents=prompt,
-            )
-            raw = response.text.strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-                raw = raw.strip()
-            return json.loads(raw)
-        except Exception as exc:
-            logger.warning("Extraction Gemini des paramètres congé échouée : %s", exc)
+        provider = get_llm_provider()
+        raw = provider.extract_json(prompt)
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+            raw = raw.strip()
+        return json.loads(raw)
+    except Exception as exc:
+        logger.warning("Extraction LLM des paramètres congé échouée : %s", exc)
 
     return _regex_extract_leave_parameters(question)
 
