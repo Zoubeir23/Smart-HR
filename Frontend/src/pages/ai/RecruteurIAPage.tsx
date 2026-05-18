@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { aiService } from '@/services/aiService';
+import { aiService, type ConversationMessage } from '@/services/aiService';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 
@@ -45,10 +45,6 @@ interface InterviewQuestion {
   type: string;
 }
 
-interface ConversationMessage {
-  role: string;
-  content: string;
-}
 
 interface InterviewFeedback {
   rating: {
@@ -409,8 +405,15 @@ Une fois toutes les questions posées, remercie le candidat chaleureusement et c
   useEffect(() => {
     startCall();
     return () => {
-      vapiRef.current?.stop();
+      const vapi = vapiRef.current;
+      if (vapi) {
+        vapi.stop();
+        vapi.removeAllListeners?.();
+        vapiRef.current = null;
+      }
     };
+    // startCall dépend de questions/jobPosition/userName qui sont stables à ce stade
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (isGeneratingFeedback) {
@@ -622,12 +625,24 @@ export default function RecruteurIAPage() {
     mutationFn: (conversation: ConversationMessage[]) =>
       aiService.generateInterviewFeedback(conversation),
     onSuccess: (data) => {
-      const fb = data?.feedback as InterviewFeedback;
-      if (!fb) {
-        toast({ title: 'Erreur', description: 'Impossible d\'analyser l\'entretien.', variant: 'destructive' });
+      const raw = data?.feedback;
+      const isValidFeedback =
+        raw &&
+        typeof raw === 'object' &&
+        raw.rating &&
+        typeof raw.rating.technicalSkills === 'number' &&
+        typeof raw.rating.communication === 'number' &&
+        typeof raw.rating.problemSolving === 'number' &&
+        typeof raw.rating.experience === 'number' &&
+        typeof raw.rating.totalRating === 'number' &&
+        typeof raw.summary === 'string' &&
+        typeof raw.recommendation === 'boolean';
+
+      if (!isValidFeedback) {
+        toast({ title: 'Erreur', description: 'Réponse du serveur invalide. Réessayez.', variant: 'destructive' });
         return;
       }
-      setFeedback(fb);
+      setFeedback(raw as InterviewFeedback);
       setStep('feedback');
     },
     onError: () => {

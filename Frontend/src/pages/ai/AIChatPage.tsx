@@ -223,11 +223,15 @@ export default function AIChatPage() {
   };
 
   // ─── Copy Message ─────────────────────
-  const copyToClipboard = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
-    toast({ title: 'Copié', description: 'Message copié dans le presse-papier.' });
+  const copyToClipboard = async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+      toast({ title: 'Copié', description: 'Message copié dans le presse-papier.' });
+    } catch {
+      toast({ title: 'Erreur', description: 'Copie non autorisée par le navigateur.', variant: 'destructive' });
+    }
   };
 
   // ─── Clear Chat ───────────────────────
