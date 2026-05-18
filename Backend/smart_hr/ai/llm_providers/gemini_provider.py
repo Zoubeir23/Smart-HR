@@ -7,7 +7,7 @@ from smart_hr.ai.llm_providers.base import BaseLLMProvider
 
 logger = logging.getLogger(__name__)
 
-_DEFAULT_MODEL = "gemini-2.0-flash"
+_DEFAULT_MODEL = "gemini-2.5-flash"
 
 
 class GeminiProvider(BaseLLMProvider):
