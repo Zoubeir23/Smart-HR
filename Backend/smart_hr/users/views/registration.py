@@ -2,7 +2,6 @@ import logging
 
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.throttling import UserRateThrottle
@@ -81,43 +80,75 @@ class CandidateRegisterView(APIView):
 
 class VerifyOTPView(APIView):
     """
-    Vérifie le code OTP soumis par le candidat.
-    Marque is_email_verified=True si le code est valide.
+    Vérifie le code OTP soumis par le candidat SANS nécessiter d'être connecté.
+
+    Flux correct :
+      1. POST /register/candidate/  → compte créé, OTP envoyé par email
+      2. POST /verify-otp/          → { email, code } → email vérifié
+      3. POST /auth/login/          → connexion autorisée (is_email_verified=True)
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     throttle_classes = [OTPVerifyThrottle]
 
     def post(self, request):
-        """Valide le code OTP soumis par l'utilisateur connecté."""
+        """Valide le code OTP pour l'email fourni dans le corps de la requête."""
+        email = request.data.get("email", "").strip().lower()
         code = request.data.get("code", "").strip()
-        if not code:
+
+        if not email or not code:
             return Response(
-                {"detail": "Le champ 'code' est requis."},
+                {"detail": "Les champs 'email' et 'code' sont requis."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        is_valid, error_message = verify_otp_for_user(request.user, code)
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "Aucun compte trouvé avec cet email."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if user.is_email_verified:
+            return Response({"detail": "Cet email est déjà vérifié. Vous pouvez vous connecter."})
+
+        is_valid, error_message = verify_otp_for_user(user, code)
         if not is_valid:
             return Response(
                 {"detail": error_message},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        return Response({"detail": "Email vérifié avec succès."})
+        return Response({"detail": "Email vérifié avec succès. Vous pouvez maintenant vous connecter."})
 
 
 class ResendOTPView(APIView):
     """
-    Renvoie un nouveau code OTP à l'utilisateur connecté (si email non encore vérifié).
+    Renvoie un nouveau code OTP SANS nécessiter d'être connecté.
+    Accessible avec uniquement l'email (candidat non encore vérifié).
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [AllowAny]
     throttle_classes = [OTPResendThrottle]
 
     def post(self, request):
-        """Génère et renvoie un nouveau code OTP si l'email n'est pas vérifié."""
-        user = request.user
+        """Génère et renvoie un nouveau code OTP pour l'email fourni."""
+        email = request.data.get("email", "").strip().lower()
+        if not email:
+            return Response(
+                {"detail": "Le champ 'email' est requis."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            user = User.objects.get(email__iexact=email)
+        except User.DoesNotExist:
+            # Réponse neutre pour ne pas confirmer l'existence du compte
+            return Response(
+                {"detail": "Si cet email existe, un nouveau code a été envoyé."},
+            )
+
         if user.is_email_verified:
             return Response(
                 {"detail": "Votre email est déjà vérifié."},
