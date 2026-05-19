@@ -1,6 +1,8 @@
 from django.contrib import admin
 
-from smart_hr.ai.models import ChatHistory, InterviewSession, InterviewSessionFeedback
+from smart_hr.ai.models import ChatHistory
+from smart_hr.ai.models import InterviewSession
+from smart_hr.ai.models import InterviewSessionFeedback
 
 
 @admin.register(ChatHistory)
