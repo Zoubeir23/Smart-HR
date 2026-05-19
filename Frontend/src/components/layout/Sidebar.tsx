@@ -76,6 +76,7 @@ const navigationGroups: NavGroup[] = [
   {
     title: 'Recrutement',
     items: [
+      { title: 'Candidatures', href: '/applications', icon: Users, roles: ['ADMIN', 'RH'] },
       { title: 'Offres d\'emploi', href: '/jobs', icon: Briefcase, roles: ['ADMIN', 'RH', 'CANDIDATE'] },
       { title: 'Mes candidatures', href: '/my-applications', icon: FileText, roles: ['CANDIDATE'] },
     ],
