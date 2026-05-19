@@ -33,8 +33,7 @@ class OpenAIProvider(BaseLLMProvider):
         try:
             client = self._get_client()
             messages = [{"role": "system", "content": system_prompt}]
-            for message in history:
-                messages.append({"role": message["role"], "content": message["content"]})
+            messages.extend({"role": m["role"], "content": m["content"]} for m in history)
             messages.append({"role": "user", "content": question})
 
             response = client.chat.completions.create(

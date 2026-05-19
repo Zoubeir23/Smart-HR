@@ -95,8 +95,8 @@ class GenerateInterviewQuestionsView(APIView):
                 raw = raw.strip()
             data = json.loads(raw)
             return Response(data, status=status.HTTP_200_OK)
-        except Exception as exc:
-            logger.exception("Erreur génération questions entretien : %s", exc)
+        except Exception:
+            logger.exception("Erreur génération questions entretien")
             return Response(
                 {"detail": "Erreur lors de la génération des questions. Réessayez."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -139,8 +139,8 @@ class GenerateInterviewFeedbackView(APIView):
                 raw = raw.strip()
             data = json.loads(raw)
             return Response(data, status=status.HTTP_200_OK)
-        except Exception as exc:
-            logger.exception("Erreur génération feedback entretien : %s", exc)
+        except Exception:
+            logger.exception("Erreur génération feedback entretien")
             return Response(
                 {"detail": "Erreur lors de la génération du feedback. Réessayez."},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,

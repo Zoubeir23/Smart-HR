@@ -38,7 +38,7 @@ class GeminiProvider(BaseLLMProvider):
             for message in history:
                 role = "user" if message["role"] == "user" else "model"
                 contents.append(
-                    types.Content(role=role, parts=[types.Part(text=message["content"])])
+                    types.Content(role=role, parts=[types.Part(text=message["content"])]),
                 )
             contents.append(types.Content(role="user", parts=[types.Part(text=question)]))
 
