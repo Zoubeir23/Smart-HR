@@ -151,7 +151,8 @@ def generate_interview_questions_from_cv(
 
     skills_text = ", ".join(skills_extracted) if skills_extracted else "Non renseignées"
 
-    prompt = f"""Tu es un expert RH spécialisé en conduite d'entretiens. Génère exactement {questions_count} questions d'entretien PERSONNALISÉES pour ce candidat.
+    prompt = f"""Tu es un expert RH specialise en conduite d'entretiens.
+Genere exactement {questions_count} questions d'entretien PERSONNALISEES pour ce candidat.
 
 POSTE VISÉ :
 Titre : {job_title}
@@ -205,8 +206,8 @@ Retourne UNIQUEMENT ce JSON exact (sans markdown, sans backticks) :
     except json.JSONDecodeError as exc:
         logger.error("JSON invalide reçu de Gemini pour la génération de questions : %s", exc)
         return _default_interview_questions(job_title, interview_type, questions_count)
-    except Exception as exc:
-        logger.exception("Erreur lors de la génération de questions d'entretien via Gemini : %s", exc)
+    except Exception:
+        logger.exception("Erreur lors de la generation de questions d'entretien via Gemini")
         return _default_interview_questions(job_title, interview_type, questions_count)
 
 
@@ -217,16 +218,59 @@ def _default_interview_questions(
 ) -> list[dict]:
     """Retourne des questions génériques de secours basées sur le titre du poste."""
     generic_questions = [
-        {"question": f"Pouvez-vous vous présenter et expliquer pourquoi vous postulez au poste de {job_title} ?", "type": "Motivation"},
-        {"question": "Quelles sont vos principales compétences techniques en lien avec ce poste ?", "type": "Technique"},
-        {"question": "Décrivez un projet dont vous êtes particulièrement fier. Quel était votre rôle ?", "type": "Expérience"},
-        {"question": "Comment gérez-vous les situations de stress ou les délais serrés ?", "type": "Comportemental"},
-        {"question": "Donnez un exemple de problème complexe que vous avez résolu. Quelle était votre approche ?", "type": "Mise en situation"},
-        {"question": "Comment vous tenez-vous informé des dernières évolutions de votre domaine ?", "type": "Motivation"},
-        {"question": "Décrivez votre façon de travailler en équipe. Avez-vous déjà géré un conflit avec un collègue ?", "type": "Comportemental"},
-        {"question": f"Où vous voyez-vous dans 3 ans ? Comment ce poste de {job_title} s'inscrit-il dans votre projet professionnel ?", "type": "Motivation"},
-        {"question": "Quelles sont selon vous vos principales forces et axes d'amélioration ?", "type": "Comportemental"},
-        {"question": "Avez-vous des questions sur le poste ou sur l'entreprise ?", "type": "Motivation"},
+        {
+            "question": (
+                f"Pouvez-vous vous presenter et expliquer pourquoi vous postulez au poste de {job_title} ?"
+            ),
+            "type": "Motivation",
+        },
+        {
+            "question": "Quelles sont vos principales competences techniques en lien avec ce poste ?",
+            "type": "Technique",
+        },
+        {
+            "question": (
+                "Decrivez un projet dont vous etes particulierement fier. Quel etait votre role ?"
+            ),
+            "type": "Experience",
+        },
+        {
+            "question": "Comment gerez-vous les situations de stress ou les delais serres ?",
+            "type": "Comportemental",
+        },
+        {
+            "question": (
+                "Donnez un exemple de probleme complexe que vous avez resolu."
+                " Quelle etait votre approche ?"
+            ),
+            "type": "Mise en situation",
+        },
+        {
+            "question": "Comment vous tenez-vous informe des dernieres evolutions de votre domaine ?",
+            "type": "Motivation",
+        },
+        {
+            "question": (
+                "Decrivez votre facon de travailler en equipe."
+                " Avez-vous deja gere un conflit avec un collegue ?"
+            ),
+            "type": "Comportemental",
+        },
+        {
+            "question": (
+                f"Ou vous voyez-vous dans 3 ans ? Comment ce poste de {job_title}"
+                " s'inscrit-il dans votre projet professionnel ?"
+            ),
+            "type": "Motivation",
+        },
+        {
+            "question": "Quelles sont selon vous vos principales forces et axes d'amelioration ?",
+            "type": "Comportemental",
+        },
+        {
+            "question": "Avez-vous des questions sur le poste ou sur l'entreprise ?",
+            "type": "Motivation",
+        },
     ]
     return generic_questions[:questions_count]
 
