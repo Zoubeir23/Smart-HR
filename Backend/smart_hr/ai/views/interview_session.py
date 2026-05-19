@@ -178,9 +178,7 @@ class InterviewSessionFeedbackCreateView(APIView):
             return Response({"detail": error_message}, status=status.HTTP_400_BAD_REQUEST)
 
         # CRITICAL-1 : empecher les soumissions dupliquees
-        if candidate_email and InterviewSessionFeedback.objects.filter(
-            session=session, candidate_email=candidate_email
-        ).exists():
+        if candidate_email and InterviewSessionFeedback.objects.filter(session=session, candidate_email=candidate_email).exists():
             return Response(
                 {"detail": "Un feedback a deja ete soumis pour cette session."},
                 status=status.HTTP_409_CONFLICT,
@@ -199,10 +197,7 @@ class InterviewSessionFeedbackCreateView(APIView):
         recommended = False
 
         try:
-            conversation_text = "\n".join(
-                f"{msg['role'].upper()} : {msg['content']}"
-                for msg in sanitized_conversation
-            )
+            conversation_text = "\n".join(f"{msg['role'].upper()} : {msg['content']}" for msg in sanitized_conversation)
             prompt = _FEEDBACK_PROMPT.format(conversation=conversation_text)
             provider = get_llm_provider()
             raw = provider.extract_json(prompt).strip()
@@ -242,10 +237,7 @@ class InterviewSessionListView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request) -> Response:
-        sessions = (
-            InterviewSession.objects.filter(created_by=request.user)
-            .prefetch_related("feedbacks")
-        )
+        sessions = InterviewSession.objects.filter(created_by=request.user).prefetch_related("feedbacks")
         data = [
             {
                 "token": str(session.token),

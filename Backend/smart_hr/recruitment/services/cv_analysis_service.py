@@ -219,9 +219,7 @@ def _default_interview_questions(
     """Retourne des questions génériques de secours basées sur le titre du poste."""
     generic_questions = [
         {
-            "question": (
-                f"Pouvez-vous vous presenter et expliquer pourquoi vous postulez au poste de {job_title} ?"
-            ),
+            "question": (f"Pouvez-vous vous presenter et expliquer pourquoi vous postulez au poste de {job_title} ?"),
             "type": "Motivation",
         },
         {
@@ -229,9 +227,7 @@ def _default_interview_questions(
             "type": "Technique",
         },
         {
-            "question": (
-                "Decrivez un projet dont vous etes particulierement fier. Quel etait votre role ?"
-            ),
+            "question": ("Decrivez un projet dont vous etes particulierement fier. Quel etait votre role ?"),
             "type": "Experience",
         },
         {
@@ -239,10 +235,7 @@ def _default_interview_questions(
             "type": "Comportemental",
         },
         {
-            "question": (
-                "Donnez un exemple de probleme complexe que vous avez resolu."
-                " Quelle etait votre approche ?"
-            ),
+            "question": ("Donnez un exemple de probleme complexe que vous avez resolu. Quelle etait votre approche ?"),
             "type": "Mise en situation",
         },
         {
@@ -250,16 +243,12 @@ def _default_interview_questions(
             "type": "Motivation",
         },
         {
-            "question": (
-                "Decrivez votre facon de travailler en equipe."
-                " Avez-vous deja gere un conflit avec un collegue ?"
-            ),
+            "question": ("Decrivez votre facon de travailler en equipe. Avez-vous deja gere un conflit avec un collegue ?"),
             "type": "Comportemental",
         },
         {
             "question": (
-                f"Ou vous voyez-vous dans 3 ans ? Comment ce poste de {job_title}"
-                " s'inscrit-il dans votre projet professionnel ?"
+                f"Ou vous voyez-vous dans 3 ans ? Comment ce poste de {job_title} s'inscrit-il dans votre projet professionnel ?"
             ),
             "type": "Motivation",
         },
