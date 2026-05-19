@@ -1,5 +1,6 @@
 import logging
 
+from django.conf import settings
 from django.utils import timezone
 from rest_framework import status
 from rest_framework import viewsets
@@ -9,10 +10,12 @@ from rest_framework.response import Response
 
 from smart_hr.core.email_service import send_application_received_email
 from smart_hr.core.email_service import send_application_status_email
+from smart_hr.core.email_service import send_interview_invitation_email
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.serializers import ApplicationSerializer
 from smart_hr.recruitment.services.cv_analysis_service import analyze_cv_against_job_offer
 from smart_hr.recruitment.services.cv_analysis_service import extract_text_from_pdf
+from smart_hr.recruitment.services.cv_analysis_service import generate_interview_questions_from_cv
 from smart_hr.users.permissions import IsCandidate
 from smart_hr.users.permissions import IsRH
 
@@ -182,3 +185,87 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 new_status,
                 candidate.email,
             )
+
+    @action(detail=True, methods=["post"], url_path="create-interview")
+    def create_interview(self, request, pk=None):
+        """
+        POST /api/v1/recruitment/applications/{id}/create-interview/
+
+        Génère des questions d'entretien personnalisées à partir du CV et de l'offre,
+        crée une InterviewSession liée à la candidature, envoie le lien par email
+        au candidat et met à jour le statut de la candidature en 'interview'.
+
+        Paramètres body (optionnels) :
+        - duration      : str  — ex. "30 Min", "45 Min" (défaut : "30 Min")
+        - interview_type: str  — ex. "Technique", "RH" (défaut : "Technique")
+        """
+        from smart_hr.ai.models import InterviewSession
+
+        application = self.get_object()
+        job_offer = application.job_offer
+        candidate = application.candidate
+
+        duration = request.data.get("duration", "30 Min")
+        interview_type = request.data.get("interview_type", "Technique")
+
+        cv_text = ""
+        try:
+            cv_text = extract_text_from_pdf(application.cv)
+        except Exception:
+            logger.exception(
+                "Impossible d'extraire le texte du CV pour la candidature %s",
+                application.pk,
+            )
+
+        questions = generate_interview_questions_from_cv(
+            cv_text=cv_text,
+            skills_extracted=application.skills_extracted or [],
+            ai_summary=application.ai_summary or "",
+            job_title=job_offer.title,
+            job_description=job_offer.description or "",
+            job_requirements=job_offer.requirements or "",
+            duration=duration,
+            interview_type=interview_type,
+        )
+
+        interview_session = InterviewSession.objects.create(
+            job_position=job_offer.title,
+            job_description=job_offer.description or "",
+            duration=duration,
+            interview_type=interview_type,
+            questions=questions,
+            created_by=request.user,
+            application=application,
+        )
+
+        site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
+        interview_link = f"{site_url}/interview/{interview_session.token}"
+
+        email_sent = False
+        try:
+            email_sent = send_interview_invitation_email(
+                candidate_email=candidate.email,
+                first_name=candidate.first_name or "",
+                job_title=job_offer.title,
+                interview_link=interview_link,
+                duration=duration,
+                interview_type=interview_type,
+            )
+        except Exception:
+            logger.exception(
+                "Échec envoi email invitation entretien à %s",
+                candidate.email,
+            )
+
+        application.status = Application.Status.INTERVIEW
+        application.save(update_fields=["status", "updated_at"])
+
+        return Response(
+            {
+                "token": str(interview_session.token),
+                "interview_link": interview_link,
+                "questions_count": len(questions),
+                "email_sent": email_sent,
+            },
+            status=status.HTTP_201_CREATED,
+        )

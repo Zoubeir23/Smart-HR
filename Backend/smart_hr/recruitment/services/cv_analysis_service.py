@@ -123,6 +123,114 @@ Retourne ce JSON exact (sans markdown, sans backticks) :
         return _default_result()
 
 
+def generate_interview_questions_from_cv(
+    cv_text: str,
+    skills_extracted: list,
+    ai_summary: str,
+    job_title: str,
+    job_description: str,
+    job_requirements: str,
+    duration: str = "30 Min",
+    interview_type: str = "Technique",
+    questions_count: int = 8,
+) -> list[dict]:
+    """
+    Génère des questions d'entretien personnalisées basées sur le CV du candidat et l'offre.
+
+    Utilise Google Gemini pour créer des questions ciblées combinant le profil du candidat
+    (compétences extraites, résumé IA) et les exigences du poste.
+
+    Retourne une liste de dicts : [{"question": "...", "type": "Technique|Comportemental|..."}]
+    En cas d'erreur, retourne des questions génériques basées sur le poste.
+    """
+    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+
+    if not api_key:
+        logger.warning("GEMINI_API_KEY absent — génération de questions désactivée, questions génériques utilisées.")
+        return _default_interview_questions(job_title, interview_type, questions_count)
+
+    skills_text = ", ".join(skills_extracted) if skills_extracted else "Non renseignées"
+
+    prompt = f"""Tu es un expert RH spécialisé en conduite d'entretiens. Génère exactement {questions_count} questions d'entretien PERSONNALISÉES pour ce candidat.
+
+POSTE VISÉ :
+Titre : {job_title}
+Description : {job_description[:1000]}
+Prérequis : {job_requirements[:500]}
+
+PROFIL DU CANDIDAT :
+CV (extrait) : {cv_text[:3000]}
+Compétences identifiées : {skills_text}
+Résumé IA : {ai_summary}
+
+PARAMÈTRES :
+Durée de l'entretien : {duration}
+Type d'entretien : {interview_type}
+
+INSTRUCTIONS :
+- Les questions doivent être SPÉCIFIQUES au profil du candidat (mentionner ses compétences, son parcours)
+- Varie les types : Technique, Comportemental, Expérience, Motivation, Mise en situation
+- Adapte la difficulté au profil et au poste
+- Questions ouvertes, formulées en français
+
+Retourne UNIQUEMENT ce JSON exact (sans markdown, sans backticks) :
+{{"interviewQuestions": [{{"question": "...", "type": "Technique"}}]}}"""
+
+    try:
+        from google import genai
+
+        gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+        client = genai.Client(api_key=api_key)
+        response = client.models.generate_content(
+            model=gemini_model_name,
+            contents=prompt,
+        )
+        raw_text = response.text.strip()
+
+        if raw_text.startswith("```"):
+            raw_text = raw_text.split("```")[1]
+            if raw_text.startswith("json"):
+                raw_text = raw_text[4:]
+            raw_text = raw_text.strip()
+
+        parsed = json.loads(raw_text)
+        questions = parsed.get("interviewQuestions", [])
+
+        if not isinstance(questions, list) or not questions:
+            logger.warning("Gemini a retourné une liste vide de questions, utilisation des questions génériques.")
+            return _default_interview_questions(job_title, interview_type, questions_count)
+
+        return questions
+
+    except json.JSONDecodeError as exc:
+        logger.error("JSON invalide reçu de Gemini pour la génération de questions : %s", exc)
+        return _default_interview_questions(job_title, interview_type, questions_count)
+    except Exception as exc:
+        logger.exception("Erreur lors de la génération de questions d'entretien via Gemini : %s", exc)
+        return _default_interview_questions(job_title, interview_type, questions_count)
+
+
+def _default_interview_questions(
+    job_title: str,
+    interview_type: str,
+    questions_count: int,
+) -> list[dict]:
+    """Retourne des questions génériques de secours basées sur le titre du poste."""
+    generic_questions = [
+        {"question": f"Pouvez-vous vous présenter et expliquer pourquoi vous postulez au poste de {job_title} ?", "type": "Motivation"},
+        {"question": "Quelles sont vos principales compétences techniques en lien avec ce poste ?", "type": "Technique"},
+        {"question": "Décrivez un projet dont vous êtes particulièrement fier. Quel était votre rôle ?", "type": "Expérience"},
+        {"question": "Comment gérez-vous les situations de stress ou les délais serrés ?", "type": "Comportemental"},
+        {"question": "Donnez un exemple de problème complexe que vous avez résolu. Quelle était votre approche ?", "type": "Mise en situation"},
+        {"question": "Comment vous tenez-vous informé des dernières évolutions de votre domaine ?", "type": "Motivation"},
+        {"question": "Décrivez votre façon de travailler en équipe. Avez-vous déjà géré un conflit avec un collègue ?", "type": "Comportemental"},
+        {"question": f"Où vous voyez-vous dans 3 ans ? Comment ce poste de {job_title} s'inscrit-il dans votre projet professionnel ?", "type": "Motivation"},
+        {"question": "Quelles sont selon vous vos principales forces et axes d'amélioration ?", "type": "Comportemental"},
+        {"question": "Avez-vous des questions sur le poste ou sur l'entreprise ?", "type": "Motivation"},
+    ]
+    return generic_questions[:questions_count]
+
+
 def _default_result() -> CVAnalysisResult:
     return CVAnalysisResult(
         skills_extracted=[],

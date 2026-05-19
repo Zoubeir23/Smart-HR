@@ -47,6 +47,13 @@ class InterviewSession(TimeStampedModel):
         on_delete=models.CASCADE,
         related_name="interview_sessions",
     )
+    application = models.ForeignKey(
+        "recruitment.Application",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="interview_sessions",
+    )
 
     class Meta:
         verbose_name = "Session d'entretien"

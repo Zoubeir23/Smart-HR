@@ -36,6 +36,7 @@ import TrainingPage from "@/pages/training/TrainingPage";
 import JobOfferListPage from "@/pages/recruitment/JobOfferListPage";
 import ApplyPage from "@/pages/recruitment/ApplyPage";
 import ApplicationTrackingPage from "@/pages/recruitment/ApplicationTrackingPage";
+import ApplicationsManagementPage from "@/pages/recruitment/ApplicationsManagementPage";
 
 // Pages IA
 import ChurnDashboardPage from "@/pages/ai-insights/ChurnDashboardPage";
@@ -240,6 +241,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['CANDIDATE']}>
                     <ApplicationTrackingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/applications"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <ApplicationsManagementPage />
                   </ProtectedRoute>
                 }
               />

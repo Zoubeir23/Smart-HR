@@ -41,4 +41,9 @@ export const recruitmentService = {
     const { data } = await api.patch(`/recruitment/applications/${id}/update-status/`, { status });
     return data;
   },
+
+  createInterview: async (applicationId: number, options?: { duration?: string; interview_type?: string }) => {
+    const { data } = await api.post(`/recruitment/applications/${applicationId}/create-interview/`, options ?? {});
+    return data;
+  },
 };

@@ -501,6 +501,45 @@ def send_otp_verification_email(
     return success
 
 
+def send_interview_invitation_email(
+    candidate_email: str,
+    first_name: str,
+    job_title: str,
+    interview_link: str,
+    duration: str = "30 Min",
+    interview_type: str = "Technique",
+) -> bool:
+    """
+    Envoie le lien d'entretien IA personnalisé au candidat.
+
+    Le candidat reçoit un email avec un bouton CTA pointant vers interview_link,
+    ainsi que les détails de l'entretien (durée, type).
+    """
+    service = EmailService(prod=True)
+
+    context = {
+        "first_name": first_name or candidate_email,
+        "job_title": job_title,
+        "interview_link": interview_link,
+        "duration": duration,
+        "interview_type": interview_type,
+    }
+
+    success = service.send_template_email(
+        template="email/interview_invitation.html",
+        context=context,
+        recipients=[candidate_email],
+        subject=f"Votre entretien IA — {job_title} — Smart-HR",
+    )
+
+    if success:
+        logger.info("Email invitation entretien IA envoyé à %s pour le poste '%s'", candidate_email, job_title)
+    else:
+        logger.error("Échec envoi invitation entretien IA à %s", candidate_email)
+
+    return success
+
+
 def send_leave_status_email(
     employee_email: str,
     first_name: str,
