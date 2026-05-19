@@ -1,7 +1,9 @@
 name: CD
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
 
 # Un seul déploiement à la fois, jamais d'annulation mid-deploy
@@ -28,7 +30,7 @@ jobs:
 # ─────────────────────────────────────────────────────────────────────────────
   build-and-push:
     name: Build & Push images (GHCR)
-    if: vars.DEPLOY_TARGET == 'vps' || vars.DEPLOY_TARGET == 'both'
+    if: ${{ github.event.workflow_run.conclusion == 'success' && (vars.DEPLOY_TARGET == 'vps' || vars.DEPLOY_TARGET == 'both') }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -203,7 +205,7 @@ jobs:
 # ─────────────────────────────────────────────────────────────────────────────
   deploy-railway:
     name: Deploy → Railway
-    if: vars.DEPLOY_TARGET == 'railway' || vars.DEPLOY_TARGET == 'both'
+    if: ${{ github.event.workflow_run.conclusion == 'success' && (vars.DEPLOY_TARGET == 'railway' || vars.DEPLOY_TARGET == 'both') }}
     runs-on: ubuntu-latest
     environment: production-railway
 
