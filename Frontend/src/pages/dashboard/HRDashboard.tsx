@@ -157,17 +157,22 @@ function RiskDistributionBar({ stats }: { stats: DashboardStats }) {
 
 /* ─────────── Quick-Action Pill ─────────── */
 
-function QuickAction({ icon: Icon, label, href }: { icon: React.ElementType; label: string; href: string }) {
+function QuickAction({ icon: Icon, label, href, color }: { icon: React.ElementType; label: string; href: string; color?: string }) {
   return (
     <Link to={href}>
       <motion.div
-        whileHover={{ scale: 1.02, y: -1 }}
+        whileHover={{ scale: 1.02, y: -2 }}
         whileTap={{ scale: 0.98 }}
-        className="flex items-center gap-2.5 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium shadow-sm transition-colors hover:border-secondary/30 hover:bg-secondary/5"
+        className="group flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-sm font-medium shadow-sm transition-all hover:shadow-md hover:border-primary/20"
       >
-        <Icon className="h-4 w-4 text-secondary" />
-        <span>{label}</span>
-        <ChevronRight className="ml-auto h-3.5 w-3.5 text-muted-foreground" />
+        <div className={cn(
+          'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+          color ?? 'bg-primary/8 group-hover:bg-primary/12'
+        )}>
+          <Icon className="h-4 w-4 text-primary" />
+        </div>
+        <span className="truncate text-sm">{label}</span>
+        <ChevronRight className="ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5" />
       </motion.div>
     </Link>
   );
@@ -281,31 +286,58 @@ export default function HRDashboard() {
     <DashboardLayout>
       <motion.div variants={container} initial="hidden" animate="visible" className="space-y-4 sm:space-y-5 md:space-y-6">
 
-        {/* ────── HEADER ────── */}
-        <motion.div variants={item} className="flex flex-col gap-3 sm:gap-4 sm:items-end sm:justify-between">
-          <div className="space-y-0.5 sm:space-y-1">
-            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">{today}</p>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
-              {getGreeting()}, {user?.first_name}
-            </h1>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              Voici un résumé de l'activité RH de votre organisation
-            </p>
-          </div>
-          {(user?.role === 'RH' || user?.role === 'ADMIN') && (
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button variant="outline" size="sm" className="gap-2 text-xs sm:text-sm h-9 sm:h-10 flex-1 sm:flex-none">
-                <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                Exporter
-              </Button>
-              <Link to="/employees/create" className="flex-1 sm:flex-none">
-                <Button size="sm" className="gap-2 text-xs sm:text-sm h-9 sm:h-10 w-full" style={{ background: 'var(--gradient-primary)' }}>
-                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Nouvel employé
-                </Button>
-              </Link>
+        {/* ────── HEADER BANNER ────── */}
+        <motion.div
+          variants={item}
+          className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-[#1a0505] via-[#3d0b0b] to-[#6b1010] px-6 py-5 sm:px-8 sm:py-6"
+        >
+          {/* Geometric background pattern */}
+          <div className="absolute inset-0 opacity-[0.04] bg-[image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] bg-[size:40px_40px]" />
+          {/* Glow orbs */}
+          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl bg-brand-red/25" />
+          <div className="absolute bottom-0 left-1/3 h-28 w-28 rounded-full blur-3xl bg-amber-400/10" />
+
+          <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/50 backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  {today}
+                </span>
+              </div>
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
+                {getGreeting()},{' '}
+                <span className="bg-gradient-to-r from-[#fecaca] to-[#fbbf24] bg-clip-text text-transparent">
+                  {user?.first_name}
+                </span>{' '}
+                👋
+              </h1>
+              <p className="text-xs sm:text-sm text-white/40">
+                Voici un résumé de l'activité RH de votre organisation
+              </p>
             </div>
-          )}
+            {(user?.role === 'RH' || user?.role === 'ADMIN') && (
+              <div className="flex items-center gap-2 shrink-0">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 text-xs h-9 border-white/15 bg-white/[0.07] text-white/70 hover:bg-white/15 hover:text-white backdrop-blur-sm"
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  Exporter
+                </Button>
+                <Link to="/employees/create">
+                  <Button
+                    size="sm"
+                    className="gap-2 text-xs h-9 bg-white text-brand-red-dark font-bold hover:bg-white/90 shadow-lg"
+                  >
+                    <Plus className="h-3.5 w-3.5" />
+                    Nouvel employé
+                  </Button>
+                </Link>
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* ────── KPI CARDS ────── */}

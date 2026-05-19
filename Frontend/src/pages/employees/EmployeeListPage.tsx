@@ -214,7 +214,7 @@ export default function EmployeeListPage() {
               <Download className="h-3 w-3 sm:h-4 sm:w-4" />
               Exporter
             </Button>
-            <Button asChild size="sm" className="gap-2 text-xs sm:text-sm" style={{ background: 'var(--gradient-primary)' }}>
+            <Button asChild size="sm" className="gap-2 text-xs sm:text-sm bg-gradient-primary">
               <Link to="/employees/create">
                 <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                 Nouvel employé
@@ -374,110 +374,137 @@ export default function EmployeeListPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className="overflow-hidden rounded-lg border border-border bg-card"
+                  className="overflow-hidden rounded-xl border border-border bg-card shadow-sm"
                 >
                   <Table>
                     <TableHeader>
-                      <TableRow className="hover:bg-transparent">
-                        <TableHead>
+                      <TableRow className="hover:bg-transparent border-b-2 border-border/60 bg-muted/30">
+                        <TableHead className="py-3.5">
                           <button
                             onClick={() => toggleSort('name')}
-                            className="flex items-center gap-1.5 font-semibold"
+                            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
                           >
                             Employé
-                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'name' ? 'text-primary' : 'text-muted-foreground/50')} />
+                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'name' ? 'text-primary' : 'opacity-40')} />
                           </button>
                         </TableHead>
-                        <TableHead>
+                        <TableHead className="py-3.5">
                           <button
                             onClick={() => toggleSort('department')}
-                            className="flex items-center gap-1.5 font-semibold"
+                            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
                           >
                             Département
-                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'department' ? 'text-primary' : 'text-muted-foreground/50')} />
+                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'department' ? 'text-primary' : 'opacity-40')} />
                           </button>
                         </TableHead>
-                        <TableHead>Poste</TableHead>
-                        <TableHead>Statut</TableHead>
-                        <TableHead>
+                        <TableHead className="py-3.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Poste</TableHead>
+                        <TableHead className="py-3.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">Statut</TableHead>
+                        <TableHead className="py-3.5">
                           <button
                             onClick={() => toggleSort('risk')}
-                            className="flex items-center gap-1.5 font-semibold"
+                            className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground transition-colors"
                           >
-                            Risque
-                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'risk' ? 'text-primary' : 'text-muted-foreground/50')} />
+                            Risque churn
+                            <ArrowUpDown className={cn('h-3 w-3', sortKey === 'risk' ? 'text-primary' : 'opacity-40')} />
                           </button>
                         </TableHead>
-                        <TableHead className="w-[80px]" />
+                        <TableHead className="w-[60px]" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredEmployees.map((employee) => {
+                      {filteredEmployees.map((employee, index) => {
                         const avatarBg = getAvatarColor(`${employee.user.first_name}${employee.user.last_name}`);
                         const dept = (employee as { department_name?: string }).department_name ?? employee.department;
                         const pos = (employee as { position_title?: string }).position_title ?? employee.position;
+                        const isHighRisk = (employee.churn_risk ?? 0) >= 60;
 
                         return (
-                          <TableRow key={employee.id} className="group cursor-pointer" onClick={() => navigate(`/employees/${employee.id}`)}>
-                            <TableCell>
+                          <TableRow
+                            key={employee.id}
+                            className={cn(
+                              'group cursor-pointer transition-all duration-150',
+                              'hover:bg-primary/[0.025] dark:hover:bg-primary/[0.05]',
+                              index % 2 === 0 ? 'bg-transparent' : 'bg-muted/[0.015]',
+                              isHighRisk && 'border-l-[2px] border-l-destructive/50'
+                            )}
+                            onClick={() => navigate(`/employees/${employee.id}`)}
+                          >
+                            <TableCell className="py-3.5">
                               <div className="flex items-center gap-3">
-                                <div className={cn('flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white', avatarBg)}>
+                                <div className={cn(
+                                  'flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[13px] font-bold text-white ring-2 ring-transparent transition-all group-hover:ring-primary/20',
+                                  avatarBg
+                                )}>
                                   {employee.user.first_name[0]}{employee.user.last_name[0]}
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="truncate font-medium">
+                                  <p className="truncate text-sm font-semibold group-hover:text-primary transition-colors">
                                     {employee.user.first_name} {employee.user.last_name}
                                   </p>
                                   <p className="truncate text-xs text-muted-foreground">{employee.user.email}</p>
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-1.5 text-sm">
-                                <MapPin className="h-3.5 w-3.5 text-muted-foreground/60" />
-                                {dept}
+                            <TableCell className="py-3.5">
+                              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                                <MapPin className="h-3.5 w-3.5 shrink-0 opacity-50" />
+                                <span className="truncate">{dept}</span>
                               </div>
                             </TableCell>
-                            <TableCell className="text-sm">{pos}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline" className={cn('text-xs', statusStyles[employee.status])}>
-                                {statusLabels[employee.status]}
-                              </Badge>
+                            <TableCell className="py-3.5 text-sm text-muted-foreground">{pos}</TableCell>
+                            <TableCell className="py-3.5">
+                              <div className="flex items-center gap-1.5">
+                                <span className={cn(
+                                  'h-1.5 w-1.5 shrink-0 rounded-full',
+                                  employee.status === 'active' && 'bg-emerald-500',
+                                  employee.status === 'inactive' && 'bg-red-500',
+                                  employee.status === 'on_leave' && 'bg-amber-500',
+                                )} />
+                                <Badge variant="outline" className={cn('text-[11px] px-2 py-0', statusStyles[employee.status])}>
+                                  {statusLabels[employee.status]}
+                                </Badge>
+                              </div>
                             </TableCell>
-                            <TableCell>
+                            <TableCell className="py-3.5">
                               {employee.churn_risk !== undefined ? (
-                                <div className="flex items-center gap-2">
-                                  <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
-                                    <div
+                                <div className="flex items-center gap-2.5">
+                                  <div className="h-2 w-20 overflow-hidden rounded-full bg-muted/70">
+                                    <motion.div
+                                      initial={{ width: 0 }}
+                                      animate={{ width: `${employee.churn_risk}%` }}
+                                      transition={{ duration: 0.6, delay: index * 0.03 }}
                                       className={cn(
-                                        'h-full rounded-full transition-all',
-                                        employee.churn_risk < 30 && 'bg-success',
-                                        employee.churn_risk >= 30 && employee.churn_risk < 60 && 'bg-warning',
-                                        employee.churn_risk >= 60 && 'bg-destructive'
+                                        'h-full rounded-full',
+                                        employee.churn_risk < 30 && 'bg-gradient-to-r from-emerald-500 to-emerald-400',
+                                        employee.churn_risk >= 30 && employee.churn_risk < 60 && 'bg-gradient-to-r from-amber-500 to-amber-400',
+                                        employee.churn_risk >= 60 && 'bg-gradient-to-r from-red-600 to-red-500'
                                       )}
-                                      style={{ width: `${employee.churn_risk}%` }}
                                     />
                                   </div>
                                   <span className={cn(
-                                    'text-xs font-semibold tabular-nums',
-                                    employee.churn_risk < 30 && 'text-success',
-                                    employee.churn_risk >= 30 && employee.churn_risk < 60 && 'text-warning',
-                                    employee.churn_risk >= 60 && 'text-destructive'
+                                    'w-9 text-right text-xs font-bold tabular-nums',
+                                    employee.churn_risk < 30 && 'text-emerald-600 dark:text-emerald-400',
+                                    employee.churn_risk >= 30 && employee.churn_risk < 60 && 'text-amber-600 dark:text-amber-400',
+                                    employee.churn_risk >= 60 && 'text-red-600 dark:text-red-400'
                                   )}>
                                     {employee.churn_risk}%
                                   </span>
-                                  {employee.churn_risk >= 60 && (
-                                    <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+                                  {isHighRisk && (
+                                    <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-red-500 animate-pulse" />
                                   )}
                                 </div>
                               ) : (
-                                <span className="text-xs text-muted-foreground">—</span>
+                                <span className="text-xs text-muted-foreground/50">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            <TableCell className="py-3.5 text-right" onClick={(e) => e.stopPropagation()}>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
                                     <MoreVertical className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>

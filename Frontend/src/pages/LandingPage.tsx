@@ -110,7 +110,18 @@ function DashboardMockup() {
             <p className={`text-[10px] font-bold uppercase tracking-widest mb-3 ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>Rétention / 6 mois</p>
             <div className="flex items-end gap-1.5 h-16">
               {[65, 72, 68, 85, 79, 92].map((h, i) => (
-                <motion.div key={i} initial={{ height: 0 }} animate={{ height: `${h}%` }} transition={{ duration: 0.8, delay: i * 0.1 }} className="flex-1 rounded-sm" style={{ background: i === 5 ? 'linear-gradient(180deg, #D62828, #e86060)' : theme === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                <motion.div
+                  key={i}
+                  initial={{ height: 0 }}
+                  animate={{ height: `${h}%` }}
+                  transition={{ duration: 0.8, delay: i * 0.1 }}
+                  className={cn(
+                    'flex-1 rounded-sm',
+                    i === 5
+                      ? 'bg-gradient-to-b from-brand-red to-brand-red-light'
+                      : 'bg-foreground/[0.08]'
+                  )}
+                />
               ))}
             </div>
           </div>

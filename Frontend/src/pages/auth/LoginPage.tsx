@@ -25,21 +25,18 @@ import { getSafePostLoginPath } from '@/lib/authNavigation';
 
 /* ─── Isometric grid node for the branding panel ─── */
 function GridNode({
-  x,
-  y,
+  positionClass,
   delay,
   size = 'md',
 }: {
-  x: string;
-  y: string;
+  positionClass: string;
   delay: number;
   size?: 'sm' | 'md' | 'lg';
 }) {
   const dim = size === 'sm' ? 'h-1.5 w-1.5' : size === 'lg' ? 'h-3 w-3' : 'h-2 w-2';
   return (
     <motion.div
-      className={`absolute rounded-full bg-white/20 ${dim}`}
-      style={{ left: x, top: y }}
+      className={`absolute rounded-full bg-white/20 ${dim} ${positionClass}`}
       initial={{ opacity: 0, scale: 0 }}
       animate={{ opacity: [0, 0.6, 0.3], scale: [0, 1.2, 1] }}
       transition={{ duration: 2, delay, repeat: Infinity, repeatDelay: 4 + delay }}
@@ -176,50 +173,43 @@ export default function LoginPage() {
           LEFT PANEL — DS: gradient rouge profond
           ───────────────────────────────────────────── */}
       <div className="relative hidden w-[55%] overflow-hidden lg:block">
-        {/* Base gradient DS: #4a0808 → #7a1414 → #c41e1e */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(160deg, #4a0808 0%, #7a1414 40%, #c41e1e 100%)',
-          }}
+        {/* Base gradient */}
+        <div className="absolute inset-0 bg-[image:linear-gradient(160deg,#2d0505_0%,#5c0f0f_35%,#a01818_70%,#c41e1e_100%)]" />
+
+        {/* Animated mesh gradient orbs */}
+        <motion.div
+          animate={{ x: [0, 40, -20, 0], y: [0, -30, 20, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute left-1/4 top-1/4 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[120px] bg-orange-400/12"
+        />
+        <motion.div
+          animate={{ x: [0, -50, 30, 0], y: [0, 40, -20, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+          className="absolute right-1/4 bottom-1/3 h-[400px] w-[400px] rounded-full blur-[100px] bg-brand-red/20"
+        />
+        <motion.div
+          animate={{ x: [0, 25, -35, 0], y: [0, -15, 35, 0] }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut', delay: 6 }}
+          className="absolute left-2/3 top-2/3 h-[280px] w-[280px] rounded-full blur-[80px] bg-amber-300/[0.08]"
         />
 
-        {/* Geometric grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.04]"
-          style={{
-            backgroundImage: `
-              linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)
-            `,
-            backgroundSize: '60px 60px',
-          }}
-        />
+        {/* Grid overlay */}
+        <div className="absolute inset-0 opacity-[0.035] bg-[image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] bg-[size:56px_56px]" />
 
-        {/* Diagonal accent line */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage:
-              'repeating-linear-gradient(45deg, transparent, transparent 80px, rgba(255,255,255,0.4) 80px, rgba(255,255,255,0.4) 81px)',
-          }}
-        />
+        {/* Diagonal lines */}
+        <div className="absolute inset-0 opacity-[0.025] bg-[image:repeating-linear-gradient(45deg,transparent,transparent_70px,rgba(255,255,255,0.5)_70px,rgba(255,255,255,0.5)_71px)]" />
 
         {/* Animated floating nodes */}
-        <GridNode x="15%" y="20%" delay={0} size="lg" />
-        <GridNode x="75%" y="15%" delay={0.8} />
-        <GridNode x="25%" y="55%" delay={1.5} size="sm" />
-        <GridNode x="60%" y="45%" delay={0.4} size="lg" />
-        <GridNode x="85%" y="65%" delay={2.0} />
-        <GridNode x="40%" y="80%" delay={1.2} size="sm" />
-        <GridNode x="10%" y="75%" delay={0.6} />
-        <GridNode x="50%" y="25%" delay={1.8} size="sm" />
-        <GridNode x="70%" y="78%" delay={2.4} />
-        <GridNode x="30%" y="35%" delay={0.2} />
-
-        {/* Radial glow spots — DS: warm amber + rose */}
-        <div className="absolute left-1/4 top-1/3 h-[400px] w-[400px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-[100px]" style={{ background: 'rgba(255,180,100,0.10)' }} />
-        <div className="absolute bottom-1/4 right-1/4 h-[300px] w-[300px] rounded-full blur-[80px]" style={{ background: 'rgba(255,120,100,0.08)' }} />
+        <GridNode positionClass="left-[15%] top-[20%]" delay={0} size="lg" />
+        <GridNode positionClass="left-[75%] top-[15%]" delay={0.8} />
+        <GridNode positionClass="left-[25%] top-[55%]" delay={1.5} size="sm" />
+        <GridNode positionClass="left-[60%] top-[45%]" delay={0.4} size="lg" />
+        <GridNode positionClass="left-[85%] top-[65%]" delay={2.0} />
+        <GridNode positionClass="left-[40%] top-[80%]" delay={1.2} size="sm" />
+        <GridNode positionClass="left-[10%] top-[75%]" delay={0.6} />
+        <GridNode positionClass="left-[50%] top-[25%]" delay={1.8} size="sm" />
+        <GridNode positionClass="left-[70%] top-[78%]" delay={2.4} />
+        <GridNode positionClass="left-[30%] top-[35%]" delay={0.2} />
 
         {/* Content layer */}
         <div className="relative z-10 flex h-full flex-col justify-between p-12 xl:p-16">
@@ -311,21 +301,14 @@ export default function LoginPage() {
           ───────────────────────────────────────────── */}
       <div className="relative flex w-full flex-col items-center justify-center px-6 lg:w-[45%] lg:px-12 xl:px-20">
         {/* Subtle background pattern */}
-        <div
-          className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--foreground)) 0.5px, transparent 0)`,
-            backgroundSize: '24px 24px',
-          }}
-        />
+        <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03] bg-[image:radial-gradient(circle_at_1px_1px,hsl(var(--foreground))_0.5px,transparent_0)] bg-[size:24px_24px]" />
 
         {/* Floating card */}
         <motion.div
           initial={{ opacity: 0, y: 32, rotateX: 4 }}
           animate={{ opacity: 1, y: 0, rotateX: 0 }}
           transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-          className="relative z-10 w-full max-w-[420px]"
-          style={{ perspective: '1200px' }}
+          className="relative z-10 w-full max-w-[420px] [perspective:1200px]"
         >
           {/* Mobile Logo */}
           <div className="mb-8 lg:hidden">
@@ -333,10 +316,10 @@ export default function LoginPage() {
           </div>
 
           {/* Form card surface */}
-          <div className="rounded-2xl border border-[hsl(34,30%,86%)] bg-card p-8 shadow-[0_8px_30px_rgb(80,30,10,0.06)]">
+          <div className="rounded-2xl border border-border/60 bg-card p-8 shadow-[0_12px_40px_rgba(80,20,10,0.08),0_2px_6px_rgba(0,0,0,0.04)] dark:shadow-[0_12px_40px_rgba(0,0,0,0.3)]">
             {/* Header */}
             <div className="mb-7 space-y-1.5">
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">
+              <h2 className="text-2xl font-extrabold tracking-tight text-foreground">
                 Connexion
               </h2>
               <p className="text-sm text-muted-foreground">
@@ -349,18 +332,18 @@ export default function LoginPage() {
               <div className="space-y-4">
                 {/* Email */}
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  <Label htmlFor="email" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
                     Adresse email
                   </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+                  <div className="relative group/field">
+                    <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within/field:text-primary" />
                     <Input
                       id="email"
                       type="email"
                       placeholder="votre@email.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="h-11 pl-10 text-sm transition-shadow focus:shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]"
+                      className="h-11 pl-10 text-sm border-border/60 transition-all focus:border-primary/40 focus:shadow-[0_0_0_3px_hsl(var(--primary)/0.08)] focus:ring-0"
                       required
                     />
                   </div>
@@ -369,37 +352,33 @@ export default function LoginPage() {
                 {/* Password */}
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    <Label htmlFor="password" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground/70">
                       Mot de passe
                     </Label>
                     <Link
                       to="/forgot-password"
-                      className="text-xs font-medium text-primary hover:text-secondary/80 transition-colors"
+                      className="text-xs font-semibold text-primary hover:underline transition-colors"
                     >
                       Oublié ?
                     </Link>
                   </div>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+                  <div className="relative group/field">
+                    <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within/field:text-primary" />
                     <Input
                       id="password"
                       type={showPassword ? 'text' : 'password'}
-                      placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;"
+                      placeholder="••••••••"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="h-11 pl-10 pr-10 text-sm transition-shadow focus:shadow-[0_0_0_3px_hsl(var(--primary)/0.08)]"
+                      className="h-11 pl-10 pr-10 text-sm border-border/60 transition-all focus:border-primary/40 focus:shadow-[0_0_0_3px_hsl(var(--primary)/0.08)] focus:ring-0"
                       required
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/60 transition-colors hover:text-foreground"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground/40 transition-colors hover:text-foreground focus:outline-none"
                     >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
+                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
@@ -408,7 +387,7 @@ export default function LoginPage() {
               {/* Submit */}
               <Button
                 type="submit"
-                className="h-11 w-full gap-2 bg-[hsl(var(--primary))] text-sm font-semibold tracking-wide transition-all hover:brightness-110 active:scale-[0.98]"
+                className="h-11 w-full gap-2 text-sm font-bold tracking-wide transition-all active:scale-[0.98]"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -424,15 +403,12 @@ export default function LoginPage() {
 
             {/* Divider — Google SSO */}
             <div className="my-5">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-border/60" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-card px-3 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/60">
-                    ou continuer avec
-                  </span>
-                </div>
+              <div className="relative flex items-center">
+                <div className="flex-1 border-t border-border/50" />
+                <span className="mx-3 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">
+                  ou continuer avec
+                </span>
+                <div className="flex-1 border-t border-border/50" />
               </div>
             </div>
 
@@ -443,24 +419,14 @@ export default function LoginPage() {
                     if (credentialResponse.credential) {
                       handleGoogleSuccess(credentialResponse.credential);
                     } else {
-                      toast({
-                        title: 'Connexion Google échouée',
-                        description: 'ID token manquant.',
-                        variant: 'destructive',
-                      });
+                      toast({ title: 'Connexion Google échouée', description: 'ID token manquant.', variant: 'destructive' });
                     }
                   }}
-                  onError={() =>
-                    toast({
-                      title: 'Connexion Google échouée',
-                      description: 'Une erreur est survenue.',
-                      variant: 'destructive',
-                    })
-                  }
+                  onError={() => toast({ title: 'Connexion Google échouée', description: 'Une erreur est survenue.', variant: 'destructive' })}
                 />
               </div>
             ) : (
-              <p className="text-center text-xs text-muted-foreground/60">
+              <p className="text-center text-xs text-muted-foreground/50">
                 SSO Google indisponible (VITE_GOOGLE_CLIENT_ID non configuré)
               </p>
             )}

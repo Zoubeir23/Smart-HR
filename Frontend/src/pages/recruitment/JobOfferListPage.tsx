@@ -92,6 +92,8 @@ export default function JobOfferListPage() {
     salary_range: '',
   });
 
+  const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
+
   const isRHOrAdmin = user?.role === 'RH' || user?.role === 'ADMIN';
   const isCandidate = user?.role === 'CANDIDATE';
 
@@ -226,7 +228,7 @@ export default function JobOfferListPage() {
           {filteredOffers.map((offer) => (
             <Card
               key={offer.id}
-              className="border border-border shadow-sm transition-all hover:border-primary"
+              className="flex flex-col border border-border shadow-sm transition-all hover:border-primary"
             >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
@@ -241,7 +243,7 @@ export default function JobOfferListPage() {
                   </Badge>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="flex flex-col flex-1 space-y-3">
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Briefcase className="h-4 w-4" />
@@ -271,7 +273,7 @@ export default function JobOfferListPage() {
                   {offer.description}
                 </p>
 
-                <div className="pt-2">
+                <div className="mt-auto pt-2">
                   {isCandidate ? (
                     <Button
                       className="w-full bg-primary text-primary-foreground"
@@ -280,7 +282,7 @@ export default function JobOfferListPage() {
                       Postuler
                     </Button>
                   ) : (
-                    <Button variant="outline" className="w-full" onClick={() => navigate(`/jobs/${offer.id}/apply`)}>
+                    <Button variant="outline" className="w-full" onClick={() => setSelectedOffer(offer)}>
                       Voir details
                     </Button>
                   )}
@@ -312,6 +314,46 @@ export default function JobOfferListPage() {
             </Button>
           </div>
         )}
+        {/* Job Detail Dialog (RH/Admin) */}
+        <Dialog open={selectedOffer !== null} onOpenChange={(open) => { if (!open) setSelectedOffer(null); }}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{selectedOffer?.title}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="flex flex-wrap items-center gap-2">
+                {selectedOffer && (
+                  <Badge variant="outline" className={contractBadgeStyles[selectedOffer.contractType]}>
+                    {selectedOffer.contractType}
+                  </Badge>
+                )}
+                <span className="text-sm text-muted-foreground">{selectedOffer?.department}</span>
+              </div>
+              <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {selectedOffer?.location || '—'}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  {selectedOffer?.applications ?? 0} candidature{(selectedOffer?.applications ?? 0) > 1 ? 's' : ''}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Clock className="h-4 w-4" />
+                  {selectedOffer?.postedDate ? new Date(selectedOffer.postedDate).toLocaleDateString('fr-FR') : '—'}
+                </div>
+              </div>
+              <div>
+                <h4 className="mb-2 font-medium text-foreground">Description</h4>
+                <p className="whitespace-pre-wrap text-sm text-muted-foreground">{selectedOffer?.description || '—'}</p>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedOffer(null)}>Fermer</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Create Offer Dialog */}
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="sm:max-w-lg">

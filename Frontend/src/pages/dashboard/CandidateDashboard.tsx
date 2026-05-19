@@ -76,22 +76,22 @@ export default function CandidateDashboard() {
       title: 'Candidatures envoyées',
       value: candidatures.length,
       icon: FileText,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-blue-600 dark:text-blue-400',
+      bgColor: 'bg-blue-500/10',
     },
     {
       title: 'Entretiens planifiés',
       value: entretiens.length,
       icon: Calendar,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: 'text-green-600 dark:text-green-400',
+      bgColor: 'bg-green-500/10',
     },
     {
       title: 'Offres consultées',
       value: offresRecommandees.length,
       icon: Briefcase,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      color: 'text-indigo-600 dark:text-indigo-400',
+      bgColor: 'bg-indigo-500/10',
     },
   ];
 
@@ -139,7 +139,7 @@ export default function CandidateDashboard() {
                       {stat.title}
                     </CardTitle>
                     <div className={`${stat.bgColor} rounded-lg p-2`}>
-                      <Icon className="h-4 w-4 sm:h-5 sm:w-5" style={{ color: stat.color.replace('text-', '') }} />
+                      <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${stat.color}`} />
                     </div>
                   </CardHeader>
                   <CardContent className="p-3 sm:p-4">

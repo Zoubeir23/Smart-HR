@@ -332,8 +332,7 @@ export default function AIChatPage() {
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
           <div className="flex items-center gap-3">
             <div
-              className="flex h-10 w-10 items-center justify-center rounded-lg"
-              style={{ background: 'var(--gradient-primary)' }}
+              className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-primary"
             >
               <Sparkles className="h-5 w-5 text-white" />
             </div>
@@ -553,8 +552,7 @@ export default function AIChatPage() {
                 placeholder="Posez votre question sur les RH..."
                 disabled={isTyping}
                 rows={1}
-                className="w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 pr-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/30 disabled:cursor-not-allowed disabled:opacity-50"
-                style={{ maxHeight: 120 }}
+                className="max-h-[120px] w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 pr-4 text-sm leading-relaxed text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/30 disabled:cursor-not-allowed disabled:opacity-50"
               />
             </div>
             <Button
@@ -580,8 +578,7 @@ export default function AIChatPage() {
             <Button
               type="submit"
               disabled={!inputValue.trim() || isTyping}
-              className="h-[46px] shrink-0 gap-2 rounded-xl px-5"
-              style={{ background: 'var(--gradient-primary)' }}
+              className="h-[46px] shrink-0 gap-2 rounded-xl px-5 bg-gradient-primary"
             >
               <Send className="h-4 w-4" />
               <span className="hidden sm:inline">Envoyer</span>

@@ -116,8 +116,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
             <button className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 rounded-[10px] px-1.5 sm:px-2 py-1 sm:py-1.5 transition-colors hover:bg-[hsl(36,40%,91%)] flex-shrink-0">
               {/* Avatar rouge gradient — RESPONSIVE SIZING */}
               <div
-                className="flex h-7 w-7 sm:h-8 sm:w-8 md:h-[34px] md:w-[34px] flex-shrink-0 items-center justify-center rounded-[10px] text-[11px] sm:text-[12px] md:text-[13px] font-bold text-white"
-                style={{ background: 'linear-gradient(135deg, #e86060, #c41e1e)' }}
+                className="flex h-7 w-7 sm:h-8 sm:w-8 md:h-[34px] md:w-[34px] flex-shrink-0 items-center justify-center rounded-[10px] text-[11px] sm:text-[12px] md:text-[13px] font-bold text-white bg-gradient-to-br from-brand-red-light to-brand-red-dark"
               >
                 {user?.first_name?.[0]}{user?.last_name?.[0]}
               </div>

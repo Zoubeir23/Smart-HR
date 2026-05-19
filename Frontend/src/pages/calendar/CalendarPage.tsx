@@ -135,7 +135,7 @@ function MonthView({ currentDate, events, onDayClick, onEventClick, onWeekClick 
       </div>
 
       {/* Weeks */}
-      <div className="flex flex-col flex-1 min-h-0">
+      <div className="flex flex-col flex-1 min-h-0 overflow-y-auto">
         {weeks.map((week) => (
           <div key={week[0].toISOString()} className="grid grid-cols-[40px_repeat(7,1fr)] flex-1 border-b border-border last:border-b-0">
             {/* Week number — click → week view */}

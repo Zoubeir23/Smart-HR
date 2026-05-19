@@ -200,8 +200,7 @@ function InterviewFormStep({
         <Button
           onClick={() => onSubmit(formData)}
           disabled={!canSubmit || isLoading}
-          className="gap-2"
-          style={{ background: 'var(--gradient-primary)' }}
+          className="gap-2 bg-gradient-primary"
         >
           {isLoading ? (
             <>
@@ -285,7 +284,7 @@ function QuestionsStep({
           <ChevronLeft className="h-4 w-4" />
           Reconfigurer
         </Button>
-        <Button onClick={onStart} className="gap-2" style={{ background: 'var(--gradient-primary)' }}>
+        <Button onClick={onStart} className="gap-2 bg-gradient-primary">
           <Phone className="h-4 w-4" />
           Démarrer l'entretien vocal
         </Button>
@@ -681,8 +680,7 @@ export default function RecruteurIAPage() {
       <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8 text-center">
           <div
-            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl"
-            style={{ background: 'var(--gradient-primary)' }}
+            className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-primary"
           >
             <Sparkles className="h-7 w-7 text-white" />
           </div>

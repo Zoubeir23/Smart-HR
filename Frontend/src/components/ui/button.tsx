@@ -14,7 +14,7 @@ const buttonVariants = cva(
           "bg-gradient-to-br from-[#D62828] to-[#e63c3c] text-white shadow-sm hover:brightness-[1.08] hover:shadow-md",
         /* Cream — bouton secondaire sur fond clair */
         secondary:
-          "bg-[#FFF3E0] text-[#c41e1e] border border-[hsl(34,30%,86%)] hover:bg-[#ffe0b2]",
+          "bg-[#FFF3E0] text-[#c41e1e] border border-[hsl(34,30%,86%)] hover:bg-[#ffe0b2] dark:bg-muted dark:text-primary dark:border-[hsl(20,10%,22%)] dark:hover:bg-muted/70",
         /* Outline — action tertiaire */
         outline:
           "border border-[hsl(34,30%,86%)] bg-card text-foreground hover:border-[hsl(0,69%,50%,0.30)] hover:bg-muted dark:border-[hsl(20,10%,22%)]",

@@ -141,7 +141,7 @@ const RegisterPage = () => {
         >
           <form onSubmit={handleSubmit} className="space-y-5">
             {errorMessage && (
-              <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 text-sm">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{errorMessage}</span>
               </div>

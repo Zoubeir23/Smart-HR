@@ -187,19 +187,19 @@ const EmailVerificationPage = () => {
           {isVerified ? (
             <div className="text-center py-4">
               <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <p className="text-green-600 font-semibold text-lg">{successMessage}</p>
+              <p className="text-green-600 dark:text-green-400 font-semibold text-lg">{successMessage}</p>
             </div>
           ) : (
             <div className="space-y-6">
               {errorMessage && (
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 text-sm">
                   <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>{errorMessage}</span>
                 </div>
               )}
 
               {successMessage && (
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 border border-green-200 text-green-700 text-sm">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-400 text-sm">
                   <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>{successMessage}</span>
                 </div>

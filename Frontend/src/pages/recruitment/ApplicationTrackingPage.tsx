@@ -169,7 +169,7 @@ const ApplicationTrackingPage = () => {
                     <p className="text-sm text-muted-foreground mb-3">
                       {application.department}
                     </p>
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 text-green-600 rounded-full text-sm font-medium">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-green-500/10 text-green-600 dark:text-green-400 rounded-full text-sm font-medium">
                       <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                       Candidature active
                     </div>
@@ -243,7 +243,15 @@ const ApplicationTrackingPage = () => {
                   </motion.div>
                 </div>
                 <p className="text-sm text-center text-muted-foreground">
-                  Excellent match ! Votre profil correspond très bien aux exigences du poste.
+                  {application.matchingScore === 0
+                    ? "Score non calculé. L'analyse IA sera effectuée prochainement."
+                    : application.matchingScore >= 80
+                      ? 'Excellent match ! Votre profil correspond très bien aux exigences du poste.'
+                      : application.matchingScore >= 60
+                        ? 'Bon match. Votre profil correspond aux principales exigences du poste.'
+                        : application.matchingScore >= 40
+                          ? 'Match partiel. Certaines compétences clés correspondent au poste.'
+                          : 'Faible compatibilité. Votre profil diffère des exigences du poste.'}
                 </p>
               </div>
             </Card>

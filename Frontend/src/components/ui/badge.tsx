@@ -10,28 +10,34 @@ const badgeVariants = cva(
       variant: {
         /* Actif — vert teinté */
         active:
-          "bg-[hsl(160,84%,28%,0.10)] text-[hsl(160,84%,24%)] border-[hsl(160,84%,28%,0.18)]",
+          "bg-[hsl(160,84%,28%,0.12)] text-[hsl(160,84%,24%)] border-[hsl(160,84%,28%,0.20)] dark:bg-[hsl(160,60%,42%,0.18)] dark:text-[hsl(160,60%,68%)] dark:border-[hsl(160,60%,42%,0.28)]",
         /* En attente — orange teinté */
         pending:
-          "bg-[hsl(25,95%,53%,0.10)] text-[hsl(25,95%,36%)] border-[hsl(25,95%,53%,0.18)]",
+          "bg-[hsl(25,95%,53%,0.12)] text-[hsl(25,95%,36%)] border-[hsl(25,95%,53%,0.20)] dark:bg-[hsl(25,90%,55%,0.18)] dark:text-[hsl(25,90%,72%)] dark:border-[hsl(25,90%,55%,0.28)]",
         /* Inactif / rejeté — rouge teinté */
         inactive:
-          "bg-[hsl(0,69%,50%,0.10)] text-[#c41e1e] border-[hsl(0,69%,50%,0.18)]",
-        /* Compteur — fond cream muted */
+          "bg-[hsl(0,69%,50%,0.12)] text-[#c41e1e] border-[hsl(0,69%,50%,0.20)] dark:bg-[hsl(0,68%,55%,0.18)] dark:text-[hsl(0,68%,72%)] dark:border-[hsl(0,68%,55%,0.28)]",
+        /* Compteur — fond muted adaptatif */
         count:
-          "bg-[hsl(36,40%,91%)] text-foreground border-[hsl(34,30%,86%)] tabular-nums min-w-[22px] justify-center",
+          "bg-muted text-foreground border-border tabular-nums min-w-[22px] justify-center",
         /* Outline neutre */
         outline:
-          "bg-card text-muted-foreground border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)]",
-        /* Default — rouge plein (badge count rouge, IA badge) */
+          "bg-card text-muted-foreground border-border",
+        /* Default — rouge plein */
         default:
           "bg-[#D62828] text-white border-[#D62828]",
-        /* Secondary */
+        /* Secondary — muted adaptatif */
         secondary:
-          "bg-[hsl(36,40%,91%)] text-foreground border-transparent",
+          "bg-muted text-foreground border-transparent dark:bg-muted dark:text-foreground",
         /* Destructive */
         destructive:
           "bg-[#D62828] text-white border-transparent",
+        /* Warning — orange adaptatif */
+        warning:
+          "bg-[hsl(25,95%,53%,0.12)] text-[hsl(25,95%,36%)] border-[hsl(25,95%,53%,0.20)] dark:bg-[hsl(25,90%,55%,0.18)] dark:text-[hsl(25,90%,72%)] dark:border-[hsl(25,90%,55%,0.28)]",
+        /* Success — vert adaptatif */
+        success:
+          "bg-[hsl(160,84%,28%,0.12)] text-[hsl(160,84%,24%)] border-[hsl(160,84%,28%,0.20)] dark:bg-[hsl(160,60%,42%,0.18)] dark:text-[hsl(160,60%,68%)] dark:border-[hsl(160,60%,42%,0.28)]",
       },
     },
     defaultVariants: {

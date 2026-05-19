@@ -9,13 +9,13 @@ interface ChurnGaugeProps {
 }
 
 const sizeConfig = {
-  sm: { width: 80, strokeWidth: 8 },
-  md: { width: 120, strokeWidth: 10 },
-  lg: { width: 160, strokeWidth: 12 },
+  sm: { width: 80,  strokeWidth: 8,  containerClass: 'w-20 h-[50px]' },
+  md: { width: 120, strokeWidth: 10, containerClass: 'w-[120px] h-[70px]' },
+  lg: { width: 160, strokeWidth: 12, containerClass: 'w-40 h-[90px]' },
 };
 
 export default function ChurnGauge({ value, size = 'md', showLabel = true, className }: ChurnGaugeProps) {
-  const { width, strokeWidth } = sizeConfig[size];
+  const { width, strokeWidth, containerClass } = sizeConfig[size];
   const radius = (width - strokeWidth) / 2;
   const circumference = radius * Math.PI; // Semi-circle
   const progress = (value / 100) * circumference;
@@ -30,7 +30,7 @@ export default function ChurnGauge({ value, size = 'md', showLabel = true, class
 
   return (
     <div className={cn('flex flex-col items-center', className)}>
-      <div className="relative" style={{ width, height: width / 2 + 10 }}>
+      <div className={cn('relative', containerClass)}>
         <svg width={width} height={width / 2 + 10} className="overflow-visible">
           {/* Background arc */}
           <path
