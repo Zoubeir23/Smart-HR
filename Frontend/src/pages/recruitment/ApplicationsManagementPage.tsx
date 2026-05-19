@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Bot,
@@ -9,12 +9,14 @@ import {
   Search,
   SlidersHorizontal,
   Users,
+  Send,
 } from 'lucide-react';
 import { recruitmentService } from '@/services/recruitmentService';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -329,6 +331,8 @@ interface ApplicationCardProps {
   onStatusChange: (applicationId: number, newStatus: ApplicationStatus) => void;
   onSendInterview: (application: Application) => void;
   isStatusChangePending: boolean;
+  isSelected: boolean;
+  onToggleSelect: (applicationId: number) => void;
 }
 
 function ApplicationCard({
@@ -337,6 +341,8 @@ function ApplicationCard({
   onStatusChange,
   onSendInterview,
   isStatusChangePending,
+  isSelected,
+  onToggleSelect,
 }: ApplicationCardProps) {
   const initials = getCandidateInitials(application);
   const fullName = getCandidateFullName(application);
@@ -345,11 +351,16 @@ function ApplicationCard({
   const score = application.matching_score ?? 0;
 
   return (
-    <Card className="overflow-hidden transition-shadow hover:shadow-md">
+    <Card className={cn('overflow-hidden transition-shadow hover:shadow-md', isSelected && 'ring-2 ring-primary/50 border-primary/40')}>
       <CardContent className="p-4 sm:p-5">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-5">
-          {/* Avatar */}
-          <div className="flex shrink-0 items-center gap-3 sm:gap-0">
+          {/* Checkbox + Avatar */}
+          <div className="flex shrink-0 items-center gap-3">
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={() => onToggleSelect(application.id)}
+              aria-label={`Sélectionner ${getCandidateFullName(application)}`}
+            />
             <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary/70 text-sm font-bold text-primary-foreground shadow-sm">
               {initials}
             </div>
@@ -455,6 +466,96 @@ function ApplicationCard({
 }
 
 // ──────────────────────────────────────────────
+// Bulk Interview Dialog
+// ──────────────────────────────────────────────
+
+interface BulkInterviewDialogProps {
+  isOpen: boolean;
+  candidateCount: number;
+  onClose: () => void;
+  onConfirm: (duration: string, interviewType: string) => void;
+  isPending: boolean;
+}
+
+function BulkInterviewDialog({ isOpen, candidateCount, onClose, onConfirm, isPending }: BulkInterviewDialogProps) {
+  const [selectedDuration, setSelectedDuration] = useState('30');
+  const [selectedInterviewType, setSelectedInterviewType] = useState('Technique');
+
+  return (
+    <Dialog open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Send className="h-5 w-5 text-primary" />
+            Envoyer l'entretien IA à {candidateCount} candidat{candidateCount > 1 ? 's' : ''}
+          </DialogTitle>
+          <DialogDescription>
+            Configurez les paramètres communs. Les questions seront générées individuellement à partir du CV de chaque candidat.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div className="space-y-2">
+            <Label htmlFor="bulk-interview-duration">Durée de l'entretien</Label>
+            <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+              <SelectTrigger id="bulk-interview-duration">
+                <SelectValue placeholder="Sélectionner une durée" />
+              </SelectTrigger>
+              <SelectContent>
+                {INTERVIEW_DURATIONS.map((duration) => (
+                  <SelectItem key={duration.value} value={duration.value}>
+                    {duration.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="bulk-interview-type">Type d'entretien</Label>
+            <Select value={selectedInterviewType} onValueChange={setSelectedInterviewType}>
+              <SelectTrigger id="bulk-interview-type">
+                <SelectValue placeholder="Sélectionner un type" />
+              </SelectTrigger>
+              <SelectContent>
+                {INTERVIEW_TYPES.map((interviewType) => (
+                  <SelectItem key={interviewType.value} value={interviewType.value}>
+                    {interviewType.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="rounded-lg bg-amber-500/10 border border-amber-500/20 p-3 text-sm text-amber-700 dark:text-amber-400">
+            {candidateCount} invitation{candidateCount > 1 ? 's' : ''} seront envoyées par email simultanément.
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={isPending}>
+            Annuler
+          </Button>
+          <Button onClick={() => onConfirm(selectedDuration, selectedInterviewType)} disabled={isPending} className="gap-2">
+            {isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Envoi en cours...
+              </>
+            ) : (
+              <>
+                <Send className="h-4 w-4" />
+                Envoyer à {candidateCount} candidat{candidateCount > 1 ? 's' : ''}
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ──────────────────────────────────────────────
 // Main Page
 // ──────────────────────────────────────────────
 
@@ -466,9 +567,15 @@ export default function ApplicationsManagementPage() {
   const [selectedJobOfferId, setSelectedJobOfferId] = useState<string>('all');
   const [selectedStatusFilter, setSelectedStatusFilter] = useState<string>('all');
   const [candidateSearchQuery, setSearchQuery] = useState('');
+  const [minimumScoreFilter, setMinimumScoreFilter] = useState<string>('0');
 
   // Interview dialog state
   const [interviewDialogApplication, setInterviewDialogApplication] = useState<Application | null>(null);
+
+  // Bulk selection state
+  const [selectedApplicationIds, setSelectedApplicationIds] = useState<Set<number>>(new Set());
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
+  const [bulkSendProgress, setBulkSendProgress] = useState<{ sent: number; total: number } | null>(null);
 
   // Track sent interviews locally (by application ID)
   const [sentInterviewApplicationIds, setSentInterviewApplicationIds] = useState<Set<number>>(new Set());
@@ -508,13 +615,20 @@ export default function ApplicationsManagementPage() {
 
   // Client-side search filter by candidate name
   const filteredApplicationsList = useMemo(() => {
-    if (!candidateSearchQuery.trim()) return allApplications;
-    const normalizedQuery = candidateSearchQuery.toLowerCase().trim();
-    return allApplications.filter((application) => {
-      const fullName = getCandidateFullName(application).toLowerCase();
-      return fullName.includes(normalizedQuery) || application.email.toLowerCase().includes(normalizedQuery);
-    });
-  }, [allApplications, candidateSearchQuery]);
+    let list = allApplications;
+    const minimumScore = Number(minimumScoreFilter);
+    if (minimumScore > 0) {
+      list = list.filter((application) => (application.matching_score ?? 0) >= minimumScore);
+    }
+    if (candidateSearchQuery.trim()) {
+      const normalizedQuery = candidateSearchQuery.toLowerCase().trim();
+      list = list.filter((application) => {
+        const fullName = getCandidateFullName(application).toLowerCase();
+        return fullName.includes(normalizedQuery) || application.email.toLowerCase().includes(normalizedQuery);
+      });
+    }
+    return list;
+  }, [allApplications, candidateSearchQuery, minimumScoreFilter]);
 
   // ── Mutations ──
 
@@ -581,6 +695,56 @@ export default function ApplicationsManagementPage() {
     createInterviewMutation.mutate({ applicationId, duration, interviewType });
   };
 
+  // ── Bulk selection handlers ──
+
+  const handleToggleSelectApplication = useCallback((applicationId: number) => {
+    setSelectedApplicationIds((previousSet) => {
+      const updatedSet = new Set(previousSet);
+      if (updatedSet.has(applicationId)) {
+        updatedSet.delete(applicationId);
+      } else {
+        updatedSet.add(applicationId);
+      }
+      return updatedSet;
+    });
+  }, []);
+
+  const handleToggleSelectAll = useCallback(() => {
+    if (selectedApplicationIds.size === filteredApplicationsList.length) {
+      setSelectedApplicationIds(new Set());
+    } else {
+      setSelectedApplicationIds(new Set(filteredApplicationsList.map((a) => a.id)));
+    }
+  }, [filteredApplicationsList, selectedApplicationIds.size]);
+
+  const handleConfirmBulkSendInterview = async (duration: string, interviewType: string) => {
+    const applicationIds = Array.from(selectedApplicationIds);
+    setBulkSendProgress({ sent: 0, total: applicationIds.length });
+    setBulkDialogOpen(false);
+
+    for (let index = 0; index < applicationIds.length; index++) {
+      const applicationId = applicationIds[index];
+      try {
+        await recruitmentService.createInterview(applicationId, { duration, interview_type: interviewType });
+        setSentInterviewApplicationIds((previousSet) => {
+          const updatedSet = new Set(previousSet);
+          updatedSet.add(applicationId);
+          return updatedSet;
+        });
+      } catch {
+        // Silently continue for failed ones
+      }
+      setBulkSendProgress({ sent: index + 1, total: applicationIds.length });
+    }
+
+    setBulkSendProgress(null);
+    setSelectedApplicationIds(new Set());
+    toast({
+      title: 'Invitations envoyées',
+      description: `${applicationIds.length} invitation${applicationIds.length > 1 ? 's' : ''} envoyée${applicationIds.length > 1 ? 's' : ''} avec succès.`,
+    });
+  };
+
   // ── Render ──
 
   const isLoading = isLoadingApplications || isLoadingJobOffers;
@@ -621,7 +785,7 @@ export default function ApplicationsManagementPage() {
               <p className="text-sm font-semibold text-foreground">Filtres</p>
             </CardHeader>
             <CardContent className="pb-4">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 {/* Job offer filter */}
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Offre d'emploi</Label>
@@ -661,6 +825,24 @@ export default function ApplicationsManagementPage() {
                   </Select>
                 </div>
 
+                {/* Minimum score filter */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Score minimum</Label>
+                  <Select value={minimumScoreFilter} onValueChange={setMinimumScoreFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tous les scores" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">Tous les scores</SelectItem>
+                      <SelectItem value="40">40%+</SelectItem>
+                      <SelectItem value="60">60%+</SelectItem>
+                      <SelectItem value="70">70%+</SelectItem>
+                      <SelectItem value="80">80%+</SelectItem>
+                      <SelectItem value="90">90%+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Candidate name search */}
                 <div className="space-y-1.5">
                   <Label className="text-xs text-muted-foreground">Rechercher un candidat</Label>
@@ -679,6 +861,57 @@ export default function ApplicationsManagementPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Bulk action bar */}
+        <AnimatePresence>
+          {selectedApplicationIds.size > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-3"
+            >
+              <div className="flex items-center gap-3">
+                <Checkbox
+                  checked={selectedApplicationIds.size === filteredApplicationsList.length}
+                  onCheckedChange={handleToggleSelectAll}
+                  id="select-all-checkbox"
+                />
+                <span className="text-sm font-medium text-foreground">
+                  {selectedApplicationIds.size} candidat{selectedApplicationIds.size > 1 ? 's' : ''} sélectionné{selectedApplicationIds.size > 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                {bulkSendProgress && (
+                  <span className="text-sm text-muted-foreground">
+                    {bulkSendProgress.sent}/{bulkSendProgress.total} envoyé{bulkSendProgress.sent > 1 ? 's' : ''}...
+                  </span>
+                )}
+                <Button
+                  size="sm"
+                  onClick={() => setBulkDialogOpen(true)}
+                  disabled={bulkSendProgress !== null}
+                  className="gap-2"
+                >
+                  {bulkSendProgress ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                  Envoyer entretien IA à {selectedApplicationIds.size} candidat{selectedApplicationIds.size > 1 ? 's' : ''}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedApplicationIds(new Set())}
+                  disabled={bulkSendProgress !== null}
+                >
+                  Annuler
+                </Button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Applications list */}
         <div>
@@ -720,6 +953,8 @@ export default function ApplicationsManagementPage() {
                       updateStatusMutation.isPending &&
                       updateStatusMutation.variables?.applicationId === application.id
                     }
+                    isSelected={selectedApplicationIds.has(application.id)}
+                    onToggleSelect={handleToggleSelectApplication}
                   />
                 </motion.div>
               ))}
@@ -728,13 +963,22 @@ export default function ApplicationsManagementPage() {
         </div>
       </div>
 
-      {/* Interview dialog */}
+      {/* Single interview dialog */}
       <InterviewDialog
         application={interviewDialogApplication}
         isOpen={interviewDialogApplication !== null}
         onClose={handleCloseInterviewDialog}
         onConfirm={handleConfirmSendInterview}
         isPending={createInterviewMutation.isPending}
+      />
+
+      {/* Bulk interview dialog */}
+      <BulkInterviewDialog
+        isOpen={bulkDialogOpen}
+        candidateCount={selectedApplicationIds.size}
+        onClose={() => setBulkDialogOpen(false)}
+        onConfirm={handleConfirmBulkSendInterview}
+        isPending={bulkSendProgress !== null}
       />
     </DashboardLayout>
   );
