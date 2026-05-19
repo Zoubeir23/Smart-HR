@@ -4,7 +4,7 @@ function normalizeApiUrl(rawApiUrl: string): string {
   const trimmedApiUrl = rawApiUrl.trim().replace(/\/+$/, '');
 
   if (!trimmedApiUrl) {
-    return 'http://localhost:8000/api/v1';
+    return '/api/v1';
   }
 
   if (trimmedApiUrl.endsWith('/api')) {
