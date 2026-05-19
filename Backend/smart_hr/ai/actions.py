@@ -20,11 +20,25 @@ logger = logging.getLogger(__name__)
 # ─── Intents supportés ───────────────────────────────────────────────────────
 
 _LEAVE_INTENT_KEYWORDS = (
-    "congé", "conge", "vacances", "absent", "absence",
-    "malade", "maladie", "arrêt maladie", "repos", "arret",
-    "poser un congé", "demande de congé", "je veux prendre",
-    "jour de repos", "partir en vacances", "jours de vacances",
-    "congé maternité", "congé personnel", "congé annuel",
+    "congé",
+    "conge",
+    "vacances",
+    "absent",
+    "absence",
+    "malade",
+    "maladie",
+    "arrêt maladie",
+    "repos",
+    "arret",
+    "poser un congé",
+    "demande de congé",
+    "je veux prendre",
+    "jour de repos",
+    "partir en vacances",
+    "jours de vacances",
+    "congé maternité",
+    "congé personnel",
+    "congé annuel",
 )
 
 
@@ -42,6 +56,7 @@ def detect_action_intent(question: str) -> str | None:
 
 
 # ─── Extraction de paramètres via Gemini ─────────────────────────────────────
+
 
 def extract_leave_parameters(question: str) -> dict:
     """
@@ -130,6 +145,7 @@ def _regex_extract_leave_parameters(question: str) -> dict:
 
 
 # ─── Exécution d'actions ─────────────────────────────────────────────────────
+
 
 def execute_action(action_intent: str, user, params: dict) -> dict:
     """

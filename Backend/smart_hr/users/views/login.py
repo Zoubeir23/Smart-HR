@@ -24,10 +24,7 @@ class EmailVerifiedLoginView(LoginView):
         if user and user.role == "CANDIDATE" and not user.is_email_verified:
             return Response(
                 {
-                    "detail": (
-                        "Votre email n'est pas encore vérifié. "
-                        "Veuillez saisir le code OTP reçu par email."
-                    ),
+                    "detail": ("Votre email n'est pas encore vérifié. Veuillez saisir le code OTP reçu par email."),
                     "code": "email_not_verified",
                     "email": user.email,
                 },

@@ -81,4 +81,5 @@ def log_audit_action(
         )
     except Exception:
         import logging
+
         logging.getLogger(__name__).exception("Échec écriture audit log")

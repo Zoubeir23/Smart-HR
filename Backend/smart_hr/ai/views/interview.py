@@ -121,10 +121,7 @@ class GenerateInterviewFeedbackView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        conversation_text = "\n".join(
-            f"{msg.get('role', 'inconnu').upper()} : {msg.get('content', '')}"
-            for msg in conversation
-        )
+        conversation_text = "\n".join(f"{msg.get('role', 'inconnu').upper()} : {msg.get('content', '')}" for msg in conversation)
 
         prompt = _FEEDBACK_PROMPT.format(conversation=conversation_text)
 
