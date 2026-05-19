@@ -55,6 +55,11 @@ import NotFoundPage from "@/pages/NotFoundPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LandingPage from "@/pages/LandingPage";
 
+// Pages interview public (sans login)
+import InterviewLandingPage from "@/pages/interview/InterviewLandingPage";
+import InterviewStartPage from "@/pages/interview/InterviewStartPage";
+import InterviewCompletedPage from "@/pages/interview/InterviewCompletedPage";
+
 const queryClient = new QueryClient();
 
 // Composant qui redirige vers le bon dashboard selon le role
@@ -91,6 +96,11 @@ const App = () => (
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/verify-email" element={<EmailVerificationPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+              {/* Entretien IA partagé — public, sans login */}
+              <Route path="/interview/:token" element={<InterviewLandingPage />} />
+              <Route path="/interview/:token/start" element={<InterviewStartPage />} />
+              <Route path="/interview/:token/completed" element={<InterviewCompletedPage />} />
 
               {/* Landing Page à la racine */}
               <Route path="/" element={<LandingPage />} />

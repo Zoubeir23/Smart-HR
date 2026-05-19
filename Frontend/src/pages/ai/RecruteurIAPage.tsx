@@ -18,6 +18,9 @@ import {
   RotateCcw,
   Phone,
   PhoneOff,
+  Link2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import Vapi from '@vapi-ai/web';
 import { useMutation } from '@tanstack/react-query';
@@ -35,6 +38,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import { aiService, type ConversationMessage } from '@/services/aiService';
+import type { InterviewQuestion as InterviewQuestionType } from '@/services/aiService';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 
@@ -226,20 +230,66 @@ function InterviewFormStep({
 function QuestionsStep({
   questions,
   jobPosition,
+  jobDescription,
+  duration,
+  interviewType,
   onStart,
   onBack,
 }: {
   questions: InterviewQuestion[];
   jobPosition: string;
+  jobDescription: string;
+  duration: string;
+  interviewType: string;
   onStart: () => void;
   onBack: () => void;
 }) {
+  const { toast } = useToast();
+  const [shareLink, setShareLink] = useState<string | null>(null);
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [isCopied, setIsCopied] = useState(false);
+
   const typeColors: Record<string, string> = {
     Technique: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
     Comportemental: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
     Expérience: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     'Résolution de problèmes': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
     Leadership: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  };
+
+  const handleGenerateShareLink = async () => {
+    setIsGeneratingLink(true);
+    try {
+      const result = await aiService.createInterviewSession({
+        job_position: jobPosition,
+        job_description: jobDescription,
+        duration,
+        interview_type: interviewType,
+        questions: questions as InterviewQuestionType[],
+      });
+      const link = `${window.location.origin}/interview/${result.token}`;
+      setShareLink(link);
+    } catch {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de générer le lien. Réessayez.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!shareLink) return;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setIsCopied(true);
+      toast({ title: 'Lien copié', description: 'Le lien a été copié dans le presse-papier.' });
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de copier le lien.', variant: 'destructive' });
+    }
   };
 
   return (
@@ -279,15 +329,63 @@ function QuestionsStep({
         ))}
       </div>
 
-      <div className="mt-5 flex justify-between">
+      {/* Share link card */}
+      {shareLink && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-4 rounded-lg border border-primary/30 bg-primary/5 p-4"
+        >
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-primary">
+            Lien de partage
+          </p>
+          <div className="flex items-center gap-2">
+            <p className="flex-1 truncate rounded border border-border bg-background px-3 py-1.5 text-xs font-mono text-muted-foreground">
+              {shareLink}
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-1.5"
+              onClick={handleCopyLink}
+            >
+              {isCopied ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+              {isCopied ? 'Copié' : 'Copier'}
+            </Button>
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Envoyez ce lien au candidat. Il pourra passer l'entretien sans se connecter.
+          </p>
+        </motion.div>
+      )}
+
+      <div className="mt-5 flex flex-wrap justify-between gap-3">
         <Button variant="outline" onClick={onBack} className="gap-1.5">
           <ChevronLeft className="h-4 w-4" />
           Reconfigurer
         </Button>
-        <Button onClick={onStart} className="gap-2 bg-gradient-primary">
-          <Phone className="h-4 w-4" />
-          Démarrer l'entretien vocal
-        </Button>
+
+        <div className="flex gap-2">
+          {!shareLink && (
+            <Button
+              variant="outline"
+              onClick={handleGenerateShareLink}
+              disabled={isGeneratingLink}
+              className="gap-1.5"
+            >
+              {isGeneratingLink ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Link2 className="h-4 w-4" />
+              )}
+              Générer le lien
+            </Button>
+          )}
+          <Button onClick={onStart} className="gap-2 bg-gradient-primary">
+            <Phone className="h-4 w-4" />
+            Démarrer l'entretien vocal
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -598,6 +696,9 @@ export default function RecruteurIAPage() {
   const { user } = useAuth();
   const [step, setStep] = useState<PageStep>('form');
   const [jobPosition, setJobPosition] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
+  const [duration, setDuration] = useState('30 Min');
+  const [interviewType, setInterviewType] = useState('Technique');
   const [questions, setQuestions] = useState<InterviewQuestion[]>([]);
   const [feedback, setFeedback] = useState<InterviewFeedback | null>(null);
   const { toast } = useToast();
@@ -656,6 +757,9 @@ export default function RecruteurIAPage() {
     interview_type: string;
   }) => {
     setJobPosition(formData.job_position);
+    setJobDescription(formData.job_description);
+    setDuration(formData.duration);
+    setInterviewType(formData.interview_type);
     questionsMutation.mutate(formData);
   };
 
@@ -673,6 +777,9 @@ export default function RecruteurIAPage() {
     setQuestions([]);
     setFeedback(null);
     setJobPosition('');
+    setJobDescription('');
+    setDuration('30 Min');
+    setInterviewType('Technique');
   };
 
   return (
@@ -711,6 +818,9 @@ export default function RecruteurIAPage() {
               <QuestionsStep
                 questions={questions}
                 jobPosition={jobPosition}
+                jobDescription={jobDescription}
+                duration={duration}
+                interviewType={interviewType}
                 onStart={() => setStep('interview')}
                 onBack={() => setStep('form')}
               />
