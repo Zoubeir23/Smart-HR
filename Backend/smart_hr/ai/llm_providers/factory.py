@@ -31,8 +31,7 @@ def get_llm_provider() -> BaseLLMProvider:
 
     if not class_path:
         logger.warning(
-            "LLM_PROVIDER='%s' inconnu. Fournisseurs disponibles : %s. "
-            "Repli sur '%s'.",
+            "LLM_PROVIDER='%s' inconnu. Fournisseurs disponibles : %s. Repli sur '%s'.",
             provider_name,
             ", ".join(_PROVIDER_MAP.keys()),
             _DEFAULT_PROVIDER,
