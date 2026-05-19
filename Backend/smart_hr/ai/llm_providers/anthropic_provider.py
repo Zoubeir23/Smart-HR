@@ -33,9 +33,7 @@ class AnthropicProvider(BaseLLMProvider):
             return "ANTHROPIC_API_KEY non configurée."
         try:
             client = self._get_client()
-            messages = []
-            for message in history:
-                messages.append({"role": message["role"], "content": message["content"]})
+            messages = [{"role": m["role"], "content": m["content"]} for m in history]
             messages.append({"role": "user", "content": question})
 
             response = client.messages.create(

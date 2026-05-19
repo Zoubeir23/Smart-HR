@@ -1,251 +1,240 @@
 <div align="center">
 
-# 🚀 Smart-HR
+<img src="Frontend/public/logo-lockup.svg" alt="Smart-HR Logo" width="260" height="62" />
 
-**Système de Gestion des Ressources Humaines Intelligent**
+<br/>
+<br/>
 
-[![Django](https://img.shields.io/badge/Django-4.2-092E20?style=for-the-badge&logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
+<p>
+  <strong>Système de Gestion des Ressources Humaines Intelligent</strong><br/>
+  <em>Anticiper les départs · Automatiser le recrutement · Piloter vos talents</em>
+</p>
 
-**Une solution complète de gestion RH avec IA intégrée pour optimiser vos processus de recrutement, formation et gestion des talents**
+<br/>
 
-[📖 Documentation](#-documentation) • [🚀 Démarrage Rapide](#-démarrage-rapide) • [🎯 Fonctionnalités](#-fonctionnalités) • [🤖 IA Intégrée](#-ia-intégrée) • [📊 Architecture](#-architecture)
+<!-- Backend -->
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
+[![Django](https://img.shields.io/badge/Django-6.0.3-092E20?style=for-the-badge&logo=django&logoColor=white)](https://djangoproject.com)
+[![DRF](https://img.shields.io/badge/Django%20REST-3.16-A30000?style=for-the-badge&logo=django&logoColor=white)](https://django-rest-framework.org)
+[![Celery](https://img.shields.io/badge/Celery-5.0+-37814A?style=for-the-badge&logo=celery&logoColor=white)](https://docs.celeryq.dev)
+
+<!-- Frontend -->
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
+[![Vite](https://img.shields.io/badge/Vite-5-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev)
+
+<!-- Infra & AI -->
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?style=for-the-badge&logo=redis&logoColor=white)](https://redis.io)
+[![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://docker.com)
+[![Google Gemini](https://img.shields.io/badge/Gemini-2.5%20Flash-4285F4?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev)
+
+<!-- Status -->
+[![GitHub Actions](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/Zoubeir23/Smart-HR/actions)
+[![License](https://img.shields.io/badge/License-MIT-22C55E?style=for-the-badge)](LICENSE)
+
+<br/>
+
+[Démarrage rapide](#-démarrage-rapide) · [Fonctionnalités](#-fonctionnalités) · [Architecture](#-architecture) · [IA Intégrée](#-ia-intégrée) · [Déploiement](#-déploiement)
 
 </div>
 
 ---
 
-## 📋 Table des Matières
+## Présentation
 
-- [🎯 À Propos](#-à-propos)
-- [✨ Fonctionnalités](#-fonctionnalités)
-- [🏗️ Architecture](#-architecture)
-- [🚀 Démarrage Rapide](#-démarrage-rapide)
-- [⚙️ Configuration](#️-configuration)
-- [🤖 IA Intégrée](#-ia-intégrée)
-- [📚 Documentation](#-documentation)
-- [🛠️ Développement](#️-développement)
-- [🐛 Dépannage](#-dépannage)
-- [🤝 Contribution](#-contribution)
-- [📄 Licence](#-licence)
+**Smart-HR** est une plateforme SIRH nouvelle génération qui transforme la gestion RH d'une PME en outil proactif. Là où les SIRH classiques stockent passivement les données, Smart-HR les analyse en temps réel pour anticiper les démissions, automatiser le recrutement et assister les équipes RH avec un chatbot IA contextuel.
+
+### Ce que Smart-HR fait concrètement
+
+- **Prédit le churn** — Un modèle Random Forest entraîné sur 1 470 employés (dataset IBM) calcule un score de risque de départ 0–100 % avec explication de la cause principale
+- **Analyse les CVs automatiquement** — Gemini 2.5 Flash extrait compétences, expériences et calcule un score de matching sémantique face à l'offre d'emploi
+- **Conduit des entretiens vocaux** — Intégration Vapi (WebRTC) pour des sessions d'entretien IA avec feedback structuré en fin d'appel
+- **Assiste les RH via chatbot** — Agent conversationnel multi-LLM (Gemini, OpenAI, Anthropic, Grok) avec actions directes sur la base de données
+- **Gère l'ensemble du cycle RH** — Congés, présences, paie, documents, formations, tâches
 
 ---
 
-## 🎯 À Propos
+## Fonctionnalités
 
-**Smart-HR** est une plateforme de gestion des ressources humaines nouvelle génération qui combine les fonctionnalités RH traditionnelles avec l'intelligence artificielle pour offrir une expérience utilisateur exceptionnelle.
+### Gestion du Personnel
 
-### 🎯 Objectifs Principaux
+| Module | Fonctionnalités |
+|--------|----------------|
+| **Profils Employés** | Informations complètes, contrat, salaire, manager, historique d'évaluations |
+| **Congés** | Demande → Validation RH, suivi des soldes, calendrier partagé |
+| **Présences** | Pointage quotidien, rapports mensuels |
+| **Paie** | Historique salaires, fiches de paie |
+| **Documents** | Upload sécurisé, contrats, attestations (par rôle) |
+| **Formations & Réunions** | Catalogue, planification, intégration Zoom |
+| **Tâches** | Kanban (À faire → En cours → En revue → Terminée) |
 
-- ✅ **Centraliser** toutes les données RH en un seul endroit
-- ✅ **Automatiser** les processus répétitifs
-- ✅ **Optimiser** le recrutement avec l'IA
-- ✅ **Améliorer** l'expérience employé
-- ✅ **Faciliter** la prise de décision avec des analytics avancés
+### Recrutement
 
----
+| Module | Fonctionnalités |
+|--------|----------------|
+| **Offres d'Emploi** | Création/publication par le RH, listing public pour candidats |
+| **Candidatures** | Upload CV (PDF), formulaire de postulation |
+| **Analyse IA** | Score de matching sémantique Gemini (0–100), extraction automatique des compétences |
+| **Filtrage** | Seuil de score configurable, tri par score décroissant |
+| **Statuts** | Workflow en attente → entretien → accepté/refusé |
 
-## ✨ Fonctionnalités
+### Intelligence Artificielle
 
-### 👥 Gestion des Employés
+| Fonctionnalité | Technologie | Description |
+|----------------|-------------|-------------|
+| **Prédiction Churn** | Random Forest (scikit-learn) | Score de risque de départ + explication SHAP |
+| **Analyse CV** | Gemini 2.5 Flash | Matching sémantique CV ↔ fiche de poste |
+| **Recruteur IA Vocal** | Vapi WebRTC + Gemini | Entretien vocal IA avec feedback structuré |
+| **Chatbot RH** | Multi-LLM (Gemini / OpenAI / Anthropic / Grok) | Assistant contextuel avec actions (chercher employé, créer congé...) |
+| **Ré-entraînement Auto** | Celery Beat (hebdomadaire) | Le modèle churn se ré-entraîne automatiquement chaque semaine |
 
-| Fonctionnalité | Description |
-|----------------|-------------|
-| 📋 **Profils Complets** | Gestion complète des informations personnelles et professionnelles |
-| 📊 **Organigramme** | Visualisation interactive de la structure organisationnelle |
-| 📈 **Évolution de Carrière** | Suivi des promotions, changements de poste et historique |
-| 📁 **Documents** | Gestion sécurisée des documents employés |
+### Sécurité & Authentification
 
-### 🏖️ Gestion des Congés
-
-| Fonctionnalité | Description |
-|----------------|-------------|
-| 📅 **Demandes en Ligne** | Soumission et suivi des demandes de congés |
-| ✅ **Validation Workflow** | Processus d'approbation multi-niveaux |
-| 📊 **Calendrier Partagé** | Vue d'ensemble des congés de l'équipe |
-| 📈 **Analytics** | Statistiques et tendances des absences |
-
-### 💰 Gestion de la Paie
-
-| Fonctionnalité | Description |
-|----------------|-------------|
-| 💵 **Fiches de Paie** | Génération automatique des bulletins de salaire |
-| 📊 **Déclarations** | Gestion des déclarations fiscales et sociales |
-| 💳 **Avantages** | Suivi des avantages et primes |
-| 📈 **Historique** | Archivage complet de l'historique salarial |
-
-### 🎓 Formation & Développement
-
-| Fonctionnalité | Description |
-|----------------|-------------|
-| 📚 **Catalogue de Formations** | Gestion des programmes de formation |
-| 📊 **Suivi des Compétences** | Cartographie des compétences de l'équipe |
-| 🎯 **Plans de Développement** - Plans personnalisés pour chaque employé |
-| 📈 **Analytics** | Mesure de l'efficacité des formations |
-
-### 📢 Recrutement
-
-| Fonctionnalité | Description |
-|----------------|-------------|
-| 📝 **Offres d'Emploi** | Création et publication des annonces |
-| 🤖 **IA Screening** | Filtrage automatique des candidatures avec l'IA |
-| 📊 **Tableau de Bord** - Suivi en temps réel du pipeline de recrutement |
-| 📧 **Communication** | Gestion centralisée des communications avec les candidats |
-
-### 🏢 Présence & Pointage
-
-| Fonctionnalité | Description |
-|----------------|-------------|
-| ⏰ **Pointage** | Enregistrement des heures de travail |
-| 📍 **Géolocalisation** - Vérification de la présence |
-| 📊 **Rapports** - Génération de rapports détaillés |
-| 🔔 **Alertes** - Notifications d'anomalies |
-
-### 🤖 IA Intégrée
-
-| Fonctionnalité | Description |
-|----------------|-------------|
-| 🎯 **Recrutement Intelligent** | Matching automatique candidats-postes |
-| 💬 **Chatbot RH** | Assistant virtuel pour les questions RH |
-| 📊 **Prédictions** | Analyse prédictive du turnover |
-| 🔍 **Analyse de Sentiment** - Évaluation du climat social |
+- JWT (access 30 min, refresh 7 jours)
+- Argon2 (hachage des mots de passe)
+- OTP email 6 chiffres (brute-force : verrouillage 15 min après 5 tentatives)
+- RBAC : 4 rôles (Admin, RH, Employé, Candidat)
+- Logs d'audit (`AuditLog`) pour toutes les actions critiques
+- Export RGPD des données personnelles (endpoint dédié)
 
 ---
 
-## 🏗️ Architecture
-
-### 📊 Vue d'Ensemble
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                        Frontend                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   React      │  │  TypeScript  │  │   Tailwind   │      │
-│  │   18.x       │  │    5.x       │  │     CSS      │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                    ┌───────┴───────┐
-                    │   REST API    │
-                    └───────┬───────┘
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│                        Backend                               │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Django     │  │  PostgreSQL  │  │     Redis     │      │
-│  │   4.2        │  │    15.x      │  │   (Cache)    │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
-                            │
-                    ┌───────┴───────┐
-                    │  AI Services  │
-                    └───────┬───────┘
-                            │
-┌─────────────────────────────────────────────────────────────┐
-│                     AI & ML Services                          │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   OpenAI     │  │  LangChain   │  │   Scikit-    │      │
-│  │   GPT-4      │  │    Agents    │  │    Learn     │      │
-│  └──────────────┘  └──────────────┘  └──────────────┘      │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│              Frontend  React 18 + TypeScript + Vite       │
+│  Pages · Composants · Services Axios · React Query        │
+└────────────────────────┬─────────────────────────────────┘
+                         │  REST API (JWT)
+┌────────────────────────▼─────────────────────────────────┐
+│              Backend  Django 6 + DRF                      │
+│  users · personnel · recruitment · leaves · ai · ai_engine│
+│  Celery Workers  │  Celery Beat (cron hebdo)              │
+└──────┬───────────┴──────────────────────┬────────────────┘
+       │                                  │
+┌──────▼───────┐              ┌───────────▼──────────────┐
+│  PostgreSQL  │              │  Redis (cache + Celery)  │
+└──────────────┘              └──────────────────────────┘
+                                          │
+              ┌───────────────────────────▼───────────────┐
+              │  IA externe                                │
+              │  Gemini 2.5 Flash · OpenAI · Anthropic     │
+              │  Grok · Vapi (WebRTC voice)                │
+              └───────────────────────────────────────────┘
 ```
 
-### 🗂️ Structure du Projet
+### Structure du Projet
 
 ```
 Smart-HR/
-├── Backend/                    # Django Backend
+├── Backend/
+│   ├── config/                 # Settings Django (base / local / production)
+│   │   ├── settings/
+│   │   │   ├── base.py
+│   │   │   ├── local.py
+│   │   │   └── production.py
+│   │   └── urls.py
+│   ├── smart_hr/
+│   │   ├── users/              # Auth JWT, OTP, RBAC
+│   │   ├── personnel/          # Employés, départements, postes
+│   │   ├── recruitment/        # Offres d'emploi, candidatures, analyse CV
+│   │   ├── leaves/             # Demandes et validation de congés
+│   │   ├── attendance/         # Pointage et présences
+│   │   ├── payroll/            # Salaires et fiches de paie
+│   │   ├── documents/          # Gestion documentaire
+│   │   ├── training/           # Formations et réunions
+│   │   ├── tasks/              # Gestion des tâches (Kanban)
+│   │   ├── ai/                 # Chatbot multi-LLM + actions RH
+│   │   ├── ai_engine/          # Prédiction churn (Random Forest)
+│   │   └── core/               # Modèles partagés (AuditLog)
+│   ├── requirements/
+│   │   ├── base.txt
+│   │   ├── local.txt
+│   │   └── production.txt
+│   └── Dockerfile
+│
+├── Frontend/
 │   ├── src/
-│   │   ├── ai_agents/         # Agents IA (recrutement, voice)
-│   │   ├── ai_engine/         # Moteur IA & ML
-│   │   ├── utilisateur/       # Gestion des utilisateurs
-│   │   ├── personnel/         # Gestion des employés
-│   │   ├── conge/             # Gestion des congés
-│   │   ├── paiement/          # Gestion de la paie
-│   │   ├── formation/         # Formation & développement
-│   │   ├── recruitment/       # Recrutement
-│   │   ├── presence/          # Présence & pointage
-│   │   └── document/          # Gestion des documents
-│   └── requirements.txt       # Dépendances Python
+│   │   ├── pages/              # Toutes les pages (dashboard, recrutement, IA...)
+│   │   ├── components/         # Composants réutilisables
+│   │   ├── services/           # Couche Axios (authService, recruitmentService...)
+│   │   ├── hooks/              # Custom React hooks
+│   │   ├── lib/                # Utilitaires et helpers
+│   │   └── types/              # Types TypeScript partagés
+│   ├── public/
+│   │   ├── logo.svg            # Logo icône seul
+│   │   └── logo-lockup.svg     # Logo + texte
+│   └── Dockerfile
 │
-├── Frontend/                   # React Frontend
-│   ├── src/
-│   │   ├── components/        # Composants réutilisables
-│   │   ├── pages/             # Pages de l'application
-│   │   ├── services/          # Services API
-│   │   ├── hooks/             # Custom React hooks
-│   │   └── types/             # Types TypeScript
-│   └── package.json           # Dépendances Node.js
-│
-├── Docs/                       # Documentation
-│   ├── Audit/                 # Rapports d'audit
-│   ├── Deployment/            # Guides de déploiement
-│   ├── Presentation/          # Présentations
-│   ├── Security/              # Documentation de sécurité
-│   └── Documentation/          # Documentation générale
-│
-├── nginx/                      # Configuration Nginx
-├── docker-compose.yml          # Docker Compose
-├── Dockerfile.backend         # Docker Backend
-└── Dockerfile.frontend        # Docker Frontend
+├── nginx/                       # Configuration reverse proxy
+├── docker-compose.yml
+└── .github/workflows/           # CI/CD GitHub Actions
 ```
 
 ---
 
-## 🚀 Démarrage Rapide
+## Démarrage Rapide
 
-### 📋 Prérequis
+### Prérequis
 
-- [x] **Python** 3.10+
-- [x] **Node.js** 18+
-- [x] **PostgreSQL** 15+
-- [x] **Docker** (optionnel)
-- [x] **Git**
+- Python 3.13
+- Node.js 18+
+- PostgreSQL 15+
+- Redis 7+
+- Docker (optionnel, recommandé)
 
-### 🔧 Installation
-
-#### 1. Cloner le Dépôt
+### Avec Docker (recommandé)
 
 ```bash
 git clone https://github.com/Zoubeir23/Smart-HR.git
 cd Smart-HR
+
+# Copier et configurer les variables d'environnement
+cp Backend/.envs/.local/.django.example Backend/.envs/.local/.django
+cp Frontend/.env.example Frontend/.env
+# Éditer les fichiers .env avec vos clés API
+
+# Lancer tous les services
+docker compose up -d
+
+# Initialiser la base de données
+docker compose exec django python manage.py migrate
+docker compose exec django python manage.py seed_demo_data
+
+# L'application est disponible sur http://localhost:8080
 ```
 
-#### 2. Backend (Django)
+### Installation Manuelle
+
+#### Backend
 
 ```bash
 cd Backend
 
-# Créer l'environnement virtuel
-python -m venv venv
-
-# Activer l'environnement (Windows)
-venv\Scripts\activate
-
-# Activer l'environnement (Linux/Mac)
-source venv/bin/activate
+# Créer l'environnement virtuel (uv recommandé)
+pip install uv
+uv venv && source .venv/bin/activate
 
 # Installer les dépendances
-pip install -r requirements.txt
+uv pip install -r requirements/local.txt
 
-# Configurer la base de données
-cd src
+# Variables d'environnement
+cp .envs/.local/.django.example .envs/.local/.django
+# Éditer le fichier avec vos paramètres
+
+# Base de données
 python manage.py migrate
-
-# Initialiser les données de démonstration
-python manage.py seed
+python manage.py seed_demo_data
 
 # Lancer le serveur
 python manage.py runserver
+# API disponible sur http://localhost:8000/api/v1/
 ```
 
-L'API sera disponible sur [`http://localhost:8000/api`](http://localhost:8000/api)
-
-#### 3. Frontend (React)
+#### Frontend
 
 ```bash
 cd Frontend
@@ -253,305 +242,223 @@ cd Frontend
 # Installer les dépendances
 npm install
 
-# Configurer les variables d'environnement
+# Variables d'environnement
 cp .env.example .env
-# Éditer .env avec vos configurations
+# Éditer .env : VITE_API_URL=http://localhost:8000
 
 # Lancer le serveur de développement
 npm run dev
+# Interface disponible sur http://localhost:5173
 ```
 
-L'interface sera disponible sur [`http://localhost:8080`](http://localhost:8080)
-
-#### 4. Avec Docker (Optionnel)
+#### Workers Celery (pour ré-entraînement churn, tâches async)
 
 ```bash
-# Lancer tous les services
-docker-compose up -d
+cd Backend
+# Worker
+celery -A config.celery_app worker --loglevel=info
 
-# Voir les logs
-docker-compose logs -f
-
-# Arrêter les services
-docker-compose down
+# Scheduler (Celery Beat)
+celery -A config.celery_app beat --loglevel=info
 ```
 
-### 🔑 Comptes de Démonstration
+### Comptes de Démonstration
 
-| Rôle | Email | Mot de passe |
-|------|-------|---------------|
-| **Admin** | `admin@smarthr.com` | `admin123` |
-| **RH** | `rh@smarthr.com` | `rh123` |
-| **Employé** | `employee@smarthr.com` | `employee123` |
-| **Candidat** | `candidate@smarthr.com` | `candidate123` |
+| Rôle | Email | Mot de passe | Accès |
+|------|-------|-------------|-------|
+| **Admin** | `admin@smarthr.com` | `admin123` | Tout + gestion utilisateurs |
+| **RH** | `rh@smarthr.com` | `rh123` | Dashboard RH, IA, recrutement, congés |
+| **Employé** | `employee@smarthr.com` | `employee123` | Profil, congés, tâches |
+| **Candidat** | `candidate@smarthr.com` | `candidate123` | Offres d'emploi, postuler |
 
 ---
 
-## ⚙️ Configuration
+## IA Intégrée
 
-### 🔐 Variables d'Environnement
+### Prédiction de Churn (Machine Learning)
 
-#### Frontend (`.env`)
+Le modèle Random Forest est entraîné sur le dataset IBM HR Analytics (1 470 employés, 35 features). Il prédit la probabilité de départ d'un employé avec un score 0–100 % et affiche la cause principale identifiée.
 
-```env
-VITE_API_URL=http://localhost:8000/api
-VITE_APP_NAME=Smart-HR
-VITE_APP_VERSION=1.0.0
+```bash
+# Ré-entraîner manuellement le modèle
+python manage.py train_churn_model
+
+# Ou déclencher via l'API (RH/Admin uniquement)
+POST /api/v1/ai-engine/retrain/
 ```
 
-#### Backend (`.env`)
+Le ré-entraînement automatique s'exécute chaque semaine via Celery Beat (configurable dans `CELERY_BEAT_SCHEDULE`).
+
+### Analyse de CV (Gemini 2.5 Flash)
+
+Lors d'une candidature, Gemini analyse le CV en PDF et génère un score de matching sémantique (0–100) par rapport à la description du poste. Le score est stocké sur le modèle `Application` et filtrable depuis le dashboard RH.
+
+### Recruteur IA Vocal (Vapi)
+
+La page `/ai/recruteur` intègre le SDK Vapi WebRTC pour conduire des entretiens vocaux IA en temps réel. Un feedback structuré (points forts, points faibles, recommandation) est généré automatiquement à la fin de chaque session.
+
+Configuration requise :
+```env
+VITE_VAPI_PUBLIC_KEY=votre_cle_publique_vapi
+```
+
+### Chatbot RH Multi-LLM
+
+L'assistant conversationnel supporte 4 fournisseurs de LLM configurables :
+
+| Fournisseur | Modèle par défaut | Variable d'env |
+|-------------|------------------|----------------|
+| **Google Gemini** (défaut) | `gemini-2.5-flash` | `GEMINI_API_KEY` |
+| **OpenAI** | `gpt-4o-mini` | `OPENAI_API_KEY` |
+| **Anthropic** | `claude-3-5-haiku` | `ANTHROPIC_API_KEY` |
+| **xAI Grok** | `grok-3-mini` | `GROK_API_KEY` |
+
+Le chatbot détecte la confusion de l'utilisateur (2 réponses consécutives hors-contexte) et propose automatiquement une escalade vers un RH humain.
+
+---
+
+## Déploiement
+
+### Production avec Dokploy (VPS)
+
+Le projet est déployé sur VPS avec Dokploy comme orchestrateur Docker. La configuration complète est disponible dans `Docs/`.
+
+```bash
+# Variables d'environnement de production critiques
+DATABASE_URL=postgres://...
+REDIS_URL=redis://...
+SECRET_KEY=...
+DJANGO_SETTINGS_MODULE=config.settings.production
+
+# IA
+GEMINI_API_KEY=...
+VITE_VAPI_PUBLIC_KEY=...
+
+# Email (SMTP Gmail)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=...
+EMAIL_HOST_PASSWORD=...  # App password Gmail
+```
+
+### CI/CD GitHub Actions
+
+Le pipeline CI/CD (`.github/workflows/`) se déclenche sur chaque push vers `main` :
+
+1. Tests Django (`pytest`)
+2. Build et push de l'image Docker
+3. Déploiement automatique sur le VPS
+
+### Nginx
+
+Le fichier `nginx/nginx.conf` sert de reverse proxy :
+- `/api/` → Django (port 8000)
+- `/` → Frontend React (port 80)
+- Compression gzip activée
+- Headers de sécurité configurés
+
+---
+
+## Variables d'Environnement
+
+### Backend (`Backend/.envs/.local/.django`)
 
 ```env
-# Database
-DB_NAME=smarthr
-DB_USER=postgres
-DB_PASSWORD=your_password
-DB_HOST=localhost
-DB_PORT=5432
-
 # Django
 SECRET_KEY=your-secret-key
 DEBUG=True
 ALLOWED_HOSTS=localhost,127.0.0.1
 
-# AI Services
-OPENAI_API_KEY=your-openai-api-key
+# Base de données
+DATABASE_URL=postgres://postgres:password@localhost:5432/smarthr
+
+# Cache & Celery
+REDIS_URL=redis://localhost:6379/0
+
+# Email (OTP)
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=your@gmail.com
+EMAIL_HOST_PASSWORD=your_app_password
+
+# IA
+GEMINI_API_KEY=...
+OPENAI_API_KEY=...
+ANTHROPIC_API_KEY=...
+GROK_API_KEY=...
 ```
 
-### 🗄️ Configuration de la Base de Données
+### Frontend (`Frontend/.env`)
 
-```python
-# Backend/src/gestion_taches/settings.py
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
-        'HOST': os.environ.get('DB_HOST'),
-        'PORT': os.environ.get('DB_PORT'),
-    }
-}
+```env
+VITE_API_URL=http://localhost:8000
+VITE_VAPI_PUBLIC_KEY=your_vapi_public_key
 ```
 
 ---
 
-## 🤖 IA Intégrée
-
-### 🎯 Agents IA
-
-Smart-HR intègre plusieurs agents IA pour automatiser et optimiser les processus RH :
-
-#### 1. Agent de Recrutement
-
-```python
-# Backend/src/ai_agents/recruitment_agent/services.py
-
-class RecruitmentAgent:
-    """
-    Agent IA pour le recrutement intelligent
-    - Analyse des CV
-    - Matching candidats-postes
-    - Scoring automatique
-    """
-```
-
-**Fonctionnalités :**
-- 📄 Analyse automatique des CV
-- 🎯 Matching intelligent avec les offres
-- 📊 Scoring des candidatures
-- 💬 Génération de questions d'entretien
-
-#### 2. Agent Vocal
-
-```python
-# Backend/src/ai_agents/voice_agent/services.py
-
-class VoiceAgent:
-    """
-    Agent IA pour le support vocal
-    - Réponses automatiques
-    - Gestion des appels
-    - Transcription en temps réel
-    """
-```
-
-**Fonctionnalités :**
-- 🎤 Reconnaissance vocale
-- 💬 Réponses automatiques
-- 📞 Gestion des appels
-- 📝 Transcription en temps réel
-
-### 🧴 Services IA
-
-| Service | Description | API |
-|---------|-------------|-----|
-| **OpenAI GPT-4** | Génération de texte, analyse | [OpenAI API](https://openai.com/api/) |
-| **LangChain** | Framework d'agents IA | [LangChain](https://langchain.com/) |
-| **Scikit-Learn** | Machine Learning | [Scikit-Learn](https://scikit-learn.org/) |
-
----
-
-## 📚 Documentation
-
-### 📖 Guides Disponibles
-
-| Guide | Description |
-|-------|-------------|
-| 🚀 [Démarrage Rapide](Docs/Deployment/QUICKSTART.md) | Guide d'installation rapide |
-| 📦 [Déploiement](Docs/Deployment/DEPLOYMENT_READY.md) | Guide de déploiement en production |
-| 🧪 [Tests](Docs/Deployment/GUIDE_TESTS_RAPIDES.md) | Guide de tests rapides |
-| 🔐 [Comptes Démo](Docs/COMPTES_DEMO.md) | Comptes de démonstration |
-| 📊 [Audit](Docs/Audit/AUDIT_FINAL_COMPLET.md) | Rapport d'audit complet |
-| 🎯 [Présentation](Docs/Presentation/PRESENTATION_FINALE.md) | Présentation du projet |
-| 🔒 [Sécurité](Docs/Security/SECURITY_INCIDENT.md) | Documentation de sécurité |
-
----
-
-## 🛠️ Développement
-
-### 🔨 Stack Technique
-
-#### Backend
-
-- **Framework** : Django 4.2
-- **Langage** : Python 3.10+
-- **Base de données** : PostgreSQL 15
-- **Cache** : Redis
-- **API** : Django REST Framework
-
-#### Frontend
-
-- **Framework** : React 18
-- **Langage** : TypeScript 5
-- **Styling** : Tailwind CSS
-- **Routing** : React Router
-- **State Management** : Zustand
-
-#### IA & ML
-
-- **LLM** : OpenAI GPT-4
-- **Agents** : LangChain
-- **ML** : Scikit-Learn
-- **NLP** : spaCy
-
-### 🧪 Tests
+## Tests
 
 ```bash
-# Backend
-cd Backend/src
-python manage.py test
+# Backend — tests unitaires et d'intégration
+cd Backend
+pytest
 
-# Frontend
+# Avec couverture
+pytest --cov=smart_hr --cov-report=term-missing
+
+# Frontend — type checking
 cd Frontend
-npm test
+npx tsc --noEmit
 
-# Tests avec couverture
-npm run test:coverage
-```
-
-### 📊 Linting & Formatting
-
-```bash
-# Backend
-pip install black flake8 pylint
-black .
-flake8 .
-pylint .
-
-# Frontend
+# Linting
 npm run lint
-npm run format
 ```
 
 ---
 
-## 🐛 Dépannage
+## Documentation
 
-### ❓ Problèmes Courants
-
-#### Problème : Erreur de connexion à la base de données
-
-**Solution :**
-```bash
-# Vérifier que PostgreSQL est en cours d'exécution
-pg_isready
-
-# Vérifier les credentials dans .env
-cat Backend/.env
-```
-
-#### Problème : Erreur de dépendances Node.js
-
-**Solution :**
-```bash
-cd Frontend
-rm -rf node_modules package-lock.json
-npm install
-```
-
-#### Problème : Erreur de migration Django
-
-**Solution :**
-```bash
-cd Backend/src
-python manage.py makemigrations
-python manage.py migrate
-```
-
-### 📞 Support
-
-Pour plus d'aide, consultez la [Documentation](#-documentation) ou ouvrez une [Issue](https://github.com/Zoubeir23/Smart-HR/issues).
+| Document | Description |
+|----------|-------------|
+| [Comptes Démo](Docs/COMPTES_DEMO.md) | Identifiants de démonstration |
+| [Guide Déploiement](Docs/Deployment/) | Instructions complètes VPS/Docker |
+| [Audit Sécurité](Docs/Audit/) | Rapport d'audit et checklist de sécurité |
+| [Rapport VPS](memoire-soutenence/vps/vpd.md) | Validation complète du déploiement production |
 
 ---
 
-## 🤝 Contribution
+## Contribution
 
-Les contributions sont les bienvenues ! Voici comment vous pouvez aider :
-
-### 📋 Processus de Contribution
-
-1. **Fork** le dépôt
-2. **Créez** une branche (`git checkout -b feature/AmazingFeature`)
-3. **Commit** vos changements (`git commit -m 'Add some AmazingFeature'`)
-4. **Push** vers la branche (`git push origin feature/AmazingFeature`)
-5. **Ouvrez** une Pull Request
-
-### 🎯 Guidelines
-
-- ✅ Suivez le style de code existant
-- ✅ Ajoutez des tests pour les nouvelles fonctionnalités
-- ✅ Mettez à jour la documentation
-- ✅ Utilisez des messages de commit clairs
+1. Forker le dépôt
+2. Créer une branche : `git checkout -b Feature/XXX-description`
+3. Commiter : `git commit -m "feat: description"`
+4. Pousser : `git push origin Feature/XXX-description`
+5. Ouvrir une Pull Request
 
 ---
 
-## 📄 Licence
+## Auteur
 
-Ce projet est sous licence MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+**Zoubeir Ibrahima Ba** — Projet de soutenance HESTAFRICA 2026
 
----
-
-## 👥 Auteurs
-
-- **Zoubeir** - *Développeur Principal* - [GitHub](https://github.com/Zoubeir23)
+[GitHub](https://github.com/Zoubeir23)
 
 ---
 
-## 🙏 Remerciements
+## Licence
 
-- [Django](https://www.djangoproject.com/) - Framework web Python
-- [React](https://reactjs.org/) - Bibliothèque JavaScript
-- [OpenAI](https://openai.com/) - API GPT-4
-- [LangChain](https://langchain.com/) - Framework d'agents IA
+MIT — voir [LICENSE](LICENSE)
 
 ---
 
 <div align="center">
 
-**⭐ Si vous aimez ce projet, n'oubliez pas de le star sur GitHub !**
+<img src="Frontend/public/logo.svg" alt="Smart-HR" width="40" height="40" />
 
-[🔝 Retour en haut](#-smart-hr)
+<br/>
+
+**Smart-HR** · SIRH Intelligent · HESTAFRICA 2026
 
 </div>

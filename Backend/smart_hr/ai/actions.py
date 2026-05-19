@@ -141,6 +141,25 @@ def execute_action(action_intent: str, user, params: dict) -> dict:
     return {"success": False, "error": f"Action '{action_intent}' non supportée."}
 
 
+def _parse_and_validate_leave_dates(
+    start_date_str: str | None,
+    end_date_str: str | None,
+) -> tuple[date | None, date | None, str | None]:
+    """Retourne (start, end, error) — error est None si les dates sont valides."""
+    if not start_date_str or not end_date_str:
+        return None, None, "dates_missing"
+    try:
+        start = date.fromisoformat(start_date_str)
+        end = date.fromisoformat(end_date_str)
+    except ValueError:
+        return None, None, "Format de date invalide. Utilisez JJ/MM/AAAA."
+    if end < start:
+        return None, None, "La date de fin est antérieure à la date de début."
+    if start < date.today():
+        return None, None, "La date de début est dans le passé."
+    return start, end, None
+
+
 def _execute_leave_request(user, params: dict) -> dict:
     """Crée une demande de congé via Django ORM."""
     from smart_hr.conge.models import LeaveRequest
@@ -154,23 +173,12 @@ def _execute_leave_request(user, params: dict) -> dict:
             "error": "Aucun profil employé trouvé pour votre compte. Contactez le service RH.",
         }
 
-    start_date_str = params.get("start_date")
-    end_date_str = params.get("end_date")
-
-    if not start_date_str or not end_date_str:
-        return {"success": False, "error": "dates_missing"}
-
-    try:
-        start = date.fromisoformat(start_date_str)
-        end = date.fromisoformat(end_date_str)
-    except ValueError:
-        return {"success": False, "error": "Format de date invalide. Utilisez JJ/MM/AAAA."}
-
-    if end < start:
-        return {"success": False, "error": "La date de fin est antérieure à la date de début."}
-
-    if start < date.today():
-        return {"success": False, "error": "La date de début est dans le passé."}
+    start, end, date_error = _parse_and_validate_leave_dates(
+        params.get("start_date"),
+        params.get("end_date"),
+    )
+    if date_error:
+        return {"success": False, "error": date_error}
 
     overlap_exists = LeaveRequest.objects.filter(
         employee=employee,
@@ -207,6 +215,6 @@ def _execute_leave_request(user, params: dict) -> dict:
             },
         }
 
-    except Exception as exc:
-        logger.exception("Erreur création congé via chatbot pour %s : %s", user.email, exc)
+    except Exception:
+        logger.exception("Erreur création congé via chatbot pour %s", user.email)
         return {"success": False, "error": "Erreur interne. Veuillez réessayer."}

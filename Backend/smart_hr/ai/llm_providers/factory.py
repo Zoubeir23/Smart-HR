@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import logging
 import os
+from typing import TYPE_CHECKING
 
-from smart_hr.ai.llm_providers.base import BaseLLMProvider
+if TYPE_CHECKING:
+    from smart_hr.ai.llm_providers.base import BaseLLMProvider
 
 logger = logging.getLogger(__name__)
 
