@@ -42,6 +42,9 @@ import ChurnDashboardPage from "@/pages/ai-insights/ChurnDashboardPage";
 import AIChatPage from "@/pages/ai/AIChatPage";
 import RecruteurIAPage from "@/pages/ai/RecruteurIAPage";
 
+// Calendrier
+import CalendarPage from "@/pages/calendar/CalendarPage";
+
 // Parametres
 import SettingsPage from "@/pages/settings/SettingsPage";
 import SecurityPage from "@/pages/settings/SecurityPage";
@@ -190,6 +193,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
                     <TrainingPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/calendar"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
+                    <CalendarPage />
                   </ProtectedRoute>
                 }
               />

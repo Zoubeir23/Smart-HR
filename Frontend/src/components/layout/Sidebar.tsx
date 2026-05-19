@@ -47,6 +47,12 @@ const navigationGroups: NavGroup[] = [
         icon: LayoutDashboard,
         roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'],
       },
+      {
+        title: 'Calendrier',
+        href: '/calendar',
+        icon: Calendar,
+        roles: ['ADMIN', 'RH', 'EMPLOYEE'],
+      },
     ],
   },
   {
