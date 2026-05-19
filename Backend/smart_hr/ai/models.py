@@ -80,6 +80,7 @@ class InterviewSessionFeedback(TimeStampedModel):
         verbose_name = "Feedback entretien"
         verbose_name_plural = "Feedbacks entretien"
         ordering = ["-created_at"]
+        unique_together = [("session", "candidate_email")]
 
     def __str__(self) -> str:
         return f"{self.candidate_name} — {self.session.job_position}"
