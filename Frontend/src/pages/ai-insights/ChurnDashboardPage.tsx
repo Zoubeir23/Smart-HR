@@ -266,22 +266,16 @@ function RiskDistribution({ low, medium, high, total }: { low: number; medium: n
             </motion.div>
           )}
         </div>
-        <div className="mt-3 flex">
-          {pLow > 0 && (
-            <div style={{ width: `${pLow}%` }} className="text-center">
-              <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">0–39%</span>
-            </div>
-          )}
-          {pMed > 0 && (
-            <div style={{ width: `${pMed}%` }} className="text-center">
-              <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">40–69%</span>
-            </div>
-          )}
-          {pHigh > 0 && (
-            <div style={{ width: `${pHigh}%` }} className="text-center">
-              <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400">70–100%</span>
-            </div>
-          )}
+        <div className="mt-3 grid grid-cols-3 text-center">
+          <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 text-left">
+            Faible 0–39%
+          </span>
+          <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400">
+            Modéré 40–69%
+          </span>
+          <span className="text-[10px] font-medium text-rose-600 dark:text-rose-400 text-right">
+            Élevé 70–100%
+          </span>
         </div>
       </Card>
     </motion.div>

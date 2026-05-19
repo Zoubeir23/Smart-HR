@@ -52,6 +52,31 @@ const LeaveListPage = () => {
   });
 
   const queryClient = useQueryClient();
+  const todayISO = new Date().toISOString().split('T')[0];
+
+  const validateLeaveForm = (): boolean => {
+    if (!newLeave.leave_type) {
+      toast({ title: 'Champ requis', description: 'Veuillez sélectionner un type de congé.', variant: 'destructive' });
+      return false;
+    }
+    if (!newLeave.start_date) {
+      toast({ title: 'Champ requis', description: 'Veuillez saisir une date de début.', variant: 'destructive' });
+      return false;
+    }
+    if (newLeave.start_date < todayISO) {
+      toast({ title: 'Date invalide', description: 'La date de début ne peut pas être dans le passé.', variant: 'destructive' });
+      return false;
+    }
+    if (!newLeave.end_date) {
+      toast({ title: 'Champ requis', description: 'Veuillez saisir une date de fin.', variant: 'destructive' });
+      return false;
+    }
+    if (newLeave.end_date < newLeave.start_date) {
+      toast({ title: 'Date invalide', description: 'La date de fin doit être égale ou postérieure à la date de début.', variant: 'destructive' });
+      return false;
+    }
+    return true;
+  };
 
   const { data: leavesData, isLoading } = useQuery({
     queryKey: ['leaves'],
@@ -111,23 +136,9 @@ const LeaveListPage = () => {
   };
 
   const getStatusBadge = (status: LeaveStatus) => {
-    const variants = {
-      pending: 'bg-warning text-warning-foreground',
-      approved: 'bg-success text-success-foreground',
-      rejected: 'bg-destructive text-destructive-foreground',
-    };
-
-    const labels = {
-      pending: 'En attente',
-      approved: 'Approuvé',
-      rejected: 'Rejeté',
-    };
-
-    return (
-      <Badge className={variants[status]}>
-        {labels[status]}
-      </Badge>
-    );
+    if (status === 'approved') return <Badge variant="success">Approuvé</Badge>;
+    if (status === 'rejected') return <Badge variant="inactive">Rejeté</Badge>;
+    return <Badge variant="warning">En attente</Badge>;
   };
 
   return (
@@ -184,8 +195,9 @@ const LeaveListPage = () => {
                   <Input
                     id="start-date"
                     type="date"
+                    min={todayISO}
                     value={newLeave.start_date}
-                    onChange={(e) => setNewLeave({ ...newLeave, start_date: e.target.value })}
+                    onChange={(e) => setNewLeave({ ...newLeave, start_date: e.target.value, end_date: '' })}
                   />
                 </div>
                 <div className="grid gap-2">
@@ -193,6 +205,7 @@ const LeaveListPage = () => {
                   <Input
                     id="end-date"
                     type="date"
+                    min={newLeave.start_date || todayISO}
                     value={newLeave.end_date}
                     onChange={(e) => setNewLeave({ ...newLeave, end_date: e.target.value })}
                   />
@@ -217,8 +230,8 @@ const LeaveListPage = () => {
                 </Button>
                 <Button
                   className="bg-primary text-primary-foreground"
-                  onClick={() => createLeaveMutation.mutate(newLeave)}
-                  disabled={createLeaveMutation.isPending || !newLeave.leave_type || !newLeave.start_date || !newLeave.end_date}
+                  onClick={() => { if (validateLeaveForm()) createLeaveMutation.mutate(newLeave); }}
+                  disabled={createLeaveMutation.isPending}
                 >
                   {createLeaveMutation.isPending ? 'Soumission...' : 'Soumettre'}
                 </Button>

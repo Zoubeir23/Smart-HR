@@ -221,12 +221,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             </div>
           )}
 
-          {filteredGroups.map((group) => (
+          {filteredGroups.map((group, groupIndex) => (
             <div key={group.title} className="space-y-1">
               {!collapsed && (
-                <h3 className="mb-2 px-2 text-[10px] font-bold uppercase tracking-widest text-sidebar-foreground/60">
-                  {group.title}
-                </h3>
+                <div className={cn('flex items-center gap-2 px-2 mb-1.5', groupIndex > 0 && 'pt-1')}>
+                  <h3 className="text-[9.5px] font-bold uppercase tracking-[0.12em] text-sidebar-foreground/40 shrink-0">
+                    {group.title}
+                  </h3>
+                  <div className="h-px flex-1 bg-sidebar-border/40" />
+                </div>
               )}
               <div className="space-y-0.5">
                 {group.items.map((item) => {
@@ -237,13 +240,21 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                     <Link
                       to={item.href}
                       className={cn(
-                        'flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
+                        'group/item relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
+                        collapsed && 'justify-center px-2',
                         active
-                          ? 'bg-[#D62828] text-white shadow-[inset_4px_0_0_0_#a4161a,0_6px_14px_rgba(214,40,40,0.38)] hover:bg-[#c61f1f]'
-                          : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                          ? 'bg-gradient-to-r from-[#D62828] to-[#e63c3c] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
+                          : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       )}
                     >
-                      <Icon className="h-5 w-5 flex-shrink-0" />
+                      <div className={cn(
+                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all duration-150',
+                        active
+                          ? 'bg-white/15'
+                          : 'group-hover/item:bg-sidebar-accent-foreground/10'
+                      )}>
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                      </div>
                       <AnimatePresence mode="wait">
                         {!collapsed && (
                           <motion.span
@@ -262,6 +273,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                         <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
                           {item.badge}
                         </span>
+                      )}
+                      {active && !collapsed && (
+                        <motion.div
+                          layoutId="active-indicator"
+                          className="absolute right-2.5 h-1.5 w-1.5 rounded-full bg-white/70"
+                        />
                       )}
                     </Link>
                   );
@@ -298,38 +315,44 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       {/* Profil & Logout */}
       <div className="border-t border-sidebar-border p-3">
         {user && (
-          <div
-            className={cn(
-              'mb-2 flex items-center gap-2 rounded-lg p-2',
-              collapsed ? 'justify-center' : 'bg-sidebar-accent/60'
-            )}
-          >
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sm font-medium text-sidebar-primary-foreground">
-              {user.first_name?.[0]}
-              {user.last_name?.[0]}
-            </div>
-            {!collapsed && (
+          collapsed ? (
+            <Tooltip delayDuration={0}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="mb-2 flex w-full items-center justify-center rounded-lg p-1.5 transition-colors hover:bg-sidebar-accent/60"
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-sidebar-primary text-sm font-bold text-sidebar-primary-foreground ring-2 ring-sidebar-primary/20">
+                    {user.first_name?.[0]}{user.last_name?.[0]}
+                  </div>
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                {user.first_name} {user.last_name} — {user.role}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => navigate('/profile')}
+              className="mb-2 flex w-full items-center gap-2.5 rounded-lg bg-sidebar-accent/50 p-2.5 text-left transition-all hover:bg-sidebar-accent hover:shadow-sm"
+            >
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#D62828] to-[#e63c3c] text-sm font-bold text-white shadow-sm">
+                {user.first_name?.[0]}{user.last_name?.[0]}
+              </div>
               <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-white/90">
+                <p className="truncate text-sm font-semibold text-sidebar-accent-foreground">
                   {user.first_name} {user.last_name}
                 </p>
-                <p className="truncate text-xs text-sidebar-foreground">{user.role}</p>
+                <p className="truncate text-[11px] text-sidebar-foreground/50">{user.role}</p>
               </div>
-            )}
-          </div>
+              <User className="h-3.5 w-3.5 shrink-0 text-sidebar-foreground/30" />
+            </button>
+          )
         )}
 
         <div className="flex items-center gap-1">
           {!collapsed && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="flex-1 justify-start gap-2"
-              onClick={() => navigate('/profile')}
-            >
-              <User className="h-4 w-4" />
-              Mon profil
-            </Button>
+            <div className="flex-1" />
           )}
           {collapsed ? (
             <Tooltip delayDuration={0}>
@@ -338,9 +361,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                   variant="ghost"
                   size="icon"
                   onClick={logout}
-                  className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className="h-9 w-9 text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive"
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="right">Déconnexion</TooltipContent>
@@ -348,11 +371,12 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           ) : (
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={logout}
-              className="h-9 w-9 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+              className="w-full gap-2 justify-start text-sidebar-foreground/50 hover:bg-destructive/10 hover:text-destructive"
             >
-              <LogOut className="h-5 w-5" />
+              <LogOut className="h-4 w-4" />
+              Déconnexion
             </Button>
           )}
         </div>
