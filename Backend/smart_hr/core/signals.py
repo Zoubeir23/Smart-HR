@@ -34,9 +34,7 @@ def _get_rh_and_admin_users():
     from django.contrib.auth import get_user_model
 
     User = get_user_model()
-    return list(
-        User.objects.filter(role__in=["ADMIN", "RH"], is_active=True).only("id", "email")
-    )
+    return list(User.objects.filter(role__in=["ADMIN", "RH"], is_active=True).only("id", "email"))
 
 
 @receiver(post_save, sender="conge.LeaveRequest")
