@@ -63,6 +63,8 @@ urlpatterns = [
     # RGPD — Droit à l'oubli et portabilité
     path("api/v1/auth/account/delete/", AccountDeleteView.as_view(), name="account-delete"),
     path("api/v1/auth/account/export/", PersonalDataExportView.as_view(), name="account-export"),
+    # API v1 — Core (notifications)
+    path("api/v1/", include("smart_hr.core.urls")),
     # API v1 — Modules métier
     path("api/v1/personnel/", include("smart_hr.personnel.urls")),
     path("api/v1/conge/", include("smart_hr.conge.urls")),

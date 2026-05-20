@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 
 class TimeStampedModel(models.Model):
@@ -83,3 +84,39 @@ def log_audit_action(
         import logging
 
         logging.getLogger(__name__).exception("Échec écriture audit log")
+
+
+class Notification(TimeStampedModel):
+    """Notification in-app par destinataire, créée via signals Django."""
+
+    class NotificationType(models.TextChoices):
+        LEAVE_REQUEST = "leave_request", _("Demande de congé")
+        LEAVE_APPROVED = "leave_approved", _("Congé approuvé")
+        LEAVE_REJECTED = "leave_rejected", _("Congé refusé")
+        APPLICATION_RECEIVED = "application_received", _("Candidature reçue")
+        TASK_ASSIGNED = "task_assigned", _("Tâche assignée")
+        SYSTEM = "system", _("Système")
+
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    notification_type = models.CharField(
+        max_length=30,
+        choices=NotificationType.choices,
+        default=NotificationType.SYSTEM,
+    )
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    is_read = models.BooleanField(default=False)
+    target_url = models.CharField(max_length=255, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Notification"
+        verbose_name_plural = "Notifications"
+
+    def __str__(self) -> str:
+        status = "lu" if self.is_read else "non lu"
+        return f"[{status}] {self.recipient.email} — {self.title}"
