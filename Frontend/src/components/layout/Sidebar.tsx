@@ -94,6 +94,7 @@ const navigationGroups: NavGroup[] = [
     items: [
       { title: 'Paramètres', href: '/settings', icon: Settings, roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'] },
       { title: 'Sécurité', href: '/security', icon: Shield, roles: ['ADMIN'] },
+      { title: 'Gestion utilisateurs', href: '/admin/users', icon: Users, roles: ['ADMIN'] },
     ],
   },
 ];

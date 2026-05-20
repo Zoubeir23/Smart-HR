@@ -8,6 +8,7 @@ from django.views.generic import TemplateView
 
 from smart_hr.core.protected_media import ProtectedMediaView
 from smart_hr.users.views import AdminStatsView
+from smart_hr.users.views import AdminUserManagementView
 from smart_hr.users.views import EmailVerifiedLoginView
 from smart_hr.users.views.account import AccountDeleteView
 from smart_hr.users.views.account import PersonalDataExportView
@@ -50,6 +51,8 @@ urlpatterns = [
     path("api/v1/auth/", include("dj_rest_auth.urls")),
     path("api/v1/auth/registration/", include("dj_rest_auth.registration.urls")),
     path("api/v1/auth/admin/stats/", AdminStatsView.as_view(), name="admin-stats"),
+    path("api/v1/auth/admin/users/", AdminUserManagementView.as_view(), name="admin-users-list"),
+    path("api/v1/auth/admin/users/<int:user_id>/", AdminUserManagementView.as_view(), name="admin-users-detail"),
     path(
         "api/v1/auth/register/candidate/",
         CandidateRegisterView.as_view(),
