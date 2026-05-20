@@ -1,5 +1,5 @@
 const SITE_NAME = 'Smart-HR';
-const SITE_URL = import.meta.env.VITE_SITE_URL ?? 'https://smart-hr.app';
+const SITE_URL = import.meta.env.VITE_SITE_URL ?? 'https://smart-hr.tech';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 export interface PageSEOConfig {
@@ -10,6 +10,7 @@ export interface PageSEOConfig {
   ogImage?: string;
   ogType?: 'website' | 'article';
   noIndex?: boolean;
+  jsonLd?: Record<string, unknown>;
 }
 
 const d = (cfg: PageSEOConfig): PageSEOConfig => cfg;
@@ -17,14 +18,37 @@ const d = (cfg: PageSEOConfig): PageSEOConfig => cfg;
 export const SEO_PAGES: Record<string, PageSEOConfig> = {
   // ─── Public ────────────────────────────────────────────────────────────────
   '/': d({
-    title: `${SITE_NAME} | SIRH Intelligent — IA pour les RH`,
+    title: `SIRH Intelligent IA — ${SITE_NAME} | Gestion RH Prédictive`,
     description:
-      'Smart-HR, le SIRH nouvelle génération qui anticipe les démissions, automatise le recrutement et centralise la gestion RH. Essayez gratuitement.',
+      'Smart-HR : SIRH intelligent IA pour PME. Prédiction du turnover à 80%, analyse CV automatique et gestion RH centralisée. Déployez en 48h — essayez gratuitement.',
     ogTitle: 'Smart-HR — Votre SIRH Intelligent',
     ogDescription:
       'Prédiction du turnover par IA, matching CV automatique et gestion RH tout-en-un. Découvrez Smart-HR.',
     ogImage: DEFAULT_OG_IMAGE,
     ogType: 'website',
+    jsonLd: {
+      '@context': 'https://schema.org',
+      '@type': 'SoftwareApplication',
+      name: SITE_NAME,
+      applicationCategory: 'BusinessApplication',
+      operatingSystem: 'Web',
+      description: 'SIRH intelligent avec IA pour PME : prédiction du turnover, analyse CV automatique et gestion RH centralisée.',
+      url: SITE_URL,
+      offers: {
+        '@type': 'Offer',
+        price: '0',
+        priceCurrency: 'EUR',
+        description: 'Accès gratuit disponible',
+      },
+      featureList: [
+        'Prédiction du turnover par IA (80% de précision)',
+        'Analyse automatique de CV par NLP en moins de 3 secondes',
+        'Assistant IA conversationnel 24/7',
+        'Gestion des congés et des présences',
+        'Tableau de bord RH en temps réel',
+        'Gestion de la paie et des documents RH',
+      ],
+    },
   }),
 
   '/login': d({
@@ -62,7 +86,7 @@ export const SEO_PAGES: Record<string, PageSEOConfig> = {
     ogType: 'website',
   }),
 
-  '/apply': d({
+  '/jobs/:jobId/apply': d({
     title: `Postuler | ${SITE_NAME}`,
     description: "Soumettez votre candidature et votre CV. Notre IA analyse votre profil et vous met en avant.",
     noIndex: false,
@@ -251,6 +275,7 @@ export function getSEOForPath(pathname: string): PageSEOConfig {
   if (pathname.match(/^\/interview\/[^/]+$/)) return SEO_PAGES['/interview/:token'];
   if (pathname.match(/^\/interview\/[^/]+\/start$/)) return SEO_PAGES['/interview/:token/start'];
   if (pathname.match(/^\/interview\/[^/]+\/completed$/)) return SEO_PAGES['/interview/:token/completed'];
+  if (pathname.match(/^\/jobs\/[^/]+\/apply$/)) return SEO_PAGES['/jobs/:jobId/apply'];
   if (pathname.match(/^\/employees\/\d+/)) {
     return {
       title: `Profil employé | ${SITE_NAME}`,

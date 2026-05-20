@@ -1,14 +1,95 @@
+# Smart-HR — robots.txt
+# https://smart-hr.tech
+
+Sitemap: https://smart-hr.tech/sitemap.xml
+
+# ── Crawlers principaux ────────────────────────────────
 User-agent: Googlebot
 Allow: /
+Disallow: /dashboard
+Disallow: /employees
+Disallow: /departments
+Disallow: /leaves
+Disallow: /tasks
+Disallow: /attendance
+Disallow: /payroll
+Disallow: /documents
+Disallow: /training
+Disallow: /calendar
+Disallow: /applications
+Disallow: /my-applications
+Disallow: /ai-insights
+Disallow: /ai-chat
+Disallow: /recruteur-ia
+Disallow: /voice-assistant
+Disallow: /admin/
+Disallow: /profile
+Disallow: /settings
+Disallow: /security
+Disallow: /verify-email
+Disallow: /unauthorized
 
 User-agent: Bingbot
 Allow: /
+Disallow: /dashboard
+Disallow: /employees
+Disallow: /departments
+Disallow: /leaves
+Disallow: /tasks
+Disallow: /attendance
+Disallow: /payroll
+Disallow: /documents
+Disallow: /training
+Disallow: /calendar
+Disallow: /applications
+Disallow: /my-applications
+Disallow: /ai-insights
+Disallow: /ai-chat
+Disallow: /recruteur-ia
+Disallow: /voice-assistant
+Disallow: /admin/
+Disallow: /profile
+Disallow: /settings
+Disallow: /security
+Disallow: /verify-email
+Disallow: /unauthorized
 
+# ── Bots sociaux (preview uniquement) ─────────────────
 User-agent: Twitterbot
 Allow: /
+Allow: /jobs
 
 User-agent: facebookexternalhit
 Allow: /
+Allow: /jobs
 
+User-agent: LinkedInBot
+Allow: /
+Allow: /jobs
+
+# ── Tous les autres bots ───────────────────────────────
 User-agent: *
 Allow: /
+Allow: /jobs
+Disallow: /dashboard
+Disallow: /employees
+Disallow: /departments
+Disallow: /leaves
+Disallow: /tasks
+Disallow: /attendance
+Disallow: /payroll
+Disallow: /documents
+Disallow: /training
+Disallow: /calendar
+Disallow: /applications
+Disallow: /my-applications
+Disallow: /ai-insights
+Disallow: /ai-chat
+Disallow: /recruteur-ia
+Disallow: /voice-assistant
+Disallow: /admin/
+Disallow: /profile
+Disallow: /settings
+Disallow: /security
+Disallow: /verify-email
+Disallow: /unauthorized

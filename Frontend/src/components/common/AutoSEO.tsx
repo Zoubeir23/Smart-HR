@@ -16,6 +16,7 @@ export default function AutoSEO() {
       ogType={config.ogType}
       noIndex={config.noIndex}
       canonicalPath={config.noIndex ? undefined : pathname}
+      jsonLd={config.jsonLd}
     />
   );
 }

@@ -7,6 +7,7 @@ from django.views import defaults as default_views
 from django.views.generic import TemplateView
 
 from smart_hr.core.protected_media import ProtectedMediaView
+from smart_hr.core.sitemap import sitemap_view
 from smart_hr.users.views import AdminStatsView
 from smart_hr.users.views import AdminUserManagementView
 from smart_hr.users.views import EmailVerifiedLoginView
@@ -34,6 +35,7 @@ def health_check(request):
 
 urlpatterns = [
     path("health/", health_check, name="health-check"),
+    path("sitemap.xml", sitemap_view, name="sitemap"),
     path("", TemplateView.as_view(template_name="pages/home.html"), name="home"),
     path(
         "about/",

@@ -66,6 +66,7 @@ services:
       - DJANGO_DEFAULT_FROM_EMAIL=${DJANGO_DEFAULT_FROM_EMAIL}
       - CELERY_FLOWER_USER=${CELERY_FLOWER_USER}
       - CELERY_FLOWER_PASSWORD=${CELERY_FLOWER_PASSWORD}
+      - SITE_URL=${SITE_URL}
       - POSTGRES_HOST=${POSTGRES_HOST}
       - POSTGRES_PORT=${POSTGRES_PORT}
       - POSTGRES_DB=${POSTGRES_DB}
@@ -87,6 +88,7 @@ services:
       dockerfile: ./Dockerfile
       args:
         VITE_API_URL: /api/v1
+        VITE_SITE_URL: https://smart-hr.tech
     image: smart_hr_vps_frontend
     networks:
       - default
