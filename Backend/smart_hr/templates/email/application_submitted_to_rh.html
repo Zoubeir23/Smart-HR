@@ -1,0 +1,59 @@
+{% extends "email/email_base.html" %}
+
+{% load i18n %}
+
+{% block email_title %}
+  Nouvelle candidature reçue — Smart-HR
+{% endblock email_title %}
+{% block email_content %}
+  <h1 class="email-title">Nouvelle candidature reçue</h1>
+  <p class="email-subtitle">Un candidat vient de postuler à l'une de vos offres d'emploi.</p>
+  <div class="divider"></div>
+  <div class="credentials-card">
+    <p class="credentials-title">📋 Détails de la candidature</p>
+    <div class="credential-row">
+      <div class="credential-icon">👤</div>
+      <div>
+        <p class="credential-label">Candidat</p>
+        <p class="credential-value">{{ candidate_name }}</p>
+      </div>
+    </div>
+    <div class="credential-row">
+      <div class="credential-icon">💼</div>
+      <div>
+        <p class="credential-label">Poste</p>
+        <p class="credential-value">{{ job_title }}</p>
+      </div>
+    </div>
+    <div class="credential-row">
+      <div class="credential-icon">📧</div>
+      <div>
+        <p class="credential-label">Email</p>
+        <p class="credential-value">{{ candidate_email }}</p>
+      </div>
+    </div>
+    <div style="margin-top: 1rem;">
+      <p class="credential-label" style="margin-bottom:0.5rem;">Statut</p>
+      <span class="status-badge"
+            style="background:#fff3cd;
+                   color:#856404;
+                   border:1px solid #ffc107;
+                   border-radius:6px;
+                   padding:4px 12px;
+                   font-size:0.8rem;
+                   font-weight:600">⏳ En attente de traitement</span>
+    </div>
+  </div>
+  <div class="alert alert-neutral">
+    <strong>Action requise :</strong> Connectez-vous à Smart-HR pour consulter le CV et traiter cette candidature.
+  </div>
+  <div class="btn-wrapper">
+    <a href="{{ applications_url }}" class="btn">Voir les candidatures →</a>
+  </div>
+  <p style="font-size:0.78rem;
+            color:#9b9589;
+            margin-top:1.5rem;
+            line-height:1.65">
+    Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
+  </p>
+{% endblock email_content %}

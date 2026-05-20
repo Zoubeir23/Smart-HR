@@ -468,6 +468,43 @@ def send_meeting_invitation_email(
     return success
 
 
+def send_new_application_to_rh_email(
+    rh_emails: list[str],
+    candidate_name: str,
+    candidate_email: str,
+    job_title: str,
+) -> bool:
+    """
+    Notifie les responsables RH qu'une nouvelle candidature a été soumise.
+    """
+    if not rh_emails:
+        return False
+
+    service = EmailService(prod=True)
+    site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
+
+    context = {
+        "candidate_name": candidate_name,
+        "candidate_email": candidate_email,
+        "job_title": job_title,
+        "applications_url": f"{site_url}/applications",
+    }
+
+    success = service.send_template_email(
+        template="email/application_submitted_to_rh.html",
+        context=context,
+        recipients=rh_emails,
+        subject=f"[Smart-HR] Nouvelle candidature — {candidate_name} pour {job_title}",
+    )
+
+    if success:
+        logger.info("Notification nouvelle candidature envoyée aux RH (%s)", rh_emails)
+    else:
+        logger.error("Échec notification candidature aux RH")
+
+    return success
+
+
 def send_otp_verification_email(
     recipient_email: str,
     first_name: str,
