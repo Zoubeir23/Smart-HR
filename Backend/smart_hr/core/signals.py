@@ -40,7 +40,7 @@ def _get_rh_and_admin_users():
 
 
 @receiver(post_save, sender="conge.LeaveRequest")
-def handle_leave_request_notification(sender, instance, created: bool, **kwargs) -> None:
+def handle_leave_request_notification(sender, instance, *, created: bool, **kwargs) -> None:
     from smart_hr.core.email_service import send_leave_request_notification_to_rh
     from smart_hr.core.email_service import send_leave_status_email
     from smart_hr.core.models import Notification
@@ -132,7 +132,7 @@ def handle_leave_request_notification(sender, instance, created: bool, **kwargs)
 
 
 @receiver(post_save, sender="recruitment.Application")
-def handle_application_notification(sender, instance, created: bool, **kwargs) -> None:
+def handle_application_notification(sender, instance, *, created: bool, **kwargs) -> None:
     if not created:
         return
 
@@ -166,7 +166,7 @@ def handle_application_notification(sender, instance, created: bool, **kwargs) -
 
 
 @receiver(post_save, sender="tache.Task")
-def handle_task_assigned_notification(sender, instance, created: bool, **kwargs) -> None:
+def handle_task_assigned_notification(sender, instance, *, created: bool, **kwargs) -> None:
     if not created or not instance.assignee_id:
         return
 
