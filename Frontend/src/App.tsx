@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import AutoSEO from "@/components/common/AutoSEO";
 
 // Pages Auth
 import LoginPage from "@/pages/auth/LoginPage";
@@ -92,6 +93,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <AutoSEO />
             <Routes>
               {/* Routes publiques */}
               <Route path="/login" element={<LoginPage />} />
