@@ -1,18 +1,18 @@
 {% extends "email/email_base.html" %}
 
-{% block email_title %}Invitation à votre entretien IA — {{ job_title }}{% endblock email_title %}
-
+{% block email_title %}
+  Invitation à votre entretien IA — {{ job_title }}
+{% endblock email_title %}
 {% block email_content %}
   <p class="email-title">Invitation à votre entretien IA</p>
   <p class="email-subtitle">
-    Bonjour {{ first_name }},<br />
+    Bonjour {{ first_name }},
+    <br />
     Votre candidature pour le poste de <strong>{{ job_title }}</strong> a retenu notre attention.
     Nous vous invitons à passer un entretien vocal avec notre assistant IA.
   </p>
-
   <div class="credentials-card">
     <p class="credentials-title">Détails de votre entretien</p>
-
     <div class="credential-row">
       <div class="credential-icon">📆</div>
       <div>
@@ -20,7 +20,6 @@
         <p class="credential-value">{{ job_title }}</p>
       </div>
     </div>
-
     <div class="credential-row">
       <div class="credential-icon">⏱</div>
       <div>
@@ -28,7 +27,6 @@
         <p class="credential-value">{{ duration }}</p>
       </div>
     </div>
-
     <div class="credential-row">
       <div class="credential-icon">🏳</div>
       <div>
@@ -37,10 +35,8 @@
       </div>
     </div>
   </div>
-
   <div class="feature-list">
     <p class="feature-list-title">Comment ça se déroule</p>
-
     <div class="feature-item">
       <div class="feature-dot">1</div>
       <div>
@@ -48,15 +44,15 @@
         <p class="feature-text-desc">Cliquez sur le bouton ci-dessous pour démarrer votre session personnalisée.</p>
       </div>
     </div>
-
     <div class="feature-item">
       <div class="feature-dot">2</div>
       <div>
         <p class="feature-text-title">Entretien vocal avec l'IA</p>
-        <p class="feature-text-desc">Notre assistant IA vous posera des questions adaptées à votre profil et au poste. Répondez à voix haute, naturellement.</p>
+        <p class="feature-text-desc">
+          Notre assistant IA vous posera des questions adaptées à votre profil et au poste. Répondez à voix haute, naturellement.
+        </p>
       </div>
     </div>
-
     <div class="feature-item">
       <div class="feature-dot">3</div>
       <div>
@@ -65,20 +61,17 @@
       </div>
     </div>
   </div>
-
   <div class="btn-wrapper">
     <a href="{{ interview_link }}" class="btn">Accéder à mon entretien</a>
   </div>
-
   <div class="alert alert-warning">
     <strong>Ce lien est personnel.</strong> Ne le partagez pas avec d'autres personnes.
     Il vous donne accès directement à votre session d'entretien.
   </div>
-
   <div class="divider"></div>
-
   <p class="email-subtitle">
-    Si vous avez des questions, n'hésitez pas à contacter notre équipe RH.<br />
+    Si vous avez des questions, n'hésitez pas à contacter notre équipe RH.
+    <br />
     Bonne chance pour votre entretien !
   </p>
 {% endblock email_content %}
