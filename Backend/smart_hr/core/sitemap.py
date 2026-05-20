@@ -6,8 +6,7 @@ from django.http import HttpResponse
 
 from smart_hr.recruitment.models import JobOffer
 
-
-SITE_URL: str = getattr(settings, "SITE_URL", "https://smart-hr.app")
+SITE_URL: str = getattr(settings, "SITE_URL", "https://smart-hr.tech")
 
 _STATIC_PAGES = [
     {"loc": f"{SITE_URL}/", "changefreq": "weekly", "priority": "1.0"},
@@ -34,28 +33,27 @@ def sitemap_view(request: HttpRequest) -> HttpResponse:
         "",
     ]
 
-    for page in _STATIC_PAGES:
-        lines.append(_render_url(
+    lines.extend(
+        _render_url(
             loc=page["loc"],
             lastmod="2026-05-20",
             changefreq=page["changefreq"],
             priority=page["priority"],
-        ))
-
-    open_job_offers = (
-        JobOffer.objects.filter(status=JobOffer.Status.OPEN)
-        .only("id", "updated_at")
-        .order_by("-updated_at")
+        )
+        for page in _STATIC_PAGES
     )
 
-    for offer in open_job_offers:
-        lastmod = offer.updated_at.strftime("%Y-%m-%d") if offer.updated_at else "2026-05-20"
-        lines.append(_render_url(
+    open_job_offers = JobOffer.objects.filter(status=JobOffer.Status.OPEN).only("id", "updated_at").order_by("-updated_at")
+
+    lines.extend(
+        _render_url(
             loc=f"{SITE_URL}/jobs/{offer.id}/apply",
-            lastmod=lastmod,
+            lastmod=offer.updated_at.strftime("%Y-%m-%d") if offer.updated_at else "2026-05-20",
             changefreq="weekly",
             priority="0.6",
-        ))
+        )
+        for offer in open_job_offers
+    )
 
     lines += ["", "</urlset>"]
     xml_content = "\n".join(lines)
