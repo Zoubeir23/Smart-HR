@@ -226,8 +226,8 @@ export default function LandingPage() {
               </motion.div>
 
               <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="font-display text-5xl leading-[1.05] tracking-tight text-foreground lg:text-[4.5rem]">
-                La gestion RH
-                <br /><span className="italic text-foreground/60">augmentée</span>
+                Le SIRH
+                <br /><span className="italic text-foreground/60">augmenté</span>
                 <br />par l'<span className="text-primary">Intelligence.</span>
               </motion.h1>
 
@@ -454,9 +454,14 @@ export default function LandingPage() {
             <div>
               <p className={`mb-5 text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>Produit</p>
               <ul className="space-y-3 text-sm">
-                {['Churn Prediction', 'Analyse CV', 'Assistant IA', 'Tableaux de bord', 'Recrutement'].map((item) => (
+                {['Churn Prediction', 'Analyse CV', 'Assistant IA', 'Tableaux de bord'].map((item) => (
                   <li key={item}><button onClick={() => scrollTo('produit')} className={`${theme === 'dark' ? 'text-white/50 hover:text-white' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>{item}</button></li>
                 ))}
+                <li>
+                  <Link to="/jobs" className={`${theme === 'dark' ? 'text-white/50 hover:text-white' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>
+                    Offres d'emploi
+                  </Link>
+                </li>
               </ul>
             </div>
             <div>

@@ -1,13 +1,14 @@
 import { Helmet } from 'react-helmet-async';
 import { type PageSEOConfig } from '@/lib/seo-config';
 
-const SITE_URL = import.meta.env.VITE_SITE_URL ?? 'https://smart-hr.app';
+const SITE_URL = import.meta.env.VITE_SITE_URL ?? 'https://smart-hr.tech';
 const DEFAULT_OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 interface SEOHeadProps extends Partial<PageSEOConfig> {
   title: string;
   description: string;
   canonicalPath?: string;
+  jsonLd?: Record<string, unknown>;
 }
 
 export default function SEOHead({
@@ -19,6 +20,7 @@ export default function SEOHead({
   ogType = 'website',
   noIndex = false,
   canonicalPath,
+  jsonLd,
 }: SEOHeadProps) {
   const resolvedOgTitle = ogTitle ?? title;
   const resolvedOgDescription = ogDescription ?? description;
@@ -49,6 +51,13 @@ export default function SEOHead({
       <meta name="twitter:title" content={resolvedOgTitle} />
       <meta name="twitter:description" content={resolvedOgDescription} />
       <meta name="twitter:image" content={ogImage} />
+
+      {/* JSON-LD Structured Data */}
+      {jsonLd && (
+        <script type="application/ld+json">
+          {JSON.stringify(jsonLd)}
+        </script>
+      )}
     </Helmet>
   );
 }
