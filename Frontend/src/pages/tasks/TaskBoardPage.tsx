@@ -58,7 +58,7 @@ import { Plus, MoreVertical, Calendar, Flag, Loader2, GripVertical } from 'lucid
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
+type TaskStatus = 'todo' | 'in_progress' | 'in_review' | 'done';
 type TaskPriority = 'low' | 'medium' | 'high';
 
 interface Task {
@@ -75,7 +75,7 @@ interface Task {
 const columnConfig: Record<TaskStatus, { title: string; color: string; accent: string; dotColor: string }> = {
   todo:        { title: 'À faire',   color: 'bg-muted/60',      accent: 'border-t-slate-400',    dotColor: 'bg-slate-400' },
   in_progress: { title: 'En cours',  color: 'bg-blue-500/5',    accent: 'border-t-blue-500',     dotColor: 'bg-blue-500' },
-  review:      { title: 'En revue',  color: 'bg-amber-500/5',   accent: 'border-t-amber-500',    dotColor: 'bg-amber-500' },
+  in_review:   { title: 'En revue',  color: 'bg-amber-500/5',   accent: 'border-t-amber-500',    dotColor: 'bg-amber-500' },
   done:        { title: 'Terminée',  color: 'bg-emerald-500/5', accent: 'border-t-emerald-500',  dotColor: 'bg-emerald-500' },
 };
 
