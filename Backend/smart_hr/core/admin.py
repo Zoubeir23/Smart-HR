@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from smart_hr.core.models import AuditLog
+from smart_hr.core.models import Notification
 
 
 @admin.register(AuditLog)
@@ -16,3 +17,12 @@ class AuditLogAdmin(admin.ModelAdmin):
 
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ["created_at", "recipient", "notification_type", "title", "is_read"]
+    list_filter = ["notification_type", "is_read"]
+    search_fields = ["recipient__email", "title", "message"]
+    readonly_fields = ["created_at", "updated_at"]
+    ordering = ["-created_at"]
