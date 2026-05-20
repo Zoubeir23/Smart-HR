@@ -68,7 +68,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
         {/* Toggle dark mode — DS: hover warm — RESPONSIVE SIZING */}
         <button
           onClick={toggleTheme}
-          className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-[38px] md:w-[38px] items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-[hsl(36,40%,91%)] hover:text-foreground flex-shrink-0"
+          className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-[38px] md:w-[38px] items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-[hsl(36,40%,91%)] dark:hover:bg-white/[0.07] hover:text-foreground flex-shrink-0"
         >
           {theme === 'dark'
             ? <Sun className="h-[15px] w-[15px] sm:h-4 sm:w-4 md:h-[17px] md:w-[17px]" />
@@ -79,32 +79,32 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
         {/* Notifications — DS: point rouge sans badge carré — RESPONSIVE SIZING */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="relative flex h-8 w-8 sm:h-9 sm:w-9 md:h-[38px] md:w-[38px] items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-[hsl(36,40%,91%)] hover:text-foreground flex-shrink-0">
+            <button className="relative flex h-8 w-8 sm:h-9 sm:w-9 md:h-[38px] md:w-[38px] items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-[hsl(36,40%,91%)] dark:hover:bg-white/[0.07] hover:text-foreground flex-shrink-0">
               <Bell className="h-[15px] w-[15px] sm:h-4 sm:w-4 md:h-[17px] md:w-[17px]" />
               {/* Dot rouge DS — RESPONSIVE */}
               <span className="absolute right-1 top-1 h-1.5 w-1.5 sm:right-[7px] sm:top-[7px] sm:h-[6px] sm:w-[6px] md:right-[9px] md:top-[9px] md:h-[7px] md:w-[7px] rounded-full bg-[#D62828] ring-1 sm:ring-2 ring-white" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-72 sm:w-80 rounded-xl border-[hsl(34,30%,86%)] shadow-lg">
+          <DropdownMenuContent align="end" className="w-72 sm:w-80 rounded-xl border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)] shadow-lg">
             <DropdownMenuLabel className="flex items-center justify-between px-3 sm:px-4 py-2.5 sm:py-3">
               <span className="font-semibold text-foreground text-sm sm:text-base">Notifications</span>
               <button className="text-[10px] sm:text-[11px] font-semibold text-[#c41e1e] hover:text-[#D62828]">
                 Tout marquer
               </button>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="border-[hsl(34,30%,86%)]" />
+            <DropdownMenuSeparator className="border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)]" />
             {notifications.map((notification) => (
               <DropdownMenuItem
                 key={notification.id}
-                className="flex cursor-pointer flex-col items-start gap-0.5 px-3 sm:px-4 py-2 sm:py-3 hover:bg-[hsl(36,40%,96%)]"
+                className="flex cursor-pointer flex-col items-start gap-0.5 px-3 sm:px-4 py-2 sm:py-3 hover:bg-[hsl(36,40%,96%)] dark:hover:bg-white/[0.06]"
               >
                 <span className="text-xs sm:text-[13px] font-semibold text-foreground line-clamp-2">{notification.title}</span>
                 <span className="text-xs text-muted-foreground line-clamp-1">{notification.description}</span>
                 <span className="text-[10px] sm:text-[11px] text-muted-foreground/60">{notification.time}</span>
               </DropdownMenuItem>
             ))}
-            <DropdownMenuSeparator className="border-[hsl(34,30%,86%)]" />
-            <DropdownMenuItem className="cursor-pointer justify-center py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-[#c41e1e] hover:bg-[hsl(36,40%,96%)] hover:text-[#D62828]">
+            <DropdownMenuSeparator className="border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)]" />
+            <DropdownMenuItem className="cursor-pointer justify-center py-2 sm:py-2.5 text-xs sm:text-[13px] font-semibold text-[#c41e1e] hover:bg-[hsl(36,40%,96%)] dark:hover:bg-white/[0.06] hover:text-[#D62828]">
               Voir toutes
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -113,7 +113,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
         {/* User menu — DS: avatar rouge gradient, nom + rôle — RESPONSIVE LAYOUT */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 rounded-[10px] px-1.5 sm:px-2 py-1 sm:py-1.5 transition-colors hover:bg-[hsl(36,40%,91%)] flex-shrink-0">
+            <button className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 rounded-[10px] px-1.5 sm:px-2 py-1 sm:py-1.5 transition-colors hover:bg-[hsl(36,40%,91%)] dark:hover:bg-white/[0.07] flex-shrink-0">
               {/* Avatar rouge gradient — RESPONSIVE SIZING */}
               <div
                 className="flex h-7 w-7 sm:h-8 sm:w-8 md:h-[34px] md:w-[34px] flex-shrink-0 items-center justify-center rounded-[10px] text-[11px] sm:text-[12px] md:text-[13px] font-bold text-white bg-gradient-to-br from-brand-red-light to-brand-red-dark"
@@ -130,24 +130,24 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
               </div>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 sm:w-56 rounded-xl border-[hsl(34,30%,86%)] shadow-lg">
+          <DropdownMenuContent align="end" className="w-48 sm:w-56 rounded-xl border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)] shadow-lg">
             <DropdownMenuLabel className="px-3 sm:px-4 py-2 sm:py-3 text-xs sm:text-[13px] font-semibold">Mon compte</DropdownMenuLabel>
-            <DropdownMenuSeparator className="border-[hsl(34,30%,86%)]" />
+            <DropdownMenuSeparator className="border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)]" />
             <DropdownMenuItem asChild>
-              <Link to="/profile" className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] hover:bg-[hsl(36,40%,96%)]">
+              <Link to="/profile" className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] hover:bg-[hsl(36,40%,96%)] dark:hover:bg-white/[0.06]">
                 <User className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                 Profil
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/settings" className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] hover:bg-[hsl(36,40%,96%)]">
+              <Link to="/settings" className="flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] hover:bg-[hsl(36,40%,96%)] dark:hover:bg-white/[0.06]">
                 <Settings className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground flex-shrink-0" />
                 Paramètres
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="border-[hsl(34,30%,86%)]" />
+            <DropdownMenuSeparator className="border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)]" />
             <DropdownMenuItem
-              className="flex cursor-pointer items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] text-[#c41e1e] hover:bg-[hsl(0,69%,50%,0.06)] hover:text-[#D62828]"
+              className="flex cursor-pointer items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] text-[#c41e1e] hover:bg-[hsl(0,69%,50%,0.06)] dark:hover:bg-[hsl(0,69%,50%,0.12)] hover:text-[#D62828]"
               onClick={() => logout()}
             >
               <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />

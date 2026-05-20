@@ -412,7 +412,7 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {googleClientId ? (
+            {googleClientId && (
               <div className="flex justify-center">
                 <GoogleLogin
                   onSuccess={(credentialResponse) => {
@@ -425,10 +425,6 @@ export default function LoginPage() {
                   onError={() => toast({ title: 'Connexion Google échouée', description: 'Une erreur est survenue.', variant: 'destructive' })}
                 />
               </div>
-            ) : (
-              <p className="text-center text-xs text-muted-foreground/50">
-                SSO Google indisponible (VITE_GOOGLE_CLIENT_ID non configuré)
-              </p>
             )}
           </div>
 
