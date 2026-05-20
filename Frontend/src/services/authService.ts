@@ -74,4 +74,20 @@ export const authService = {
     const { data } = await api.get('/auth/admin/stats/');
     return data;
   },
+
+  // Admin — gestion des comptes utilisateurs
+  listAllUsers: async () => {
+    const { data } = await api.get('/auth/admin/users/');
+    return data;
+  },
+
+  updateUserIsActive: async (userId: number, isActive: boolean) => {
+    const { data } = await api.patch(`/auth/admin/users/${userId}/`, { is_active: isActive });
+    return data;
+  },
+
+  updateUserRole: async (userId: number, role: string) => {
+    const { data } = await api.patch(`/auth/admin/users/${userId}/`, { role });
+    return data;
+  },
 };

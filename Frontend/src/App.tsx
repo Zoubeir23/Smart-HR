@@ -50,6 +50,7 @@ import CalendarPage from "@/pages/calendar/CalendarPage";
 import SettingsPage from "@/pages/settings/SettingsPage";
 import SecurityPage from "@/pages/settings/SecurityPage";
 import ProfilePage from "@/pages/settings/ProfilePage";
+import UserManagementPage from "@/pages/admin/UserManagementPage";
 
 // Pages generales
 import NotFoundPage from "@/pages/NotFoundPage";
@@ -306,6 +307,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN']}>
                     <SecurityPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/admin/users"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <UserManagementPage />
                   </ProtectedRoute>
                 }
               />
