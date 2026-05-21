@@ -428,3 +428,19 @@ REST_AUTH = {
 
 # Your stuff...
 # ------------------------------------------------------------------------------
+
+# Sentry — Error monitoring & performance tracing
+# ------------------------------------------------------------------------------
+SENTRY_DSN = env("SENTRY_DSN", default="")
+
+if SENTRY_DSN:
+    import sentry_sdk
+
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        send_default_pii=True,
+        enable_logs=True,
+        traces_sample_rate=1.0,
+        profile_session_sample_rate=1.0,
+        profile_lifecycle="trace",
+    )
