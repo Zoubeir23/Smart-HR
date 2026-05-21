@@ -154,5 +154,9 @@ CORS_ALLOW_ALL_ORIGINS = env.bool("CORS_ALLOW_ALL_ORIGINS", default=False)
 GEMINI_API_KEY = env("GEMINI_API_KEY", default="")
 GOOGLE_API_KEY = env("GOOGLE_API_KEY", default=GEMINI_API_KEY)
 
-# Your stuff...
+# Sentry — actif en production uniquement
 # ------------------------------------------------------------------------------
+if SENTRY_DSN:
+    from config.sentry import initialize_sentry
+
+    initialize_sentry(SENTRY_DSN)
