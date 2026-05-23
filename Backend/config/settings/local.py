@@ -1,6 +1,7 @@
 from .base import *  # noqa: F403
 from .base import INSTALLED_APPS
 from .base import MIDDLEWARE
+from .base import SENTRY_DSN
 from .base import env
 
 # GENERAL
@@ -82,6 +83,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
 ]
+
+# Sentry — actif en local si SENTRY_DSN est défini
+# ------------------------------------------------------------------------------
+if SENTRY_DSN:
+    from config.sentry import initialize_sentry
+
+    initialize_sentry(SENTRY_DSN)
 
 # Your stuff...
 # ------------------------------------------------------------------------------
