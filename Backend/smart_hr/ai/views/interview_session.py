@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from smart_hr.ai.llm_providers import get_llm_provider
 from smart_hr.ai.models import InterviewSession
 from smart_hr.ai.models import InterviewSessionFeedback
+from smart_hr.core.throttles import AILLMAnonThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,7 @@ class InterviewSessionFeedbackCreateView(APIView):
     """POST /api/v1/ai/interview/sessions/{token}/feedback/ — Public, candidat soumet le feedback"""
 
     permission_classes = [AllowAny]
+    throttle_classes = [AILLMAnonThrottle]
 
     def post(self, request, token) -> Response:
         # CRITICAL-1 : verifier que la session est ACTIVE (pas fermee)

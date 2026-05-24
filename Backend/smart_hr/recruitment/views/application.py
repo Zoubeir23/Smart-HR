@@ -44,11 +44,20 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 try:
                     queryset = queryset.filter(matching_score__gte=float(min_score))
                 except ValueError:
-                    pass
+                    return Response(
+                        {"detail": "Le paramètre 'min_score' doit être un nombre décimal."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
             job_offer_id = self.request.query_params.get("job_offer")
             if job_offer_id:
-                queryset = queryset.filter(job_offer_id=job_offer_id)
+                try:
+                    queryset = queryset.filter(job_offer_id=int(job_offer_id))
+                except ValueError:
+                    return Response(
+                        {"detail": "Le paramètre 'job_offer' doit être un entier."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
 
             application_status = self.request.query_params.get("status")
             if application_status:
