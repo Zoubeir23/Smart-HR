@@ -28,9 +28,7 @@ def predict_all_employees_task() -> dict:
         logger.error("Modèle churn introuvable — tâche annulée")
         return {"status": "error", "detail": "Modèle non entraîné"}
 
-    employees = Employee.objects.filter(status="active").select_related(
-        "user", "department", "position"
-    )
+    employees = Employee.objects.filter(status="active").select_related("user", "department", "position")
     count = 0
     for employee in employees:
         try:
