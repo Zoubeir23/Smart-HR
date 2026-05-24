@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from smart_hr.ai.models import ChatHistory
 from smart_hr.ai.serializers import ChatHistorySerializer
+from smart_hr.core.throttles import AILLMUserThrottle
 
 logger = logging.getLogger(__name__)
 
@@ -257,6 +258,7 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
 
     serializer_class = ChatHistorySerializer
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AILLMUserThrottle]
     http_method_names = ["get", "post", "delete", "head", "options"]
 
     def get_queryset(self):

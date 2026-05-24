@@ -126,52 +126,11 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="predict-all")
     def predict_all(self, request):
-        """Lance la prédiction churn pour tous les employés actifs."""
-        model = _load_model()
-        if model is None:
-            return Response(
-                {"detail": "Le modèle de prédiction n'est pas encore entraîné."},
-                status=status.HTTP_503_SERVICE_UNAVAILABLE,
-            )
+        """Déclenche la prédiction churn globale en tâche Celery (réponse 202)."""
+        from smart_hr.ai_engine.tasks import predict_all_employees_task
 
-        employees = Employee.objects.filter(status="active").select_related(
-            "user",
-            "department",
-            "position",
+        predict_all_employees_task.delay()
+        return Response(
+            {"detail": "Prédiction globale lancée en tâche de fond."},
+            status=status.HTTP_202_ACCEPTED,
         )
-        results = []
-        try:
-            import numpy as np
-
-            for employee in employees:
-                features = _employee_to_features(employee)
-                X = np.array([list(features.values())])
-                proba = model.predict_proba(X)[0][1]
-                risk_score = round(proba * 100, 2)
-
-                if risk_score >= 70:
-                    risk_level = ChurnPrediction.RiskLevel.HIGH
-                elif risk_score >= 40:
-                    risk_level = ChurnPrediction.RiskLevel.MEDIUM
-                else:
-                    risk_level = ChurnPrediction.RiskLevel.LOW
-
-                prediction = ChurnPrediction.objects.create(
-                    employee=employee,
-                    risk_score=risk_score,
-                    risk_level=risk_level,
-                    factors=list(features.keys()),
-                    recommendations=[],
-                )
-                employee.churn_risk = risk_score
-                employee.save(update_fields=["churn_risk"])
-                results.append(self.get_serializer(prediction).data)
-
-            return Response({"count": len(results), "predictions": results})
-
-        except Exception as exc:
-            logger.error("Erreur lors de la prédiction globale : %s", exc)
-            return Response(
-                {"detail": "Erreur lors de la prédiction globale."},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
