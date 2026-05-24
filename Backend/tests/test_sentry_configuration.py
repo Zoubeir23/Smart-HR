@@ -5,7 +5,7 @@ import pytest
 from config.sentry import initialize_sentry
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_dsn() -> str:
     return "https://abc123@o000000.ingest.de.sentry.io/000000"
 
