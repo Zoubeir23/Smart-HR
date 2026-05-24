@@ -9,4 +9,10 @@ python /app/manage.py collectstatic --noinput
 python /app/manage.py migrate --noinput
 python /app/manage.py seed_demo_data 2>/dev/null || true
 
-exec gunicorn config.wsgi --bind 0.0.0.0:5000 --chdir=/app
+exec gunicorn config.wsgi \
+  --bind 0.0.0.0:5000 \
+  --chdir=/app \
+  --workers "${WEB_CONCURRENCY:-2}" \
+  --timeout 120 \
+  --graceful-timeout 30 \
+  --keep-alive 5
