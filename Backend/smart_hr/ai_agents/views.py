@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from smart_hr.core.throttles import AILLMUserThrottle
+
 logger = logging.getLogger(__name__)
 
 HR_FAQ = {
@@ -98,6 +100,7 @@ class VoiceAskView(APIView):
     """
 
     permission_classes = [IsAuthenticated]
+    throttle_classes = [AILLMUserThrottle]
 
     def post(self, request):
         """Valide la question utilisateur et retourne une réponse RH textuelle."""
