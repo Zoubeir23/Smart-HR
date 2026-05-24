@@ -90,6 +90,8 @@ services:
       args:
         VITE_API_URL: /api/v1
         VITE_SITE_URL: https://smart-hr.tech
+        VITE_SENTRY_DSN: ${VITE_SENTRY_DSN}
+        SENTRY_AUTH_TOKEN: ${SENTRY_AUTH_TOKEN}
     image: smart_hr_vps_frontend
     networks:
       - default
