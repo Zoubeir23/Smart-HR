@@ -47,5 +47,5 @@ class ChurnPredictionSerializer(serializers.ModelSerializer):
 
         if obj.employee and obj.employee.hire_date:
             years = (timezone.now().date() - obj.employee.hire_date).days // 365
-            return f"{years} an{'s' if years > 1 else ''}"
+            return f"{years} an{'s' if years != 1 else ''}"
         return "—"
