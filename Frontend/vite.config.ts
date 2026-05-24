@@ -31,6 +31,8 @@ export default defineConfig(({ mode }) => ({
       sentryVitePlugin({
         org: "isi-of",
         project: "javascript-react",
+        errorHandler: (err) => { console.warn("[sentry]", err); },
+        telemetry: false,
       }),
   ].filter(Boolean),
   resolve: {
