@@ -49,11 +49,11 @@ const leaveTypeLabels: Record<string, string> = {
 };
 
 const leaveTypeIcons: Record<string, string> = {
-  vacation: '🏖️',
-  sick: '🤒',
-  personal: '👤',
-  maternity: '👶',
-  other: '📋',
+  vacation: 'V',
+  sick: 'M',
+  personal: 'P',
+  maternity: 'MT',
+  other: '?',
 };
 
 function formatLeaveDate(start: string, end: string): string {
@@ -508,7 +508,7 @@ export default function HRDashboard() {
                         className="group flex items-center justify-between rounded-lg border border-transparent bg-muted/40 p-2 sm:p-3 transition-colors hover:border-border hover:bg-muted/60"
                       >
                         <div className="flex items-center gap-2 sm:gap-3 overflow-hidden">
-                          <span className="text-base sm:text-lg leading-none flex-shrink-0">{leaveTypeIcons[leave.type] ?? '📋'}</span>
+                          <span className="text-base sm:text-lg leading-none flex-shrink-0">{leaveTypeIcons[leave.type] ?? '?'}</span>
                           <div className="min-w-0">
                             <p className="truncate text-xs sm:text-sm font-medium">
                               {leave.employee?.user?.first_name} {leave.employee?.user?.last_name}

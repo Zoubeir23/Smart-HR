@@ -21,6 +21,19 @@ from smart_hr.users.permissions import IsRH
 logger = logging.getLogger(__name__)
 
 
+class AvailableUserSerializer(drf_serializers.ModelSerializer):
+    """Expose les utilisateurs sans fiche employé (pour la création d'employé)."""
+
+    full_name = drf_serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ["id", "email", "first_name", "last_name", "full_name", "role"]
+
+    def get_full_name(self, obj):
+        return obj.get_full_name() or obj.email
+
+
 class EmployeeViewSet(viewsets.ModelViewSet):
     """API CRUD des employés avec règles RBAC et endpoints métier."""
 
@@ -163,19 +176,6 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             "first_name",
             "last_name",
         )
-
-        class AvailableUserSerializer(drf_serializers.ModelSerializer):
-            """Serializer local minimal pour exposer les utilisateurs disponibles."""
-
-            full_name = drf_serializers.SerializerMethodField()
-
-            class Meta:
-                model = User
-                fields = ["id", "email", "first_name", "last_name", "full_name", "role"]
-
-            def get_full_name(self, obj):
-                """Construit un nom lisible, avec fallback email."""
-                return obj.get_full_name() or obj.email
 
         serializer = AvailableUserSerializer(users, many=True)
         return Response(serializer.data)
