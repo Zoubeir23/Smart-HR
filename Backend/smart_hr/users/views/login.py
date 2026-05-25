@@ -4,6 +4,8 @@ from dj_rest_auth.views import LoginView
 from rest_framework import status
 from rest_framework.response import Response
 
+from smart_hr.core.throttles import LoginRateThrottle
+
 logger = logging.getLogger(__name__)
 
 
@@ -13,6 +15,8 @@ class EmailVerifiedLoginView(LoginView):
     Les autres rôles (ADMIN, RH, EMPLOYEE) sont exemptés : leur compte est créé
     par un admin et n'a pas besoin de vérification OTP.
     """
+
+    throttle_classes = [LoginRateThrottle]
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
