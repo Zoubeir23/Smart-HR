@@ -55,14 +55,15 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Retourne l'historique des prédictions avec les relations utiles préchargées."""
-        return ChurnPrediction.objects.select_related("employee__user").all()
+        return ChurnPrediction.objects.select_related(
+            "employee__user",
+            "employee__department",
+        ).all()
 
     @action(detail=False, methods=["get"], url_path="high-risk")
     def high_risk(self, request):
         """Retourne uniquement les prédictions à risque ÉLEVÉ."""
-        qs = ChurnPrediction.objects.filter(
-            risk_level=ChurnPrediction.RiskLevel.HIGH,
-        ).select_related("employee__user")
+        qs = self.get_queryset().filter(risk_level=ChurnPrediction.RiskLevel.HIGH)
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
