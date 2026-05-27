@@ -69,10 +69,10 @@ class EmailService:
             return True
 
         try:
-            sender = from_email or getattr(
-                settings,
-                "DEFAULT_FROM_EMAIL",
-                "noreply@smart-hr.com",
+            sender = (
+                from_email
+                or getattr(settings, "DEFAULT_FROM_EMAIL", None)
+                or "Smart-HR <noreply@smart-hr.com>"
             )
             message = EmailMessage(
                 subject=subject,
