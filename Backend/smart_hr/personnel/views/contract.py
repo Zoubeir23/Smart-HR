@@ -42,6 +42,7 @@ class ContractViewSet(viewsets.ModelViewSet):
         employee = contract.employee
 
         logo_path = Path(settings.STATICFILES_DIRS[0]) / "images" / "logo.svg"
+        logo_uri = logo_path.as_uri() if logo_path.exists() else ""
 
         context = {
             "contract": contract,
@@ -50,7 +51,7 @@ class ContractViewSet(viewsets.ModelViewSet):
             "department": employee.department.name if employee.department else "",
             "salary_formatted": f"{float(contract.salary):,.0f}".replace(",", " "),
             "today": timezone.now().date().strftime("%d/%m/%Y"),
-            "logo_path": logo_path.as_uri(),
+            "logo_path": logo_uri,
         }
 
         html_content = render_to_string("personnel/contract_pdf.html", context, request=request)
