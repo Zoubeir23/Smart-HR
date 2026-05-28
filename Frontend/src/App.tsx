@@ -25,6 +25,7 @@ import EmployeeCreatePage from "@/pages/employees/EmployeeCreatePage";
 import EmployeeDetailPage from "@/pages/employees/EmployeeDetailPage";
 import DepartmentPage from "@/pages/employees/DepartmentPage";
 import PositionPage from "@/pages/employees/PositionPage";
+import ContractPage from "@/pages/employees/ContractPage";
 import LeaveListPage from "@/pages/leaves/LeaveListPage";
 import TaskBoardPage from "@/pages/tasks/TaskBoardPage";
 import AttendancePage from "@/pages/attendance/AttendancePage";
@@ -162,6 +163,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
                     <PositionPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/contracts"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <ContractPage />
                   </ProtectedRoute>
                 }
               />
