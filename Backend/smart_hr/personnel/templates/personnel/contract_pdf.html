@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      @page {
+        size: A4;
+        margin: 2.5cm 2cm;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 11pt;
+        color: #1a1a1a;
+        line-height: 1.6;
+      }
+
+      /* ── En-tête ── */
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 3px solid #d62828;
+        padding-bottom: 16px;
+        margin-bottom: 28px;
+      }
+
+      .header img {
+        height: 48px;
+      }
+
+      .header-meta {
+        text-align: right;
+        font-size: 9pt;
+        color: #666;
+      }
+
+      .header-meta strong {
+        display: block;
+        font-size: 10pt;
+        color: #1a1a1a;
+      }
+
+      /* ── Titre ── */
+      .title-block {
+        text-align: center;
+        margin-bottom: 32px;
+      }
+
+      .title-block h1 {
+        font-size: 18pt;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #d62828;
+      }
+
+      .title-block .contract-type-badge {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 4px 14px;
+        background: #d62828;
+        color: #fff;
+        border-radius: 20px;
+        font-size: 10pt;
+        font-weight: 600;
+        letter-spacing: 1px;
+      }
+
+      /* ── Sections ── */
+      .section {
+        margin-bottom: 24px;
+      }
+
+      .section-title {
+        font-size: 10pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #d62828;
+        border-bottom: 1px solid #f0e0e0;
+        padding-bottom: 4px;
+        margin-bottom: 12px;
+      }
+
+      /* ── Table de données ── */
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      .data-table tr td {
+        padding: 7px 10px;
+        vertical-align: top;
+      }
+
+      .data-table tr td:first-child {
+        width: 38%;
+        font-weight: 600;
+        color: #444;
+        font-size: 10pt;
+      }
+
+      .data-table tr td:last-child {
+        color: #1a1a1a;
+      }
+
+      .data-table tr:nth-child(even) {
+        background: #fafafa;
+      }
+
+      /* ── Clauses ── */
+      .clause {
+        background: #f9f9f9;
+        border-left: 3px solid #d62828;
+        padding: 10px 14px;
+        margin-bottom: 10px;
+        font-size: 10pt;
+        color: #333;
+      }
+
+      .clause strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #1a1a1a;
+      }
+
+      /* ── Signatures ── */
+      .signatures {
+        margin-top: 40px;
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .signature-block {
+        width: 42%;
+        text-align: center;
+      }
+
+      .signature-block .signature-line {
+        border-top: 1px solid #1a1a1a;
+        margin-top: 48px;
+        padding-top: 6px;
+        font-size: 9pt;
+        color: #444;
+      }
+
+      /* ── Pied de page ── */
+      .footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 8px 2cm;
+        border-top: 1px solid #e0e0e0;
+        font-size: 8pt;
+        color: #999;
+        display: flex;
+        justify-content: space-between;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- En-tête -->
+    <div class="header">
+      <img src="{{ logo_path }}" alt="Smart-HR" />
+      <div class="header-meta">
+        <strong>Smart-HR</strong>
+        Système d'Information RH<br />
+        Réf. : CTR-{{ contract.id|stringformat:"05d" }}<br />
+        Émis le : {{ today }}
+      </div>
+    </div>
+
+    <!-- Titre -->
+    <div class="title-block">
+      <h1>Contrat de Travail</h1>
+      <span class="contract-type-badge">{{ contract.get_contract_type_display }}</span>
+    </div>
+
+    <!-- Parties -->
+    <div class="section">
+      <div class="section-title">Parties au contrat</div>
+      <table class="data-table">
+        <tr>
+          <td>Employeur</td>
+          <td><strong>Smart-HR SARL</strong></td>
+        </tr>
+        <tr>
+          <td>Employé(e)</td>
+          <td><strong>{{ employee_full_name }}</strong></td>
+        </tr>
+        {% if position %}
+          <tr>
+            <td>Poste occupé</td>
+            <td>{{ position }}</td>
+          </tr>
+        {% endif %}
+        {% if department %}
+          <tr>
+            <td>Département</td>
+            <td>{{ department }}</td>
+          </tr>
+        {% endif %}
+      </table>
+    </div>
+
+    <!-- Conditions du contrat -->
+    <div class="section">
+      <div class="section-title">Conditions d'emploi</div>
+      <table class="data-table">
+        <tr>
+          <td>Type de contrat</td>
+          <td>{{ contract.get_contract_type_display }}</td>
+        </tr>
+        <tr>
+          <td>Date de prise d'effet</td>
+          <td>{{ contract.start_date }}</td>
+        </tr>
+        {% if contract.end_date %}
+          <tr>
+            <td>Date d'échéance</td>
+            <td>{{ contract.end_date }}</td>
+          </tr>
+        {% else %}
+          <tr>
+            <td>Durée</td>
+            <td>Indéterminée</td>
+          </tr>
+        {% endif %}
+        <tr>
+          <td>Rémunération brute mensuelle</td>
+          <td><strong>{{ salary_formatted }} FCFA</strong></td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Clauses principales -->
+    <div class="section">
+      <div class="section-title">Clauses générales</div>
+      <div class="clause">
+        <strong>Article 1 — Période d'essai</strong>
+        {% if contract.contract_type == "CDI" %}
+          Le présent contrat est soumis à une période d'essai de trois (3) mois renouvelable une fois.
+        {% elif contract.contract_type == "CDD" %}
+          Le présent contrat est soumis à une période d'essai d'un (1) mois.
+        {% elif contract.contract_type == "STAGE" %}
+          Aucune période d'essai n'est applicable dans le cadre d'un contrat de stage.
+        {% else %}
+          Les modalités de la période d'essai sont définies d'un commun accord entre les parties.
+        {% endif %}
+      </div>
+      <div class="clause">
+        <strong>Article 2 — Durée du travail</strong>
+        La durée hebdomadaire de travail est fixée à quarante (40) heures conformément à la
+        législation du travail en vigueur.
+      </div>
+      <div class="clause">
+        <strong>Article 3 — Confidentialité</strong>
+        L'employé(e) s'engage à maintenir la confidentialité de toutes les informations relatives
+        à l'entreprise, à ses clients et partenaires, pendant et après la durée du contrat.
+      </div>
+    </div>
+
+    <!-- Signatures -->
+    <div class="signatures">
+      <div class="signature-block">
+        <div>L'Employeur</div>
+        <div class="signature-line">Smart-HR SARL — Direction</div>
+      </div>
+      <div class="signature-block">
+        <div>L'Employé(e)</div>
+        <div class="signature-line">{{ employee_full_name }}</div>
+      </div>
+    </div>
+
+    <!-- Pied de page -->
+    <div class="footer">
+      <span>Smart-HR — Système SIRH © {{ today|slice:":4" }}</span>
+      <span>Document généré automatiquement — Réf. CTR-{{ contract.id|stringformat:"05d" }}</span>
+    </div>
+  </body>
+</html>

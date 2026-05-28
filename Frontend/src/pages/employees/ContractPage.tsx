@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileText, Plus, Pencil, Trash2, Check, X, Users, Clock } from 'lucide-react';
+import { FileText, Plus, Pencil, Trash2, Check, X, Users, Clock, Download } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { contractService, type Contract, type ContractPayload, type ContractType } from '@/services/contractService';
 import { employeeService } from '@/services/employeeService';
+import api from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -151,6 +152,22 @@ export default function ContractPage() {
   const isPending = createMutation.isPending || updateMutation.isPending;
   const isFormValid = Boolean(form.employee && form.start_date && form.salary);
 
+  async function downloadContractPdf(contract: Contract) {
+    try {
+      const response = await api.get(`/personnel/contracts/${contract.id}/export_pdf/`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `contrat_${contract.employee_full_name.replace(/\s+/g, '_')}_${contract.id}.pdf`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de générer le PDF.', variant: 'destructive' });
+    }
+  }
+
   // ── Stats ─────────────────────────────────────────────────────────
   const activeCount = contracts.filter((c) => c.status === 'active').length;
   const expiringCount = contracts.filter((c) => c.status === 'expired').length;
@@ -250,26 +267,37 @@ export default function ContractPage() {
                         </span>
                       </div>
                     </div>
-                    {canEdit && (
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          onClick={() => openEdit(contract)}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                          onClick={() => setDeleteId(contract.id)}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-primary"
+                        onClick={() => downloadContractPdf(contract)}
+                        title="Exporter PDF"
+                      >
+                        <Download className="h-3.5 w-3.5" />
+                      </Button>
+                      {canEdit && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                            onClick={() => openEdit(contract)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={() => setDeleteId(contract.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-1.5 text-sm text-muted-foreground pt-1 border-t border-border">
