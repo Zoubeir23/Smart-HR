@@ -144,3 +144,17 @@ class ContractSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["employee", "status", "created_at", "updated_at"]
+
+    def validate(self, data: dict) -> dict:
+        end_date = data.get("end_date")
+        start_date = data.get("start_date")
+        if end_date and start_date and end_date < start_date:
+            raise serializers.ValidationError(
+                {"end_date": "La date de fin doit être postérieure à la date de début."}
+            )
+        salary = data.get("salary")
+        if salary is not None and salary <= 0:
+            raise serializers.ValidationError(
+                {"salary": "Le salaire doit être supérieur à zéro."}
+            )
+        return data

@@ -129,7 +129,7 @@ export default function ContractPage() {
   }
 
   function buildPayload(): ContractPayload | null {
-    if (!form.employee || !form.start_date || !form.salary) return null;
+    if (!form.employee || !form.start_date || !form.salary || parseFloat(form.salary) <= 0) return null;
     return {
       employee: form.employee,
       contract_type: form.contract_type,
@@ -161,7 +161,9 @@ export default function ContractPage() {
       const link = document.createElement('a');
       link.href = url;
       link.download = `contrat_${contract.employee_full_name.replace(/\s+/g, '_')}_${contract.id}.pdf`;
+      document.body.appendChild(link);
       link.click();
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch {
       toast({ title: 'Erreur', description: 'Impossible de générer le PDF.', variant: 'destructive' });
