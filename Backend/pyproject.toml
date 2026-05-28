@@ -46,6 +46,7 @@ dependencies = [
   "redis==7.3.0",
   "scikit-learn>=1.5.0",
   "sentry-sdk[django]==2.29.1",
+  "weasyprint>=62.0",
   "whitenoise==6.12.0",
 ]
 
