@@ -121,6 +121,7 @@ class Contract(TimeStampedModel):
     @property
     def status(self) -> str:
         from django.utils import timezone
+
         today = timezone.now().date()
         if self.start_date > today:
             return self.ContractStatus.UPCOMING
