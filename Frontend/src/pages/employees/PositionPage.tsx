@@ -56,7 +56,7 @@ export default function PositionPage() {
     queryFn: departmentService.getAll,
   });
 
-  const positions: Position[] = positionsData ?? [];
+  const positions: Position[] = positionsData?.results ?? (Array.isArray(positionsData) ? positionsData : []);
   const departments: Department[] = departmentsData?.results ?? departmentsData ?? [];
 
   // ── Mutations ─────────────────────────────────────────────────────
