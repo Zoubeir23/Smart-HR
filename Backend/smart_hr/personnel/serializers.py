@@ -124,9 +124,7 @@ class EmployeeSelfSerializer(EmployeeSerializer):
 class ContractSerializer(serializers.ModelSerializer):
     """Serializer pour un contrat employé."""
 
-    employee_full_name = serializers.CharField(
-        source="employee.user.get_full_name", read_only=True
-    )
+    employee_full_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
     status = serializers.CharField(read_only=True)
 
     class Meta:
@@ -149,12 +147,8 @@ class ContractSerializer(serializers.ModelSerializer):
         end_date = data.get("end_date")
         start_date = data.get("start_date")
         if end_date and start_date and end_date < start_date:
-            raise serializers.ValidationError(
-                {"end_date": "La date de fin doit être postérieure à la date de début."}
-            )
+            raise serializers.ValidationError({"end_date": "La date de fin doit être postérieure à la date de début."})
         salary = data.get("salary")
         if salary is not None and salary <= 0:
-            raise serializers.ValidationError(
-                {"salary": "Le salaire doit être supérieur à zéro."}
-            )
+            raise serializers.ValidationError({"salary": "Le salaire doit être supérieur à zéro."})
         return data
