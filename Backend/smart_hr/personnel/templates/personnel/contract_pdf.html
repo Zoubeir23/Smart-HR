@@ -1,7 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
+    <title>Contrat de Travail — Smart-HR</title>
     <style>
       @page {
         size: A4;
@@ -172,29 +173,33 @@
       <img src="{{ logo_path }}" alt="Smart-HR" />
       <div class="header-meta">
         <strong>Smart-HR</strong>
-        Système d'Information RH<br />
-        Réf. : CTR-{{ contract.id|stringformat:"05d" }}<br />
+        Système d'Information RH
+        <br />
+        Réf. : CTR-{{ contract.id|stringformat:"05d" }}
+        <br />
         Émis le : {{ today }}
       </div>
     </div>
-
     <!-- Titre -->
     <div class="title-block">
       <h1>Contrat de Travail</h1>
       <span class="contract-type-badge">{{ contract.get_contract_type_display }}</span>
     </div>
-
     <!-- Parties -->
     <div class="section">
       <div class="section-title">Parties au contrat</div>
       <table class="data-table">
         <tr>
           <td>Employeur</td>
-          <td><strong>Smart-HR SARL</strong></td>
+          <td>
+            <strong>Smart-HR SARL</strong>
+          </td>
         </tr>
         <tr>
           <td>Employé(e)</td>
-          <td><strong>{{ employee_full_name }}</strong></td>
+          <td>
+            <strong>{{ employee_full_name }}</strong>
+          </td>
         </tr>
         {% if position %}
           <tr>
@@ -210,7 +215,6 @@
         {% endif %}
       </table>
     </div>
-
     <!-- Conditions du contrat -->
     <div class="section">
       <div class="section-title">Conditions d'emploi</div>
@@ -236,11 +240,12 @@
         {% endif %}
         <tr>
           <td>Rémunération brute mensuelle</td>
-          <td><strong>{{ salary_formatted }} FCFA</strong></td>
+          <td>
+            <strong>{{ salary_formatted }} FCFA</strong>
+          </td>
         </tr>
       </table>
     </div>
-
     <!-- Clauses principales -->
     <div class="section">
       <div class="section-title">Clauses générales</div>
@@ -267,7 +272,6 @@
         à l'entreprise, à ses clients et partenaires, pendant et après la durée du contrat.
       </div>
     </div>
-
     <!-- Signatures -->
     <div class="signatures">
       <div class="signature-block">
@@ -279,7 +283,6 @@
         <div class="signature-line">{{ employee_full_name }}</div>
       </div>
     </div>
-
     <!-- Pied de page -->
     <div class="footer">
       <span>Smart-HR — Système SIRH © {{ today|slice:":4" }}</span>
