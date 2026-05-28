@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from smart_hr.personnel.models import Contract
 from smart_hr.personnel.models import Department
 from smart_hr.personnel.models import Employee
 from smart_hr.personnel.models import Position
@@ -118,3 +119,36 @@ class EmployeeSelfSerializer(EmployeeSerializer):
 
     class Meta(EmployeeSerializer.Meta):
         fields = [f for f in EmployeeSerializer.Meta.fields if f != "churn_risk"]
+
+
+class ContractSerializer(serializers.ModelSerializer):
+    """Serializer pour un contrat employé."""
+
+    employee_full_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    status = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = Contract
+        fields = [
+            "id",
+            "employee",
+            "employee_full_name",
+            "contract_type",
+            "start_date",
+            "end_date",
+            "salary",
+            "status",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["employee", "status", "created_at", "updated_at"]
+
+    def validate(self, data: dict) -> dict:
+        end_date = data.get("end_date")
+        start_date = data.get("start_date")
+        if end_date and start_date and end_date < start_date:
+            raise serializers.ValidationError({"end_date": "La date de fin doit être postérieure à la date de début."})
+        salary = data.get("salary")
+        if salary is not None and salary <= 0:
+            raise serializers.ValidationError({"salary": "Le salaire doit être supérieur à zéro."})
+        return data
