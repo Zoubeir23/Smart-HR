@@ -144,7 +144,9 @@ class ContractSerializer(serializers.ModelSerializer):
         read_only_fields = ["status", "created_at", "updated_at"]
 
     def update(self, instance: Contract, validated_data: dict) -> Contract:
-        validated_data.pop("employee", None)
+        employee = validated_data.pop("employee", None)
+        if employee is not None and employee != instance.employee:
+            raise serializers.ValidationError({"employee": "La réassignation d'un contrat à un autre employé est interdite."})
         return super().update(instance, validated_data)
 
     def validate(self, data: dict) -> dict:
