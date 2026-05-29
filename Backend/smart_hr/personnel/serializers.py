@@ -141,7 +141,11 @@ class ContractSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["employee", "status", "created_at", "updated_at"]
+        read_only_fields = ["status", "created_at", "updated_at"]
+
+    def update(self, instance: Contract, validated_data: dict) -> Contract:
+        validated_data.pop("employee", None)
+        return super().update(instance, validated_data)
 
     def validate(self, data: dict) -> dict:
         end_date = data.get("end_date")
