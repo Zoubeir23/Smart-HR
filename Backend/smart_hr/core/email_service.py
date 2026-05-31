@@ -27,6 +27,11 @@ class EmailService:
     def __init__(self, *, prod: bool = True) -> None:
         self.prod = prod
         self.site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
+        if prod and not getattr(settings, "DEFAULT_FROM_EMAIL", ""):
+            logger.warning(
+                "DEFAULT_FROM_EMAIL n'est pas configuré — les emails ne seront pas envoyés. "
+                "Définissez DJANGO_DEFAULT_FROM_EMAIL ou EMAIL_HOST_USER dans votre .env."
+            )
 
     # ------------------------------------------------------------------
     # Connexion SMTP
