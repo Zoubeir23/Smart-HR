@@ -85,6 +85,7 @@ class EmailService:
                 connection=self._get_smtp_connection(),
             )
             message.content_subtype = "html"
+            message.encoding = "utf-8"
 
             if attachments:
                 for file_path in attachments:
@@ -419,7 +420,7 @@ def send_payslip_paid_email(
         template="email/payslip_paid.html",
         context=context,
         recipients=[employee_email],
-        subject=f"Votre salaire {month_label} a été versé — Smart-HR",
+        subject=f"Votre salaire {month_label} a ete verse - Smart-HR",
     )
 
     if success:
