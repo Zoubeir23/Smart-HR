@@ -145,9 +145,9 @@ class AdminUserManagementView(APIView):
 
         if "role" in request.data:
             new_role = request.data["role"]
-            if new_role not in _ALLOWED_ROLES:
+            if new_role not in _INTERNAL_ROLES:
                 return Response(
-                    {"detail": f"Role invalide. Valeurs acceptees : {sorted(_ALLOWED_ROLES)}"},
+                    {"detail": f"Role invalide. Valeurs acceptees : {sorted(str(r) for r in _INTERNAL_ROLES)}"},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             target_user.role = new_role
