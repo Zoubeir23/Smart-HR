@@ -1,6 +1,31 @@
+from django.conf import settings
+
+from allauth.account.utils import user_pk_to_url_str
+from allauth.utils import build_absolute_uri
+from dj_rest_auth.serializers import PasswordResetSerializer as BasePasswordResetSerializer
 from rest_framework import serializers
 
 from smart_hr.users.models import User
+
+
+def frontend_password_reset_url_generator(request, user, temp_key):
+    """Génère le lien de reset mot de passe pointant vers le frontend React."""
+    uid = user_pk_to_url_str(user)
+    frontend_url = getattr(settings, "SITE_URL", build_absolute_uri(request, "/"))
+    confirm_path = getattr(
+        settings,
+        "REST_AUTH",
+        {},
+    ).get("PASSWORD_RESET_CONFIRM_URL", "reset-password/{uid}/{token}/")
+    path = confirm_path.format(uid=uid, token=temp_key)
+    return f"{frontend_url.rstrip('/')}/{path}"
+
+
+class PasswordResetSerializer(BasePasswordResetSerializer):
+    """Surchage pour générer le lien de reset vers le frontend (pas une URL Django)."""
+
+    def get_email_options(self) -> dict:
+        return {"url_generator": frontend_password_reset_url_generator}
 
 
 class UserSerializer(serializers.ModelSerializer):

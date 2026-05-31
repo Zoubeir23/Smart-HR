@@ -8,6 +8,7 @@ from rest_framework.views import APIView
 
 from smart_hr.users.models import User
 from smart_hr.users.permissions import IsAdmin
+from smart_hr.users.serializers import UserRegisterSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -16,11 +17,56 @@ _ALLOWED_ROLES = {User.Role.ADMIN, User.Role.RH, User.Role.EMPLOYEE, User.Role.C
 
 class AdminUserManagementView(APIView):
     """
-    GET  /api/v1/auth/admin/users/           — liste tous les utilisateurs
+    GET   /api/v1/auth/admin/users/           — liste tous les utilisateurs
+    POST  /api/v1/auth/admin/users/           — crée un compte (RH, EMPLOYEE, ADMIN)
     PATCH /api/v1/auth/admin/users/{id}/      — modifie role ou is_active
     """
 
     permission_classes = [IsAdmin]
+
+    def post(self, request) -> Response:
+        """Crée un compte utilisateur interne (RH, EMPLOYEE, ADMIN).
+        Le compte est actif et vérifié dès la création — pas d'OTP requis.
+        """
+        role = request.data.get("role", "")
+        if role == User.Role.CANDIDATE:
+            return Response(
+                {"detail": "Utilisez /register/candidate/ pour créer un compte candidat."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if role not in _ALLOWED_ROLES:
+            return Response(
+                {"detail": f"Rôle invalide. Valeurs acceptées : {sorted(str(r) for r in _ALLOWED_ROLES)}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        serializer = UserRegisterSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.save()
+        user.is_email_verified = True
+        user.is_active = True
+        user.save(update_fields=["is_email_verified", "is_active"])
+
+        logger.info(
+            "Admin %s a créé le compte %s avec le rôle %s",
+            request.user.email,
+            user.email,
+            user.role,
+        )
+
+        return Response(
+            {
+                "id": user.pk,
+                "email": user.email,
+                "username": user.username,
+                "role": user.role,
+                "is_active": user.is_active,
+                "is_email_verified": user.is_email_verified,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
     def get(self, request) -> Response:
         users = User.objects.order_by("date_joined").values(
