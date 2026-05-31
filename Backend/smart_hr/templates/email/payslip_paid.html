@@ -6,7 +6,7 @@
   Votre salaire a été versé — Smart-HR
 {% endblock email_title %}
 {% block email_content %}
-  <h1 class="email-title">Votre salaire a été versé 💰</h1>
+  <h1 class="email-title">Votre salaire a été versé</h1>
   <p class="email-subtitle">
     Bonjour <strong>{{ first_name }} {{ last_name }}</strong>,
     <br />
@@ -14,16 +14,16 @@
   </p>
   <div class="divider"></div>
   <div class="credentials-card">
-    <p class="credentials-title">💳 Récapitulatif de paie</p>
+    <p class="credentials-title">Récapitulatif de paie</p>
     <div class="credential-row">
-      <div class="credential-icon">📅</div>
+      <div class="credential-icon">[Date]</div>
       <div>
         <p class="credential-label">Période</p>
         <p class="credential-value">{{ month_label }}</p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">💵</div>
+      <div class="credential-icon">[Salaire]</div>
       <div>
         <p class="credential-label">Salaire de base</p>
         <p class="credential-value">{{ base_salary }} FCFA</p>
@@ -31,7 +31,7 @@
     </div>
     {% if bonuses and bonuses != "0.00" %}
       <div class="credential-row">
-        <div class="credential-icon">🎁</div>
+        <div class="credential-icon">[+]</div>
         <div>
           <p class="credential-label">Primes et bonus</p>
           <p class="credential-value" style="color:#2d6a4f;">+ {{ bonuses }} FCFA</p>
@@ -40,7 +40,7 @@
     {% endif %}
     {% if deductions and deductions != "0.00" %}
       <div class="credential-row">
-        <div class="credential-icon">➖</div>
+        <div class="credential-icon">[-]</div>
         <div>
           <p class="credential-label">Retenues</p>
           <p class="credential-value" style="color:#D62828;">- {{ deductions }} FCFA</p>
@@ -56,10 +56,10 @@
     </div>
   </div>
   <div class="alert alert-success">
-    <strong>✅ Versement confirmé :</strong> Le montant a été transféré sur votre compte bancaire enregistré. Consultez votre fiche de paie complète sur Smart-HR.
+    <strong>Versement confirme :</strong> Le montant a été transféré sur votre compte bancaire enregistré. Consultez votre fiche de paie complète sur Smart-HR.
   </div>
   <div class="btn-wrapper">
-    <a href="{{ payroll_url }}" class="btn">Voir ma fiche de paie →</a>
+    <a href="{{ payroll_url }}" class="btn">Voir ma fiche de paie &gt;</a>
   </div>
   <p style="font-size:0.78rem;
             color:#9b9589;
