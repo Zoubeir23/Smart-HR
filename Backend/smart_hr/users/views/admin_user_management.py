@@ -25,9 +25,7 @@ def _build_invitation_url(user: User) -> str:
     """
     uid = user_pk_to_url_str(user)
     token = default_token_generator.make_token(user)
-    invitation_path = getattr(settings, "REST_AUTH", {}).get(
-        "ACCOUNT_INVITATION_URL", "set-password/{uid}/{token}/"
-    )
+    invitation_path = getattr(settings, "REST_AUTH", {}).get("ACCOUNT_INVITATION_URL", "set-password/{uid}/{token}/")
     path = invitation_path.format(uid=uid, token=token)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
     return f"{site_url.rstrip('/')}/{path}"
