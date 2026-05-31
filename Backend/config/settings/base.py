@@ -249,7 +249,7 @@ EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
 DEFAULT_FROM_EMAIL = env(
     "DJANGO_DEFAULT_FROM_EMAIL",
-    default=env("EMAIL_HOST_USER", default=""),
+    default=EMAIL_HOST_USER,  # utilise l'adresse SMTP si non surchargée
 )
 EMAIL_SUBJECT_PREFIX = "[Smart-HR] "
 
