@@ -69,7 +69,14 @@ class EmailService:
             return True
 
         try:
-            sender = from_email or getattr(settings, "DEFAULT_FROM_EMAIL", None) or "noreply@smart-hr.com"
+            sender = from_email or settings.DEFAULT_FROM_EMAIL
+            if not sender:
+                logger.error(
+                    "DEFAULT_FROM_EMAIL est vide — email non envoyé à %s. "
+                    "Définissez DJANGO_DEFAULT_FROM_EMAIL ou EMAIL_HOST_USER dans votre .env.",
+                    recipients,
+                )
+                return False
             message = EmailMessage(
                 subject=subject,
                 body=html_content,
