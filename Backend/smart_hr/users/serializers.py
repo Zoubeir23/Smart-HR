@@ -1,6 +1,43 @@
+from allauth.account.utils import user_pk_to_url_str
+from allauth.utils import build_absolute_uri
+from dj_rest_auth.serializers import PasswordResetSerializer as BasePasswordResetSerializer
+from django.conf import settings
 from rest_framework import serializers
 
 from smart_hr.users.models import User
+
+
+def frontend_password_reset_url_generator(request, user, temp_key):
+    """Génère le lien de reset mot de passe pointant vers le frontend React."""
+    uid = user_pk_to_url_str(user)
+    frontend_url = getattr(settings, "SITE_URL", build_absolute_uri(request, "/"))
+    confirm_path = getattr(
+        settings,
+        "REST_AUTH",
+        {},
+    ).get("PASSWORD_RESET_CONFIRM_URL", "reset-password/{uid}/{token}/")
+    path = confirm_path.format(uid=uid, token=temp_key)
+    return f"{frontend_url.rstrip('/')}/{path}"
+
+
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    """Serializer pour la création de comptes internes par l'admin (sans mot de passe)."""
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "first_name", "last_name", "role", "tel"]
+
+    def validate_email(self, value: str) -> str:
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Un compte avec cet email existe déjà.")
+        return value.lower()
+
+
+class PasswordResetSerializer(BasePasswordResetSerializer):
+    """Surchage pour générer le lien de reset vers le frontend (pas une URL Django)."""
+
+    def get_email_options(self) -> dict:
+        return {"url_generator": frontend_password_reset_url_generator}
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -28,7 +65,8 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         ]
 
     def validate_email(self, value: str) -> str:
-        if User.objects.filter(email__iexact=value).exists():
+        existing_user = User.objects.filter(email__iexact=value).first()
+        if existing_user and existing_user.is_email_verified:
             raise serializers.ValidationError("Un compte avec cet email existe déjà.")
         return value.lower()
 
