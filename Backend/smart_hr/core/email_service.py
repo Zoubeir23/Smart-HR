@@ -70,6 +70,9 @@ class EmailService:
 
         try:
             sender = from_email or settings.DEFAULT_FROM_EMAIL
+            # Last-resort fallback: use the SMTP username as sender address
+            if not sender:
+                sender = getattr(settings, "EMAIL_HOST_USER", "")
             if not sender:
                 logger.error(
                     "DEFAULT_FROM_EMAIL est vide — email non envoyé à %s. "
