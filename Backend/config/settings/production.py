@@ -1,5 +1,6 @@
 from .base import *  # noqa: F403
 from .base import DATABASES
+from .base import DEFAULT_FROM_EMAIL
 from .base import INSTALLED_APPS
 from .base import REDIS_URL
 from .base import SENTRY_DSN
@@ -65,11 +66,10 @@ STORAGES = {
 
 # EMAIL
 # ------------------------------------------------------------------------------
-# https://docs.djangoproject.com/en/dev/ref/settings/#default-from-email
-DEFAULT_FROM_EMAIL = env(
-    "DJANGO_DEFAULT_FROM_EMAIL",
-    default="",
-)
+# DEFAULT_FROM_EMAIL is intentionally NOT overridden here.
+# base.py already computes it with a correct fallback chain:
+#   DJANGO_DEFAULT_FROM_EMAIL -> EMAIL_HOST_USER -> ""
+# Overriding it here with default="" would break that fallback in production.
 # https://docs.djangoproject.com/en/dev/ref/settings/#server-email
 SERVER_EMAIL = env("DJANGO_SERVER_EMAIL", default=DEFAULT_FROM_EMAIL)
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-subject-prefix
