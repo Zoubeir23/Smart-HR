@@ -21,6 +21,19 @@ def frontend_password_reset_url_generator(request, user, temp_key):
     return f"{frontend_url.rstrip('/')}/{path}"
 
 
+class AdminUserCreateSerializer(serializers.ModelSerializer):
+    """Serializer pour la création de comptes internes par l'admin (sans mot de passe)."""
+
+    class Meta:
+        model = User
+        fields = ["username", "email", "first_name", "last_name", "role", "tel"]
+
+    def validate_email(self, value: str) -> str:
+        if User.objects.filter(email__iexact=value).exists():
+            raise serializers.ValidationError("Un compte avec cet email existe déjà.")
+        return value.lower()
+
+
 class PasswordResetSerializer(BasePasswordResetSerializer):
     """Surchage pour générer le lien de reset vers le frontend (pas une URL Django)."""
 

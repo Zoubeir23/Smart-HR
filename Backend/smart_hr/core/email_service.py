@@ -505,6 +505,50 @@ def send_new_application_to_rh_email(
     return success
 
 
+def send_account_invitation_email(
+    recipient_email: str,
+    first_name: str,
+    last_name: str,
+    role: str,
+    invitation_url: str,
+    expiry_hours: int = 24,
+) -> bool:
+    """
+    Envoie un email d'invitation à un nouvel utilisateur (RH, EMPLOYEE, ADMIN).
+    L'utilisateur clique sur le lien pour définir son mot de passe.
+    """
+    service = EmailService(prod=True)
+
+    role_labels = {
+        "ADMIN": "Administrateur",
+        "RH": "Responsable RH",
+        "EMPLOYEE": "Employé",
+    }
+
+    context = {
+        "first_name": first_name or recipient_email,
+        "last_name": last_name or "",
+        "email": recipient_email,
+        "role_label": role_labels.get(role, role),
+        "invitation_url": invitation_url,
+        "expiry_hours": expiry_hours,
+    }
+
+    success = service.send_template_email(
+        template="email/account_invitation.html",
+        context=context,
+        recipients=[recipient_email],
+        subject="Invitation Smart-HR — Définissez votre mot de passe",
+    )
+
+    if success:
+        logger.info("Email invitation envoyé à %s (rôle: %s)", recipient_email, role)
+    else:
+        logger.error("Échec envoi invitation à %s", recipient_email)
+
+    return success
+
+
 def send_otp_verification_email(
     recipient_email: str,
     first_name: str,
