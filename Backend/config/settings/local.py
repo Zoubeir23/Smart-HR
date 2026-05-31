@@ -31,7 +31,7 @@ EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-DEFAULT_FROM_EMAIL = f"Smart-HR <{env('EMAIL_HOST_USER', default='noreply@smarthr.com')}>"
+DEFAULT_FROM_EMAIL = f"Smart-HR <{env('EMAIL_HOST_USER', default='')}>" if env("EMAIL_HOST_USER", default="") else ""
 
 # WhiteNoise
 # ------------------------------------------------------------------------------
