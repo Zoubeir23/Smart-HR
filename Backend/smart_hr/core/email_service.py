@@ -101,7 +101,11 @@ class EmailService:
             logger.exception("Erreur réseau lors de l'envoi à %s", recipients)
             return False
         except ValueError:
-            logger.exception("Erreur de configuration SMTP lors de l'envoi à %s (vérifiez DEFAULT_FROM_EMAIL et les paramètres TLS/SSL)", recipients)
+            logger.exception(
+                "Erreur de configuration SMTP lors de l'envoi à %s"
+                " (vérifiez DEFAULT_FROM_EMAIL et les paramètres TLS/SSL)",
+                recipients,
+            )
             return False
         except TypeError:
             logger.exception("Erreur d'encodage lors de l'envoi à %s", recipients)
