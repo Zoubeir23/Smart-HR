@@ -44,7 +44,7 @@ class EmailService:
                 use_ssl=getattr(settings, "EMAIL_USE_SSL", False),
                 timeout=getattr(settings, "EMAIL_TIMEOUT", 30),
             )
-        except (OSError, smtplib.SMTPException):
+        except (OSError, smtplib.SMTPException, ValueError):
             logger.exception("Impossible d'établir la connexion SMTP")
             return None
 
@@ -69,10 +69,10 @@ class EmailService:
             return True
 
         try:
-            sender = from_email or getattr(
-                settings,
-                "DEFAULT_FROM_EMAIL",
-                "noreply@smart-hr.com",
+            sender = (
+                from_email
+                or getattr(settings, "DEFAULT_FROM_EMAIL", None)
+                or "noreply@smart-hr.com"
             )
             message = EmailMessage(
                 subject=subject,
@@ -100,7 +100,10 @@ class EmailService:
         except (TimeoutError, OSError, smtplib.SMTPException, ConnectionError):
             logger.exception("Erreur réseau lors de l'envoi à %s", recipients)
             return False
-        except (ValueError, TypeError):
+        except ValueError:
+            logger.exception("Erreur de configuration SMTP lors de l'envoi à %s (vérifiez DEFAULT_FROM_EMAIL et les paramètres TLS/SSL)", recipients)
+            return False
+        except TypeError:
             logger.exception("Erreur d'encodage lors de l'envoi à %s", recipients)
             return False
 
