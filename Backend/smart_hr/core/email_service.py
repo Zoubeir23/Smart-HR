@@ -69,11 +69,7 @@ class EmailService:
             return True
 
         try:
-            sender = (
-                from_email
-                or getattr(settings, "DEFAULT_FROM_EMAIL", None)
-                or "noreply@smart-hr.com"
-            )
+            sender = from_email or getattr(settings, "DEFAULT_FROM_EMAIL", None) or "noreply@smart-hr.com"
             message = EmailMessage(
                 subject=subject,
                 body=html_content,
@@ -102,8 +98,7 @@ class EmailService:
             return False
         except ValueError:
             logger.exception(
-                "Erreur de configuration SMTP lors de l'envoi à %s"
-                " (vérifiez DEFAULT_FROM_EMAIL et les paramètres TLS/SSL)",
+                "Erreur de configuration SMTP lors de l'envoi à %s (vérifiez DEFAULT_FROM_EMAIL et les paramètres TLS/SSL)",
                 recipients,
             )
             return False
