@@ -124,6 +124,7 @@ class EmployeeSelfSerializer(EmployeeSerializer):
 class ContractSerializer(serializers.ModelSerializer):
     """Serializer pour un contrat employé."""
 
+    employee = serializers.PrimaryKeyRelatedField(queryset=Employee.objects.all())
     employee_full_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
     status = serializers.CharField(read_only=True)
 
