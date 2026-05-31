@@ -1,8 +1,7 @@
-from django.conf import settings
-
 from allauth.account.utils import user_pk_to_url_str
 from allauth.utils import build_absolute_uri
 from dj_rest_auth.serializers import PasswordResetSerializer as BasePasswordResetSerializer
+from django.conf import settings
 from rest_framework import serializers
 
 from smart_hr.users.models import User
