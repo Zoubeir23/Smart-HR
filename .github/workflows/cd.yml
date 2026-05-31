@@ -188,7 +188,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             set -e
-            cd ${{ secrets.SSH_DEPLOY_PATH }}
+            cd /etc/dokploy/compose/smarthr-smarthr-o4ouvh/code
             echo "→ Pull derniers commits depuis main..."
             git pull origin main
             echo "→ Lancement docker compose..."
