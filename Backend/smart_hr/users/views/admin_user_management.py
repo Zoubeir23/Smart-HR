@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import logging
 
-from allauth.account.utils import user_pk_to_url_str
 from allauth.account.forms import default_token_generator
+from allauth.account.utils import user_pk_to_url_str
 from django.conf import settings
 from rest_framework import status
 from rest_framework.response import Response
