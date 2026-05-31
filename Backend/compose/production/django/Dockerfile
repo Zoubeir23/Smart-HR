@@ -80,11 +80,14 @@ RUN chmod +x /start-flower
 
 # Copy the application from the builder
 COPY --from=python-build-stage --chown=django:django ${APP_HOME} ${APP_HOME}
-# explicitly create the media folder before changing ownership below
-RUN mkdir -p ${APP_HOME}/smart_hr/media
+# explicitly create the media folders before changing ownership below
+RUN mkdir -p ${APP_HOME}/smart_hr/media/documents \
+             ${APP_HOME}/smart_hr/media/audio \
+             ${APP_HOME}/smart_hr/media/cvs
 
 # make django owner of the WORKDIR directory as well.
-RUN chown django:django ${APP_HOME}
+RUN chown -R django:django ${APP_HOME}/smart_hr/media \
+  && chown django:django ${APP_HOME}
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
