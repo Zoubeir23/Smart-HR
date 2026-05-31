@@ -422,6 +422,10 @@ REST_AUTH = {
     "JWT_AUTH_REFRESH_COOKIE": "smart-hr-refresh-token",
     "JWT_AUTH_HTTPONLY": False,
     "USER_DETAILS_SERIALIZER": "smart_hr.users.serializers.UserSerializer",
+    # Serializer custom : génère le lien reset vers le frontend React (pas reverse Django)
+    "PASSWORD_RESET_SERIALIZER": "smart_hr.users.serializers.PasswordResetSerializer",
+    # Chemin frontend : SITE_URL/reset-password/{uid}/{token}/
+    "PASSWORD_RESET_CONFIRM_URL": "reset-password/{uid}/{token}/",
 }
 
 # Your stuff...
