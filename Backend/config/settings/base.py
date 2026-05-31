@@ -251,6 +251,8 @@ DEFAULT_FROM_EMAIL = env(
     "DJANGO_DEFAULT_FROM_EMAIL",
     default=EMAIL_HOST_USER,  # utilise l'adresse SMTP si non surchargée
 )
+# Fallback: env var may be set to an empty string (bypasses django-environ default)
+DEFAULT_FROM_EMAIL = DEFAULT_FROM_EMAIL or (f"Smart-HR <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else "")
 EMAIL_SUBJECT_PREFIX = "[Smart-HR] "
 
 # URL publique du frontend (utilisée dans les liens des emails)
