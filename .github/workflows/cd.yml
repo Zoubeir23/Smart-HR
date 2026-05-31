@@ -168,34 +168,36 @@ jobs:
           vuln-type: os,library
 
 # ─────────────────────────────────────────────────────────────────────────────
-# JOB 3 — Confirmation deploy VPS  (dépend de trivy-image-scan)
-# Dokploy autodéploie via son intégration GitHub native (Autodeploy activé).
-# Ce job confirme simplement que le pipeline CD est complet.
+# JOB 3 — Deploy VPS via SSH
+# Se connecte au VPS, pull le code depuis GitHub, puis relance docker compose.
 # ─────────────────────────────────────────────────────────────────────────────
   deploy-vps:
-    name: Deploy → VPS (Dokploy)
+    name: Deploy → VPS (SSH)
     if: vars.DEPLOY_TARGET == 'vps' || vars.DEPLOY_TARGET == 'both'
     needs: trivy-image-scan
     runs-on: ubuntu-latest
     environment: production-vps
 
     steps:
-      - name: Trigger Dokploy deployment
-        continue-on-error: true
-        run: |
-          response=$(curl -s -o /tmp/dokploy_response.txt -w "%{http_code}" \
-            -X POST \
-            -H "Content-Type: application/json" \
-            -H "x-github-event: push" \
-            -d '{"ref":"refs/heads/main"}' \
-            "${{ secrets.DOKPLOY_WEBHOOK_URL }}")
-          echo "Dokploy response code: $response"
-          cat /tmp/dokploy_response.txt
-          if [ "$response" != "200" ] && [ "$response" != "201" ] && [ "$response" != "202" ]; then
-            echo "::warning::Dokploy webhook returned HTTP $response — vérifier la config webhook dans Dokploy UI"
-          else
-            echo "✓ Dokploy deployment triggered successfully."
-          fi
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          port: ${{ secrets.SSH_PORT }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.SSH_DEPLOY_PATH }}
+            echo "→ Pull derniers commits depuis main..."
+            git pull origin main
+            echo "→ Lancement docker compose..."
+            docker compose -p smarthr-smarthr-o4ouvh \
+              -f ./docker-compose.vps.yml \
+              up -d --build --remove-orphans
+            echo "→ Nettoyage images orphelines..."
+            docker image prune -f
+            echo "✓ Déploiement terminé."
 
 # ─────────────────────────────────────────────────────────────────────────────
 # JOB 4 — Deploy Railway via webhooks  (indépendant, pas de build GHCR)
