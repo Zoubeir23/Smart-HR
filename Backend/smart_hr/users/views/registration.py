@@ -48,7 +48,38 @@ class CandidateRegisterView(APIView):
     throttle_classes = [RegistrationThrottle]
 
     def post(self, request):
-        """Crée un compte candidat et déclenche l'envoi du code OTP."""
+        """Crée un compte candidat et déclenche l'envoi du code OTP.
+
+        Si un compte non vérifié existe déjà avec cet email, un nouvel OTP
+        est renvoyé sans recréer le compte.
+        """
+        email = request.data.get("email", "").strip().lower()
+        existing_unverified_user = User.objects.filter(
+            email__iexact=email,
+            is_email_verified=False,
+        ).first()
+
+        if existing_unverified_user:
+            otp = create_otp_for_user(existing_unverified_user)
+            try:
+                send_otp_verification_email(
+                    recipient_email=existing_unverified_user.email,
+                    first_name=existing_unverified_user.first_name or "",
+                    otp_code=otp.code,
+                )
+            except Exception:
+                logger.exception(
+                    "Échec renvoi OTP pour compte non vérifié %s",
+                    existing_unverified_user.email,
+                )
+            return Response(
+                {
+                    "detail": "Un code de vérification a été renvoyé à votre adresse email.",
+                    "email": existing_unverified_user.email,
+                },
+                status=status.HTTP_200_OK,
+            )
+
         data = {**request.data, "role": User.Role.CANDIDATE}
         serializer = UserRegisterSerializer(data=data)
         if not serializer.is_valid():
