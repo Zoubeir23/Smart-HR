@@ -60,6 +60,15 @@ class CandidateRegisterView(APIView):
         ).first()
 
         if existing_unverified_user:
+            # Mettre à jour le mot de passe avec les nouvelles données pour éviter
+            # qu'un attaquant pré-enregistre l'email et bloque le vrai propriétaire.
+            new_password = request.data.get("password", "")
+            if new_password:
+                existing_unverified_user.set_password(new_password)
+                existing_unverified_user.first_name = request.data.get("first_name", existing_unverified_user.first_name)
+                existing_unverified_user.last_name = request.data.get("last_name", existing_unverified_user.last_name)
+                existing_unverified_user.save(update_fields=["password", "first_name", "last_name"])
+
             otp = create_otp_for_user(existing_unverified_user)
             try:
                 send_otp_verification_email(
