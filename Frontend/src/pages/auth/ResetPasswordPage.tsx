@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Lock, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
@@ -20,6 +20,12 @@ export default function ResetPasswordPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!isSuccess) return;
+    const redirectTimer = setTimeout(() => navigate('/login'), 3000);
+    return () => clearTimeout(redirectTimer);
+  }, [isSuccess, navigate]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,7 +53,6 @@ export default function ResetPasswordPage() {
     try {
       await authService.confirmPasswordReset(uid, token, newPassword, confirmPassword);
       setIsSuccess(true);
-      setTimeout(() => navigate('/login'), 3000);
     } catch {
       toast({
         variant: 'destructive',
