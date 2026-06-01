@@ -12,6 +12,8 @@ import AutoSEO from "@/components/common/AutoSEO";
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 import EmailVerificationPage from "@/pages/auth/EmailVerificationPage";
+import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
+import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 
 // Dashboards
 import AdminDashboard from "@/pages/dashboard/AdminDashboard";
@@ -101,6 +103,8 @@ const App = () => (
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/verify-email" element={<EmailVerificationPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
               {/* Entretien IA partagé — public, sans login */}

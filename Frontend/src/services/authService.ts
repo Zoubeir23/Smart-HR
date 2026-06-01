@@ -69,6 +69,28 @@ export const authService = {
     return data;
   },
 
+  // dj_rest_auth — POST /auth/password/reset/
+  requestPasswordReset: async (email: string) => {
+    const { data } = await api.post('/auth/password/reset/', { email });
+    return data;
+  },
+
+  // dj_rest_auth — POST /auth/password/reset/confirm/
+  confirmPasswordReset: async (
+    uid: string,
+    token: string,
+    newPassword1: string,
+    newPassword2: string,
+  ) => {
+    const { data } = await api.post('/auth/password/reset/confirm/', {
+      uid,
+      token,
+      new_password1: newPassword1,
+      new_password2: newPassword2,
+    });
+    return data;
+  },
+
   // Smart-HR custom — GET /auth/admin/stats/
   getAdminStats: async () => {
     const { data } = await api.get('/auth/admin/stats/');
