@@ -18,6 +18,7 @@ def predict_all_employees_task() -> dict:
     import numpy as np
 
     from smart_hr.ai_engine.models import ChurnPrediction
+    from smart_hr.ai_engine.views.churn import FEATURE_COLUMNS
     from smart_hr.ai_engine.views.churn import _employee_to_features
     from smart_hr.ai_engine.views.churn import _load_model
     from smart_hr.personnel.models import Employee
@@ -33,7 +34,7 @@ def predict_all_employees_task() -> dict:
     for employee in employees:
         try:
             features = _employee_to_features(employee)
-            proba = model.predict_proba(np.array([list(features.values())]))[0][1]
+            proba = model.predict_proba(np.array([[features[col] for col in FEATURE_COLUMNS]]))[0][1]
             risk_score = round(proba * 100, 2)
             risk_level = (
                 ChurnPrediction.RiskLevel.HIGH
