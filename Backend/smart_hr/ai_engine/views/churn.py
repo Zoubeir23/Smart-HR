@@ -16,6 +16,15 @@ logger = logging.getLogger(__name__)
 # Chemin vers le modèle ML entraîné
 MODEL_PATH = Path(__file__).resolve().parent.parent / "ml_models" / "churn_model.pkl"
 
+# Ordre des colonnes correspondant exactement à l'entraînement du modèle
+FEATURE_COLUMNS = [
+    "salary",
+    "tenure_years",
+    "status_active",
+    "has_department",
+    "has_position",
+]
+
 
 def _load_model():
     """Charge le modèle churn depuis le fichier .pkl. Retourne None si absent."""
@@ -93,7 +102,7 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
             import numpy as np
 
             features = _employee_to_features(employee)
-            X = np.array([list(features.values())])
+            X = np.array([[features[col] for col in FEATURE_COLUMNS]])
             proba = model.predict_proba(X)[0][1]
             risk_score = round(proba * 100, 2)
 
