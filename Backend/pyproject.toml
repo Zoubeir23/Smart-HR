@@ -48,6 +48,8 @@ dependencies = [
   "sentry-sdk[django]==2.29.1",
   "weasyprint>=62.0",
   "whitenoise==6.12.0",
+  "boto3>=1.34.0",
+  "django-storages[s3]>=1.14.0",
 ]
 
 [dependency-groups]
