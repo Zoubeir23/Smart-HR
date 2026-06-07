@@ -8,6 +8,6 @@ from smart_hr.users.permissions import IsRH
 class PositionViewSet(viewsets.ModelViewSet):
     """API CRUD des postes, avec lien vers le département."""
 
-    queryset = Position.objects.select_related("department").all()
+    queryset = Position.objects.select_related("department").all().order_by("id")
     serializer_class = PositionSerializer
     permission_classes = [IsRH]
