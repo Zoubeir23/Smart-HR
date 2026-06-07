@@ -55,14 +55,43 @@ SECURE_CONTENT_TYPE_NOSNIFF = env.bool(
 
 # STATIC & MEDIA
 # ------------------------
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
+MINIO_STORAGE_ENABLED = env.bool("MINIO_STORAGE_ENABLED", default=False)
+
+if MINIO_STORAGE_ENABLED:
+    INSTALLED_APPS += ["storages"]
+
+    AWS_ACCESS_KEY_ID = env("MINIO_ACCESS_KEY")
+    AWS_SECRET_ACCESS_KEY = env("MINIO_SECRET_KEY")
+    AWS_STORAGE_BUCKET_NAME = env("MINIO_BUCKET_NAME", default="smart-hr")
+    AWS_S3_ENDPOINT_URL = env("MINIO_ENDPOINT_URL")
+    AWS_S3_REGION_NAME = "us-east-1"
+    AWS_DEFAULT_ACL = None
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_QUERYSTRING_AUTH = False
+
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": {
+                "location": "media",
+            },
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
+    MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/media/"
+
+else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
 
 # EMAIL
 # ------------------------------------------------------------------------------
