@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 
+from django.db.models.signals import post_delete
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
@@ -161,6 +162,18 @@ def handle_application_notification(sender, instance, *, created: bool, **kwargs
             candidate_email=candidate_email,
             job_title=job_title,
         )
+
+
+@receiver(post_delete, sender="ai_engine.ChurnPrediction")
+def reset_employee_churn_risk_on_prediction_delete(sender, instance, **kwargs) -> None:
+    """Remet churn_risk à None quand la dernière prédiction est supprimée."""
+    try:
+        employee = instance.employee
+    except Exception:
+        return
+    if not employee.churn_predictions.exists():
+        employee.churn_risk = None
+        employee.save(update_fields=["churn_risk"])
 
 
 @receiver(post_save, sender="tache.Task")

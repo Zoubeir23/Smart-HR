@@ -1,5 +1,7 @@
 import logging
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -64,17 +66,29 @@ class CandidateRegisterView(APIView):
             # qu'un attaquant pré-enregistre l'email et bloque le vrai propriétaire.
             new_password = request.data.get("password", "")
             if new_password:
+                if new_password != request.data.get("password2", ""):
+                    return Response(
+                        {"password": "Les mots de passe ne correspondent pas."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                try:
+                    validate_password(new_password, existing_unverified_user)
+                except DjangoValidationError as exc:
+                    return Response(
+                        {"password": list(exc.messages)},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 existing_unverified_user.set_password(new_password)
                 existing_unverified_user.first_name = request.data.get("first_name", existing_unverified_user.first_name)
                 existing_unverified_user.last_name = request.data.get("last_name", existing_unverified_user.last_name)
                 existing_unverified_user.save(update_fields=["password", "first_name", "last_name"])
 
-            otp = create_otp_for_user(existing_unverified_user)
+            _otp, raw_otp_code = create_otp_for_user(existing_unverified_user)
             try:
                 send_otp_verification_email(
                     recipient_email=existing_unverified_user.email,
                     first_name=existing_unverified_user.first_name or "",
-                    otp_code=otp.code,
+                    otp_code=raw_otp_code,
                 )
             except Exception:
                 logger.exception(
@@ -89,19 +103,18 @@ class CandidateRegisterView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        data = {**request.data, "role": User.Role.CANDIDATE}
-        serializer = UserRegisterSerializer(data=data)
+        serializer = UserRegisterSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        user = serializer.save()
+        user = serializer.save(role=User.Role.CANDIDATE)
 
-        otp = create_otp_for_user(user)
+        _otp, raw_otp_code = create_otp_for_user(user)
         try:
             send_otp_verification_email(
                 recipient_email=user.email,
                 first_name=user.first_name or "",
-                otp_code=otp.code,
+                otp_code=raw_otp_code,
             )
         except Exception:
             logger.exception(
@@ -151,7 +164,10 @@ class VerifyOTPView(APIView):
             )
 
         if user.is_email_verified:
-            return Response({"detail": "Cet email est déjà vérifié. Vous pouvez vous connecter."})
+            return Response(
+                {"detail": "Cet email est déjà vérifié. Vous pouvez vous connecter."},
+                status=status.HTTP_200_OK,
+            )
 
         is_valid, error_message = verify_otp_for_user(user, code)
         if not is_valid:
@@ -160,7 +176,10 @@ class VerifyOTPView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        return Response({"detail": "Email vérifié avec succès. Vous pouvez maintenant vous connecter."})
+        return Response(
+            {"detail": "Email vérifié avec succès. Vous pouvez maintenant vous connecter."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class ResendOTPView(APIView):
@@ -195,12 +214,12 @@ class ResendOTPView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        otp = create_otp_for_user(user)
+        _otp, raw_otp_code = create_otp_for_user(user)
         try:
             send_otp_verification_email(
                 recipient_email=user.email,
                 first_name=user.first_name or "",
-                otp_code=otp.code,
+                otp_code=raw_otp_code,
             )
         except Exception:
             logger.exception("Échec renvoi OTP pour %s", user.email)

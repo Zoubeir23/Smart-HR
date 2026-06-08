@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -43,21 +44,19 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             if min_score is not None:
                 try:
                     queryset = queryset.filter(matching_score__gte=float(min_score))
-                except ValueError:
-                    return Response(
+                except ValueError as exc:
+                    raise ValidationError(
                         {"detail": "Le paramètre 'min_score' doit être un nombre décimal."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                    ) from exc
 
             job_offer_id = self.request.query_params.get("job_offer")
             if job_offer_id:
                 try:
                     queryset = queryset.filter(job_offer_id=int(job_offer_id))
-                except ValueError:
-                    return Response(
+                except ValueError as exc:
+                    raise ValidationError(
                         {"detail": "Le paramètre 'job_offer' doit être un entier."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+                    ) from exc
 
             application_status = self.request.query_params.get("status")
             if application_status:
@@ -77,8 +76,6 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Crée une candidature, lance l'analyse CV (si consentement RGPD) puis notifie."""
-        from rest_framework.exceptions import ValidationError
-
         if not serializer.validated_data.get("gdpr_consent", False):
             raise ValidationError(
                 {"gdpr_consent": "Vous devez accepter le traitement de vos données par l'IA (RGPD)."},
