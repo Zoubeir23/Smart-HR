@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import secrets
 
+from django.conf import settings
 from django.db.models import F
 from django.utils import timezone
 
@@ -16,7 +17,11 @@ def generate_otp_code() -> str:
 
 
 def _hash_otp_code(raw_code: str) -> str:
-    return hashlib.sha256(raw_code.encode()).hexdigest()
+    return hmac.new(
+        settings.SECRET_KEY.encode(),
+        raw_code.encode(),
+        hashlib.sha256,
+    ).hexdigest()
 
 
 def _verify_otp_hash(raw_code: str, stored_hash: str) -> bool:

@@ -167,7 +167,10 @@ def handle_application_notification(sender, instance, *, created: bool, **kwargs
 @receiver(post_delete, sender="ai_engine.ChurnPrediction")
 def reset_employee_churn_risk_on_prediction_delete(sender, instance, **kwargs) -> None:
     """Remet churn_risk à None quand la dernière prédiction est supprimée."""
-    employee = instance.employee
+    try:
+        employee = instance.employee
+    except Exception:
+        return
     if not employee.churn_predictions.exists():
         employee.churn_risk = None
         employee.save(update_fields=["churn_risk"])
