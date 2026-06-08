@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import secrets
 
 from django.db.models import F
@@ -13,22 +15,31 @@ def generate_otp_code() -> str:
     return str(secrets.randbelow(900000) + 100000)
 
 
-def create_otp_for_user(user: User) -> OTPCode:
-    """Crée (ou remplace) un OTP actif pour l'utilisateur donné. Réinitialise le compteur d'échecs."""
+def _hash_otp_code(raw_code: str) -> str:
+    return hashlib.sha256(raw_code.encode()).hexdigest()
+
+
+def _verify_otp_hash(raw_code: str, stored_hash: str) -> bool:
+    return hmac.compare_digest(stored_hash, _hash_otp_code(raw_code))
+
+
+def create_otp_for_user(user: User) -> tuple[OTPCode, str]:
+    """Crée (ou remplace) un OTP actif. Retourne (otp_code, raw_code) — raw_code à envoyer par email."""
     expiry_date = timezone.now() + timezone.timedelta(
         minutes=OTPCode.OTP_EXPIRY_MINUTES,
     )
+    raw_code = generate_otp_code()
     otp_code, _ = OTPCode.objects.update_or_create(
         user=user,
         defaults={
-            "code": generate_otp_code(),
+            "code": _hash_otp_code(raw_code),
             "expiry_date": expiry_date,
             "is_used": False,
             "failed_attempts": 0,
             "locked_until": None,
         },
     )
-    return otp_code
+    return otp_code, raw_code
 
 
 def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:  # noqa: PLR0911
@@ -50,7 +61,7 @@ def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:  #
     if otp.is_expired:
         return False, "Ce code OTP a expiré. Veuillez en demander un nouveau."
 
-    if otp.code != submitted_code:
+    if not _verify_otp_hash(submitted_code, otp.code):
         OTPCode.objects.filter(pk=otp.pk).update(
             failed_attempts=F("failed_attempts") + 1,
         )

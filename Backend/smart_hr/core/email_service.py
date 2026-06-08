@@ -168,7 +168,7 @@ def send_employee_credentials_email(
     """
     Envoie les identifiants de connexion à un nouvel employé créé par le RH.
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     role_labels = {
@@ -218,7 +218,7 @@ def send_leave_request_notification_to_rh(
         logger.warning("Aucun email RH fourni pour la notification de congé")
         return False
 
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     context = {
@@ -256,7 +256,7 @@ def send_application_received_email(
     """
     Confirme la réception d'une candidature au candidat.
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     context = {
@@ -293,7 +293,7 @@ def send_application_status_email(
     Notifie le candidat du changement de statut de sa candidature.
     `new_status` : 'reviewing' | 'interview' | 'accepted' | 'rejected'
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     status_subjects = {
@@ -351,7 +351,7 @@ def send_task_assigned_email(
     """
     Notifie un employé qu'une tâche lui a été assignée.
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     context = {
@@ -393,7 +393,7 @@ def send_payslip_paid_email(
     Notifie un employé que son salaire a été versé.
     `month` : format 'YYYY-MM' (ex: '2026-04')
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     month_labels = {
@@ -454,7 +454,7 @@ def send_meeting_invitation_email(
     if not employee_emails:
         return False
 
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     context = {
@@ -498,7 +498,7 @@ def send_new_application_to_rh_email(
     if not rh_emails:
         return False
 
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     context = {
@@ -535,7 +535,7 @@ def send_account_invitation_email(
     Envoie un email d'invitation à un nouvel utilisateur (RH, EMPLOYEE, ADMIN).
     L'utilisateur clique sur le lien pour définir son mot de passe.
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
 
     role_labels = {
         "ADMIN": "Administrateur",
@@ -575,7 +575,7 @@ def send_otp_verification_email(
     """
     Envoie un code OTP à un candidat pour vérifier son adresse email.
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
     site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
 
     context = {
@@ -614,7 +614,7 @@ def send_interview_invitation_email(
     Le candidat reçoit un email avec un bouton CTA pointant vers interview_link,
     ainsi que les détails de l'entretien (durée, type).
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
 
     context = {
         "first_name": first_name or candidate_email,
@@ -652,7 +652,7 @@ def send_leave_status_email(
     """
     Notifie un employé de la décision (approuvée/refusée) sur sa demande de congé.
     """
-    service = EmailService(prod=True)
+    service = EmailService(prod=not settings.DEBUG)
 
     leave_type_labels = {
         "vacation": "Congé annuel",
