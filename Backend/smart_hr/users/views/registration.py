@@ -1,5 +1,7 @@
 import logging
 
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -64,9 +66,6 @@ class CandidateRegisterView(APIView):
             # qu'un attaquant pré-enregistre l'email et bloque le vrai propriétaire.
             new_password = request.data.get("password", "")
             if new_password:
-                from django.contrib.auth.password_validation import validate_password
-                from django.core.exceptions import ValidationError as DjangoValidationError
-
                 try:
                     validate_password(new_password, existing_unverified_user)
                 except DjangoValidationError as exc:
@@ -99,12 +98,11 @@ class CandidateRegisterView(APIView):
                 status=status.HTTP_200_OK,
             )
 
-        data = {**request.data, "role": User.Role.CANDIDATE}
-        serializer = UserRegisterSerializer(data=data)
+        serializer = UserRegisterSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        user = serializer.save()
+        user = serializer.save(role=User.Role.CANDIDATE)
 
         _otp, raw_otp_code = create_otp_for_user(user)
         try:
