@@ -31,8 +31,6 @@ class AdminStatsView(APIView):
                 User.Role.CANDIDATE,
             ]
         }
-        active_roles = sum(1 for count in by_role.values() if count > 0)
-
         total_employees = Employee.objects.count()
         active_employees = Employee.objects.filter(status="active").count()
         high_risk_employees = Employee.objects.filter(churn_risk__gte=70).count()

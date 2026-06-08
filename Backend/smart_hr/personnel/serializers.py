@@ -17,12 +17,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "updated_at"]
 
     def get_employee_count(self, obj: Department) -> int:
-        """Retourne le nombre d'employés actifs dans ce département.
-
-        Note : utilise prefetch_related depuis la vue pour éviter le N+1.
-        """
-        # Optimisé si prefetch_related("employees") est fait dans la vue
-        return obj.employees.filter(status=Employee.Status.ACTIVE).count()
+        return sum(1 for e in obj.employees.all() if e.status == Employee.Status.ACTIVE)
 
 
 class DepartmentDetailSerializer(DepartmentSerializer):
@@ -41,13 +36,7 @@ class DepartmentDetailSerializer(DepartmentSerializer):
         )
 
     def get_total_salary(self, obj: Department) -> float:
-        """Masse salariale totale des employés actifs du département."""
-        from django.db.models import Sum
-
-        result = obj.employees.filter(status=Employee.Status.ACTIVE).aggregate(
-            total=Sum("salary"),
-        )
-        return float(result["total"] or 0)
+        return float(sum(e.salary or 0 for e in obj.employees.all() if e.status == Employee.Status.ACTIVE))
 
 
 class PositionSerializer(serializers.ModelSerializer):

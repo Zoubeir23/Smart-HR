@@ -338,7 +338,7 @@ CELERY_TASK_SOFT_TIME_LIMIT = 90  # signal SIGTERM avant SIGKILL
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SCHEDULE = {
     "retrain-churn-model-weekly": {
-        "task": "smart_hr.ai_engine.tasks.retrain_churn_model",
+        "task": "smart_hr.ai_engine.tasks.retrain_churn_model_task",
         "schedule": 604800,  # toutes les 7 jours (secondes)
         "options": {"expires": 3600},
     },

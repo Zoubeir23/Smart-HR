@@ -2,6 +2,8 @@ from allauth.account.utils import user_pk_to_url_str
 from allauth.utils import build_absolute_uri
 from dj_rest_auth.serializers import PasswordResetSerializer as BasePasswordResetSerializer
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from smart_hr.users.models import User
@@ -48,7 +50,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=12)
     password2 = serializers.CharField(write_only=True)
 
     class Meta:
@@ -58,7 +60,6 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             "email",
             "first_name",
             "last_name",
-            "role",
             "tel",
             "password",
             "password2",
@@ -75,6 +76,10 @@ class UserRegisterSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"password": "Les mots de passe ne correspondent pas."},
             )
+        try:
+            validate_password(data["password"])
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": list(exc.messages)}) from exc
         return data
 
     def create(self, validated_data):
