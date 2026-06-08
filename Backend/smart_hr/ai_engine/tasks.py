@@ -59,7 +59,7 @@ def predict_all_employees_task() -> dict:
     return {"status": "ok", "processed": count}
 
 
-@shared_task
+@shared_task(name="smart_hr.ai_engine.tasks.retrain_churn_model_task")
 def retrain_churn_model_task() -> None:
     """Ré-entraîne le modèle Random Forest de prédiction churn.
 

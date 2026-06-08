@@ -76,8 +76,6 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Crée une candidature, lance l'analyse CV (si consentement RGPD) puis notifie."""
-        from rest_framework.exceptions import ValidationError
-
         if not serializer.validated_data.get("gdpr_consent", False):
             raise ValidationError(
                 {"gdpr_consent": "Vous devez accepter le traitement de vos données par l'IA (RGPD)."},
