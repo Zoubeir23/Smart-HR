@@ -25,7 +25,7 @@ class UserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     """Permet à l'utilisateur connecté de mettre à jour ses informations."""
 
     model = User
-    fields = ["name"]
+    fields = ["first_name", "last_name", "tel"]
     success_message = _("Information successfully updated")
 
     def get_success_url(self) -> str:

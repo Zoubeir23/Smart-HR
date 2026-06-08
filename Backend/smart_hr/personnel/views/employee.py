@@ -1,4 +1,5 @@
 import logging
+import secrets
 
 from django.db.models import Count
 from rest_framework import filters
@@ -67,10 +68,6 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         """Crée l'employé puis envoie ses identifiants par email."""
         employee = serializer.save()
         employee_user = employee.user
-
-        # Le mot de passe en clair n'est plus accessible après hashage —
-        # on envoie un mot de passe temporaire généré ici et on le définit.
-        import secrets
 
         temp_password = secrets.token_urlsafe(10)
         employee_user.set_password(temp_password)
