@@ -43,8 +43,8 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         )
 
     def get_permissions(self):
-        """Réserve l'approbation/rejet aux profils RH/Admin."""
-        if self.action in ["approve", "reject"]:
+        """Réserve l'approbation/rejet et les modifications aux profils RH/Admin."""
+        if self.action in ["approve", "reject", "update", "partial_update"]:
             return [IsRH()]
         return [IsAuthenticated()]
 
