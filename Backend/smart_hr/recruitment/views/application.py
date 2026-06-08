@@ -44,19 +44,19 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             if min_score is not None:
                 try:
                     queryset = queryset.filter(matching_score__gte=float(min_score))
-                except ValueError:
+                except ValueError as exc:
                     raise ValidationError(
                         {"detail": "Le paramètre 'min_score' doit être un nombre décimal."},
-                    )
+                    ) from exc
 
             job_offer_id = self.request.query_params.get("job_offer")
             if job_offer_id:
                 try:
                     queryset = queryset.filter(job_offer_id=int(job_offer_id))
-                except ValueError:
+                except ValueError as exc:
                     raise ValidationError(
                         {"detail": "Le paramètre 'job_offer' doit être un entier."},
-                    )
+                    ) from exc
 
             application_status = self.request.query_params.get("status")
             if application_status:
