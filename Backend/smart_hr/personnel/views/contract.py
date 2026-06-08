@@ -5,8 +5,10 @@ from django.conf import settings
 from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils import timezone
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.response import Response
 
 from smart_hr.personnel.models import Contract
 from smart_hr.personnel.serializers import ContractSerializer
@@ -60,7 +62,10 @@ class ContractViewSet(viewsets.ModelViewSet):
             pdf_bytes = weasyprint.HTML(string=html_content).write_pdf()
         except Exception:
             logger.exception("Échec génération PDF contrat %s", contract.id)
-            return HttpResponse("Erreur lors de la génération du PDF.", status=500)
+            return Response(
+                {"detail": "Erreur lors de la génération du PDF. Réessayez plus tard."},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
 
         filename = f"contrat_{employee.user.last_name.lower()}_{contract.id}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
