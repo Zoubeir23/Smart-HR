@@ -428,7 +428,7 @@ def send_payslip_paid_email(
         template="email/payslip_paid.html",
         context=context,
         recipients=[employee_email],
-        subject=f"Votre salaire {month_label} a ete verse - Smart-HR",
+        subject=f"Votre salaire {month_label} a été versé — Smart-HR",
     )
 
     if success:

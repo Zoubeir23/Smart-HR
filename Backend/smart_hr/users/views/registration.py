@@ -66,6 +66,11 @@ class CandidateRegisterView(APIView):
             # qu'un attaquant pré-enregistre l'email et bloque le vrai propriétaire.
             new_password = request.data.get("password", "")
             if new_password:
+                if new_password != request.data.get("password2", ""):
+                    return Response(
+                        {"password": "Les mots de passe ne correspondent pas."},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 try:
                     validate_password(new_password, existing_unverified_user)
                 except DjangoValidationError as exc:

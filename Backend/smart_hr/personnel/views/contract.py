@@ -1,4 +1,5 @@
 import logging
+import re
 from pathlib import Path
 
 from django.conf import settings
@@ -67,7 +68,8 @@ class ContractViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
 
-        filename = f"contrat_{employee.user.last_name.lower()}_{contract.id}.pdf"
+        safe_name = re.sub(r"[^\w\-]", "_", employee.user.last_name.lower())
+        filename = f"contrat_{safe_name}_{contract.id}.pdf"
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
