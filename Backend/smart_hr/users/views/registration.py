@@ -64,6 +64,16 @@ class CandidateRegisterView(APIView):
             # qu'un attaquant pré-enregistre l'email et bloque le vrai propriétaire.
             new_password = request.data.get("password", "")
             if new_password:
+                from django.contrib.auth.password_validation import validate_password
+                from django.core.exceptions import ValidationError as DjangoValidationError
+
+                try:
+                    validate_password(new_password, existing_unverified_user)
+                except DjangoValidationError as exc:
+                    return Response(
+                        {"password": list(exc.messages)},
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
                 existing_unverified_user.set_password(new_password)
                 existing_unverified_user.first_name = request.data.get("first_name", existing_unverified_user.first_name)
                 existing_unverified_user.last_name = request.data.get("last_name", existing_unverified_user.last_name)
@@ -151,7 +161,10 @@ class VerifyOTPView(APIView):
             )
 
         if user.is_email_verified:
-            return Response({"detail": "Cet email est déjà vérifié. Vous pouvez vous connecter."})
+            return Response(
+                {"detail": "Cet email est déjà vérifié. Vous pouvez vous connecter."},
+                status=status.HTTP_200_OK,
+            )
 
         is_valid, error_message = verify_otp_for_user(user, code)
         if not is_valid:
@@ -160,7 +173,10 @@ class VerifyOTPView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        return Response({"detail": "Email vérifié avec succès. Vous pouvez maintenant vous connecter."})
+        return Response(
+            {"detail": "Email vérifié avec succès. Vous pouvez maintenant vous connecter."},
+            status=status.HTTP_200_OK,
+        )
 
 
 class ResendOTPView(APIView):

@@ -5,6 +5,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -44,9 +45,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 try:
                     queryset = queryset.filter(matching_score__gte=float(min_score))
                 except ValueError:
-                    return Response(
+                    raise ValidationError(
                         {"detail": "Le paramètre 'min_score' doit être un nombre décimal."},
-                        status=status.HTTP_400_BAD_REQUEST,
                     )
 
             job_offer_id = self.request.query_params.get("job_offer")
@@ -54,9 +54,8 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 try:
                     queryset = queryset.filter(job_offer_id=int(job_offer_id))
                 except ValueError:
-                    return Response(
+                    raise ValidationError(
                         {"detail": "Le paramètre 'job_offer' doit être un entier."},
-                        status=status.HTTP_400_BAD_REQUEST,
                     )
 
             application_status = self.request.query_params.get("status")
