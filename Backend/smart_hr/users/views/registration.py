@@ -69,12 +69,12 @@ class CandidateRegisterView(APIView):
                 existing_unverified_user.last_name = request.data.get("last_name", existing_unverified_user.last_name)
                 existing_unverified_user.save(update_fields=["password", "first_name", "last_name"])
 
-            otp = create_otp_for_user(existing_unverified_user)
+            _otp, raw_otp_code = create_otp_for_user(existing_unverified_user)
             try:
                 send_otp_verification_email(
                     recipient_email=existing_unverified_user.email,
                     first_name=existing_unverified_user.first_name or "",
-                    otp_code=otp.code,
+                    otp_code=raw_otp_code,
                 )
             except Exception:
                 logger.exception(
@@ -96,12 +96,12 @@ class CandidateRegisterView(APIView):
 
         user = serializer.save()
 
-        otp = create_otp_for_user(user)
+        _otp, raw_otp_code = create_otp_for_user(user)
         try:
             send_otp_verification_email(
                 recipient_email=user.email,
                 first_name=user.first_name or "",
-                otp_code=otp.code,
+                otp_code=raw_otp_code,
             )
         except Exception:
             logger.exception(
@@ -195,12 +195,12 @@ class ResendOTPView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        otp = create_otp_for_user(user)
+        _otp, raw_otp_code = create_otp_for_user(user)
         try:
             send_otp_verification_email(
                 recipient_email=user.email,
                 first_name=user.first_name or "",
-                otp_code=otp.code,
+                otp_code=raw_otp_code,
             )
         except Exception:
             logger.exception("Échec renvoi OTP pour %s", user.email)

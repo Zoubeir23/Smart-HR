@@ -44,7 +44,7 @@ class OTPCode(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid_lib.uuid4, editable=False)
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="otp_code")
-    code = models.CharField(max_length=6)
+    code = models.CharField(max_length=64)
     created_at = models.DateTimeField(auto_now_add=True)
     expiry_date = models.DateTimeField()
     is_used = models.BooleanField(default=False)
