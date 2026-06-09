@@ -4,7 +4,6 @@ from datetime import timedelta
 
 from django.db.models import Avg
 from django.db.models import Count
-from django.db.models import Q
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
