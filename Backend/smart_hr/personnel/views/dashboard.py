@@ -1,5 +1,6 @@
 import logging
 from datetime import date
+from datetime import timedelta
 
 from django.db.models import Avg
 from django.db.models import Count
@@ -77,9 +78,8 @@ class DashboardStatsView(APIView):
         avg_salary = employees.aggregate(avg=Avg("salary"))["avg"]
         avg_salary = round(float(avg_salary), 2) if avg_salary is not None else 0
 
-        recent_hires_count = employees.filter(
-            hire_date__gte=date.today().replace(month=max(1, date.today().month - 3)),
-        ).count()
+        three_months_ago = date.today() - timedelta(days=90)
+        recent_hires_count = employees.filter(hire_date__gte=three_months_ago).count()
 
         return Response(
             {
