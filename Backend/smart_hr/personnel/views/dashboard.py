@@ -64,11 +64,7 @@ class DashboardStatsView(APIView):
                         bracket_count += 1
             age_pyramid.append({"bracket": label, "count": bracket_count})
 
-        department_distribution = list(
-            employees.values("department__name")
-            .annotate(count=Count("id"))
-            .order_by("-count")
-        )
+        department_distribution = list(employees.values("department__name").annotate(count=Count("id")).order_by("-count"))
         department_distribution = [
             {"department": entry["department__name"] or "Non assigné", "count": entry["count"]}
             for entry in department_distribution
