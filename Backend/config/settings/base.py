@@ -85,6 +85,7 @@ THIRD_PARTY_APPS = [
     "corsheaders",
     "dj_rest_auth",
     "dj_rest_auth.registration",
+    "drf_spectacular",
 ]
 
 LOCAL_APPS = [
@@ -393,6 +394,17 @@ REST_FRAMEWORK = {
         "ai_llm": "20/hour",
         "ai_llm_anon": "10/hour",
     },
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# drf-spectacular — OpenAPI / Swagger
+# ------------------------------------------------------------------------------
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Smart-HR API",
+    "DESCRIPTION": "SIRH Intelligent — API REST pour la gestion RH, recrutement et IA.",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 # JWT Settings
