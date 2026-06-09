@@ -78,7 +78,7 @@ def _explain_prediction(model, features: dict) -> tuple[str, list[str]]:
     try:
         importances = model.feature_importances_
         ranked = sorted(
-            zip(FEATURE_COLUMNS, importances),
+            zip(FEATURE_COLUMNS, importances, strict=True),
             key=lambda x: x[1],
             reverse=True,
         )
