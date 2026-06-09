@@ -693,3 +693,44 @@ def send_leave_status_email(
         logger.error("Échec envoi email congé à %s", employee_email)
 
     return success
+
+
+def send_churn_alert_to_rh(
+    rh_email: str,
+    rh_first_name: str,
+    employee_full_name: str,
+    risk_score: float,
+    main_risk_factor: str,
+    employee_department: str = "",
+) -> bool:
+    """
+    Alerte le RH qu'un employé vient d'être identifié à haut risque de départ.
+    """
+    service = EmailService(prod=not settings.DEBUG)
+
+    subject = f"Alerte churn — {employee_full_name} ({risk_score:.0f}% de risque)"
+
+    context = {
+        "rh_first_name": rh_first_name,
+        "employee_full_name": employee_full_name,
+        "risk_score": risk_score,
+        "main_risk_factor": main_risk_factor,
+        "employee_department": employee_department,
+        "dashboard_url": f"{getattr(settings, 'SITE_URL', 'http://localhost:3000')}/ai-insights",
+    }
+
+    success = service.send_template_email(
+        template="email/churn_alert.html",
+        context=context,
+        recipients=[rh_email],
+        subject=subject,
+    )
+
+    if success:
+        logger.info("Alerte churn envoyée à %s pour l'employé %s", rh_email, employee_full_name)
+    else:
+        logger.error("Échec envoi alerte churn à %s", rh_email)
+
+    return success
+
+    return success

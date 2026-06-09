@@ -5,6 +5,9 @@ from django.urls import include
 from django.urls import path
 from django.views import defaults as default_views
 from django.views.generic import TemplateView
+from drf_spectacular.views import SpectacularAPIView
+from drf_spectacular.views import SpectacularRedocView
+from drf_spectacular.views import SpectacularSwaggerView
 
 from smart_hr.core.protected_media import ProtectedMediaView
 from smart_hr.core.sitemap import sitemap_view
@@ -81,6 +84,10 @@ urlpatterns = [
     path("api/v1/agents/", include("smart_hr.ai_agents.urls")),
     # Media files — accès protégé par JWT
     path("media/<path:path>", ProtectedMediaView.as_view(), name="protected-media"),
+    # OpenAPI / Swagger — documentation interactive
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]
 
 
