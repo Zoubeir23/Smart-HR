@@ -50,3 +50,32 @@ class IsSelfOrRH(BasePermission):
         if request.user.role in [User.Role.ADMIN, User.Role.RH]:
             return True
         return obj.user == request.user
+
+
+class IsRHOrDepartmentManager(BasePermission):
+    """Autorise les RH/Admin ou les employés désignés managers d'un département."""
+
+    def has_permission(self, request, view) -> bool:
+        """Vérifie que l'utilisateur est authentifié et RH/Admin ou manager."""
+        if not request.user.is_authenticated:
+            return False
+        if request.user.role in [User.Role.ADMIN, User.Role.RH]:
+            return True
+        return (
+            request.user.role == User.Role.EMPLOYEE
+            and hasattr(request.user, "employee_profile")
+            and request.user.employee_profile.is_department_manager
+        )
+
+    def has_object_permission(self, request, view, obj) -> bool:
+        """Pour les managers, restreint l'action aux membres de leur département."""
+        if request.user.role in [User.Role.ADMIN, User.Role.RH]:
+            return True
+        try:
+            manager_profile = request.user.employee_profile
+        except AttributeError:
+            return False
+        if not manager_profile.is_department_manager or not manager_profile.department:
+            return False
+        # obj est une LeaveRequest — vérifie que l'employé est dans le même département
+        return obj.employee.department == manager_profile.department
