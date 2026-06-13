@@ -146,16 +146,30 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
+        from smart_hr.conge.models import LeaveRequest
+        from smart_hr.recruitment.models import Application
+        from smart_hr.recruitment.models import JobOffer
+
         total = Employee.objects.count()
         by_status = {s: Employee.objects.filter(status=s).count() for s in ["active", "inactive", "on_leave"]}
         by_department = list(
             Employee.objects.values("department__name").annotate(count=Count("id")).order_by("-count"),
         )
         high_churn_risk = Employee.objects.filter(churn_risk__gte=70).count()
+        pending_leaves = LeaveRequest.objects.filter(status=LeaveRequest.Status.PENDING).count()
+        open_positions = JobOffer.objects.filter(status=JobOffer.Status.OPEN).count()
+        new_applications = Application.objects.filter(status=Application.Status.PENDING).count()
 
         return Response(
             {
                 "total_employees": total,
+                # Champs à plat consommés par le dashboard frontend (DashboardStats).
+                "active_employees": by_status["active"],
+                "pending_leaves": pending_leaves,
+                "open_positions": open_positions,
+                "new_applications": new_applications,
+                "churn_risk_high": high_churn_risk,
+                # Champs détaillés conservés pour les autres consommateurs.
                 "by_status": by_status,
                 "by_department": by_department,
                 "high_churn_risk": high_churn_risk,
