@@ -34,15 +34,69 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/context/AuthContext';
-import { Calendar, List, Plus, Check, X } from 'lucide-react';
+import { Calendar, List, Plus, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 type LeaveStatus = 'pending' | 'approved' | 'rejected';
+
+type LeaveItem = {
+  id: number;
+  start_date?: string;
+  startDate?: string;
+  end_date?: string;
+  endDate?: string;
+  leave_type?: string;
+  type?: string;
+  status?: string;
+  employee_name?: string;
+  employee?: { first_name?: string; last_name?: string } | string;
+};
+
+const MONTH_LABELS = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+];
+
+const LEAVE_TYPE_LABELS: Record<string, string> = {
+  vacation: 'Vacances',
+  sick: 'Maladie',
+  personal: 'Personnel',
+  maternity: 'Maternité',
+  other: 'Autre',
+};
+
+const STATUS_CHIP: Record<LeaveStatus, string> = {
+  approved: 'bg-success/15 text-success border-success/30',
+  pending: 'bg-warning/15 text-warning border-warning/30',
+  rejected: 'bg-destructive/10 text-destructive border-destructive/30',
+};
+
+const toLocalDate = (value?: string): Date | null => (value ? new Date(`${value}T00:00:00`) : null);
+const isSameDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+/** Grille de 6 semaines (42 jours), démarrant le lundi, pour le mois donné. */
+const buildMonthGrid = (month: Date): Date[] => {
+  const firstOfMonth = new Date(month.getFullYear(), month.getMonth(), 1);
+  const mondayOffset = (firstOfMonth.getDay() + 6) % 7;
+  const gridStart = new Date(firstOfMonth);
+  gridStart.setDate(firstOfMonth.getDate() - mondayOffset);
+  return Array.from({ length: 42 }, (_, index) => {
+    const day = new Date(gridStart);
+    day.setDate(gridStart.getDate() + index);
+    return day;
+  });
+};
 
 const LeaveListPage = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [calendarMonth, setCalendarMonth] = useState<Date>(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [newLeave, setNewLeave] = useState({
     leave_type: '',
@@ -139,6 +193,26 @@ const LeaveListPage = () => {
     if (status === 'approved') return <Badge variant="success">Approuvé</Badge>;
     if (status === 'rejected') return <Badge variant="inactive">Rejeté</Badge>;
     return <Badge variant="warning">En attente</Badge>;
+  };
+
+  const getLeaveName = (leave: LeaveItem): string => {
+    if (typeof leave.employee === 'string') return leave.employee;
+    if (leave.employee_name) return leave.employee_name;
+    const first = leave.employee?.first_name ?? '';
+    const last = leave.employee?.last_name ?? '';
+    return `${first} ${last}`.trim();
+  };
+
+  const leavesForDay = (day: Date): LeaveItem[] => {
+    const target = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+    return (leaves as LeaveItem[]).filter((leave) => {
+      const start = toLocalDate(leave.start_date || leave.startDate);
+      const end = toLocalDate(leave.end_date || leave.endDate) || start;
+      if (!start || !end) return false;
+      const startTime = new Date(start.getFullYear(), start.getMonth(), start.getDate()).getTime();
+      const endTime = new Date(end.getFullYear(), end.getMonth(), end.getDate()).getTime();
+      return target >= startTime && target <= endTime;
+    });
   };
 
   return (
@@ -348,28 +422,108 @@ const LeaveListPage = () => {
             </div>
           </Card>
         ) : (
-          <Card className="p-8">
-            <div className="grid grid-cols-7 gap-2">
+          <Card className="p-4 sm:p-6">
+            {/* Navigation mois */}
+            <div className="flex items-center justify-between mb-4">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() =>
+                  setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() - 1, 1))
+                }
+                aria-label="Mois précédent"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <h3 className="text-sm sm:text-base font-semibold text-foreground">
+                {MONTH_LABELS[calendarMonth.getMonth()]} {calendarMonth.getFullYear()}
+              </h3>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() =>
+                  setCalendarMonth(new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + 1, 1))
+                }
+                aria-label="Mois suivant"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-7 gap-1 sm:gap-2">
               {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'].map((day) => (
                 <div
                   key={day}
-                  className="text-center font-semibold text-sm text-muted-foreground p-2"
+                  className="text-center font-semibold text-xs text-muted-foreground p-2"
                 >
                   {day}
                 </div>
               ))}
-              {Array.from({ length: 35 }, (_, i) => (
-                <div
-                  key={i}
-                  className="border border-border rounded-lg p-4 min-h-[80px] hover:bg-muted/50 transition-colors"
-                >
-                  <div className="text-sm text-muted-foreground">{i + 1}</div>
-                </div>
-              ))}
+              {buildMonthGrid(calendarMonth).map((day, index) => {
+                const inMonth = day.getMonth() === calendarMonth.getMonth();
+                const isToday = isSameDay(day, new Date());
+                const dayLeaves = leavesForDay(day);
+                return (
+                  <div
+                    key={index}
+                    className={cn(
+                      'flex min-h-[84px] flex-col gap-1 rounded-lg border p-1.5 transition-colors',
+                      inMonth ? 'border-border bg-card' : 'border-transparent bg-muted/30',
+                      isToday && 'ring-2 ring-primary border-primary/40'
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        'text-xs font-medium',
+                        inMonth ? 'text-foreground' : 'text-muted-foreground/50',
+                        isToday && 'font-bold text-primary'
+                      )}
+                    >
+                      {day.getDate()}
+                    </div>
+                    <div className="flex flex-col gap-0.5 overflow-hidden">
+                      {dayLeaves.slice(0, 3).map((leave) => {
+                        const status = (leave.status || 'pending') as LeaveStatus;
+                        const name = getLeaveName(leave);
+                        const typeLabel = LEAVE_TYPE_LABELS[leave.leave_type || leave.type || 'other'] ?? '';
+                        return (
+                          <div
+                            key={leave.id}
+                            className={cn(
+                              'truncate rounded border px-1 py-0.5 text-[10px] font-medium',
+                              STATUS_CHIP[status]
+                            )}
+                            title={`${name} — ${typeLabel}`}
+                          >
+                            {name || typeLabel}
+                          </div>
+                        );
+                      })}
+                      {dayLeaves.length > 3 && (
+                        <span className="text-[10px] text-muted-foreground">
+                          +{dayLeaves.length - 3}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <p className="text-center text-muted-foreground mt-6">
-              Vue calendrier - Fonctionnalité à venir
-            </p>
+
+            {/* Légende */}
+            <div className="mt-4 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-success" /> Approuvé
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-warning" /> En attente
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-destructive" /> Rejeté
+              </span>
+            </div>
           </Card>
         )}
       </motion.div>

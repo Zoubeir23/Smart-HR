@@ -301,8 +301,8 @@ export default function HRDashboard() {
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.07] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/50 backdrop-blur-sm">
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.15] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
                   {today}
                 </span>
               </div>
@@ -322,15 +322,16 @@ export default function HRDashboard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 text-xs h-9 border-white/15 bg-white/[0.07] text-white/70 hover:bg-white/15 hover:text-white backdrop-blur-sm"
+                  className="gap-2 text-xs h-9 !border-white/50 !bg-white/10 !text-white hover:!bg-white/20 backdrop-blur-sm"
                 >
                   <FileText className="h-3.5 w-3.5" />
                   Exporter
                 </Button>
                 <Link to="/employees/create">
                   <Button
+                    variant="secondary"
                     size="sm"
-                    className="gap-2 text-xs h-9 bg-white text-brand-red-dark font-bold hover:bg-white/90 shadow-lg"
+                    className="gap-2 text-xs h-9 font-bold shadow-md"
                   >
                     <Plus className="h-3.5 w-3.5" />
                     Nouvel employé
