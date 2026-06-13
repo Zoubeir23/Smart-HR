@@ -20,7 +20,6 @@ import {
   Shield,
   User,
   Search,
-  Inbox,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -208,9 +207,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               className="h-9 w-full rounded-lg border border-sidebar-border bg-sidebar-accent/60 pl-8 pr-3 text-sm text-sidebar-accent-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-2 focus:ring-sidebar-primary/30"
             />
           </div>
-          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
-            <Inbox className="h-4 w-4" />
-          </Button>
           <NotificationBell variant="sidebar" />
         </motion.div>
       )}
