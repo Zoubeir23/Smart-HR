@@ -23,15 +23,25 @@ CACHES = {
     },
 }
 
-# EMAIL — Gmail SMTP (notifications recrutement)
+# EMAIL — Gmail SMTP (OTP + notifications)
 # ------------------------------------------------------------------------------
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")
-DEFAULT_FROM_EMAIL = f"Smart-HR <{env('EMAIL_HOST_USER', default='')}>" if env("EMAIL_HOST_USER", default="") else ""
+DEFAULT_FROM_EMAIL = f"Smart-HR <{EMAIL_HOST_USER}>" if EMAIL_HOST_USER else ""
+# Si des identifiants SMTP sont fournis on envoie réellement (Gmail), sinon on
+# bascule sur le backend console : les emails (dont le code OTP) sont imprimés
+# dans le terminal du serveur, ce qui garde la fonctionnalité utilisable en dev.
+EMAIL_BACKEND = env(
+    "DJANGO_EMAIL_BACKEND",
+    default=(
+        "django.core.mail.backends.smtp.EmailBackend"
+        if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD
+        else "django.core.mail.backends.console.EmailBackend"
+    ),
+)
 
 # WhiteNoise
 # ------------------------------------------------------------------------------

@@ -27,28 +27,32 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         - Admin/RH : toutes les demandes
         - Manager de département : demandes de son équipe
         - Employé : uniquement ses propres demandes
+
+        Filtre optionnel par query param ``status`` (pending/approved/rejected).
         """
         user = self.request.user
+        base = LeaveRequest.objects.select_related("employee__user", "approved_by")
+
         if user.role in [User.Role.ADMIN, User.Role.RH]:
-            return LeaveRequest.objects.select_related(
-                "employee__user",
-                "approved_by",
-            ).all()
+            queryset = base
+        else:
+            try:
+                employee_profile = user.employee_profile
+            except Employee.DoesNotExist:
+                return LeaveRequest.objects.none()
 
-        try:
-            employee_profile = user.employee_profile
-        except Employee.DoesNotExist:
-            return LeaveRequest.objects.none()
+            if employee_profile.is_department_manager and employee_profile.department:
+                queryset = base.filter(employee__department=employee_profile.department)
+            else:
+                queryset = base.filter(employee__user=user)
 
-        if employee_profile.is_department_manager and employee_profile.department:
-            return LeaveRequest.objects.select_related(
-                "employee__user",
-                "approved_by",
-            ).filter(employee__department=employee_profile.department)
+        status_filter = self.request.query_params.get("status")
+        if status_filter:
+            valid_statuses = {choice[0] for choice in LeaveRequest.Status.choices}
+            if status_filter in valid_statuses:
+                queryset = queryset.filter(status=status_filter)
 
-        return LeaveRequest.objects.select_related("employee__user").filter(
-            employee__user=user,
-        )
+        return queryset
 
     def get_permissions(self):
         """Permissions par action :

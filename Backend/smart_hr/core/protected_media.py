@@ -7,11 +7,23 @@ from django.views import View
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
+# Préfixes de média soumis à un contrôle de propriété strict.
+_CV_PREFIX = "cvs/"
+_DOCUMENT_PREFIX = "documents/"
+_PRIVILEGED_ROLES = ("ADMIN", "RH")
+
 
 class ProtectedMediaView(View):
     """
-    Sert les fichiers media uniquement aux utilisateurs authentifiés.
-    Protège contre le path traversal.
+    Sert les fichiers media aux utilisateurs autorisés.
+
+    Deux niveaux de protection :
+    1. Path traversal : le chemin résolu doit rester sous MEDIA_ROOT.
+    2. Contrôle d'accès objet : un employé/candidat ne peut télécharger que
+       ses propres documents (contrats, fiches) et son propre CV. RH/Admin
+       accèdent à tout. Les autres médias (photos, audio) restent accessibles
+       à tout utilisateur authentifié.
+
     Authentification via JWT (header Authorization: Bearer <token>).
     """
 
@@ -20,6 +32,11 @@ class ProtectedMediaView(View):
         if not user or not user.is_authenticated:
             raise PermissionDenied(
                 "Authentification requise pour accéder aux fichiers.",
+            )
+
+        if not self._is_authorized(user, path):
+            raise PermissionDenied(
+                "Vous n'êtes pas autorisé à accéder à ce fichier.",
             )
 
         full_path = self._safe_path(path)
@@ -37,6 +54,25 @@ class ProtectedMediaView(View):
             return result[0] if result else None
         except Exception:
             return None
+
+    @staticmethod
+    def _is_authorized(user, path: str) -> bool:
+        """Vérifie que l'utilisateur a le droit de télécharger ce fichier précis."""
+        if getattr(user, "role", None) in _PRIVILEGED_ROLES:
+            return True
+
+        if path.startswith(_CV_PREFIX):
+            from smart_hr.recruitment.models import Application
+
+            return Application.objects.filter(cv=path, candidate=user).exists()
+
+        if path.startswith(_DOCUMENT_PREFIX):
+            from smart_hr.document.models import Document
+
+            return Document.objects.filter(file=path, employee__user=user).exists()
+
+        # Médias non sensibles (photos de profil, audio) : utilisateur authentifié suffit.
+        return True
 
     @staticmethod
     def _safe_path(path: str) -> Path:

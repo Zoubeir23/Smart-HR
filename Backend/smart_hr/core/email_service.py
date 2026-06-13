@@ -9,7 +9,6 @@ from typing import Any
 
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.core.mail import get_connection
 from django.template.loader import render_to_string
 
 logger = logging.getLogger(__name__)
@@ -18,7 +17,11 @@ logger = logging.getLogger(__name__)
 class EmailService:
     """
     Utilitaire centralisé pour l'envoi d'emails HTML avec ou sans pièces jointes.
-    En mode dev (prod=False), les emails sont loggués sans être envoyés.
+
+    L'envoi est gouverné par le backend email configuré dans Django
+    (``settings.EMAIL_BACKEND``) : SMTP en production, console/locmem en dev/test.
+    Le paramètre ``prod`` est conservé pour compatibilité ascendante mais ne
+    désactive plus l'envoi — utilisez ``DJANGO_EMAIL_BACKEND`` pour cela.
     """
 
     COMPANY_NAME = "Smart-HR"
@@ -27,31 +30,15 @@ class EmailService:
     def __init__(self, *, prod: bool = True) -> None:
         self.prod = prod
         self.site_url = getattr(settings, "SITE_URL", "http://localhost:3000")
-        if prod and not getattr(settings, "DEFAULT_FROM_EMAIL", ""):
-            logger.warning(
-                "DEFAULT_FROM_EMAIL n'est pas configuré — les emails ne seront pas envoyés. "
-                "Définissez DJANGO_DEFAULT_FROM_EMAIL ou EMAIL_HOST_USER dans votre .env."
-            )
 
-    # ------------------------------------------------------------------
-    # Connexion SMTP
-    # ------------------------------------------------------------------
-
-    def _get_smtp_connection(self):
-        try:
-            return get_connection(
-                backend="django.core.mail.backends.smtp.EmailBackend",
-                host=settings.EMAIL_HOST,
-                port=settings.EMAIL_PORT,
-                username=getattr(settings, "EMAIL_HOST_USER", ""),
-                password=getattr(settings, "EMAIL_HOST_PASSWORD", ""),
-                use_tls=getattr(settings, "EMAIL_USE_TLS", False),
-                use_ssl=getattr(settings, "EMAIL_USE_SSL", False),
-                timeout=getattr(settings, "EMAIL_TIMEOUT", 30),
-            )
-        except (OSError, smtplib.SMTPException, ValueError):
-            logger.exception("Impossible d'établir la connexion SMTP")
-            return None
+    def _resolve_sender(self, from_email: str | None) -> str:
+        """Détermine l'adresse expéditrice avec repli successif."""
+        return (
+            from_email
+            or getattr(settings, "DEFAULT_FROM_EMAIL", "")
+            or getattr(settings, "EMAIL_HOST_USER", "")
+            or "Smart-HR <no-reply@smart-hr.local>"
+        )
 
     # ------------------------------------------------------------------
     # Envoi générique (HTML brut)
@@ -65,32 +52,12 @@ class EmailService:
         from_email: str | None = None,
         attachments: list[str] | None = None,
     ) -> bool:
-        if not self.prod:
-            logger.info(
-                "[DEV] Email non envoyé — destinataires: %s, sujet: %s",
-                recipients,
-                subject,
-            )
-            return True
-
         try:
-            sender = from_email or settings.DEFAULT_FROM_EMAIL
-            # Last-resort fallback: use the SMTP username as sender address
-            if not sender:
-                sender = getattr(settings, "EMAIL_HOST_USER", "")
-            if not sender:
-                logger.error(
-                    "DEFAULT_FROM_EMAIL est vide — email non envoyé à %s. "
-                    "Définissez DJANGO_DEFAULT_FROM_EMAIL ou EMAIL_HOST_USER dans votre .env.",
-                    recipients,
-                )
-                return False
             message = EmailMessage(
                 subject=subject,
                 body=html_content,
-                from_email=sender,
+                from_email=self._resolve_sender(from_email),
                 to=recipients,
-                connection=self._get_smtp_connection(),
             )
             message.content_subtype = "html"
             message.encoding = "utf-8"
@@ -112,14 +79,12 @@ class EmailService:
         except (TimeoutError, OSError, smtplib.SMTPException, ConnectionError):
             logger.exception("Erreur réseau lors de l'envoi à %s", recipients)
             return False
-        except ValueError:
+        except (ValueError, TypeError):
             logger.exception(
-                "Erreur de configuration SMTP lors de l'envoi à %s (vérifiez DEFAULT_FROM_EMAIL et les paramètres TLS/SSL)",
+                "Erreur de configuration/encodage SMTP lors de l'envoi à %s "
+                "(vérifiez DEFAULT_FROM_EMAIL et les paramètres TLS/SSL)",
                 recipients,
             )
-            return False
-        except TypeError:
-            logger.exception("Erreur d'encodage lors de l'envoi à %s", recipients)
             return False
 
     # ------------------------------------------------------------------
@@ -585,6 +550,11 @@ def send_otp_verification_email(
         "verify_url": f"{site_url}/verify-email",
     }
 
+    # Filet de sécurité en développement : on journalise le code OTP afin qu'il
+    # reste récupérable depuis la console même si l'envoi SMTP échoue. Jamais en prod.
+    if settings.DEBUG:
+        logger.warning("[DEV] Code OTP pour %s : %s", recipient_email, otp_code)
+
     success = service.send_template_email(
         template="email/otp_verification.html",
         context=context,
@@ -730,7 +700,5 @@ def send_churn_alert_to_rh(
         logger.info("Alerte churn envoyée à %s pour l'employé %s", rh_email, employee_full_name)
     else:
         logger.error("Échec envoi alerte churn à %s", rh_email)
-
-    return success
 
     return success
