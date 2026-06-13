@@ -20,7 +20,6 @@ import {
   Shield,
   User,
   Search,
-  Bell,
   Inbox,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -31,6 +30,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
+import NotificationBell from '@/components/layout/NotificationBell';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -211,12 +211,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
             <Inbox className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="relative h-9 w-9 shrink-0">
-            <Bell className="h-4 w-4" />
-            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-              3
-            </span>
-          </Button>
+          <NotificationBell variant="sidebar" />
         </motion.div>
       )}
 
