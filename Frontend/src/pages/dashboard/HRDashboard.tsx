@@ -308,7 +308,7 @@ export default function HRDashboard() {
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
                 {getGreeting()},{' '}
-                <span className="bg-gradient-to-r from-[#fecaca] to-[#e86060] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-brand-red-light to-brand-red bg-clip-text text-transparent">
                   {user?.first_name}
                 </span>{' '}
                 👋
