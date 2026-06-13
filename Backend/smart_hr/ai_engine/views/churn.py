@@ -217,10 +217,24 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=["post"], url_path="predict-all")
     def predict_all(self, request):
-        """Déclenche la prédiction churn globale en tâche Celery (réponse 202)."""
+        """Déclenche la prédiction churn globale.
+
+        Utilise Celery si un broker est disponible ; sinon (dev sans Redis)
+        bascule en exécution synchrone au lieu de renvoyer une erreur 500.
+        """
         from smart_hr.ai_engine.tasks import predict_all_employees_task
 
-        predict_all_employees_task.delay()
+        try:
+            predict_all_employees_task.delay()
+        except Exception:  # broker indisponible : repli synchrone
+            logger.warning(
+                "Broker Celery indisponible — exécution synchrone de la prédiction churn globale.",
+            )
+            predict_all_employees_task()
+            return Response(
+                {"detail": "Prédiction globale exécutée (mode synchrone, sans Celery)."},
+                status=status.HTTP_200_OK,
+            )
         return Response(
             {"detail": "Prédiction globale lancée en tâche de fond."},
             status=status.HTTP_202_ACCEPTED,

@@ -19,6 +19,21 @@ Contrairement à un audit statique (qui ressortait « projet sain »), l'exécut
 | 5 | 🟠 MAJEUR | `ProtectedMediaView` : tout user lit tout fichier (IDOR) | ✅ Corrigé |
 | 6 | 🟡 MOYEN | Test frontend cassé (localStorage / Node 25) | ✅ Corrigé |
 | 7 | 🟢 MINEUR | Code mort (`return success` dupliqué) | ✅ Corrigé |
+| 8 | 🔴 CRITIQUE | `seed_demo_data` : comptes démo non vérifiés + email admin faux (login impossible) | ✅ Corrigé |
+| 9 | 🔴 CRITIQUE | `GET /personnel/dashboard/` → 500 (`User.birth_date` inexistant) | ✅ Corrigé |
+| 10 | 🔴 CRITIQUE | Upload CV → 500 (`ImportError: libmagic`) — candidature cassée | ✅ Corrigé |
+| 11 | 🟠 MAJEUR | `churn predict-all` → 500 sans Redis/Celery | ✅ Corrigé |
+| 12 | 🟠 MAJEUR | Comptes démo `employee`/`rh` sans profil Employee (congés/profil KO) | ✅ Corrigé |
+
+> Bugs 8–12 trouvés au round 2/3 : audit systématique des **143 opérations API** (82 paths)
+> via le schéma OpenAPI, testées avec de vrais jetons (admin/RH/employé/candidat).
+> Résultat final : **30/30 GET → 200, mutations clés → 200, zéro 500**.
+
+### Endpoints à dépendance externe (dégradation gracieuse, pas des bugs)
+- Chat IA (`ai/chat/`) : « GEMINI_API_KEY non configurée » si la clé manque (pas de crash).
+- Interview questions (`ai/interview/questions/`) : renvoie vide sans clé LLM.
+- Voice agent (`agents/voice/ask/`) : mode « simulated » sans Qdrant/OpenAI.
+- Retrain churn (`ai-engine/retrain/`) : message clair si Celery absent.
 
 ---
 

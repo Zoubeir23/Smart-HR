@@ -58,8 +58,8 @@ class DashboardStatsView(APIView):
         for label, age_min, age_max in _AGE_BRACKETS:
             bracket_count = 0
             for employee in employees:
-                if employee.user.birth_date:
-                    age = _compute_age(employee.user.birth_date)
+                if employee.date_of_birth:
+                    age = _compute_age(employee.date_of_birth)
                     if age_min <= age <= age_max:
                         bracket_count += 1
             age_pyramid.append({"bracket": label, "count": bracket_count})

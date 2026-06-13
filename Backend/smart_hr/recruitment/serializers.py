@@ -64,11 +64,26 @@ class ApplicationSerializer(serializers.ModelSerializer):
     def validate_cv(self, value):
         if value.size > 5 * 1024 * 1024:
             raise serializers.ValidationError("Le CV ne doit pas dépasser 5 Mo.")
-        import magic
 
-        value.seek(0)
-        mime = magic.from_buffer(value.read(2048), mime=True)
-        value.seek(0)
+        # Validation du type via libmagic (analyse du contenu) si la bibliothèque
+        # système est disponible. Sinon, repli sur l'extension et le content_type
+        # déclaré — libmagic n'est pas installé par défaut sur tous les OS et son
+        # absence ne doit pas provoquer une erreur 500 lors de l'envoi du CV.
+        try:
+            import magic
+
+            value.seek(0)
+            mime = magic.from_buffer(value.read(2048), mime=True)
+            value.seek(0)
+        except ImportError:
+            declared = getattr(value, "content_type", None)
+            name = (getattr(value, "name", "") or "").lower()
+            if declared == "application/pdf" or name.endswith(".pdf"):
+                return value
+            raise serializers.ValidationError(
+                "Le CV doit être un fichier PDF valide.",
+            ) from None
+
         if mime != "application/pdf":
             raise serializers.ValidationError("Le CV doit être un fichier PDF valide.")
         return value
