@@ -14,10 +14,11 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
 
   useEffect(() => {
+    // Thème clair par défaut : on ne suit pas la préférence système (prefers-color-scheme).
+    // Seul un choix explicite déjà enregistré par l'utilisateur peut activer le sombre.
     const stored = localStorage.getItem('theme') as Theme | null;
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    const initialTheme = stored || (prefersDark ? 'dark' : 'light');
+    const initialTheme: Theme = stored === 'dark' ? 'dark' : 'light';
     setThemeState(initialTheme);
     document.documentElement.classList.toggle('dark', initialTheme === 'dark');
   }, []);

@@ -296,7 +296,7 @@ export default function HRDashboard() {
           <div className="absolute inset-0 opacity-[0.04] bg-[image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] bg-[size:40px_40px]" />
           {/* Glow orbs */}
           <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl bg-brand-red/25" />
-          <div className="absolute bottom-0 left-1/3 h-28 w-28 rounded-full blur-3xl bg-amber-400/10" />
+          <div className="absolute bottom-0 left-1/3 h-28 w-28 rounded-full blur-3xl bg-brand-red-light/15" />
 
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
@@ -308,7 +308,7 @@ export default function HRDashboard() {
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
                 {getGreeting()},{' '}
-                <span className="bg-gradient-to-r from-[#fecaca] to-[#fbbf24] bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-[#fecaca] to-[#e86060] bg-clip-text text-transparent">
                   {user?.first_name}
                 </span>{' '}
                 👋
