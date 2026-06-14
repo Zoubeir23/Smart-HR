@@ -23,3 +23,6 @@ frontend-build: ## Compile le frontend pour la production
 
 frontend-test: ## Lance les tests vitest
 	cd Frontend && npm run test
+
+frontend-lint: ## Vérifie le code frontend avec ESLint
+	cd Frontend && npm run lint
