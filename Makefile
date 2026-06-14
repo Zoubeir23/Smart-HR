@@ -82,3 +82,9 @@ collectstatic: ## Collecte les fichiers statiques
 
 flush-db: ## Vide la base de données (sans supprimer les tables)
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py flush --no-input
+
+# ==============================================================================
+# EXTRA
+# ==============================================================================
+celery-logs: ## Affiche les logs de Celery
+	cd Backend && docker compose -f docker-compose.local.yml logs -f celery
