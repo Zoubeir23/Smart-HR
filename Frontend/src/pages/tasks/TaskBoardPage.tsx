@@ -22,6 +22,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { taskService } from '@/services/taskService';
 import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -277,6 +278,9 @@ function DropColumn({ status, tasks, onMove, isOver }: DropColumnProps) {
 const TaskBoardPage = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  // Seuls RH/Admin créent des tâches ; l'employé déplace ses propres cartes.
+  const canManage = user?.role === 'RH' || user?.role === 'ADMIN';
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeDragTask, setActiveDragTask] = useState<Task | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -419,6 +423,7 @@ const TaskBoardPage = () => {
             </p>
           </div>
 
+          {canManage && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-primary text-primary-foreground gap-2">
@@ -516,6 +521,7 @@ const TaskBoardPage = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          )}
         </div>
 
         {/* Kanban board */}
