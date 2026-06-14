@@ -41,3 +41,6 @@ down-v: ## Stoppe les conteneurs et supprime les volumes
 
 restart: ## Redémarre les conteneurs Docker
 	cd Backend && docker compose -f docker-compose.local.yml restart
+
+build: ## Construit les images Docker
+	cd Backend && docker compose -f docker-compose.local.yml build
