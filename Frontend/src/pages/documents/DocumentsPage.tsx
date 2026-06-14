@@ -44,6 +44,8 @@ import { cn } from '@/lib/utils';
 import { documentService } from '@/services/documentService';
 import { employeeService } from '@/services/employeeService';
 import { useAuth } from '@/context/AuthContext';
+import SearchableSelect from '@/components/common/SearchableSelect';
+import DataPagination, { usePagination } from '@/components/common/DataPagination';
 import { toast } from 'sonner';
 
 type DocumentType = 'contract' | 'certificate' | 'attestation' | 'id_card' | 'other';
@@ -179,6 +181,8 @@ export default function DocumentsPage() {
     return matchesSearch && matchesCategory;
   });
 
+  const { pageItems: pagedDocuments, currentPage, setCurrentPage, totalPages } = usePagination(filteredDocuments);
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -312,7 +316,7 @@ export default function DocumentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocuments.map((doc) => (
+                {pagedDocuments.map((doc) => (
                   <TableRow key={doc.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -356,7 +360,7 @@ export default function DocumentsPage() {
         ) : (
           /* Grid View */
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredDocuments.map((doc) => (
+            {pagedDocuments.map((doc) => (
               <Card key={doc.id} className="border border-border shadow-sm transition-all hover:border-primary">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
@@ -391,6 +395,14 @@ export default function DocumentsPage() {
               </Card>
             ))}
           </div>
+        )}
+
+        {filteredDocuments.length > 0 && (
+          <DataPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
 
         {/* Empty State */}
@@ -462,21 +474,17 @@ export default function DocumentsPage() {
 
               <div className="grid gap-2">
                 <Label>Employé</Label>
-                <Select
+                <SearchableSelect
                   value={uploadForm.employee}
-                  onValueChange={(value) => setUploadForm((prev) => ({ ...prev, employee: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un employé" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(employees as Array<{ id: number; user: { first_name: string; last_name: string } }>).map((emp) => (
-                      <SelectItem key={emp.id} value={String(emp.id)}>
-                        {emp.user?.first_name} {emp.user?.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setUploadForm((prev) => ({ ...prev, employee: value }))}
+                  placeholder="Sélectionner un employé"
+                  searchPlaceholder="Rechercher un employé…"
+                  emptyText="Aucun employé trouvé."
+                  options={(employees as Array<{ id: number; user: { first_name: string; last_name: string } }>).map((emp) => ({
+                    value: String(emp.id),
+                    label: `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`.trim(),
+                  }))}
+                />
               </div>
             </div>
             <DialogFooter>

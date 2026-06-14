@@ -26,6 +26,8 @@ import {
 import { cn } from '@/lib/utils';
 import { payrollService } from '@/services/payrollService';
 import { employeeService } from '@/services/employeeService';
+import SearchableSelect from '@/components/common/SearchableSelect';
+import DataPagination, { usePagination } from '@/components/common/DataPagination';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -128,6 +130,7 @@ export default function PayrollPage() {
 
   const employees = employeesData?.results ?? employeesData ?? [];
   const payrollRecords: PayrollRecord[] = data?.results ?? data ?? [];
+  const { pageItems: pagedRecords, currentPage, setCurrentPage, totalPages } = usePagination(payrollRecords);
 
   const totalMass    = payrollRecords.reduce((s, r) => s + Number(r.base_salary), 0);
   const averageSalary = payrollRecords.length > 0 ? Math.round(totalMass / payrollRecords.length) : 0;
@@ -341,7 +344,7 @@ export default function PayrollPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {payrollRecords.map((record) => {
+                {pagedRecords.map((record) => {
                   const sc = STATUS_CONFIG[record.status];
                   return (
                     <TableRow
@@ -416,6 +419,13 @@ export default function PayrollPage() {
             </Table>
           </div>
 
+          <DataPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            className="pt-4"
+          />
+
           {payrollRecords.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16 text-center">
               <DollarSign className="h-12 w-12 text-muted-foreground/40" />
@@ -451,21 +461,17 @@ export default function PayrollPage() {
             {/* Employé */}
             <div className="space-y-1.5">
               <Label>Employé <span className="text-destructive">*</span></Label>
-              <Select
+              <SearchableSelect
                 value={form.employee}
-                onValueChange={(v) => setForm((f) => ({ ...f, employee: v }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner un employé" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((emp: { id: number; user_full_name?: string; user?: { first_name?: string; last_name?: string } }) => (
-                    <SelectItem key={emp.id} value={String(emp.id)}>
-                      {emp.user_full_name ?? `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(v) => setForm((f) => ({ ...f, employee: v }))}
+                placeholder="Sélectionner un employé"
+                searchPlaceholder="Rechercher un employé…"
+                emptyText="Aucun employé trouvé."
+                options={employees.map((emp: { id: number; user_full_name?: string; user?: { first_name?: string; last_name?: string } }) => ({
+                  value: String(emp.id),
+                  label: emp.user_full_name ?? `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`.trim(),
+                }))}
+              />
             </div>
 
             {/* Mois */}

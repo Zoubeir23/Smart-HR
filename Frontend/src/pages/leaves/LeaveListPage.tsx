@@ -37,6 +37,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Calendar, List, Plus, Check, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import DataPagination, { usePagination } from '@/components/common/DataPagination';
 
 type LeaveStatus = 'pending' | 'approved' | 'rejected';
 
@@ -137,6 +138,7 @@ const LeaveListPage = () => {
     queryFn: () => leaveService.getAll(),
   });
   const leaves = leavesData?.results || leavesData || [];
+  const { pageItems: pagedLeaves, currentPage, setCurrentPage, totalPages } = usePagination(leaves);
 
   const createLeaveMutation = useMutation({
     mutationFn: (leaveData: { leave_type: string; start_date: string; end_date: string; reason: string }) =>
@@ -365,7 +367,7 @@ const LeaveListPage = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {leaves.map((leave: { id: number; start_date?: string; startDate?: string; end_date?: string; endDate?: string; leave_type?: string; type?: string; employee?: { first_name?: string; last_name?: string } | string; employee_name?: string; duration?: number; status?: string; reason?: string }) => {
+                  {pagedLeaves.map((leave: { id: number; start_date?: string; startDate?: string; end_date?: string; endDate?: string; leave_type?: string; type?: string; employee?: { first_name?: string; last_name?: string } | string; employee_name?: string; duration?: number; status?: string; reason?: string }) => {
                     const startDate = leave.start_date || leave.startDate;
                     const endDate = leave.end_date || leave.endDate;
                     const leaveType = leave.leave_type || leave.type;
@@ -424,6 +426,12 @@ const LeaveListPage = () => {
                 </TableBody>
               </Table>
             </div>
+            <DataPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              className="px-4 py-3 border-t border-border"
+            />
           </Card>
         ) : (
           <Card className="p-4 sm:p-6">

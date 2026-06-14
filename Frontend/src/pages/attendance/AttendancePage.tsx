@@ -6,6 +6,7 @@ import {
   Plus, Pencil, Trash2, X, Check, LogIn, LogOut,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import SearchableSelect from '@/components/common/SearchableSelect';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -403,21 +404,18 @@ export default function AttendancePage() {
             {/* Employé */}
             <div className="space-y-1.5">
               <Label htmlFor="att-employee">Employé <span className="text-destructive">*</span></Label>
-              <Select
+              <SearchableSelect
+                id="att-employee"
                 value={form.employee}
-                onValueChange={(v) => setForm((f) => ({ ...f, employee: v }))}
-              >
-                <SelectTrigger id="att-employee">
-                  <SelectValue placeholder="Sélectionner un employé" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((emp: { id: number; user_full_name?: string; user?: { first_name?: string; last_name?: string } }) => (
-                    <SelectItem key={emp.id} value={String(emp.id)}>
-                      {emp.user_full_name ?? `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                onChange={(v) => setForm((f) => ({ ...f, employee: v }))}
+                placeholder="Sélectionner un employé"
+                searchPlaceholder="Rechercher un employé…"
+                emptyText="Aucun employé trouvé."
+                options={employees.map((emp: { id: number; user_full_name?: string; user?: { first_name?: string; last_name?: string } }) => ({
+                  value: String(emp.id),
+                  label: emp.user_full_name ?? `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`.trim(),
+                }))}
+              />
             </div>
 
             {/* Date */}
