@@ -38,3 +38,6 @@ down: ## Stoppe les conteneurs Docker
 
 down-v: ## Stoppe les conteneurs et supprime les volumes
 	cd Backend && docker compose -f docker-compose.local.yml down -v
+
+restart: ## Redémarre les conteneurs Docker
+	cd Backend && docker compose -f docker-compose.local.yml restart
