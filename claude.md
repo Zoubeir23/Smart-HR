@@ -267,7 +267,7 @@ tts_agent = Agent(
 
 #### 4.3.4 Assistant Conversationnel IA (GenAI) 💬
 
-- **Modèle :** [Z.ai](http://Z.ai) GLM 4.7 ou Google Gemini
+- **Modèle :** Google Gemini 2.5 Flash (défaut) / OpenAI / Claude / Grok (multi-provider)
 - **Fonctionnalités :**
     - Chat intelligent sur les données RH
     - Réponses contextuelles (personnels, congés, tâches)
@@ -310,7 +310,7 @@ tts_agent = Agent(
     - FastEmbed (embeddings)
     - Firecrawl (optionnel : indexation docs depuis URL)
     - OpenAI TTS (text-to-speech)
-- **Assistant IA Conversationnel :** Google Gemini / Z.ai GLM 4.7
+- **Assistant IA Conversationnel :** Google Gemini 2.5 Flash (défaut) — multi-provider (OpenAI, Claude, Grok)
 
 #### Démos de référence (`Backend/reference_agents/`)
 
@@ -345,9 +345,9 @@ tts_agent = Agent(
     │             │              │                │
     ▼             ▼              ▼                ▼
 ┌─────────┐  ┌─────────┐  ┌──────────┐   ┌──────────┐
-│PostgreSQL│  │  Zoom   │  │  Qdrant  │   │  Z.ai    │
+│PostgreSQL│  │  Zoom   │  │  Qdrant  │   │  Gemini  │
 │  Local   │  │   API   │  │   OSS    │   │  API     │
-│  & Prod  │  │         │  │  Vector  │   │ GLM-4.7  │
+│  & Prod  │  │         │  │  Vector  │   │ 2.5Flash│
 └─────────┘  └─────────┘  └──────────┘   └──────────┘
 ```
 
@@ -481,7 +481,7 @@ gestion_rh_django/          # 📁 RACINE DU PROJET
     │   ├── migrations/
     │   ├── __init__.py
     │   ├── models.py       # Historique conversations (ChatHistory)
-    │   ├── train.py        # Contexte/prompt pour l'IA Z.ai (GLM-4.7) ou Gemini
+    │   ├── train.py        # Contexte/prompt pour l'IA Google Gemini (multi-provider) ou Gemini
     │   ├── views.py        # Endpoints API: /api/chat/
     │   ├── serializers.py  # Serializers pour conversations
     │   ├── admin.py
@@ -515,13 +515,13 @@ gestion_rh_django/          # 📁 RACINE DU PROJET
     │   ├── migrations/
     │   ├── __init__.py
     │   ├── config.py       # 🔑 Configuration centralisée (API Keys)
-    │   │                   # Z.ai (GLM-4.7), Zoom, Gmail, Google OAuth2
+    │   │                   # Google Gemini (multi-provider), Zoom, Gmail, Google OAuth2
     │   ├── admin.py        # Admin pour les agents (logs, configurations)
     │   │
     │   ├── recruitment_agent/  # 📋 AGENT DE RECRUTEMENT
     │   │   ├── __init__.py
     │   │   ├── models.py       # Modèles: AgentLog, CVAnalysis
-    │   │   ├── resume_analyzer.py   # 📄 Analyse CV avec **Z.ai GLM-4.7**
+    │   │   ├── resume_analyzer.py   # 📄 Analyse CV avec **Google Gemini 2.5 Flash**
     │   │   ├── scheduler.py         # 📅 Planification Zoom automatique
     │   │   ├── email_handler.py     # 📧 Emails automatisés (Gmail)
     │   │   ├── views.py             # 🌐 Django REST endpoints
@@ -720,7 +720,7 @@ frontend/                   # 📁 RACINE DU FRONTEND
     │   │   └── MatchingScore.jsx       # Score de matching IA
     │   │
     │   └── ai/             # 🤖 Composants IA
-    │       ├── ChatWidget.jsx          # Widget chat Z.ai
+    │       ├── ChatWidget.jsx          # Widget chat IA (Gemini multi-provider)
     │       ├── VoiceAssistant.jsx      # Assistant vocal
     │       └── ChurnAlert.jsx          # Alerte de churn
     │
@@ -793,7 +793,7 @@ frontend/                   # 📁 RACINE DU FRONTEND
 
 | **Phase** | **Composants** | **Technologie** | **Semaines** |
 | --- | --- | --- | --- |
-| **Phase 1** | Backend Django (11 apps fonctionnelles) | Django + DRF + postgresql+ **Z.ai (GLM-4.7)** | 1-8 |
+| **Phase 1** | Backend Django (11 apps fonctionnelles) | Django + DRF + postgresql+ **Google Gemini (multi-provider)** | 1-8 |
 | **Phase 2** | Agents IA intégrés (ai_agents) | OpenAI + Qdrant + FastEmbed | 9-10 |
 | **Phase 3** | Frontend React | React 18 + Vite 5 + Tailwind | 11-12 |
 
@@ -952,7 +952,7 @@ jobs:
 - **Backend Setup**
     - Init projet Django.
     - Connexion Base de Données (**PostgreSQL local**).
-    - Configuration Variables d'Env (`.env`) : [Z.ai](http://Z.ai) API, Google OAuth2, PostgreSQL.
+    - Configuration Variables d'Env (`.env`) : GEMINI_API_KEY, Google OAuth2, PostgreSQL.
 - **1.3 Frontend Setup**
     - Init projet React + Vite (`npm create vite@latest`).
     - Installation Tailwind CSS + PostCSS.
@@ -1004,7 +1004,7 @@ jobs:
 - **Implémentation Django** : `src/ai_agents/recruitment_agent/`
 - **Démo de référence** : `reference_agents/.../ai_recruitment_agent_team/` (Streamlit, venv dédié)
 - **Configuration API Keys**
-    - [**Z.ai](http://Z.ai) GLM-4.7** (pour analyse de CV)
+    - **Google Gemini 2.5 Flash** (défaut, `GEMINI_API_KEY`) — ou OpenAI/Claude/Grok via `LLM_PROVIDER`
     - Zoom API (Account ID, Client ID/Secret)
     - Gmail App Password
     - Google OAuth2 (Client ID/Secret)
@@ -1037,7 +1037,7 @@ jobs:
 
 #### 4.4 Assistant Conversationnel IA
 
-- **Intégration [Z.ai](http://Z.ai) GLM-4.7** (seule API payante)
+- **Intégration Google Gemini 2.5 Flash** (seule API payante)
     - Chat intelligent sur données RH
     - Réponses contextuelles
     - Endpoint `/api/chat/`
@@ -1090,7 +1090,7 @@ jobs:
     - Sélection de voix (nova, alloy, echo)
     - Tests UX avec candidats
 - **6.3 Assistant Conversationnel**
-    - Widget chat **Z.ai (GLM-4.7)**
+    - Widget chat **Google Gemini (multi-provider)**
     - Réponses contextuelles RH
     - Historique conversations
 - **6.4 Polish UI/UX**
@@ -1390,7 +1390,7 @@ GET  /api/proctoring/verify/<test_id>/  # Pour le RH
 | **Biais de l'IA** | Résultats discriminants | Utiliser uniquement le dataset IBM équilibré. |
 | **Performance "Cold Start"** | Lenteur démo (Render Free) | Prévoir un script qui "ping" le site 5 min avant la soutenance. |
 | **Temps de dev** | Retard sur le planning | Respecter le MVP (Lots 1 à 5 sont prioritaires). |
-| **Coûts API [Z.ai](http://Z.ai)** | Budget dépassé | Limiter le nombre d'appels, utiliser cache, prévoir quotas [Z.ai](http://Z.ai) GLM-4.7. |
+| **Coûts API Gemini** | Budget dépassé | Limiter le nombre d'appels, utiliser cache, prévoir quotas Google Gemini 2.5 Flash. |
 | **Latence agents IA** | UX dégradée | Traitement asynchrone (Celery), feedback visuel (loaders). |
 | **Intégration Zoom/Gmail** | Authentification complexe | Suivre documentation officielle, tests unitaires poussés. |
 | **Dépendances multiples** | Conflits versions | `reference_agents/` : venv dédié. Django : requirements.txt principal sans phidata/agno. |
