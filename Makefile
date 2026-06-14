@@ -49,3 +49,6 @@ rebuild: ## Reconstruit et relance les conteneurs
 	cd Backend && docker compose -f docker-compose.local.yml down
 	cd Backend && docker compose -f docker-compose.local.yml build
 	cd Backend && docker compose -f docker-compose.local.yml up -d
+
+logs: ## Affiche les logs du backend Django
+	cd Backend && docker compose -f docker-compose.local.yml logs -f django
