@@ -1,0 +1,59 @@
+site_name: Smart-HR Docs
+site_description: Documentation officielle et technique du SIRH Smart-HR
+site_author: Smart-HR Team
+
+theme:
+  name: material
+  language: fr
+  palette:
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: red
+      accent: red
+      toggle:
+        icon: material/brightness-7
+        name: Passer en mode sombre
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: red
+      accent: red
+      toggle:
+        icon: material/brightness-4
+        name: Passer en mode clair
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+
+docs_dir: Docs
+
+nav:
+  - Accueil: index.md
+  - Guide Utilisateur:
+    - Espace Employé: user-guide/employee.md
+    - Espace Manager / RH: user-guide/hr-manager.md
+    - Administration: user-guide/admin.md
+  - Documentation Technique:
+    - Architecture Système: Architecture/ARCHITECTURE.md
+    - Déploiement Docker: Deployment/DOCKER_SETUP.md
+    - Matrice de Sécurité (RBAC): Security/RBAC_MATRIX.md
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
