@@ -7,7 +7,7 @@ import socket
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.settimeout(2)
 try:
-    s.connect(('${DB_HOST:-db}', int('${DB_PORT:-5432}')))
+    s.connect(('${DB_HOST:-postgres}', int('${DB_PORT:-5432}')))
     s.close()
     exit(0)
 except:
