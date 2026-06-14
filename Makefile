@@ -70,3 +70,6 @@ migrate: ## Applique les migrations en base de données
 
 check: ## Vérifie la configuration Django
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py check
+
+test: ## Lance les tests pytest du backend
+	cd Backend && docker compose -f docker-compose.local.yml exec django pytest
