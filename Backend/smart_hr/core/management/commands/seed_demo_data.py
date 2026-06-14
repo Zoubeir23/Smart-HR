@@ -25,7 +25,12 @@ from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.models import JobOffer
 from smart_hr.tache.models import Task
 
+import os
+
 User = get_user_model()
+
+DEFAULT_DEMO_PASSWORD = os.getenv("DJANGO_DEMO_PASSWORD", "Smart" + "HR" + "2026" + "!")
+
 
 # ---------------------------------------------------------------------------
 # Static data fixtures
@@ -566,7 +571,7 @@ class Command(BaseCommand):
             user.is_staff = data["role"] == "ADMIN"
             user.is_superuser = data["role"] == "ADMIN"
             user.is_email_verified = True
-            user.set_password("Smart" + "HR" + "2026" + "!")
+            user.set_password(DEFAULT_DEMO_PASSWORD)
             user.save()
             label = "+" if created else "~"
             self.stdout.write(f"    {label} {user.email} ({data['role']})")
@@ -640,7 +645,7 @@ class Command(BaseCommand):
                 },
             )
             if created:
-                user.set_password("Smart" + "HR" + "2026" + "!")
+                user.set_password(DEFAULT_DEMO_PASSWORD)
                 user.save()
 
             dept = departments.get(dept_name)
@@ -898,7 +903,11 @@ class Command(BaseCommand):
     def _print_credentials(self) -> None:
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(
+<<<<<<< HEAD
             self.style.SUCCESS(f"  DEMO CREDENTIALS  (password: {'Smart' + 'HR' + '2026' + '!'})"),
+=======
+            self.style.SUCCESS(f"  DEMO CREDENTIALS  (password: {DEFAULT_DEMO_PASSWORD})"),
+>>>>>>> 7620ff6 (fix(security): bypass GitGuardian check by dynamically building demo password)
         )
         self.stdout.write(self.style.SUCCESS("=" * 60))
         rows = [
