@@ -42,6 +42,29 @@ nav:
     - Architecture Système: Architecture/ARCHITECTURE.md
     - Déploiement Docker: Deployment/DOCKER_SETUP.md
     - Matrice de Sécurité (RBAC): Security/RBAC_MATRIX.md
+  - API Reference:
+    - Auth Login: api-reference/auth_login.md
+    - Auth Refresh: api-reference/auth_refresh.md
+    - Auth Verify: api-reference/auth_verify.md
+    - Auth Logout: api-reference/auth_logout.md
+    - Users Profile: api-reference/users_profile.md
+    - Users List: api-reference/users_list.md
+    - Personnel Employees: api-reference/personnel_employees.md
+    - Personnel Departments: api-reference/personnel_departments.md
+    - Leaves Requests: api-reference/conge_requests.md
+    - Leaves Approve: api-reference/conge_approve.md
+    - Leaves Reject: api-reference/conge_reject.md
+    - Leaves Balance: api-reference/conge_balance.md
+    - AI Churn Predict: api-reference/ai_churn-predict.md
+    - Recruitment Jobs: api-reference/recruitment_jobs.md
+    - Recruitment Apply: api-reference/recruitment_apply.md
+    - Recruitment Candidates: api-reference/recruitment_candidates.md
+    - Payroll Payslips: api-reference/payroll_payslips.md
+    - Payroll Generate: api-reference/payroll_generate.md
+    - Tasks List: api-reference/tasks_list.md
+    - Tasks Assign: api-reference/tasks_assign.md
+    - Attendance Clock In: api-reference/attendance_clock-in.md
+    - Attendance Clock Out: api-reference/attendance_clock-out.md
 
 markdown_extensions:
   - admonition
