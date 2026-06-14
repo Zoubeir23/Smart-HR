@@ -91,3 +91,19 @@ celery-logs: ## Affiche les logs de Celery
 
 docs-build: ## Construit la documentation MkDocs
 	mkdocs build
+
+seed-demo: ## Génère les données de démonstration (employés, congés)
+	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py seed_demo_data
+
+init-all: ## Initialisation complète (up, migrate, seed-demo)
+	@echo "==========================================================="
+	@echo "   Initialisation de Smart-HR"
+	@echo "==========================================================="
+	$(MAKE) up
+	@echo "Attente démarrage PostgreSQL..."
+	sleep 10
+	$(MAKE) migrate
+	$(MAKE) seed-demo
+	@echo "==========================================================="
+	@echo "   Initialisation terminée !"
+	@echo "==========================================================="
