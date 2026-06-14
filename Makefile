@@ -61,3 +61,6 @@ shell: ## Ouvre le shell Python de Django
 
 dbshell: ## Ouvre le shell PostgreSQL
 	cd Backend && docker compose -f docker-compose.local.yml exec postgres psql -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-smarthr}
+
+makemigrations: ## Crée les fichiers de migration
+	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py makemigrations
