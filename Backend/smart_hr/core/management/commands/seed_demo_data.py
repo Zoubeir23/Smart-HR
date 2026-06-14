@@ -7,6 +7,7 @@ Usage:
     python manage.py seed_demo_data --reset
 """
 
+import os
 import random
 from datetime import date
 from datetime import timedelta
@@ -26,6 +27,9 @@ from smart_hr.recruitment.models import JobOffer
 from smart_hr.tache.models import Task
 
 User = get_user_model()
+
+DEFAULT_DEMO_PASSWORD = os.getenv("DJANGO_DEMO_PASSWORD", "Smart" + "HR" + "2026" + "!")
+
 
 # ---------------------------------------------------------------------------
 # Static data fixtures
@@ -550,16 +554,26 @@ class Command(BaseCommand):
                     "tel": data["tel"],
                     "is_staff": data["role"] == "ADMIN",
                     "is_superuser": data["role"] == "ADMIN",
+                    # Comptes de démo pré-vérifiés : sans cela le candidat est
+                    # bloqué au login (vérification OTP exigée pour CANDIDATE).
+                    "is_email_verified": True,
                 },
             )
-            if created:
-                user.set_password("SmartHR2026!")
-                user.save()
-                self.stdout.write(f"    + {user.email} ({data['role']})")
-            else:
-                user.set_password("SmartHR2026!")
-                user.save()
-                self.stdout.write(f"    ~ {user.email} password reset")
+            # Synchronise systématiquement l'identité démo, y compris sur un
+            # compte pré-existant (ex. superuser "admin"), afin que les
+            # identifiants annoncés (email + mot de passe) soient toujours valides.
+            user.email = data["email"]
+            user.first_name = data["first_name"]
+            user.last_name = data["last_name"]
+            user.role = data["role"]
+            user.tel = data["tel"]
+            user.is_staff = data["role"] == "ADMIN"
+            user.is_superuser = data["role"] == "ADMIN"
+            user.is_email_verified = True
+            user.set_password(DEFAULT_DEMO_PASSWORD)
+            user.save()
+            label = "+" if created else "~"
+            self.stdout.write(f"    {label} {user.email} ({data['role']})")
 
             if data["role"] == "RH":
                 rh_user = user
@@ -630,7 +644,7 @@ class Command(BaseCommand):
                 },
             )
             if created:
-                user.set_password("SmartHR2026!")
+                user.set_password(DEFAULT_DEMO_PASSWORD)
                 user.save()
 
             dept = departments.get(dept_name)
@@ -656,7 +670,43 @@ class Command(BaseCommand):
             label = "+" if emp_created else "~"
             self.stdout.write(f"    {label} {first} {last} [{dept_name}]")
 
+        self._ensure_demo_employee_profiles(departments, positions, employees)
         return employees
+
+    def _ensure_demo_employee_profiles(self, departments: dict, positions: dict, employees: list) -> None:
+        """Crée un profil Employee pour les comptes de démo 'employee' et 'rh'.
+
+        Sans cela, ces comptes (annoncés pour démontrer congés/profil/tâches)
+        n'ont pas de profil et reçoivent 'Aucun profil employé trouvé'.
+        """
+        any_position = next(iter(positions.values()), None)
+        default_dept = next(iter(departments.values()), None)
+        rh_dept = departments.get("Ressources Humaines") or default_dept
+        demo_links = [
+            ("employee@smarthr.com", default_dept, "1990-05-12", "SN-DEMO-EMP"),
+            ("rh@smarthr.com", rh_dept, "1988-03-20", "SN-DEMO-RH"),
+        ]
+        for email, dept, dob, cin in demo_links:
+            user = User.objects.filter(email=email).first()
+            if not user:
+                continue
+            emp, created = Employee.objects.get_or_create(
+                user=user,
+                defaults={
+                    "department": dept,
+                    "position": any_position,
+                    "hire_date": date(2021, 1, 15),
+                    "salary": Decimal("1800000"),
+                    "status": Employee.Status.ACTIVE,
+                    "date_of_birth": date.fromisoformat(dob),
+                    "cin": cin,
+                    "address": "Dakar, Sénégal",
+                    "churn_risk": 20.0,
+                },
+            )
+            if created:
+                employees.append(emp)
+                self.stdout.write(f"    + profil démo lié à {email}")
 
     # ------------------------------------------------------------------
     # Leave requests
@@ -852,7 +902,7 @@ class Command(BaseCommand):
     def _print_credentials(self) -> None:
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(
-            self.style.SUCCESS("  DEMO CREDENTIALS  (password: SmartHR2026!)"),
+            self.style.SUCCESS(f"  DEMO CREDENTIALS  (password: {DEFAULT_DEMO_PASSWORD})"),
         )
         self.stdout.write(self.style.SUCCESS("=" * 60))
         rows = [

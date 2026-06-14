@@ -22,6 +22,8 @@ import { CSS } from '@dnd-kit/utilities';
 import { taskService } from '@/services/taskService';
 import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/context/AuthContext';
+import SearchableSelect from '@/components/common/SearchableSelect';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -277,6 +279,9 @@ function DropColumn({ status, tasks, onMove, isOver }: DropColumnProps) {
 const TaskBoardPage = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
+  // Seuls RH/Admin créent des tâches ; l'employé déplace ses propres cartes.
+  const canManage = user?.role === 'RH' || user?.role === 'ADMIN';
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeDragTask, setActiveDragTask] = useState<Task | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -419,6 +424,7 @@ const TaskBoardPage = () => {
             </p>
           </div>
 
+          {canManage && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-primary text-primary-foreground gap-2">
@@ -454,21 +460,18 @@ const TaskBoardPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="assignee">Assigné à</Label>
-                    <Select
+                    <SearchableSelect
+                      id="assignee"
                       value={newTask.assignee}
-                      onValueChange={(value) => setNewTask({ ...newTask, assignee: value })}
-                    >
-                      <SelectTrigger id="assignee">
-                        <SelectValue placeholder="Sélectionner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((emp: { id: number; user: { first_name: string; last_name: string } }) => (
-                          <SelectItem key={emp.id} value={String(emp.id)}>
-                            {emp.user?.first_name} {emp.user?.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(value) => setNewTask({ ...newTask, assignee: value })}
+                      placeholder="Sélectionner un employé"
+                      searchPlaceholder="Rechercher un employé…"
+                      emptyText="Aucun employé trouvé."
+                      options={employees.map((emp: { id: number; user: { first_name: string; last_name: string } }) => ({
+                        value: String(emp.id),
+                        label: `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`.trim(),
+                      }))}
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="priority">Priorité</Label>
@@ -516,6 +519,7 @@ const TaskBoardPage = () => {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+          )}
         </div>
 
         {/* Kanban board */}

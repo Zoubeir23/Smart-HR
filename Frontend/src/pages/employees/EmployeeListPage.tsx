@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import EmployeeCard from '@/components/employees/EmployeeCard';
+import DataPagination, { usePagination } from '@/components/common/DataPagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -153,6 +154,8 @@ export default function EmployeeListPage() {
 
     return result;
   }, [employees, searchQuery, selectedDepartment, selectedStatus, sortKey, sortDir]);
+
+  const { pageItems: pagedEmployees, currentPage, setCurrentPage, totalPages } = usePagination(filteredEmployees);
 
   // ─── Stats ────────────────────────────
   const stats = useMemo(() => ({
@@ -361,7 +364,7 @@ export default function EmployeeListPage() {
                   exit={{ opacity: 0 }}
                   className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
                 >
-                  {filteredEmployees.map((employee) => (
+                  {pagedEmployees.map((employee) => (
                     <motion.div key={employee.id} variants={item}>
                       <EmployeeCard employee={employee} />
                     </motion.div>
@@ -412,7 +415,7 @@ export default function EmployeeListPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredEmployees.map((employee, index) => {
+                      {pagedEmployees.map((employee, index) => {
                         const avatarBg = getAvatarColor(`${employee.user.first_name}${employee.user.last_name}`);
                         const dept = (employee as { department_name?: string }).department_name ?? employee.department;
                         const pos = (employee as { position_title?: string }).position_title ?? employee.position;
@@ -538,6 +541,12 @@ export default function EmployeeListPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+            <DataPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              className="pt-4"
+            />
           </>
         )}
       </motion.div>

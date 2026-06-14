@@ -75,6 +75,10 @@ class Employee(TimeStampedModel):
         blank=True,
         help_text="Score de risque 0-100",
     )
+    is_department_manager = models.BooleanField(
+        default=False,
+        help_text="Désigne cet employé comme responsable de son département (N+1).",
+    )
 
     class Meta:
         verbose_name = "Employé"
