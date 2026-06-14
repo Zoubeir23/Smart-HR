@@ -23,6 +23,7 @@ import { taskService } from '@/services/taskService';
 import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
+import SearchableSelect from '@/components/common/SearchableSelect';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -459,21 +460,18 @@ const TaskBoardPage = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="assignee">Assigné à</Label>
-                    <Select
+                    <SearchableSelect
+                      id="assignee"
                       value={newTask.assignee}
-                      onValueChange={(value) => setNewTask({ ...newTask, assignee: value })}
-                    >
-                      <SelectTrigger id="assignee">
-                        <SelectValue placeholder="Sélectionner" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((emp: { id: number; user: { first_name: string; last_name: string } }) => (
-                          <SelectItem key={emp.id} value={String(emp.id)}>
-                            {emp.user?.first_name} {emp.user?.last_name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(value) => setNewTask({ ...newTask, assignee: value })}
+                      placeholder="Sélectionner un employé"
+                      searchPlaceholder="Rechercher un employé…"
+                      emptyText="Aucun employé trouvé."
+                      options={employees.map((emp: { id: number; user: { first_name: string; last_name: string } }) => ({
+                        value: String(emp.id),
+                        label: `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`.trim(),
+                      }))}
+                    />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="priority">Priorité</Label>
