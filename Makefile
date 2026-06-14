@@ -52,3 +52,9 @@ rebuild: ## Reconstruit et relance les conteneurs
 
 logs: ## Affiche les logs du backend Django
 	cd Backend && docker compose -f docker-compose.local.yml logs -f django
+
+# ==============================================================================
+# DJANGO COMMANDS (exécutées dans le conteneur)
+# ==============================================================================
+shell: ## Ouvre le shell Python de Django
+	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py shell
