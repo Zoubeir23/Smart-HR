@@ -4,7 +4,7 @@ Bienvenue dans votre espace employé Smart-HR. Ce portail a été conçu pour vo
 
 ## Mon Profil
 
-Votre profil regroupe vos informations personnelles et professionnelles. 
+Votre profil regroupe vos informations personnelles et professionnelles.
 
 1. **Accéder au profil** : Cliquez sur votre nom ou votre avatar en haut à droite de l'écran, puis sélectionnez **Profil**.
 2. **Informations affichées** :
