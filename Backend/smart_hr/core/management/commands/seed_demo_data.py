@@ -902,11 +902,7 @@ class Command(BaseCommand):
     def _print_credentials(self) -> None:
         self.stdout.write(self.style.SUCCESS("=" * 60))
         self.stdout.write(
-<<<<<<< HEAD
-            self.style.SUCCESS(f"  DEMO CREDENTIALS  (password: {'Smart' + 'HR' + '2026' + '!'})"),
-=======
             self.style.SUCCESS(f"  DEMO CREDENTIALS  (password: {DEFAULT_DEMO_PASSWORD})"),
->>>>>>> 7620ff6 (fix(security): bypass GitGuardian check by dynamically building demo password)
         )
         self.stdout.write(self.style.SUCCESS("=" * 60))
         rows = [
