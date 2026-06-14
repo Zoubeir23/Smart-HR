@@ -343,7 +343,8 @@ export default function TrainingPage() {
           </div>
         )}
 
-        {/* Create Formation Dialog */}
+        {/* Create Formation Dialog — réservé RH/Admin */}
+        {canManage && (
         <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -403,6 +404,7 @@ export default function TrainingPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </motion.div>
     </DashboardLayout>
   );
