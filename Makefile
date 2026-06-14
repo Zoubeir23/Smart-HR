@@ -26,3 +26,9 @@ frontend-test: ## Lance les tests vitest
 
 frontend-lint: ## Vérifie le code frontend avec ESLint
 	cd Frontend && npm run lint
+
+# ==============================================================================
+# DOCKER COMMANDS
+# ==============================================================================
+up: ## Lance les conteneurs Docker en arrière-plan
+	cd Backend && docker compose -f docker-compose.local.yml up -d
