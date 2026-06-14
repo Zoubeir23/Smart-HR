@@ -7,6 +7,7 @@ Usage:
     python manage.py seed_demo_data --reset
 """
 
+import os
 import random
 from datetime import date
 from datetime import timedelta
@@ -24,8 +25,6 @@ from smart_hr.personnel.models import Position
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.models import JobOffer
 from smart_hr.tache.models import Task
-
-import os
 
 User = get_user_model()
 
