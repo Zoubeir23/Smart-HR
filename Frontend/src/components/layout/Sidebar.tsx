@@ -19,7 +19,6 @@ import {
   LogOut,
   Shield,
   User,
-  Search,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -197,16 +196,8 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="flex items-center gap-2 px-3 py-3"
+          className="flex items-center justify-end px-3 py-3"
         >
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              className="h-9 w-full rounded-lg border border-sidebar-border bg-sidebar-accent/60 pl-8 pr-3 text-sm text-sidebar-accent-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-2 focus:ring-sidebar-primary/30"
-            />
-          </div>
           <NotificationBell variant="sidebar" />
         </motion.div>
       )}
