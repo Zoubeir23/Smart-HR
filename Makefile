@@ -32,3 +32,6 @@ frontend-lint: ## Vérifie le code frontend avec ESLint
 # ==============================================================================
 up: ## Lance les conteneurs Docker en arrière-plan
 	cd Backend && docker compose -f docker-compose.local.yml up -d
+
+down: ## Stoppe les conteneurs Docker
+	cd Backend && docker compose -f docker-compose.local.yml down
