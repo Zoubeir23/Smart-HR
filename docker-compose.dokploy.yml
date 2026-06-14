@@ -1,0 +1,59 @@
+volumes:
+  dokploy_postgres_data: {}
+  dokploy_redis_data: {}
+  dokploy_django_media: {}
+
+services:
+  postgres:
+    build:
+      context: ./Backend
+      dockerfile: ./compose/production/postgres/Dockerfile
+    volumes:
+      - dokploy_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.2-alpine
+    volumes:
+      - dokploy_redis_data:/data
+    restart: unless-stopped
+
+  django: &django
+    build:
+      context: ./Backend
+      dockerfile: ./compose/production/django/Dockerfile
+    volumes:
+      - dokploy_django_media:/app/smart_hr/media
+    depends_on:
+      - postgres
+      - redis
+    expose:
+      - "5000"
+    command: /start
+    restart: unless-stopped
+
+  celeryworker:
+    <<: *django
+    command: /start-celeryworker
+    expose: []
+
+  celerybeat:
+    <<: *django
+    command: /start-celerybeat
+    expose: []
+    
+  flower:
+    <<: *django
+    command: /start-flower
+    expose:
+      - "5555"
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: ./Dockerfile
+    depends_on:
+      - django
+    expose:
+      - "80"
+    restart: unless-stopped
