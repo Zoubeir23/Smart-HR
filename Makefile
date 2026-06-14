@@ -79,3 +79,6 @@ createsuperuser: ## Crée un super-administrateur
 
 collectstatic: ## Collecte les fichiers statiques
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py collectstatic --noinput
+
+flush-db: ## Vide la base de données (sans supprimer les tables)
+	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py flush --no-input
