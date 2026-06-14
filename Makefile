@@ -64,3 +64,6 @@ dbshell: ## Ouvre le shell PostgreSQL
 
 makemigrations: ## Crée les fichiers de migration
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py makemigrations
+
+migrate: ## Applique les migrations en base de données
+	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py migrate
