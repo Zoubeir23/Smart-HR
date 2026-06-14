@@ -43,6 +43,7 @@ import {
 import { cn } from '@/lib/utils';
 import { documentService } from '@/services/documentService';
 import { employeeService } from '@/services/employeeService';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
 type DocumentType = 'contract' | 'certificate' | 'attestation' | 'id_card' | 'other';
@@ -86,6 +87,9 @@ const CATEGORY_TABS = [
 export default function DocumentsPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  // Seuls RH/Admin gèrent les documents ; l'employé consulte les siens.
+  const canManage = user?.role === 'RH' || user?.role === 'ADMIN';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -197,25 +201,30 @@ export default function DocumentsPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-              Gestion des Documents
+              {canManage ? 'Gestion des Documents' : 'Mes documents'}
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Gérez et organisez les documents de vos collaborateurs
+              {canManage
+                ? 'Gérez et organisez les documents de vos collaborateurs'
+                : 'Consultez vos documents personnels'}
             </p>
           </div>
-          <Button
-            className="bg-primary text-primary-foreground"
-            onClick={() => {
-              setIsUploadDialogOpen(true);
-              setSelectedFile(null);
-            }}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Ajouter un document
-          </Button>
+          {canManage && (
+            <Button
+              className="bg-primary text-primary-foreground"
+              onClick={() => {
+                setIsUploadDialogOpen(true);
+                setSelectedFile(null);
+              }}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Ajouter un document
+            </Button>
+          )}
         </div>
 
-        {/* Upload Drop Zone */}
+        {/* Upload Drop Zone — réservé RH/Admin */}
+        {canManage && (
         <div
           className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 transition-colors hover:border-primary/50 cursor-pointer"
           onClick={() => fileInputRef.current?.click()}
@@ -248,6 +257,7 @@ export default function DocumentsPage() {
             Parcourir
           </Button>
         </div>
+        )}
 
         {/* Search + View Mode */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -326,14 +336,16 @@ export default function DocumentsPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)} title="Télécharger">
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteConfirmId(doc.id)}
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteConfirmId(doc.id)}
+                            title="Supprimer"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -369,9 +381,11 @@ export default function DocumentsPage() {
                       <Download className="mr-1 h-3 w-3" />
                       Télécharger
                     </Button>
-                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setDeleteConfirmId(doc.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {canManage && (
+                      <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setDeleteConfirmId(doc.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
