@@ -88,3 +88,6 @@ graphify-out/
 
 # Documents de mémoire/soutenance (binaires lourds, hors dépôt)
 memoire-soutenence/
+
+# ── MkDocs ─────────────────────────────────────────────────────────
+site/
