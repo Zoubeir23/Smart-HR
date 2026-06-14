@@ -76,3 +76,6 @@ test: ## Lance les tests pytest du backend
 
 createsuperuser: ## Crée un super-administrateur
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py createsuperuser
+
+collectstatic: ## Collecte les fichiers statiques
+	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py collectstatic --noinput
