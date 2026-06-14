@@ -14,3 +14,6 @@ help: ## Affiche cette aide
 # ==============================================================================
 frontend-install: ## Installe les dépendances frontend
 	cd Frontend && npm install
+
+frontend-dev: ## Lance le serveur de développement React
+	cd Frontend && npm run dev
