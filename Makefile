@@ -35,3 +35,6 @@ up: ## Lance les conteneurs Docker en arrière-plan
 
 down: ## Stoppe les conteneurs Docker
 	cd Backend && docker compose -f docker-compose.local.yml down
+
+down-v: ## Stoppe les conteneurs et supprime les volumes
+	cd Backend && docker compose -f docker-compose.local.yml down -v
