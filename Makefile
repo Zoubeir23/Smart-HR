@@ -44,3 +44,8 @@ restart: ## Redémarre les conteneurs Docker
 
 build: ## Construit les images Docker
 	cd Backend && docker compose -f docker-compose.local.yml build
+
+rebuild: ## Reconstruit et relance les conteneurs
+	cd Backend && docker compose -f docker-compose.local.yml down
+	cd Backend && docker compose -f docker-compose.local.yml build
+	cd Backend && docker compose -f docker-compose.local.yml up -d
