@@ -17,6 +17,7 @@ import { GraduationCap, Calendar, Users, Video, Clock, BookOpen, Plus, Loader2 }
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trainingService } from '@/services/trainingService';
+import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
 interface ApiMeeting {
@@ -65,6 +66,9 @@ interface NewFormationForm {
 
 export default function TrainingPage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  // Seuls RH/Admin planifient des formations ; l'employé consulte.
+  const canManage = user?.role === 'RH' || user?.role === 'ADMIN';
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [newFormationForm, setNewFormationForm] = useState<NewFormationForm>({
     title: '',
@@ -141,13 +145,17 @@ export default function TrainingPage() {
           <div>
             <h1 className="text-3xl font-bold text-foreground">Formations & Réunions</h1>
             <p className="text-muted-foreground mt-1">
-              Gérez les formations et les réunions de votre équipe
+              {canManage
+                ? 'Gérez les formations et les réunions de votre équipe'
+                : 'Consultez les formations et réunions auxquelles vous participez'}
             </p>
           </div>
-          <Button className="bg-primary text-primary-foreground" onClick={() => setIsCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Planifier une formation
-          </Button>
+          {canManage && (
+            <Button className="bg-primary text-primary-foreground" onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Planifier une formation
+            </Button>
+          )}
         </div>
 
         {/* Stats */}
@@ -221,10 +229,12 @@ export default function TrainingPage() {
             <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border py-12">
               <GraduationCap className="h-10 w-10 text-muted-foreground" />
               <p className="mt-3 text-sm text-muted-foreground">Aucune formation planifiée</p>
-              <Button className="mt-4" size="sm" onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Créer une formation
-              </Button>
+              {canManage && (
+                <Button className="mt-4" size="sm" onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Créer une formation
+                </Button>
+              )}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
