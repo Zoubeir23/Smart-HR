@@ -58,3 +58,6 @@ logs: ## Affiche les logs du backend Django
 # ==============================================================================
 shell: ## Ouvre le shell Python de Django
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py shell
+
+dbshell: ## Ouvre le shell PostgreSQL
+	cd Backend && docker compose -f docker-compose.local.yml exec postgres psql -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-smarthr}
