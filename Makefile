@@ -17,3 +17,6 @@ frontend-install: ## Installe les dépendances frontend
 
 frontend-dev: ## Lance le serveur de développement React
 	cd Frontend && npm run dev
+
+frontend-build: ## Compile le frontend pour la production
+	cd Frontend && npm run build
