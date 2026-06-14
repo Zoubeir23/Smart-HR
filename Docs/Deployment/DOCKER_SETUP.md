@@ -13,7 +13,7 @@ Our `docker-compose.local.yml` spins up the following services:
 - **redis**: The Redis instance used for caching and Celery.
 - **celeryworker**: The Celery worker to process asynchronous tasks (like emails and churn prediction).
 - **celerybeat**: The Celery beat scheduler for periodic tasks.
-- **frontend**: The Vite dev server for the React app running on `localhost:3000`.
+- **frontend**: The Vite dev server for the React app running on `localhost:5173`.
 
 ## Setup Instructions
 
@@ -38,7 +38,9 @@ Our `docker-compose.local.yml` spins up the following services:
    ```
 
 3. **Build the Stack**:
+   Navigate to the Backend directory where the compose file is located, then build the images.
    ```bash
+   cd Backend
    docker compose -f docker-compose.local.yml build
    ```
 
@@ -61,11 +63,13 @@ Our `docker-compose.local.yml` spins up the following services:
    ```
 
 ## Accessing the Apps
-- **Frontend App**: `http://localhost:3000`
+- **Frontend App**: `http://localhost:5173`
 - **Django Admin**: `http://localhost:8000/admin`
 - **Swagger API Docs**: `http://localhost:8000/api/schema/swagger-ui/`
 
 ## Stopping the Environment
+Ensure you are in the `Backend/` directory when running these commands.
+
 To stop the containers without removing your database data:
 ```bash
 docker compose -f docker-compose.local.yml stop

@@ -6,7 +6,7 @@ Smart-HR uses a strict Role-Based Access Control system to ensure data privacy a
 
 - **ADMIN**: Super administrator. Has full access to all modules and configurations.
 - **RH (HR Manager)**: Human Resources Manager. Can manage employees, approve all leaves, run payroll, and post job offers.
-- **MANAGER (Department Manager)**: An employee who manages a specific department. Can approve leaves for their direct reports but cannot view payroll or modify other employees.
+- **MANAGER (Department Manager)**: Not a base `User.Role`, but rather an `EMPLOYEE` whose profile has the `is_department_manager=True` flag. Can approve leaves for their direct reports but cannot view payroll or modify other employees.
 - **EMPLOYEE**: A standard employee. Can view their own profile, submit leave requests, view their own payslips, and see tasks assigned to them.
 - **CANDIDATE**: An external user applying for a job. Can only view job offers and submit applications.
 
