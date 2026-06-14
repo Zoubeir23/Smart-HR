@@ -73,3 +73,6 @@ check: ## Vérifie la configuration Django
 
 test: ## Lance les tests pytest du backend
 	cd Backend && docker compose -f docker-compose.local.yml exec django pytest
+
+createsuperuser: ## Crée un super-administrateur
+	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py createsuperuser
