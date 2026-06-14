@@ -77,5 +77,9 @@ class IsRHOrDepartmentManager(BasePermission):
             return False
         if not manager_profile.is_department_manager or not manager_profile.department:
             return False
-        # obj est une LeaveRequest — vérifie que l'employé est dans le même département
+        # obj est une LeaveRequest. Le manager peut traiter les demandes des membres
+        # de son département, MAIS jamais la sienne (séparation des tâches : une
+        # demande de congé d'un manager doit être validée par RH/Admin).
+        if obj.employee.user_id == request.user.id:
+            return False
         return obj.employee.department == manager_profile.department
