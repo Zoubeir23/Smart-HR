@@ -407,7 +407,8 @@ export default function DocumentsPage() {
           </div>
         )}
 
-        {/* Upload Dialog */}
+        {/* Upload Dialog — réservé RH/Admin */}
+        {canManage && (
         <Dialog open={isUploadDialogOpen} onOpenChange={(open) => { if (!open) { setIsUploadDialogOpen(false); setSelectedFile(null); } }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -489,8 +490,10 @@ export default function DocumentsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
 
-        {/* Delete Confirmation Dialog */}
+        {/* Delete Confirmation Dialog — réservé RH/Admin */}
+        {canManage && (
         <Dialog open={deleteConfirmId !== null} onOpenChange={() => setDeleteConfirmId(null)}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
@@ -512,6 +515,7 @@ export default function DocumentsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </motion.div>
     </DashboardLayout>
   );
