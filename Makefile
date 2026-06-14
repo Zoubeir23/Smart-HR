@@ -8,3 +8,9 @@ export
 
 help: ## Affiche cette aide
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
+
+# ==============================================================================
+# FRONTEND COMMANDS
+# ==============================================================================
+frontend-install: ## Installe les dépendances frontend
+	cd Frontend && npm install
