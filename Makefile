@@ -86,8 +86,8 @@ flush-db: ## Vide la base de données (sans supprimer les tables)
 # ==============================================================================
 # EXTRA
 # ==============================================================================
-celery-logs: ## Affiche les logs de Celery
-	cd Backend && docker compose -f docker-compose.local.yml logs -f celery
+celery-logs: ## Affiche les logs de Celery (worker et beat)
+	cd Backend && docker compose -f docker-compose.local.yml logs -f celeryworker celerybeat
 
 docs-build: ## Construit la documentation MkDocs
 	mkdocs build
