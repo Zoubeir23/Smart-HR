@@ -226,9 +226,13 @@ const LeaveListPage = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Gestion des Congés</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              {user?.role === 'RH' || user?.role === 'ADMIN' ? 'Gestion des Congés' : 'Mes congés'}
+            </h1>
             <p className="text-muted-foreground mt-1">
-              Gérez les demandes de congés de votre équipe
+              {user?.role === 'RH' || user?.role === 'ADMIN'
+                ? 'Gérez les demandes de congés de votre équipe'
+                : 'Demandez et suivez vos congés'}
             </p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
