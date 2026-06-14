@@ -20,3 +20,6 @@ frontend-dev: ## Lance le serveur de développement React
 
 frontend-build: ## Compile le frontend pour la production
 	cd Frontend && npm run build
+
+frontend-test: ## Lance les tests vitest
+	cd Frontend && npm run test
