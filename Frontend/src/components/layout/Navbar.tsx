@@ -1,4 +1,4 @@
-import { Bell, Search, Moon, Sun, Menu, LogOut, User, Settings, Check, CheckCheck } from 'lucide-react';
+import { Bell, Moon, Sun, Menu, LogOut, User, Settings, Check, CheckCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
@@ -7,7 +7,6 @@ import Logo from '@/components/common/Logo';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,15 +86,6 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
       <Link to="/dashboard" className="flex items-center shrink-0 lg:hidden">
         <Logo variant="full" size="sm" />
       </Link>
-
-      {/* Search */}
-      <div className="relative hidden flex-1 max-w-xs sm:max-w-sm md:max-w-md lg:max-w-[420px] md:flex">
-        <Search className="absolute left-2 sm:left-3 top-1/2 h-[13px] w-[13px] sm:h-[14px] sm:w-[14px] -translate-y-1/2 text-muted-foreground/60 flex-shrink-0" />
-        <Input
-          placeholder="Rechercher..."
-          className="h-[36px] sm:h-[38px] rounded-[10px] border-[hsl(34,30%,86%)] bg-muted pl-7 sm:pl-9 pr-3 text-[12px] sm:text-[13px] focus-visible:bg-card dark:border-[hsl(20,10%,22%)] truncate"
-        />
-      </div>
 
       <div className="flex-1 min-w-0" />
 

@@ -6,7 +6,6 @@ import re
 
 from rest_framework import status
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -14,6 +13,7 @@ from smart_hr.ai.llm_providers import get_llm_provider
 from smart_hr.ai.models import InterviewSession
 from smart_hr.ai.models import InterviewSessionFeedback
 from smart_hr.core.throttles import AILLMAnonThrottle
+from smart_hr.users.permissions import IsRH
 
 logger = logging.getLogger(__name__)
 
@@ -76,9 +76,9 @@ def _validate_conversation(conversation: object) -> tuple[bool, str]:
 
 
 class InterviewSessionCreateView(APIView):
-    """POST /api/v1/ai/interview/sessions/create/ — RH cree une session (authentifie)"""
+    """POST /api/v1/ai/interview/sessions/create/ — RH/Admin crée une session d'entretien."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsRH]
 
     def post(self, request) -> Response:
         job_position = request.data.get("job_position", "").strip()
@@ -234,9 +234,9 @@ class InterviewSessionFeedbackCreateView(APIView):
 
 
 class InterviewSessionListView(APIView):
-    """GET /api/v1/ai/interview/sessions/ — RH liste ses sessions (authentifie)"""
+    """GET /api/v1/ai/interview/sessions/ — RH/Admin liste les sessions d'entretien."""
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsRH]
 
     def get(self, request) -> Response:
         sessions = InterviewSession.objects.filter(created_by=request.user).prefetch_related("feedbacks")

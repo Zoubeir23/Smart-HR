@@ -43,6 +43,9 @@ import {
 import { cn } from '@/lib/utils';
 import { documentService } from '@/services/documentService';
 import { employeeService } from '@/services/employeeService';
+import { useAuth } from '@/context/AuthContext';
+import SearchableSelect from '@/components/common/SearchableSelect';
+import DataPagination, { usePagination } from '@/components/common/DataPagination';
 import { toast } from 'sonner';
 
 type DocumentType = 'contract' | 'certificate' | 'attestation' | 'id_card' | 'other';
@@ -86,6 +89,9 @@ const CATEGORY_TABS = [
 export default function DocumentsPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
+  // Seuls RH/Admin gèrent les documents ; l'employé consulte les siens.
+  const canManage = user?.role === 'RH' || user?.role === 'ADMIN';
 
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -175,6 +181,8 @@ export default function DocumentsPage() {
     return matchesSearch && matchesCategory;
   });
 
+  const { pageItems: pagedDocuments, currentPage, setCurrentPage, totalPages } = usePagination(filteredDocuments);
+
   if (isLoading) {
     return (
       <DashboardLayout>
@@ -197,25 +205,30 @@ export default function DocumentsPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
-              Gestion des Documents
+              {canManage ? 'Gestion des Documents' : 'Mes documents'}
             </h1>
             <p className="mt-1 text-muted-foreground">
-              Gérez et organisez les documents de vos collaborateurs
+              {canManage
+                ? 'Gérez et organisez les documents de vos collaborateurs'
+                : 'Consultez vos documents personnels'}
             </p>
           </div>
-          <Button
-            className="bg-primary text-primary-foreground"
-            onClick={() => {
-              setIsUploadDialogOpen(true);
-              setSelectedFile(null);
-            }}
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            Ajouter un document
-          </Button>
+          {canManage && (
+            <Button
+              className="bg-primary text-primary-foreground"
+              onClick={() => {
+                setIsUploadDialogOpen(true);
+                setSelectedFile(null);
+              }}
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              Ajouter un document
+            </Button>
+          )}
         </div>
 
-        {/* Upload Drop Zone */}
+        {/* Upload Drop Zone — réservé RH/Admin */}
+        {canManage && (
         <div
           className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted/30 p-8 transition-colors hover:border-primary/50 cursor-pointer"
           onClick={() => fileInputRef.current?.click()}
@@ -248,6 +261,7 @@ export default function DocumentsPage() {
             Parcourir
           </Button>
         </div>
+        )}
 
         {/* Search + View Mode */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -302,7 +316,7 @@ export default function DocumentsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDocuments.map((doc) => (
+                {pagedDocuments.map((doc) => (
                   <TableRow key={doc.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -326,14 +340,16 @@ export default function DocumentsPage() {
                         <Button variant="ghost" size="icon" onClick={() => handleDownload(doc)} title="Télécharger">
                           <Download className="h-4 w-4" />
                         </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDeleteConfirmId(doc.id)}
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        {canManage && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteConfirmId(doc.id)}
+                            title="Supprimer"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -344,7 +360,7 @@ export default function DocumentsPage() {
         ) : (
           /* Grid View */
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {filteredDocuments.map((doc) => (
+            {pagedDocuments.map((doc) => (
               <Card key={doc.id} className="border border-border shadow-sm transition-all hover:border-primary">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-3">
@@ -369,14 +385,24 @@ export default function DocumentsPage() {
                       <Download className="mr-1 h-3 w-3" />
                       Télécharger
                     </Button>
-                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setDeleteConfirmId(doc.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {canManage && (
+                      <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setDeleteConfirmId(doc.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
             ))}
           </div>
+        )}
+
+        {filteredDocuments.length > 0 && (
+          <DataPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+          />
         )}
 
         {/* Empty State */}
@@ -393,7 +419,8 @@ export default function DocumentsPage() {
           </div>
         )}
 
-        {/* Upload Dialog */}
+        {/* Upload Dialog — réservé RH/Admin */}
+        {canManage && (
         <Dialog open={isUploadDialogOpen} onOpenChange={(open) => { if (!open) { setIsUploadDialogOpen(false); setSelectedFile(null); } }}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -447,21 +474,17 @@ export default function DocumentsPage() {
 
               <div className="grid gap-2">
                 <Label>Employé</Label>
-                <Select
+                <SearchableSelect
                   value={uploadForm.employee}
-                  onValueChange={(value) => setUploadForm((prev) => ({ ...prev, employee: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner un employé" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(employees as Array<{ id: number; user: { first_name: string; last_name: string } }>).map((emp) => (
-                      <SelectItem key={emp.id} value={String(emp.id)}>
-                        {emp.user?.first_name} {emp.user?.last_name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(value) => setUploadForm((prev) => ({ ...prev, employee: value }))}
+                  placeholder="Sélectionner un employé"
+                  searchPlaceholder="Rechercher un employé…"
+                  emptyText="Aucun employé trouvé."
+                  options={(employees as Array<{ id: number; user: { first_name: string; last_name: string } }>).map((emp) => ({
+                    value: String(emp.id),
+                    label: `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`.trim(),
+                  }))}
+                />
               </div>
             </div>
             <DialogFooter>
@@ -475,8 +498,10 @@ export default function DocumentsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
 
-        {/* Delete Confirmation Dialog */}
+        {/* Delete Confirmation Dialog — réservé RH/Admin */}
+        {canManage && (
         <Dialog open={deleteConfirmId !== null} onOpenChange={() => setDeleteConfirmId(null)}>
           <DialogContent className="sm:max-w-sm">
             <DialogHeader>
@@ -498,6 +523,7 @@ export default function DocumentsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </motion.div>
     </DashboardLayout>
   );

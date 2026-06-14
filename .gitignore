@@ -85,3 +85,6 @@ Thumbs.db
 # ── repo .claude ─────────────────────────────────────────────────────────
 .claude/
 graphify-out/
+
+# Documents de mémoire/soutenance (binaires lourds, hors dépôt)
+memoire-soutenence/

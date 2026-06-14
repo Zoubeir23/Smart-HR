@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import DataPagination, { usePagination } from '@/components/common/DataPagination';
 import {
   Select,
   SelectContent,
@@ -330,6 +331,8 @@ export default function UserManagementPage() {
     return list;
   }, [allUsers, roleFilter, activeFilter, searchQuery]);
 
+  const { pageItems: pagedUsers, currentPage, setCurrentPage, totalPages } = usePagination(filteredUsers);
+
   // ── Mutations ──
 
   const toggleActiveMutation = useMutation({
@@ -516,7 +519,7 @@ export default function UserManagementPage() {
               <p className="text-sm text-muted-foreground">
                 {filteredUsers.length} utilisateur{filteredUsers.length > 1 ? 's' : ''} trouvé{filteredUsers.length > 1 ? 's' : ''}
               </p>
-              {filteredUsers.map((managedUser, index) => (
+              {pagedUsers.map((managedUser, index) => (
                 <motion.div
                   key={managedUser.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -537,6 +540,12 @@ export default function UserManagementPage() {
                   />
                 </motion.div>
               ))}
+              <DataPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                className="pt-2"
+              />
             </div>
           )}
         </div>

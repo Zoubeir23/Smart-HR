@@ -19,9 +19,6 @@ import {
   LogOut,
   Shield,
   User,
-  Search,
-  Bell,
-  Inbox,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -31,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Switch } from '@/components/ui/switch';
+import NotificationBell from '@/components/layout/NotificationBell';
 
 interface SidebarProps {
   collapsed: boolean;
@@ -65,7 +63,7 @@ const navigationGroups: NavGroup[] = [
       { title: 'Congés', href: '/leaves', icon: Calendar, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
       { title: 'Tâches', href: '/tasks', icon: ClipboardList, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
       { title: 'Présences', href: '/attendance', icon: Clock, roles: ['ADMIN', 'RH'] },
-      { title: 'Paie', href: '/payroll', icon: CreditCard, roles: ['ADMIN', 'RH'] },
+      { title: 'Paie', href: '/payroll', icon: CreditCard, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
     ],
   },
   {
@@ -127,13 +125,20 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar sidebar-grid-overlay"
     >
-      {/* Header : Logo + Toggle */}
-      <div className="flex h-16 items-center justify-between border-b border-sidebar-border px-3">
+      {/* Header : Logo + Toggle (toggle cohérent dans les deux états) */}
+      <div
+        className={cn(
+          'border-b border-sidebar-border',
+          collapsed
+            ? 'flex flex-col items-center gap-1 py-2'
+            : 'flex h-16 items-center justify-between px-3'
+        )}
+      >
         <Link
           to="/dashboard"
           className={cn(
             'flex min-w-0 flex-1 items-center gap-2 overflow-hidden rounded-md px-1 py-1',
-            collapsed && 'justify-center px-0'
+            collapsed && 'flex-none justify-center px-0'
           )}
         >
           {collapsed ? (
@@ -164,21 +169,25 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             )
           )}
         </Link>
-        {!collapsed && (
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onToggle}
-                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-              >
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onToggle}
+              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+            >
+              {collapsed ? (
+                <PanelLeft className="h-4 w-4" />
+              ) : (
                 <PanelLeftClose className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Réduire le menu</TooltipContent>
-          </Tooltip>
-        )}
+              )}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {collapsed ? 'Agrandir le menu' : 'Réduire le menu'}
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       {/* Utilitaires : Recherche, Notifications (mode étendu) */}
@@ -187,25 +196,9 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="flex items-center gap-2 px-3 py-3"
+          className="flex items-center justify-end px-3 py-3"
         >
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              className="h-9 w-full rounded-lg border border-sidebar-border bg-sidebar-accent/60 pl-8 pr-3 text-sm text-sidebar-accent-foreground placeholder:text-sidebar-foreground/50 focus:outline-none focus:ring-2 focus:ring-sidebar-primary/30"
-            />
-          </div>
-          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
-            <Inbox className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="relative h-9 w-9 shrink-0">
-            <Bell className="h-4 w-4" />
-            <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-medium text-primary-foreground">
-              3
-            </span>
-          </Button>
+          <NotificationBell variant="sidebar" />
         </motion.div>
       )}
 
@@ -386,22 +379,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </div>
       </div>
 
-      {/* Bouton Expand (mode compact) */}
-      {collapsed && (
-        <div className="absolute -right-3 top-20">
-          <Tooltip delayDuration={0}>
-            <TooltipTrigger asChild>
-              <button
-                onClick={onToggle}
-                className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-background shadow-sm transition-colors hover:bg-muted"
-              >
-                <PanelLeft className="h-3.5 w-3.5 text-muted-foreground" />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Agrandir le menu</TooltipContent>
-            </Tooltip>
-        </div>
-      )}
     </motion.aside>
   );
 }
