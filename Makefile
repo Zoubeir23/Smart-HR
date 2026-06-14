@@ -107,3 +107,10 @@ init-all: ## Initialisation complète (up, migrate, seed-demo)
 	@echo "==========================================================="
 	@echo "   Initialisation terminée !"
 	@echo "==========================================================="
+
+reset: ## Réinitialisation complète (DESTRUCTIF — supprime les volumes et relance tout)
+	@echo "==========================================================="
+	@echo "   ATTENTION : Réinitialisation destructrice !"
+	@echo "==========================================================="
+	$(MAKE) down-v
+	$(MAKE) init-all
