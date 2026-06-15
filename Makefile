@@ -76,8 +76,8 @@ migrate-local: ## Applique les migrations en base de données (SANS Docker, avec
 	cd Backend && DJANGO_READ_DOT_ENV_FILE=True USE_DOCKER=no .venv/bin/python manage.py migrate
 
 delete-migrations: ## Supprime tous les fichiers de migration (utile pour les recréer de zéro)
-	cd Backend && find . -path "*/migrations/*.py" -not -path "*/.venv/*" -not -name "__init__.py" -delete
-	cd Backend && find . -path "*/migrations/*.pyc" -not -path "*/.venv/*" -delete
+	cd Backend && find . -path "*/migrations/*.py" -not -path "*/.venv/*" -not -path "*/contrib/sites/*" -not -name "__init__.py" -delete
+	cd Backend && find . -path "*/migrations/*.pyc" -not -path "*/.venv/*" -not -path "*/contrib/sites/*" -delete
 
 check: ## Vérifie la configuration Django
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py check
