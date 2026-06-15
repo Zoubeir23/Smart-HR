@@ -67,13 +67,13 @@ makemigrations: ## Crée les fichiers de migration
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py makemigrations
 
 makemigrations-local: ## Crée les fichiers de migration (SANS Docker, avec SQLite)
-	cd Backend && USE_DOCKER=no ../.venv/bin/python manage.py makemigrations
+	cd Backend && USE_DOCKER=no .venv/bin/python manage.py makemigrations
 
 migrate: ## Applique les migrations en base de données
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py migrate
 
 migrate-local: ## Applique les migrations en base de données (SANS Docker, avec SQLite)
-	cd Backend && USE_DOCKER=no ../.venv/bin/python manage.py migrate
+	cd Backend && USE_DOCKER=no .venv/bin/python manage.py migrate
 
 delete-migrations: ## Supprime tous les fichiers de migration (utile pour les recréer de zéro)
 	cd Backend && find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
