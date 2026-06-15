@@ -4,7 +4,8 @@ export
 
 .PHONY: help frontend-install frontend-dev frontend-build frontend-test frontend-lint \
         up down down-v restart build rebuild logs shell dbshell makemigrations migrate \
-        check test createsuperuser collectstatic flush-db celery-logs docs-build reset
+        check test createsuperuser collectstatic flush-db celery-logs docs-build reset \
+        delete-migrations
 
 help: ## Affiche cette aide
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -67,6 +68,10 @@ makemigrations: ## Crée les fichiers de migration
 
 migrate: ## Applique les migrations en base de données
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py migrate
+
+delete-migrations: ## Supprime tous les fichiers de migration (utile pour les recréer de zéro)
+	cd Backend && find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+	cd Backend && find . -path "*/migrations/*.pyc" -delete
 
 check: ## Vérifie la configuration Django
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py check
