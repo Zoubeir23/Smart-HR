@@ -5,7 +5,7 @@ export
 .PHONY: help frontend-install frontend-dev frontend-build frontend-test frontend-lint \
         up down down-v restart build rebuild logs shell dbshell makemigrations migrate \
         check test createsuperuser collectstatic flush-db celery-logs docs-build reset \
-        delete-migrations clean-all
+        delete-migrations clean-all makemigrations-local migrate-local
 
 help: ## Affiche cette aide
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -66,8 +66,14 @@ dbshell: ## Ouvre le shell PostgreSQL
 makemigrations: ## Crée les fichiers de migration
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py makemigrations
 
+makemigrations-local: ## Crée les fichiers de migration (SANS Docker, idéal pour les captures d'écran)
+	cd Backend && ../.venv/bin/python manage.py makemigrations
+
 migrate: ## Applique les migrations en base de données
 	cd Backend && docker compose -f docker-compose.local.yml exec django python manage.py migrate
+
+migrate-local: ## Applique les migrations en base de données (SANS Docker)
+	cd Backend && ../.venv/bin/python manage.py migrate
 
 delete-migrations: ## Supprime tous les fichiers de migration (utile pour les recréer de zéro)
 	cd Backend && find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
