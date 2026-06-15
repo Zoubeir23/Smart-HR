@@ -179,7 +179,7 @@ export default function LandingPage() {
               Connexion
             </Link>
             <Link to="/register" className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition-all hover:bg-brand-red-dark active:scale-95 shadow-sm">
-              Démarrer gratuitement
+              Inscription
             </Link>
           </div>
 
@@ -204,7 +204,7 @@ export default function LandingPage() {
             </div>
             <div className="mt-4 flex flex-col gap-2">
               <Link to="/login" className="rounded-lg border border-border px-4 py-2.5 text-center text-sm font-semibold text-foreground">Connexion</Link>
-              <Link to="/register" className="rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-bold text-primary-foreground">Démarrer gratuitement</Link>
+              <Link to="/register" className="rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-bold text-primary-foreground">Inscription</Link>
             </div>
           </motion.div>
         )}
@@ -218,8 +218,8 @@ export default function LandingPage() {
         </div>
 
         <div className="relative mx-auto max-w-7xl px-6 pt-36 pb-24 lg:pt-48 lg:pb-32">
-          <div className="grid items-center gap-16 lg:grid-cols-2">
-            <div className="space-y-8">
+          <div className="flex flex-col items-center text-center">
+            <div className="space-y-8 max-w-3xl w-full">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/8 px-4 py-1.5">
                 <Brain className="h-3.5 w-3.5 text-primary" />
                 <span className="text-xs font-bold uppercase tracking-widest text-primary">SIRH propulsé par l'IA</span>
@@ -235,16 +235,16 @@ export default function LandingPage() {
                 Smart-HR anticipe les départs, automatise le recrutement et transforme vos données RH en décisions stratégiques.
               </motion.p>
 
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }} className="flex flex-wrap gap-3">
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }} className="flex flex-wrap justify-center gap-3">
                 <Link to="/register" className="group flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-brand-red-dark active:scale-95">
-                  Essayer gratuitement <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  Inscription <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <button onClick={() => scrollTo('produit')} className="flex items-center gap-2 rounded-xl border border-border bg-card px-7 py-3.5 text-base font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-secondary active:scale-95">
                   Voir les fonctionnalités
                 </button>
               </motion.div>
 
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.5 }} className="flex items-center gap-6 pt-2">
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.5 }} className="flex items-center justify-center gap-6 pt-2">
                 <div className="flex -space-x-2">
                   {['A', 'B', 'M', 'S'].map((l) => (
                     <div key={l} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary to-brand-red-dark text-[11px] font-bold text-white">{l}</div>
@@ -254,10 +254,6 @@ export default function LandingPage() {
                 <p className="text-sm text-muted-foreground">Rejoints par <span className="font-bold text-foreground">1 500+ PME</span></p>
               </motion.div>
             </div>
-
-            <motion.div initial={{ opacity: 0, x: 32 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.9, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}>
-              <DashboardMockup />
-            </motion.div>
           </div>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="absolute bottom-8 left-1/2 -translate-x-1/2">
