@@ -1426,3 +1426,11 @@ GET  /api/proctoring/verify/<test_id>/  # Pour le RH
 |---|---|---|
 | 1.0 | Juin 2026 | Création initiale du cahier des charges |
 | 1.1 | Juin 2026 | Ajout des précisions sur le multi-agents |
+
+## 12. RÈGLES DE GESTION GIT (POUR L'IA)
+
+Pour maximiser le nombre de contributions (carrés verts) sur GitHub de manière naturelle, l'assistant IA DOIT respecter scrupuleusement la règle suivante à chaque fin de tâche :
+
+- **Commits atomiques par fichier :** Ne faites jamais de commit global regroupant tous les fichiers modifiés (ex: `git commit -am '...'`).
+- **Un commit = un fichier :** Pour chaque fichier modifié, effectuez un `git add <fichier>` suivi d'un `git commit -m '<message approprié>'` individuel.
+- **Objectif :** Cela permet de générer de multiples contributions légitimes pour le profil GitHub du développeur.
