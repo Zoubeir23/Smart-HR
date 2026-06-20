@@ -1422,3 +1422,5 @@ GET  /api/proctoring/verify/<test_id>/  # Pour le RH
 
 ## 11. HISTORIQUE DES RÉVISIONS
 
+| Version | Date | Description |
+|---|---|---|
