@@ -1424,3 +1424,4 @@ GET  /api/proctoring/verify/<test_id>/  # Pour le RH
 
 | Version | Date | Description |
 |---|---|---|
+| 1.0 | Juin 2026 | Création initiale du cahier des charges |
