@@ -46,4 +46,26 @@ export const recruitmentService = {
     const { data } = await api.post(`/recruitment/applications/${applicationId}/create-interview/`, options ?? {});
     return data;
   },
+
+  onboardCandidate: async (applicationId: number) => {
+    const { data } = await api.post(`/recruitment/applications/${applicationId}/onboard/`);
+    return data;
+  },
+
+  getApplicationDocuments: async (applicationId: number) => {
+    const { data } = await api.get('/recruitment/application-documents/', { params: { application: applicationId } });
+    return data;
+  },
+
+  uploadApplicationDocument: async (applicationId: number, formData: FormData) => {
+    formData.append('application', String(applicationId));
+    const { data } = await api.post('/recruitment/application-documents/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+
+  deleteApplicationDocument: async (documentId: number) => {
+    await api.delete(`/recruitment/application-documents/${documentId}/`);
+  },
 };
