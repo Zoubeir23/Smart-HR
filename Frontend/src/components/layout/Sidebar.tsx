@@ -21,6 +21,7 @@ import {
   User,
   Scale,
   Megaphone,
+  TrendingUp,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -70,6 +71,7 @@ const navigationGroups: NavGroup[] = [
       { title: 'Paie', href: '/payroll', icon: CreditCard, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
       { title: 'Discipline', href: '/discipline', icon: Scale, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
       { title: 'Communication', href: '/communication', icon: Megaphone, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+      { title: 'Performance', href: '/performance', icon: TrendingUp, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
     ],
   },
   {
