@@ -63,6 +63,7 @@ class Application(TimeStampedModel):
         INTERVIEW = "interview", "Entretien planifié"
         ACCEPTED = "accepted", "Accepté"
         REJECTED = "rejected", "Rejeté"
+        WITHDRAWN = "withdrawn", "Retiree"
 
     job_offer = models.ForeignKey(
         JobOffer,
@@ -99,6 +100,10 @@ class Application(TimeStampedModel):
     onboarded = models.BooleanField(
         default=False,
         help_text="True si le candidat a été transformé en employé via l'onboarding automatique.",
+    )
+    anonymized = models.BooleanField(
+        default=False,
+        help_text="True si les donnees personnelles ont ete purgees (RGPD droit a l'oubli).",
     )
 
     class Meta:
