@@ -3,7 +3,7 @@ from smart_hr.recruitment.views.application_document import ApplicationDocumentV
 from smart_hr.recruitment.views.job_offer import JobOfferViewSet
 
 __all__ = [
-    "ApplicationViewSet",
     "ApplicationDocumentViewSet",
+    "ApplicationViewSet",
     "JobOfferViewSet",
 ]
