@@ -102,7 +102,7 @@ export default function DisciplinePage() {
 
   const canEdit = user?.role === 'RH' || user?.role === 'ADMIN';
 
-  const [filterType, setFilterType] = useState<string>('');
+  const [filterType, setFilterType] = useState<string>('all');
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<DisciplinaryRecord | null>(null);
   const [form, setForm] = useState<ActionForm>(EMPTY_FORM);
@@ -113,7 +113,7 @@ export default function DisciplinePage() {
   // ── Data ──────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
     queryKey: ['discipline', filterType],
-    queryFn: () => disciplineService.getAll(filterType ? { action_type: filterType } : undefined),
+    queryFn: () => disciplineService.getAll(filterType !== 'all' ? { action_type: filterType } : undefined),
   });
 
   const { data: employeesData } = useQuery({
@@ -243,7 +243,7 @@ export default function DisciplinePage() {
                 <SelectValue placeholder="Tous les types" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Tous les types</SelectItem>
+                <SelectItem value="all">Tous les types</SelectItem>
                 {(Object.entries(ACTION_CONFIG) as [ActionType, typeof ACTION_CONFIG[ActionType]][]).map(([key, cfg]) => (
                   <SelectItem key={key} value={key}>{cfg.label}</SelectItem>
                 ))}
@@ -379,9 +379,9 @@ export default function DisciplinePage() {
               <Scale className="h-12 w-12 text-muted-foreground/40" />
               <h3 className="mt-4 text-base font-semibold text-foreground">Aucune action disciplinaire</h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                {filterType ? 'Aucun résultat pour ce type de sanction.' : 'Aucune sanction enregistrée.'}
+                {filterType !== 'all' ? 'Aucun résultat pour ce type de sanction.' : 'Aucune sanction enregistrée.'}
               </p>
-              {canEdit && !filterType && (
+              {canEdit && filterType === 'all' && (
                 <Button className="mt-4 gap-2" onClick={openCreate}>
                   <Plus className="h-4 w-4" /> Créer une sanction
                 </Button>
