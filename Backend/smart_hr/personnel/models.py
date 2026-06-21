@@ -335,6 +335,12 @@ class Contract(TimeStampedModel):
     def __str__(self):
         return f"{self.employee} — {self.contract_type} ({self.start_date})"
 
+    def clean(self) -> None:
+        from django.core.exceptions import ValidationError
+
+        if self.contract_type == self.ContractType.CDI and self.end_date:
+            raise ValidationError({"end_date": "Un CDI ne peut pas avoir de date de fin."})
+
     @property
     def status(self) -> str:
         from django.utils import timezone
