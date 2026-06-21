@@ -75,15 +75,9 @@ class DisciplinaryActionViewSet(viewsets.ModelViewSet):
             return Response(status=403)
 
         total = DisciplinaryAction.objects.count()
-        by_type = list(
-            DisciplinaryAction.objects.values("action_type")
-            .annotate(count=Count("id"))
-            .order_by("-count")
-        )
+        by_type = list(DisciplinaryAction.objects.values("action_type").annotate(count=Count("id")).order_by("-count"))
         by_department = list(
-            DisciplinaryAction.objects.values("employee__department__name")
-            .annotate(count=Count("id"))
-            .order_by("-count")
+            DisciplinaryAction.objects.values("employee__department__name").annotate(count=Count("id")).order_by("-count")
         )
 
         return Response(
