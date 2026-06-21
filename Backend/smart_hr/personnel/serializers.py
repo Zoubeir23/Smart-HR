@@ -237,10 +237,16 @@ class ContractSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def validate(self, data: dict) -> dict:
+        contract_type = data.get("contract_type") or (self.instance.contract_type if self.instance else None)
         end_date = data.get("end_date")
         start_date = data.get("start_date")
+
+        if contract_type == "CDI" and end_date:
+            raise serializers.ValidationError({"end_date": "Un CDI ne peut pas avoir de date de fin."})
+
         if end_date and start_date and end_date < start_date:
             raise serializers.ValidationError({"end_date": "La date de fin doit être postérieure à la date de début."})
+
         salary = data.get("salary")
         if salary is not None and salary <= 0:
             raise serializers.ValidationError({"salary": "Le salaire doit être supérieur à zéro."})
