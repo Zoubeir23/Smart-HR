@@ -24,7 +24,7 @@ export interface AuditLogFilters {
 }
 
 export const securityService = {
-  getAuditLogs: async (filters?: AuditLogFilters): Promise<{ count: number; results: AuditLogEntry[] }> => {
+  getAuditLogs: async (filters?: AuditLogFilters): Promise<{ count: number; returned: number; results: AuditLogEntry[] }> => {
     const { data } = await api.get('/audit-logs/', { params: filters });
     return data;
   },
@@ -40,16 +40,29 @@ export const securityService = {
   },
 
   getRejectedApplications: async (): Promise<{ results: unknown[] }> => {
-    const { data } = await api.get('/recruitment/applications/', {
-      params: { status: 'rejected' },
-    });
-    return data;
+    const [rejected, withdrawn] = await Promise.all([
+      api.get('/recruitment/applications/', { params: { status: 'rejected' } }),
+      api.get('/recruitment/applications/', { params: { status: 'withdrawn' } }),
+    ]);
+    return {
+      results: [
+        ...(rejected.data.results ?? []),
+        ...(withdrawn.data.results ?? []),
+      ],
+    };
   },
 
   getInactiveEmployees: async (): Promise<{ results: unknown[] }> => {
-    const { data } = await api.get('/personnel/employees/', {
-      params: { status: 'inactive' },
-    });
+    const [inactive, terminated] = await Promise.all([
+      api.get('/personnel/employees/', { params: { status: 'inactive' } }),
+      api.get('/personnel/employees/', { params: { status: 'terminated' } }),
+    ]);
+    return {
+      results: [
+        ...(inactive.data.results ?? []),
+        ...(terminated.data.results ?? []),
+      ],
+    };
     return data;
   },
 };
