@@ -65,13 +65,6 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
-    def validate_gdpr_consent(self, value: bool) -> bool:
-        if not value:
-            raise serializers.ValidationError(
-                "Vous devez accepter le traitement de vos données personnelles (RGPD).",
-            )
-        return value
-
     def validate_cv(self, value):
         if value.size > 5 * 1024 * 1024:
             raise serializers.ValidationError("Le CV ne doit pas dépasser 5 Mo.")
