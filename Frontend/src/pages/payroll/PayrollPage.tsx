@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   DollarSign, TrendingUp, Users, Clock,
   Plus, Pencil, Trash2, Zap, Check, X, Download,
+  FileText, BarChart2, List, Printer,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -37,13 +38,16 @@ interface PayrollRecord {
   id: number;
   employee: number;
   employee_name: string;
+  employee_email: string;
   department_name: string;
   month: string;
   base_salary: string | number;
   bonuses: string | number;
   deductions: string | number;
+  gross_salary: string | number;
   net_salary: string | number;
   status: PayrollStatus;
+  status_display: string;
 }
 
 interface PayrollForm {
@@ -53,6 +57,20 @@ interface PayrollForm {
   bonuses: string;
   deductions: string;
   status: PayrollStatus;
+}
+
+interface DepartmentStat {
+  employee__department__name: string | null;
+  count: number;
+  total_net: string | number;
+}
+
+interface PayrollStats {
+  month: string;
+  total_payrolls: number;
+  total_net_salary: string | number;
+  by_status: Record<string, number>;
+  by_department: DepartmentStat[];
 }
 
 const EMPTY_FORM: PayrollForm = {
@@ -78,6 +96,7 @@ const MONTHS = [
   { value: '09', label: 'Septembre' }, { value: '10', label: 'Octobre' },
   { value: '11', label: 'Novembre' }, { value: '12', label: 'Décembre' },
 ];
+
 function getYears(rangeBefore = 2, rangeAfter = 2): string[] {
   const currentYear = new Date().getFullYear();
   return Array.from({ length: rangeBefore + rangeAfter + 1 }, (_, i) => String(currentYear - rangeBefore + i));
@@ -92,12 +111,44 @@ function getInitials(name: string): string {
   return name.split(' ').slice(0, 2).map((p) => p[0] ?? '').join('').toUpperCase();
 }
 
+function formatMonthLabel(monthParam: string): string {
+  const [year, month] = monthParam.split('-');
+  const label = MONTHS.find((m) => m.value === month)?.label ?? month;
+  return `${label} ${year}`;
+}
+
+function exportToCSV(records: PayrollRecord[], monthParam: string): void {
+  const headers = ['Employé', 'Email', 'Département', 'Mois', 'Brut', 'Primes', 'Déductions', 'Net', 'Statut'];
+  const rows = records.map((r) => [
+    r.employee_name,
+    r.employee_email ?? '',
+    r.department_name ?? '',
+    r.month,
+    Number(r.base_salary),
+    Number(r.bonuses),
+    Number(r.deductions),
+    Number(r.net_salary),
+    r.status_display ?? r.status,
+  ]);
+  const csvContent = [headers, ...rows]
+    .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    .join('\n');
+  const blob = new Blob(['﻿' + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `fiches-paie-${monthParam}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+type ActiveTab = 'list' | 'stats';
+
 export default function PayrollPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  // RH et Admin peuvent créer / modifier / supprimer / marquer payé
   const canEdit = user?.role === 'RH' || user?.role === 'ADMIN';
 
   const currentDate = new Date();
@@ -105,21 +156,26 @@ export default function PayrollPage() {
     String(currentDate.getMonth() + 1).padStart(2, '0'),
   );
   const [selectedYear, setSelectedYear] = useState(String(currentDate.getFullYear()));
+  const [activeTab, setActiveTab] = useState<ActiveTab>('list');
 
   const monthParam = `${selectedYear}-${selectedMonth}`;
 
-  // Modale création / édition
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<PayrollRecord | null>(null);
   const [form, setForm] = useState<PayrollForm>(EMPTY_FORM);
-
-  // Confirmation suppression
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [slipRecord, setSlipRecord] = useState<PayrollRecord | null>(null);
 
   // ── Data ──────────────────────────────────────────────────────────
   const { data, isLoading } = useQuery({
     queryKey: ['payroll', monthParam],
     queryFn: () => payrollService.getAll({ month: monthParam }),
+  });
+
+  const { data: statsData, isLoading: isStatsLoading } = useQuery({
+    queryKey: ['payroll-stats', monthParam],
+    queryFn: () => payrollService.getStats(monthParam),
+    enabled: activeTab === 'stats',
   });
 
   const { data: employeesData } = useQuery({
@@ -130,14 +186,14 @@ export default function PayrollPage() {
 
   const employees = employeesData?.results ?? employeesData ?? [];
   const payrollRecords: PayrollRecord[] = data?.results ?? data ?? [];
+  const stats: PayrollStats | null = statsData ?? null;
+
   const { pageItems: pagedRecords, currentPage, setCurrentPage, totalPages } = usePagination(payrollRecords);
 
-  const totalMass    = payrollRecords.reduce((s, r) => s + Number(r.base_salary), 0);
+  const totalMass     = payrollRecords.reduce((s, r) => s + Number(r.base_salary), 0);
   const averageSalary = payrollRecords.length > 0 ? Math.round(totalMass / payrollRecords.length) : 0;
-  const paidCount    = payrollRecords.filter((r) => r.status === 'paid').length;
-  const pendingCount = payrollRecords.filter((r) => r.status !== 'paid').length;
-
-  const selectedMonthLabel = MONTHS.find((m) => m.value === selectedMonth)?.label ?? selectedMonth;
+  const paidCount     = payrollRecords.filter((r) => r.status === 'paid').length;
+  const pendingCount  = payrollRecords.filter((r) => r.status !== 'paid').length;
 
   // ── Mutations ─────────────────────────────────────────────────────
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['payroll'] });
@@ -149,8 +205,8 @@ export default function PayrollPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
-      payrollService.update(id, data),
+    mutationFn: ({ id, data: payload }: { id: number; data: Record<string, unknown> }) =>
+      payrollService.update(id, payload),
     onSuccess: () => { toast({ title: 'Fiche mise à jour' }); invalidate(); closeForm(); },
     onError:   () => toast({ title: 'Erreur', description: 'Impossible de modifier la fiche.', variant: 'destructive' }),
   });
@@ -163,7 +219,7 @@ export default function PayrollPage() {
 
   const markPaidMutation = useMutation({
     mutationFn: payrollService.markPaid,
-    onSuccess: () => { toast({ title: '✅ Marqué comme payé — email envoyé à l\'employé' }); invalidate(); },
+    onSuccess: () => { toast({ title: 'Marqué comme payé — email envoyé à l\'employé' }); invalidate(); },
     onError:   () => toast({ title: 'Erreur', variant: 'destructive' }),
   });
 
@@ -251,7 +307,6 @@ export default function PayrollPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {/* Filtre mois / année */}
             <Select value={selectedMonth} onValueChange={setSelectedMonth}>
               <SelectTrigger className="w-32 h-9">
                 <SelectValue placeholder="Mois" />
@@ -272,8 +327,6 @@ export default function PayrollPage() {
                 ))}
               </SelectContent>
             </Select>
-
-            {/* Actions RH/Admin */}
             {canEdit && (
               <>
                 <Button
@@ -298,10 +351,10 @@ export default function PayrollPage() {
         {/* ── KPI Cards ── */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {[
-            { label: 'Masse salariale', value: formatCurrency(totalMass),    icon: DollarSign, color: 'text-primary' },
-            { label: 'Salaire moyen',   value: formatCurrency(averageSalary), icon: TrendingUp, color: 'text-success' },
-            { label: 'Payés',           value: String(paidCount),             icon: Users,      color: 'text-success' },
-            { label: 'En attente',      value: String(pendingCount),          icon: Clock,      color: 'text-warning' },
+            { label: 'Masse salariale', value: formatCurrency(totalMass),     icon: DollarSign, color: 'text-primary' },
+            { label: 'Salaire moyen',   value: formatCurrency(averageSalary),  icon: TrendingUp, color: 'text-success' },
+            { label: 'Payés',           value: String(paidCount),              icon: Users,      color: 'text-success' },
+            { label: 'En attente',      value: String(pendingCount),           icon: Clock,      color: 'text-warning' },
           ].map((s) => {
             const Icon = s.icon;
             return (
@@ -318,39 +371,69 @@ export default function PayrollPage() {
           })}
         </div>
 
-        {/* ── Table ── */}
-        <div className="border border-border bg-card rounded-xl shadow-sm overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <h2 className="text-base font-semibold text-foreground">
-              Fiches de paie — {selectedMonthLabel} {selectedYear}
-            </h2>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              Exporter
-            </Button>
-          </div>
+        {/* ── Tabs ── */}
+        <div className="flex gap-1 border-b border-border">
+          {([
+            { key: 'list',  label: 'Fiches de paie', icon: List },
+            { key: 'stats', label: 'Analyse masse salariale', icon: BarChart2 },
+          ] as const).map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={cn(
+                'flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 transition-colors',
+                activeTab === key
+                  ? 'border-primary text-primary'
+                  : 'border-transparent text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              {label}
+            </button>
+          ))}
+        </div>
 
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow className="bg-muted/50">
-                  <TableHead>Employé</TableHead>
-                  <TableHead className="hidden sm:table-cell">Département</TableHead>
-                  <TableHead className="text-right">Brut</TableHead>
-                  <TableHead className="text-right hidden md:table-cell">Déductions</TableHead>
-                  <TableHead className="text-right">Net</TableHead>
-                  <TableHead>Statut</TableHead>
-                  {canEdit && <TableHead className="text-right">Actions</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pagedRecords.map((record) => {
-                  const sc = STATUS_CONFIG[record.status];
-                  return (
-                    <TableRow
-                      key={record.id}
-                      className="border-b border-border hover:bg-muted/40 transition-colors animate-in fade-in"
-                    >
+        {/* ══ Tab: Liste ══ */}
+        {activeTab === 'list' && (
+          <div className="border border-border bg-card rounded-xl shadow-sm overflow-hidden">
+            <div className="flex items-center justify-between p-4 border-b border-border">
+              <h2 className="text-base font-semibold text-foreground">
+                Fiches — {formatMonthLabel(monthParam)}
+              </h2>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => exportToCSV(payrollRecords, monthParam)}
+                disabled={payrollRecords.length === 0}
+              >
+                <Download className="h-4 w-4" />
+                Exporter CSV
+              </Button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead>Employé</TableHead>
+                    <TableHead className="hidden sm:table-cell">Département</TableHead>
+                    <TableHead className="text-right">Brut</TableHead>
+                    <TableHead className="text-right hidden md:table-cell">Primes</TableHead>
+                    <TableHead className="text-right hidden md:table-cell">Déductions</TableHead>
+                    <TableHead className="text-right">Net</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pagedRecords.map((record) => {
+                    const sc = STATUS_CONFIG[record.status];
+                    return (
+                      <TableRow
+                        key={record.id}
+                        className="border-b border-border hover:bg-muted/40 transition-colors animate-in fade-in"
+                      >
                         <TableCell>
                           <div className="flex items-center gap-2 min-w-0">
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
@@ -367,6 +450,9 @@ export default function PayrollPage() {
                         <TableCell className="text-right text-sm font-medium text-foreground">
                           {formatCurrency(record.base_salary)}
                         </TableCell>
+                        <TableCell className="text-right text-sm text-success hidden md:table-cell">
+                          +{formatCurrency(record.bonuses)}
+                        </TableCell>
                         <TableCell className="text-right text-sm text-destructive hidden md:table-cell">
                           -{formatCurrency(record.deductions)}
                         </TableCell>
@@ -378,74 +464,195 @@ export default function PayrollPage() {
                             {sc?.label ?? record.status}
                           </Badge>
                         </TableCell>
-                        {canEdit && (
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              {record.status !== 'paid' && (
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                              title="Voir la fiche"
+                              onClick={() => setSlipRecord(record)}
+                            >
+                              <FileText className="h-3.5 w-3.5" />
+                            </Button>
+                            {canEdit && record.status !== 'paid' && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-success hover:bg-success/10"
+                                title="Marquer payé"
+                                onClick={() => markPaidMutation.mutate(record.id)}
+                                disabled={markPaidMutation.isPending}
+                              >
+                                <Check className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {canEdit && (
+                              <>
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-8 w-8 text-success hover:bg-success/10"
-                                  title="Marquer payé"
-                                  onClick={() => markPaidMutation.mutate(record.id)}
-                                  disabled={markPaidMutation.isPending}
+                                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                  onClick={() => openEdit(record)}
                                 >
-                                  <Check className="h-3.5 w-3.5" />
+                                  <Pencil className="h-3.5 w-3.5" />
                                 </Button>
-                              )}
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                onClick={() => openEdit(record)}
-                              >
-                                <Pencil className="h-3.5 w-3.5" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                onClick={() => setDeleteId(record.id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-
-          <DataPagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            className="pt-4"
-          />
-
-          {payrollRecords.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <DollarSign className="h-12 w-12 text-muted-foreground/40" />
-              <h3 className="mt-4 text-base font-semibold text-foreground">Aucune fiche de paie</h3>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Aucune fiche pour {selectedMonthLabel} {selectedYear}.
-              </p>
-              {canEdit && (
-                <div className="mt-4 flex gap-2">
-                  <Button variant="outline" className="gap-2" onClick={() => bulkMutation.mutate()}>
-                    <Zap className="h-4 w-4" /> Générer automatiquement
-                  </Button>
-                  <Button className="gap-2" onClick={openCreate}>
-                    <Plus className="h-4 w-4" /> Créer manuellement
-                  </Button>
-                </div>
-              )}
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => setDeleteId(record.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
             </div>
-          )}
-        </div>
+
+            <DataPagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              className="pt-4"
+            />
+
+            {payrollRecords.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <DollarSign className="h-12 w-12 text-muted-foreground/40" />
+                <h3 className="mt-4 text-base font-semibold text-foreground">Aucune fiche de paie</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Aucune fiche pour {formatMonthLabel(monthParam)}.
+                </p>
+                {canEdit && (
+                  <div className="mt-4 flex gap-2">
+                    <Button variant="outline" className="gap-2" onClick={() => bulkMutation.mutate()}>
+                      <Zap className="h-4 w-4" /> Générer automatiquement
+                    </Button>
+                    <Button className="gap-2" onClick={openCreate}>
+                      <Plus className="h-4 w-4" /> Créer manuellement
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ══ Tab: Stats ══ */}
+        {activeTab === 'stats' && (
+          <div className="space-y-4">
+            {isStatsLoading ? (
+              <div className="flex items-center justify-center h-32">
+                <p className="text-muted-foreground">Chargement des statistiques…</p>
+              </div>
+            ) : stats ? (
+              <>
+                {/* Cards résumé */}
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {[
+                    { label: 'Total fiches',        value: String(stats.total_payrolls) },
+                    { label: 'Masse salariale nette', value: formatCurrency(stats.total_net_salary) },
+                    { label: 'Mois analysé',         value: formatMonthLabel(monthParam) },
+                  ].map((s) => (
+                    <div key={s.label} className="border border-border bg-card rounded-xl shadow-sm p-4">
+                      <p className="text-xs text-muted-foreground mb-1">{s.label}</p>
+                      <p className="text-lg font-bold text-foreground">{s.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Par statut */}
+                <div className="border border-border bg-card rounded-xl shadow-sm p-4">
+                  <h3 className="text-sm font-semibold text-foreground mb-4">Répartition par statut</h3>
+                  <div className="space-y-3">
+                    {Object.entries(stats.by_status).map(([statusKey, count]) => {
+                      const cfg = STATUS_CONFIG[statusKey];
+                      const total = stats.total_payrolls || 1;
+                      const pct = Math.round((count / total) * 100);
+                      return (
+                        <div key={statusKey} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">{cfg?.label ?? statusKey}</span>
+                            <span className="font-medium text-foreground">{count} ({pct}%)</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-muted overflow-hidden">
+                            <div
+                              className={cn('h-full rounded-full transition-all', {
+                                'bg-success': statusKey === 'paid',
+                                'bg-warning': statusKey === 'pending',
+                                'bg-blue-500': statusKey === 'processed',
+                              })}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Par département */}
+                {stats.by_department.length > 0 && (
+                  <div className="border border-border bg-card rounded-xl shadow-sm overflow-hidden">
+                    <div className="p-4 border-b border-border">
+                      <h3 className="text-sm font-semibold text-foreground">Masse salariale par département</h3>
+                    </div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50">
+                          <TableHead>Département</TableHead>
+                          <TableHead className="text-center">Effectif</TableHead>
+                          <TableHead className="text-right">Total net</TableHead>
+                          <TableHead className="text-right">Part</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {stats.by_department.map((dept) => {
+                          const totalNet = Number(stats.total_net_salary) || 1;
+                          const deptNet  = Number(dept.total_net);
+                          const share    = Math.round((deptNet / totalNet) * 100);
+                          return (
+                            <TableRow key={dept.employee__department__name ?? 'none'} className="border-b border-border">
+                              <TableCell className="font-medium text-sm">
+                                {dept.employee__department__name ?? 'Sans département'}
+                              </TableCell>
+                              <TableCell className="text-center text-sm text-muted-foreground">
+                                {dept.count}
+                              </TableCell>
+                              <TableCell className="text-right text-sm font-medium text-foreground">
+                                {formatCurrency(dept.total_net)}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <div className="h-1.5 w-16 rounded-full bg-muted overflow-hidden">
+                                    <div className="h-full bg-primary rounded-full" style={{ width: `${share}%` }} />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground w-8 text-right">{share}%</span>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <BarChart2 className="h-12 w-12 text-muted-foreground/40" />
+                <p className="mt-4 text-sm text-muted-foreground">Aucune donnée pour ce mois.</p>
+              </div>
+            )}
+          </div>
+        )}
       </motion.div>
 
       {/* ══ Modale Création / Édition ══ */}
@@ -458,7 +665,6 @@ export default function PayrollPage() {
           </DialogHeader>
 
           <div className="space-y-4 py-2">
-            {/* Employé */}
             <div className="space-y-1.5">
               <Label>Employé <span className="text-destructive">*</span></Label>
               <SearchableSelect
@@ -474,7 +680,6 @@ export default function PayrollPage() {
               />
             </div>
 
-            {/* Mois */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label>Mois <span className="text-destructive">*</span></Label>
@@ -482,13 +687,9 @@ export default function PayrollPage() {
                   value={form.month.split('-')[1]}
                   onValueChange={(m) => setForm((f) => ({ ...f, month: `${f.month.split('-')[0]}-${m}` }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Mois" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Mois" /></SelectTrigger>
                   <SelectContent>
-                    {MONTHS.map((m) => (
-                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                    ))}
+                    {MONTHS.map((m) => <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -498,19 +699,14 @@ export default function PayrollPage() {
                   value={form.month.split('-')[0]}
                   onValueChange={(y) => setForm((f) => ({ ...f, month: `${y}-${f.month.split('-')[1]}` }))}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Année" />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Année" /></SelectTrigger>
                   <SelectContent>
-                    {YEARS.map((y) => (
-                      <SelectItem key={y} value={y}>{y}</SelectItem>
-                    ))}
+                    {YEARS.map((y) => <SelectItem key={y} value={y}>{y}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* Salaires */}
             <div className="grid grid-cols-3 gap-3">
               {[
                 { key: 'base_salary', label: 'Salaire brut *' },
@@ -530,7 +726,6 @@ export default function PayrollPage() {
               ))}
             </div>
 
-            {/* Net calculé */}
             {form.base_salary && (
               <p className="text-sm text-muted-foreground text-right">
                 Net estimé :{' '}
@@ -544,16 +739,13 @@ export default function PayrollPage() {
               </p>
             )}
 
-            {/* Statut */}
             <div className="space-y-1.5">
               <Label>Statut</Label>
               <Select
                 value={form.status}
                 onValueChange={(v) => setForm((f) => ({ ...f, status: v as PayrollStatus }))}
               >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {Object.entries(STATUS_CONFIG).map(([val, cfg]) => (
                     <SelectItem key={val} value={val}>{cfg.label}</SelectItem>
@@ -578,14 +770,68 @@ export default function PayrollPage() {
         </DialogContent>
       </Dialog>
 
+      {/* ══ Modale Fiche de Paie (impression) ══ */}
+      <Dialog open={slipRecord !== null} onOpenChange={(open) => !open && setSlipRecord(null)}>
+        <DialogContent className="max-w-lg w-full">
+          <DialogHeader>
+            <DialogTitle>Bulletin de Paie</DialogTitle>
+          </DialogHeader>
+          {slipRecord && (
+            <div id="payslip-print" className="space-y-4 py-2 text-sm">
+              <div className="flex justify-between items-start border-b border-border pb-3">
+                <div>
+                  <p className="font-bold text-foreground text-base">{slipRecord.employee_name}</p>
+                  <p className="text-muted-foreground">{slipRecord.employee_email}</p>
+                  <p className="text-muted-foreground">{slipRecord.department_name || 'Sans département'}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Période</p>
+                  <p className="font-semibold text-foreground">{formatMonthLabel(slipRecord.month)}</p>
+                  <Badge className={cn('text-xs mt-1', STATUS_CONFIG[slipRecord.status]?.className ?? '')}>
+                    {STATUS_CONFIG[slipRecord.status]?.label ?? slipRecord.status}
+                  </Badge>
+                </div>
+              </div>
+
+              <table className="w-full">
+                <tbody className="divide-y divide-border">
+                  {[
+                    { label: 'Salaire de base',  value: formatCurrency(slipRecord.base_salary),  className: '' },
+                    { label: 'Primes / Ancienneté', value: `+ ${formatCurrency(slipRecord.bonuses)}`, className: 'text-success' },
+                    { label: 'Déductions',        value: `- ${formatCurrency(slipRecord.deductions)}`, className: 'text-destructive' },
+                  ].map(({ label, value, className }) => (
+                    <tr key={label}>
+                      <td className="py-2 text-muted-foreground">{label}</td>
+                      <td className={cn('py-2 text-right font-medium', className)}>{value}</td>
+                    </tr>
+                  ))}
+                  <tr className="font-bold">
+                    <td className="py-3 text-foreground text-base border-t-2 border-border">Net à payer</td>
+                    <td className="py-3 text-right text-primary text-base border-t-2 border-border">
+                      {formatCurrency(slipRecord.net_salary)}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setSlipRecord(null)}>
+              <X className="mr-1 h-4 w-4" /> Fermer
+            </Button>
+            <Button onClick={() => window.print()} className="gap-2">
+              <Printer className="h-4 w-4" /> Imprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ══ Confirmation Suppression ══ */}
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer cette fiche de paie ?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irréversible.
-            </AlertDialogDescription>
+            <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
