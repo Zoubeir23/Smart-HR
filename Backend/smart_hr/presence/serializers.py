@@ -20,6 +20,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
     absence_type_display = serializers.CharField(
         source="get_absence_type_display",
         read_only=True,
+        allow_null=True,
     )
 
     class Meta:
@@ -64,13 +65,17 @@ class AttendanceSerializer(serializers.ModelSerializer):
                 {"check_out": "L'heure de sortie doit être après l'heure d'arrivée."},
             )
 
-        att_status = attrs.get("status")
-        absence_type = attrs.get("absence_type")
+        # Pour les PATCH partiels, on consulte l'instance existante si le champ est absent
+        instance_status = getattr(self.instance, "status", None)
+        att_status = attrs.get("status", instance_status)
+        instance_absence = getattr(self.instance, "absence_type", None)
+        absence_type = attrs.get("absence_type", instance_absence)
+
         if att_status == Attendance.Status.ABSENT and not absence_type:
             raise serializers.ValidationError(
                 {"absence_type": "Précisez si l'absence est signalée ou non."},
             )
-        if att_status != Attendance.Status.ABSENT and absence_type:
+        if att_status != Attendance.Status.ABSENT and "absence_type" in attrs:
             attrs["absence_type"] = None
 
         return attrs
