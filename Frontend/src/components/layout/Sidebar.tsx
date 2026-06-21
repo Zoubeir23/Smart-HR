@@ -19,6 +19,7 @@ import {
   LogOut,
   Shield,
   User,
+  Scale,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -66,6 +67,7 @@ const navigationGroups: NavGroup[] = [
       { title: 'Tâches', href: '/tasks', icon: ClipboardList, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
       { title: 'Présences', href: '/attendance', icon: Clock, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
       { title: 'Paie', href: '/payroll', icon: CreditCard, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+      { title: 'Discipline', href: '/discipline', icon: Scale, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
     ],
   },
   {
