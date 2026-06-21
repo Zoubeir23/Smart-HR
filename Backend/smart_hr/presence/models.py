@@ -33,8 +33,8 @@ class Attendance(TimeStampedModel):
     absence_type = models.CharField(
         max_length=12,
         choices=AbsenceType.choices,
-        null=True,
         blank=True,
+        default="",
         help_text="Renseigné uniquement si statut = Absent.",
     )
     note = models.TextField(blank=True)
