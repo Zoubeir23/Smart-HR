@@ -31,9 +31,13 @@ class LeaveRequestAdmin(admin.ModelAdmin):
     actions = ["bulk_approve", "bulk_reject"]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related(
-            "employee__user",
-            "approved_by",
+        return (
+            super()
+            .get_queryset(request)
+            .select_related(
+                "employee__user",
+                "approved_by",
+            )
         )
 
     @admin.action(description="✅ Approuver les demandes sélectionnées")
