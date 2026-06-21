@@ -71,9 +71,7 @@ class InternalMessageViewSet(viewsets.ModelViewSet):
 
         published_year = self.request.query_params.get("year")
         if published_year and published_year.isdigit():
-            queryset = queryset.filter(
-                Q(published_at__year=published_year) | Q(created_at__year=published_year)
-            )
+            queryset = queryset.filter(Q(published_at__year=published_year) | Q(created_at__year=published_year))
 
         return queryset
 
@@ -94,14 +92,9 @@ class InternalMessageViewSet(viewsets.ModelViewSet):
         total = InternalMessage.objects.count()
         published_count = InternalMessage.objects.filter(is_published=True).count()
         draft_count = total - published_count
-        by_type = list(
-            InternalMessage.objects.values("message_type").annotate(count=Count("id")).order_by("-count")
-        )
+        by_type = list(InternalMessage.objects.values("message_type").annotate(count=Count("id")).order_by("-count"))
         categories = list(
-            InternalMessage.objects.exclude(category="")
-            .values_list("category", flat=True)
-            .distinct()
-            .order_by("category")
+            InternalMessage.objects.exclude(category="").values_list("category", flat=True).distinct().order_by("category")
         )
 
         return Response(
