@@ -3,8 +3,60 @@ from django.db.models import Count
 from django.db.models import Sum
 
 from smart_hr.personnel.models import Department
+from smart_hr.personnel.models import DepartureReason
+from smart_hr.personnel.models import Diploma
 from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import FamilyStatus
+from smart_hr.personnel.models import Nationality
 from smart_hr.personnel.models import Position
+from smart_hr.personnel.models import Service
+
+
+@admin.register(Nationality)
+class NationalityAdmin(admin.ModelAdmin):
+    list_display = ["name"]
+    search_fields = ["name"]
+
+
+@admin.register(FamilyStatus)
+class FamilyStatusAdmin(admin.ModelAdmin):
+    list_display = ["label"]
+    search_fields = ["label"]
+
+
+@admin.register(Diploma)
+class DiplomaAdmin(admin.ModelAdmin):
+    list_display = ["label"]
+    search_fields = ["label"]
+
+
+@admin.register(DepartureReason)
+class DepartureReasonAdmin(admin.ModelAdmin):
+    list_display = ["label"]
+    search_fields = ["label"]
+
+
+@admin.register(Service)
+class ServiceAdmin(admin.ModelAdmin):
+    list_display = ["name", "department", "employee_count_display", "position_count_display"]
+    list_filter = ["department"]
+    search_fields = ["name", "department__name"]
+
+    def get_queryset(self, request):
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("department")
+            .annotate(_employee_count=Count("employees"), _position_count=Count("positions"))
+        )
+
+    @admin.display(description="Nb. employés", ordering="_employee_count")
+    def employee_count_display(self, obj) -> int:
+        return obj._employee_count  # noqa: SLF001
+
+    @admin.display(description="Nb. postes", ordering="_position_count")
+    def position_count_display(self, obj) -> int:
+        return obj._position_count  # noqa: SLF001
 
 
 @admin.register(Department)
@@ -39,12 +91,17 @@ class DepartmentAdmin(admin.ModelAdmin):
 class PositionAdmin(admin.ModelAdmin):
     """Admin enrichi pour les postes."""
 
-    list_display = ["title", "department", "employee_count_display"]
-    list_filter = ["department"]
-    search_fields = ["title"]
+    list_display = ["title", "service", "profile_type", "indicative_salary", "employee_count_display"]
+    list_filter = ["service__department", "service", "profile_type"]
+    search_fields = ["title", "service__name"]
 
     def get_queryset(self, request):
-        return super().get_queryset(request).select_related("department").annotate(_employee_count=Count("employees"))
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("service__department")
+            .annotate(_employee_count=Count("employees"))
+        )
 
     @admin.display(description="Nb. employés", ordering="_employee_count")
     def employee_count_display(self, obj) -> int:
@@ -57,17 +114,19 @@ class EmployeeAdmin(admin.ModelAdmin):
 
     list_display = [
         "full_name_display",
+        "matricule",
         "department",
+        "service",
         "position",
         "status",
         "hire_date",
         "salary",
         "churn_risk",
     ]
-    list_filter = ["status", "department", "position"]
-    search_fields = ["user__first_name", "user__last_name", "user__email", "cin"]
+    list_filter = ["status", "department", "service", "position", "nationality", "family_status"]
+    search_fields = ["user__first_name", "user__last_name", "user__email", "cin", "cnss_number", "matricule"]
     raw_id_fields = ["user"]
-    readonly_fields = ["churn_risk", "created_at", "updated_at"]
+    readonly_fields = ["matricule", "churn_risk", "created_at", "updated_at"]
     ordering = ["user__last_name", "user__first_name"]
 
     actions = ["mark_active", "mark_inactive"]
@@ -79,7 +138,11 @@ class EmployeeAdmin(admin.ModelAdmin):
             .select_related(
                 "user",
                 "department",
+                "service",
                 "position",
+                "nationality",
+                "family_status",
+                "diploma",
             )
         )
 
