@@ -114,14 +114,14 @@ def _build_rh_task_lines() -> list[str]:
     from smart_hr.tache.models import Task
 
     today = timezone.now().date()
-    overdue = Task.objects.filter(due_date__lt=today).exclude(status="done").select_related("assignee")
+    overdue = Task.objects.filter(due_date__lt=today).exclude(status="done").select_related("assignee__user")
     pending = Task.objects.filter(status="todo").count()
     in_progress = Task.objects.filter(status="in_progress").count()
     lines: list[str] = [f"Tâches : {pending} à faire, {in_progress} en cours, {overdue.count()} en retard"]
     if overdue.exists():
         lines.append("Tâches en retard :")
         for task in overdue[:5]:
-            assignee_name = task.assignee.get_full_name() if task.assignee else "Non assigné"
+            assignee_name = task.assignee.user.get_full_name() if task.assignee else "Non assigné"
             lines.append(f"  - {task.title} | {assignee_name} | Échéance : {_fmt_date(task.due_date)}")
     return lines
 
@@ -194,13 +194,13 @@ def _build_employee_task_lines(user) -> list[str]:
     from smart_hr.tache.models import Task
 
     today = timezone.now().date()
-    my_tasks = Task.objects.filter(assignee=user).exclude(status="done")
+    my_tasks = Task.objects.filter(assignee__user=user).exclude(status="done")
     if not my_tasks.exists():
         return ["Aucune tâche active assignée."]
 
     overdue_count = my_tasks.filter(due_date__lt=today).count()
     lines = [f"Mes tâches actives : {my_tasks.count()} (dont {overdue_count} en retard)"]
-    overdue_tasks = my_tasks.filter(due_date__lt=today).order_by("due_date")[:3]
+    overdue_tasks = my_tasks.filter(due_date__lt=today).order_by("due_date").select_related("assignee__user")[:3]
     if overdue_tasks:
         lines.append("Tâches en retard :")
         lines.extend(f"  - {task.title} | Échéance : {_fmt_date(task.due_date)}" for task in overdue_tasks)
