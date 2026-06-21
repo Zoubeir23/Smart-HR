@@ -85,6 +85,13 @@ const leaveStatusLabels: Record<string, string> = {
   rejected: 'Refusé',
 };
 
+// new Date("YYYY-MM-DD") is parsed as UTC midnight, causing a -1 day shift in UTC-
+// negative timezones. Passing year/month/day separately uses the local clock instead.
+function formatLocalDate(dateString: string): string {
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('fr-FR');
+}
+
 function getRiskLevel(score: number) {
   if (score < 30) return { label: 'Faible', color: 'text-success', bgColor: 'bg-success' };
   if (score < 60) return { label: 'Modéré', color: 'text-warning', bgColor: 'bg-warning' };
@@ -512,7 +519,7 @@ export default function EmployeeDetailPage() {
                   <div className="flex items-center gap-3 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-foreground">
-                      Embauché le {employee?.hire_date ? new Date(employee.hire_date).toLocaleDateString('fr-FR') : 'Non disponible'}
+                      Embauché le {employee?.hire_date ? formatLocalDate(employee.hire_date) : 'Non disponible'}
                     </span>
                   </div>
                 </div>
@@ -638,8 +645,8 @@ export default function EmployeeDetailPage() {
                       <div>
                         <p className="font-medium text-foreground">{leave.type}</p>
                         <p className="text-sm text-muted-foreground">
-                          {new Date(leave.start).toLocaleDateString('fr-FR')} -{' '}
-                          {new Date(leave.end).toLocaleDateString('fr-FR')}
+                          {formatLocalDate(leave.start)} -{' '}
+                          {formatLocalDate(leave.end)}
                         </p>
                       </div>
                       <Badge variant="outline" className={leaveStatusStyles[leave.status]}>
@@ -762,7 +769,7 @@ export default function EmployeeDetailPage() {
                         <p className="text-xs text-muted-foreground">
                           {member.relationship_display}
                           {member.age !== null ? ` · ${member.age} ans` : ''}
-                          {member.date_of_birth ? ` · né(e) le ${new Date(member.date_of_birth).toLocaleDateString('fr-FR')}` : ''}
+                          {member.date_of_birth ? ` · né(e) le ${formatLocalDate(member.date_of_birth)}` : ''}
                         </p>
                       </div>
                       <Button
