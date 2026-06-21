@@ -36,6 +36,7 @@ import AttendancePage from "@/pages/attendance/AttendancePage";
 import PayrollPage from "@/pages/payroll/PayrollPage";
 import DisciplinePage from "@/pages/discipline/DisciplinePage";
 import CommunicationPage from "@/pages/communication/CommunicationPage";
+import PerformancePage from "@/pages/performance/PerformancePage";
 
 // Documents & Formation
 import DocumentsPage from "@/pages/documents/DocumentsPage";
@@ -252,6 +253,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
                     <CommunicationPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/performance"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
+                    <PerformancePage />
                   </ProtectedRoute>
                 }
               />
