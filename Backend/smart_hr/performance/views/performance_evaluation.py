@@ -62,17 +62,9 @@ class PerformanceEvaluationViewSet(viewsets.ModelViewSet):
             return Response(status=403)
 
         total = PerformanceEvaluation.objects.count()
-        average_score = PerformanceEvaluation.objects.filter(global_score__isnull=False).aggregate(
-            avg=Avg("global_score")
-        )["avg"]
-        by_status = list(
-            PerformanceEvaluation.objects.values("status").annotate(count=Count("id"))
-        )
-        by_year = list(
-            PerformanceEvaluation.objects.values("year").annotate(
-                avg_score=Avg("global_score")
-            ).order_by("-year")[:5]
-        )
+        average_score = PerformanceEvaluation.objects.filter(global_score__isnull=False).aggregate(avg=Avg("global_score"))["avg"]
+        by_status = list(PerformanceEvaluation.objects.values("status").annotate(count=Count("id")))
+        by_year = list(PerformanceEvaluation.objects.values("year").annotate(avg_score=Avg("global_score")).order_by("-year")[:5])
 
         return Response(
             {

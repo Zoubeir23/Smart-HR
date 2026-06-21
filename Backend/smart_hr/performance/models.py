@@ -31,7 +31,7 @@ class Skill(TimeStampedModel):
     )
     level = models.PositiveSmallIntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        verbose_name="Niveau (1–5)",
+        verbose_name="Niveau (1-5)",
         help_text="1 = débutant, 5 = expert",
     )
     notes = models.TextField(blank=True, verbose_name="Observations")
@@ -73,7 +73,7 @@ class PerformanceEvaluation(TimeStampedModel):
         validators=[MinValueValidator(0), MaxValueValidator(100)],
         null=True,
         blank=True,
-        verbose_name="Score global (0–100)",
+        verbose_name="Score global (0-100)",
     )
     status = models.CharField(
         max_length=20,
