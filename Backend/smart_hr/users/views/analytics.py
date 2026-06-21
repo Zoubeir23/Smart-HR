@@ -30,7 +30,7 @@ _SALARY_BRACKETS = [
     ("200-400k", 200_000, 400_000),
     ("400-700k", 400_000, 700_000),
     ("700k-1M", 700_000, 1_000_000),
-    ("> 1M", 1_000_000, 999_999_999),
+    ("> 1M", 1_000_000, None),
 ]
 
 
@@ -99,8 +99,13 @@ class HRAnalyticsView(APIView):
     def _build_salary_distribution(self, employees) -> list[dict]:
         """Distribution des salaires par tranche."""
         result = []
-        for label, salary_min, salary_max in _SALARY_BRACKETS:
-            count = employees.filter(salary__gte=salary_min, salary__lt=salary_max).count()
+        brackets = _SALARY_BRACKETS
+        for index, (label, salary_min, salary_max) in enumerate(brackets):
+            is_last_bracket = index == len(brackets) - 1
+            if is_last_bracket:
+                count = employees.filter(salary__gte=salary_min).count()
+            else:
+                count = employees.filter(salary__gte=salary_min, salary__lt=salary_max).count()
             result.append({"bracket": label, "count": count})
         return result
 
