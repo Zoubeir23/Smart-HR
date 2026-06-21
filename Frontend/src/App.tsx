@@ -48,6 +48,9 @@ import ApplyPage from "@/pages/recruitment/ApplyPage";
 import ApplicationTrackingPage from "@/pages/recruitment/ApplicationTrackingPage";
 import ApplicationsManagementPage from "@/pages/recruitment/ApplicationsManagementPage";
 
+// Analytics
+import AnalyticsPage from "@/pages/analytics/AnalyticsPage";
+
 // Pages IA
 import ChurnDashboardPage from "@/pages/ai-insights/ChurnDashboardPage";
 import AIChatPage from "@/pages/ai/AIChatPage";
@@ -327,6 +330,16 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
                     <ApplicationsManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* Analytiques */}
+              <Route
+                path="/analytics"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <AnalyticsPage />
                   </ProtectedRoute>
                 }
               />
