@@ -258,6 +258,44 @@ class Employee(TimeStampedModel):
         super().save(*args, **kwargs)
 
 
+class FamilyMember(TimeStampedModel):
+    """Membre de la famille d'un employé (conjoint ou enfant)."""
+
+    class Relationship(models.TextChoices):
+        SPOUSE = "spouse", "Conjoint(e)"
+        CHILD = "child", "Enfant"
+
+    class Gender(models.TextChoices):
+        MALE = "M", "Masculin"
+        FEMALE = "F", "Féminin"
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="family_members",
+    )
+    relationship = models.CharField(
+        max_length=10,
+        choices=Relationship.choices,
+    )
+    first_name = models.CharField(max_length=100)
+    last_name = models.CharField(max_length=100)
+    date_of_birth = models.DateField(null=True, blank=True)
+    gender = models.CharField(
+        max_length=1,
+        choices=Gender.choices,
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = "Membre de la famille"
+        verbose_name_plural = "Membres de la famille"
+        ordering = ["relationship", "date_of_birth"]
+
+    def __str__(self) -> str:
+        return f"{self.first_name} {self.last_name} ({self.get_relationship_display()})"
+
+
 class Contract(TimeStampedModel):
     class ContractType(models.TextChoices):
         CDI = "CDI", "CDI"

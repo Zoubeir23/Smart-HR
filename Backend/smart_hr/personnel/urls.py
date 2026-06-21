@@ -8,6 +8,7 @@ from smart_hr.personnel.views import DepartmentViewSet
 from smart_hr.personnel.views import DepartureReasonViewSet
 from smart_hr.personnel.views import DiplomaViewSet
 from smart_hr.personnel.views import EmployeeViewSet
+from smart_hr.personnel.views import FamilyMemberViewSet
 from smart_hr.personnel.views import FamilyStatusViewSet
 from smart_hr.personnel.views import NationalityViewSet
 from smart_hr.personnel.views import PositionViewSet
@@ -19,6 +20,7 @@ router.register("services", ServiceViewSet, basename="service")
 router.register("positions", PositionViewSet, basename="position")
 router.register("employees", EmployeeViewSet, basename="employee")
 router.register("contracts", ContractViewSet, basename="contract")
+router.register("family-members", FamilyMemberViewSet, basename="family-member")
 router.register("ref/nationalities", NationalityViewSet, basename="nationality")
 router.register("ref/family-statuses", FamilyStatusViewSet, basename="family-status")
 router.register("ref/diplomas", DiplomaViewSet, basename="diploma")
