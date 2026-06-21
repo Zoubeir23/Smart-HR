@@ -1,9 +1,10 @@
 from django.conf import settings
+from django.db import IntegrityError
 from django.db import models
+from django.db import transaction
 from django.utils import timezone
 
 from smart_hr.core.models import TimeStampedModel
-
 
 # ---------------------------------------------------------------------------
 # Tables de référence système
@@ -141,13 +142,20 @@ class Position(TimeStampedModel):
 
 
 def _generate_matricule() -> str:
-    """Génère un matricule unique au format EMP-YYYY-NNNN."""
+    """Génère un matricule unique au format EMP-YYYY-NNNN.
+
+    Utilise select_for_update() pour sérialiser les lectures concurrentes et
+    éviter les doublons de matricule sous charge. Doit être appelé depuis un
+    bloc transaction.atomic().
+    """
     year = timezone.now().year
-    last = Employee.objects.filter(matricule__startswith=f"EMP-{year}-").order_by("matricule").last()
-    if last:
-        sequence = int(last.matricule.split("-")[-1]) + 1
-    else:
-        sequence = 1
+    last = (
+        Employee.objects.select_for_update()
+        .filter(matricule__startswith=f"EMP-{year}-")
+        .order_by("matricule")
+        .last()
+    )
+    sequence = int(last.matricule.split("-")[-1]) + 1 if last else 1
     return f"EMP-{year}-{sequence:04d}"
 
 
@@ -241,7 +249,17 @@ class Employee(TimeStampedModel):
 
     def save(self, *args, **kwargs) -> None:
         if not self.matricule:
-            self.matricule = _generate_matricule()
+            for _attempt in range(5):
+                try:
+                    with transaction.atomic():
+                        self.matricule = _generate_matricule()
+                        super().save(*args, **kwargs)
+                    return
+                except IntegrityError:
+                    self.matricule = ""
+            raise RuntimeError(
+                "Impossible de générer un matricule unique après 5 tentatives.",
+            )
         super().save(*args, **kwargs)
 
 
