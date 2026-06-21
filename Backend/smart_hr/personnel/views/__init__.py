@@ -2,6 +2,7 @@ from smart_hr.personnel.views.contract import ContractViewSet
 from smart_hr.personnel.views.dashboard import DashboardStatsView
 from smart_hr.personnel.views.department import DepartmentViewSet
 from smart_hr.personnel.views.employee import EmployeeViewSet
+from smart_hr.personnel.views.family_member import FamilyMemberViewSet
 from smart_hr.personnel.views.position import PositionViewSet
 from smart_hr.personnel.views.reference_tables import DepartureReasonViewSet
 from smart_hr.personnel.views.reference_tables import DiplomaViewSet
@@ -16,6 +17,7 @@ __all__ = [
     "DepartureReasonViewSet",
     "DiplomaViewSet",
     "EmployeeViewSet",
+    "FamilyMemberViewSet",
     "FamilyStatusViewSet",
     "NationalityViewSet",
     "PositionViewSet",
