@@ -60,7 +60,9 @@ interface MessageForm {
   published_at: string;
 }
 
-const today = new Date().toISOString().slice(0, 10);
+function getToday(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 const EMPTY_FORM: MessageForm = {
   message_type: 'memo',
@@ -69,7 +71,7 @@ const EMPTY_FORM: MessageForm = {
   category: '',
   target_audience: 'all',
   is_published: false,
-  published_at: today,
+  published_at: getToday(),
 };
 
 const MESSAGE_TYPE_CONFIG: Record<MessageType, { label: string; icon: typeof FileText; className: string }> = {
@@ -148,7 +150,7 @@ export default function CommunicationPage() {
     mutationFn: ({ id, is_published }: { id: number; is_published: boolean }) =>
       communicationService.update(id, {
         is_published,
-        ...(is_published ? { published_at: today } : {}),
+        ...(is_published ? { published_at: getToday() } : {}),
       }),
     onSuccess: (_, { is_published }) => {
       toast({ title: is_published ? 'Message publié' : 'Message dépublié' });
@@ -173,7 +175,7 @@ export default function CommunicationPage() {
       category:       record.category ?? '',
       target_audience: record.target_audience,
       is_published:   record.is_published,
-      published_at:   record.published_at ?? today,
+      published_at:   record.published_at ?? getToday(),
     });
     setShowForm(true);
   }
@@ -192,7 +194,7 @@ export default function CommunicationPage() {
       category:        form.category.trim(),
       target_audience: form.target_audience,
       is_published:    form.is_published,
-      published_at:    form.is_published ? form.published_at || today : null,
+      published_at:    form.is_published ? form.published_at || getToday() : null,
     };
     if (editTarget) {
       updateMutation.mutate({ id: editTarget.id, payload });
