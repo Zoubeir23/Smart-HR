@@ -9,6 +9,8 @@ import {
   Upload,
   CheckCircle,
   Send,
+  X,
+  Tag,
 } from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,9 +18,11 @@ import { Button } from '@/components/ui/button';
 import { recruitmentService } from '@/services/recruitmentService';
 import { useToast } from '@/hooks/use-toast';
 
-interface FormData {
+interface ApplicationFormData {
   lettreMotivation: string;
   cv: File | null;
+  searchKeywords: string[];
+  keywordInput: string;
 }
 
 const JOB_TYPE_LABELS: Record<string, string> = {
@@ -34,9 +38,11 @@ const ApplyPage = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const [formData, setFormData] = useState<FormData>({
+  const [formData, setFormData] = useState<ApplicationFormData>({
     lettreMotivation: '',
     cv: null,
+    searchKeywords: [],
+    keywordInput: '',
   });
 
   const [fileName, setFileName] = useState<string>('');
@@ -55,6 +61,10 @@ const ApplyPage = () => {
       fd.append('job_offer', jobId);
       fd.append('cv', formData.cv);
       fd.append('cover_letter', formData.lettreMotivation);
+      fd.append('gdpr_consent', 'true');
+      if (formData.searchKeywords.length > 0) {
+        fd.append('search_keywords', JSON.stringify(formData.searchKeywords));
+      }
       return recruitmentService.apply(fd);
     },
     onSuccess: () => {
@@ -78,6 +88,29 @@ const ApplyPage = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setFormData((prev) => ({ ...prev, lettreMotivation: e.target.value }));
+  };
+
+  const handleKeywordInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === 'Enter' || e.key === ',') && formData.keywordInput.trim()) {
+      e.preventDefault();
+      const newKeyword = formData.keywordInput.trim().toLowerCase();
+      if (!formData.searchKeywords.includes(newKeyword)) {
+        setFormData((prev) => ({
+          ...prev,
+          searchKeywords: [...prev.searchKeywords, newKeyword],
+          keywordInput: '',
+        }));
+      } else {
+        setFormData((prev) => ({ ...prev, keywordInput: '' }));
+      }
+    }
+  };
+
+  const removeKeyword = (keyword: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      searchKeywords: prev.searchKeywords.filter((k) => k !== keyword),
+    }));
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -264,6 +297,46 @@ const ApplyPage = () => {
                     placeholder="Expliquez pourquoi vous êtes le candidat idéal pour ce poste..."
                     required
                   />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-medium text-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="h-4 w-4" />
+                      Mots-clés de recherche
+                      <span className="text-xs font-normal text-muted-foreground">(optionnel)</span>
+                    </span>
+                  </label>
+                  <div className="min-h-10 w-full rounded-lg border border-border bg-card px-3 py-2 focus-within:ring-2 focus-within:ring-primary">
+                    <div className="flex flex-wrap gap-1.5">
+                      {formData.searchKeywords.map((keyword) => (
+                        <span
+                          key={keyword}
+                          className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary border border-primary/20"
+                        >
+                          {keyword}
+                          <button
+                            type="button"
+                            onClick={() => removeKeyword(keyword)}
+                            className="text-primary/60 hover:text-primary"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        </span>
+                      ))}
+                      <input
+                        type="text"
+                        value={formData.keywordInput}
+                        onChange={(e) => setFormData((prev) => ({ ...prev, keywordInput: e.target.value }))}
+                        onKeyDown={handleKeywordInputKeyDown}
+                        placeholder={formData.searchKeywords.length === 0 ? 'ex : informatique, comptabilité — Entrée pour valider' : 'Ajouter un mot-clé...'}
+                        className="flex-1 min-w-32 bg-transparent text-sm text-foreground placeholder:text-muted-foreground outline-none py-0.5"
+                      />
+                    </div>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ces mots-clés aideront le RH à retrouver votre profil lors de futures recherches.
+                  </p>
                 </div>
 
                 <div>
