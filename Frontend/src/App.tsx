@@ -34,6 +34,7 @@ import LeaveListPage from "@/pages/leaves/LeaveListPage";
 import TaskBoardPage from "@/pages/tasks/TaskBoardPage";
 import AttendancePage from "@/pages/attendance/AttendancePage";
 import PayrollPage from "@/pages/payroll/PayrollPage";
+import DisciplinePage from "@/pages/discipline/DisciplinePage";
 
 // Documents & Formation
 import DocumentsPage from "@/pages/documents/DocumentsPage";
@@ -232,6 +233,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
                     <PayrollPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/discipline"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
+                    <DisciplinePage />
                   </ProtectedRoute>
                 }
               />
