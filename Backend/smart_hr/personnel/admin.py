@@ -96,12 +96,7 @@ class PositionAdmin(admin.ModelAdmin):
     search_fields = ["title", "service__name"]
 
     def get_queryset(self, request):
-        return (
-            super()
-            .get_queryset(request)
-            .select_related("service__department")
-            .annotate(_employee_count=Count("employees"))
-        )
+        return super().get_queryset(request).select_related("service__department").annotate(_employee_count=Count("employees"))
 
     @admin.display(description="Nb. employés", ordering="_employee_count")
     def employee_count_display(self, obj) -> int:
