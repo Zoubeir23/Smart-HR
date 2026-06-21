@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.timezone import now
 
 from smart_hr.conge.models import LeaveRequest
 
@@ -40,6 +41,7 @@ class LeaveRequestAdmin(admin.ModelAdmin):
         updated = queryset.filter(status=LeaveRequest.Status.PENDING).update(
             status=LeaveRequest.Status.APPROVED,
             approved_by=request.user,
+            updated_at=now(),
         )
         self.message_user(request, f"{updated} demande(s) approuvée(s).")
 
@@ -48,5 +50,6 @@ class LeaveRequestAdmin(admin.ModelAdmin):
         updated = queryset.filter(status=LeaveRequest.Status.PENDING).update(
             status=LeaveRequest.Status.REJECTED,
             approved_by=request.user,
+            updated_at=now(),
         )
         self.message_user(request, f"{updated} demande(s) refusée(s).")
