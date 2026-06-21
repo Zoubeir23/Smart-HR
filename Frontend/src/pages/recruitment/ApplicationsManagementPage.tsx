@@ -10,6 +10,7 @@ import {
   SlidersHorizontal,
   Users,
   Send,
+  UserCheck,
 } from 'lucide-react';
 import { recruitmentService } from '@/services/recruitmentService';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -65,6 +66,8 @@ interface Application {
   status: ApplicationStatus;
   matching_score: number;
   skills_extracted?: string[];
+  search_keywords?: string[];
+  onboarded: boolean;
   created_at: string;
 }
 
@@ -330,7 +333,9 @@ interface ApplicationCardProps {
   interviewAlreadySent: boolean;
   onStatusChange: (applicationId: number, newStatus: ApplicationStatus) => void;
   onSendInterview: (application: Application) => void;
+  onOnboard: (application: Application) => void;
   isStatusChangePending: boolean;
+  isOnboardPending: boolean;
   isSelected: boolean;
   onToggleSelect: (applicationId: number) => void;
 }
@@ -340,7 +345,9 @@ function ApplicationCard({
   interviewAlreadySent,
   onStatusChange,
   onSendInterview,
+  onOnboard,
   isStatusChangePending,
+  isOnboardPending,
   isSelected,
   onToggleSelect,
 }: ApplicationCardProps) {
@@ -454,6 +461,36 @@ function ApplicationCard({
                   >
                     <Bot className="h-3.5 w-3.5" />
                     Envoyer entretien IA
+                  </Button>
+                )
+              )}
+
+              {/* Onboard button — only for accepted, not yet onboarded candidates */}
+              {application.status === 'accepted' && (
+                application.onboarded ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled
+                    className="gap-1.5 border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 cursor-not-allowed"
+                  >
+                    <UserCheck className="h-3.5 w-3.5" />
+                    Employé actif
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 border-emerald-500/60 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
+                    onClick={() => onOnboard(application)}
+                    disabled={isOnboardPending}
+                  >
+                    {isOnboardPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <UserCheck className="h-3.5 w-3.5" />
+                    )}
+                    Intégrer comme employé
                   </Button>
                 )
               )}
@@ -580,6 +617,9 @@ export default function ApplicationsManagementPage() {
   // Track sent interviews locally (by application ID)
   const [sentInterviewApplicationIds, setSentInterviewApplicationIds] = useState<Set<number>>(new Set());
 
+  // Track the application being onboarded
+  const [onboardingApplicationId, setOnboardingApplicationId] = useState<number | null>(null);
+
   // ── Data fetching ──
 
   const { data: jobOffersData, isLoading: isLoadingJobOffers } = useQuery({
@@ -648,6 +688,27 @@ export default function ApplicationsManagementPage() {
     },
   });
 
+  const onboardMutation = useMutation({
+    mutationFn: ({ applicationId }: { applicationId: number }) =>
+      recruitmentService.onboardCandidate(applicationId),
+    onSuccess: (responseData) => {
+      queryClient.invalidateQueries({ queryKey: ['applications-management'] });
+      setOnboardingApplicationId(null);
+      toast({
+        title: 'Onboarding réussi',
+        description: responseData?.detail ?? 'Le candidat a été intégré comme employé.',
+      });
+    },
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+      setOnboardingApplicationId(null);
+      toast({
+        title: 'Erreur lors de l\'onboarding',
+        description: error?.response?.data?.detail ?? 'Impossible d\'intégrer ce candidat. Réessayez.',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const createInterviewMutation = useMutation({
     mutationFn: ({ applicationId, duration, interviewType }: { applicationId: number; duration: string; interviewType: string }) =>
       recruitmentService.createInterview(applicationId, { duration, interview_type: interviewType }),
@@ -681,6 +742,11 @@ export default function ApplicationsManagementPage() {
 
   const handleStatusChange = (applicationId: number, newStatus: ApplicationStatus) => {
     updateStatusMutation.mutate({ applicationId, newStatus });
+  };
+
+  const handleOnboard = (application: Application) => {
+    setOnboardingApplicationId(application.id);
+    onboardMutation.mutate({ applicationId: application.id });
   };
 
   const handleOpenInterviewDialog = (application: Application) => {
@@ -949,10 +1015,12 @@ export default function ApplicationsManagementPage() {
                     interviewAlreadySent={sentInterviewApplicationIds.has(application.id)}
                     onStatusChange={handleStatusChange}
                     onSendInterview={handleOpenInterviewDialog}
+                    onOnboard={handleOnboard}
                     isStatusChangePending={
                       updateStatusMutation.isPending &&
                       updateStatusMutation.variables?.applicationId === application.id
                     }
+                    isOnboardPending={onboardMutation.isPending && onboardingApplicationId === application.id}
                     isSelected={selectedApplicationIds.has(application.id)}
                     onToggleSelect={handleToggleSelectApplication}
                   />

@@ -275,3 +275,70 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_201_CREATED,
         )
+
+    @action(detail=True, methods=["post"], url_path="onboard")
+    def onboard(self, request, pk=None):
+        """
+        POST /api/v1/recruitment/applications/{id}/onboard/
+
+        Transforme un candidat accepté en employé actif :
+        - Crée un profil Employee lié à son compte utilisateur
+        - Change le rôle User de CANDIDATE à EMPLOYEE
+        - Marque la candidature comme onboardée (onboarded=True)
+
+        Contraintes :
+        - La candidature doit être au statut 'accepted'
+        - L'onboarding ne peut être effectué qu'une seule fois
+        """
+        from django.utils import timezone
+
+        from smart_hr.personnel.models import Employee
+
+        application = self.get_object()
+
+        if application.status != Application.Status.ACCEPTED:
+            return Response(
+                {"detail": "Seules les candidatures acceptées peuvent être onboardées."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if application.onboarded:
+            return Response(
+                {"detail": "Ce candidat a déjà été transformé en employé."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        candidate_user = application.candidate
+
+        if hasattr(candidate_user, "employee_profile"):
+            return Response(
+                {"detail": "Un profil employé existe déjà pour cet utilisateur."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Employee.objects.create(
+            user=candidate_user,
+            hire_date=timezone.now().date(),
+            status=Employee.Status.ACTIVE,
+        )
+
+        candidate_user.role = "EMPLOYEE"
+        candidate_user.save(update_fields=["role"])
+
+        application.onboarded = True
+        application.save(update_fields=["onboarded", "updated_at"])
+
+        logger.info(
+            "Onboarding effectué : candidature %s → employé %s",
+            application.pk,
+            candidate_user.pk,
+        )
+
+        serializer = self.get_serializer(application)
+        return Response(
+            {
+                "detail": f"{candidate_user.get_full_name() or candidate_user.email} a été intégré comme employé.",
+                "application": serializer.data,
+            },
+            status=status.HTTP_200_OK,
+        )
