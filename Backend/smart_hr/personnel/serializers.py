@@ -10,7 +10,6 @@ from smart_hr.personnel.models import Nationality
 from smart_hr.personnel.models import Position
 from smart_hr.personnel.models import Service
 
-
 # ---------------------------------------------------------------------------
 # Tables de référence
 # ---------------------------------------------------------------------------
@@ -107,6 +106,7 @@ class ServiceSerializer(serializers.ModelSerializer):
 class PositionSerializer(serializers.ModelSerializer):
     service_name = serializers.CharField(source="service.name", read_only=True)
     department_name = serializers.SerializerMethodField()
+    department_id = serializers.SerializerMethodField()
     employee_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -116,6 +116,7 @@ class PositionSerializer(serializers.ModelSerializer):
             "title",
             "service",
             "service_name",
+            "department_id",
             "department_name",
             "profile_type",
             "indicative_salary",
@@ -124,6 +125,9 @@ class PositionSerializer(serializers.ModelSerializer):
 
     def get_department_name(self, obj: Position) -> str:
         return obj.service.department.name if obj.service else ""
+
+    def get_department_id(self, obj: Position) -> int | None:
+        return obj.service.department_id if obj.service else None
 
     def get_employee_count(self, obj: Position) -> int:
         return obj.employees.filter(status=Employee.Status.ACTIVE).count()
