@@ -6,6 +6,7 @@ from smart_hr.personnel.models import Department
 from smart_hr.personnel.models import DepartureReason
 from smart_hr.personnel.models import Diploma
 from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import FamilyMember
 from smart_hr.personnel.models import FamilyStatus
 from smart_hr.personnel.models import Nationality
 from smart_hr.personnel.models import Position
@@ -154,3 +155,17 @@ class EmployeeAdmin(admin.ModelAdmin):
     def mark_inactive(self, request, queryset):
         updated = queryset.update(status=Employee.Status.INACTIVE)
         self.message_user(request, f"{updated} employé(s) marqué(s) comme inactif(s).")
+
+
+class FamilyMemberInline(admin.TabularInline):
+    model = FamilyMember
+    extra = 0
+    fields = ["relationship", "first_name", "last_name", "date_of_birth", "gender"]
+
+
+@admin.register(FamilyMember)
+class FamilyMemberAdmin(admin.ModelAdmin):
+    list_display = ["employee", "relationship", "first_name", "last_name", "date_of_birth"]
+    list_filter = ["relationship", "gender"]
+    search_fields = ["first_name", "last_name", "employee__user__last_name"]
+    autocomplete_fields = ["employee"]
