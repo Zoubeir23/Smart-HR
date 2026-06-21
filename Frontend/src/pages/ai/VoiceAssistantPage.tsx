@@ -1,374 +1,498 @@
-import { useState, useRef } from 'react';
-import { motion } from 'framer-motion';
-import { Mic, MicOff, Volume2, Sparkles, Send, Loader2 } from 'lucide-react';
+import { useState, useRef, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  Sparkles,
+  Send,
+  Loader2,
+  RefreshCcw,
+  Radio,
+} from 'lucide-react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { Card } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { aiService } from '@/services/aiService';
+import { cn } from '@/lib/utils';
+
+/* ─── Types ─── */
 
 type VoiceType = 'nova' | 'alloy' | 'echo';
 
-interface Voice {
+interface VoiceProfile {
   id: VoiceType;
   name: string;
   description: string;
-  gender: string;
+  useCase: string;
+  pitch: number;
+  rate: number;
 }
 
-interface VoiceResponse {
-  text_response: string;
-  audio_url: string | null;
-  sources: string[];
-  mode: string;
+interface ConversationEntry {
+  id: number;
+  question: string;
+  answer: string;
+  voice: VoiceType;
+  timestamp: Date;
 }
 
-const VoiceAssistantPage = () => {
-  const [isRecording, setIsRecording] = useState(false);
+/* ─── Voice profiles mapped to Web Speech Synthesis params ─── */
+
+const VOICE_PROFILES: VoiceProfile[] = [
+  {
+    id: 'nova',
+    name: 'Nova',
+    description: 'Féminine, douce',
+    useCase: "Onboarding et support candidat",
+    pitch: 1.2,
+    rate: 0.95,
+  },
+  {
+    id: 'alloy',
+    name: 'Alloy',
+    description: 'Neutre, claire',
+    useCase: "FAQ et procédures RH",
+    pitch: 1.0,
+    rate: 1.0,
+  },
+  {
+    id: 'echo',
+    name: 'Echo',
+    description: 'Masculine, posée',
+    useCase: "Briefings d'entretien",
+    pitch: 0.85,
+    rate: 0.9,
+  },
+];
+
+const EXAMPLE_QUESTIONS = [
+  'Comment poser une demande de congé ?',
+  'Où trouver mes fiches de paie ?',
+  "Comment se préparer pour l'entretien technique ?",
+  "Quels sont les avantages offerts par l'entreprise ?",
+  "Quelle est la procédure en cas d'absence ?",
+];
+
+/* ─── TTS helper ─── */
+
+function speakText(text: string, profile: VoiceProfile): void {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'fr-FR';
+  utterance.pitch = profile.pitch;
+  utterance.rate = profile.rate;
+
+  const voices = window.speechSynthesis.getVoices();
+  const frenchVoice = voices.find(
+    (v) => v.lang.startsWith('fr') && v.localService
+  ) ?? voices.find((v) => v.lang.startsWith('fr'));
+  if (frenchVoice) utterance.voice = frenchVoice;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function stopSpeech(): void {
+  if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+/* ─── Main component ─── */
+
+export default function VoiceAssistantPage() {
   const [selectedVoice, setSelectedVoice] = useState<VoiceType>('nova');
-  const [response, setResponse] = useState<VoiceResponse | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
   const [textQuery, setTextQuery] = useState('');
-  const audioRef = useRef<HTMLAudioElement>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [conversation, setConversation] = useState<ConversationEntry[]>([]);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const entryCounterRef = useRef(0);
 
-  const voices: Voice[] = [
-    {
-      id: 'nova',
-      name: 'Nova',
-      description: 'Féminine, douce',
-      gender: 'Idéale pour l\'onboarding et le support candidat'
-    },
-    {
-      id: 'alloy',
-      name: 'Alloy',
-      description: 'Neutre, claire',
-      gender: 'Parfaite pour les FAQ et procédures'
-    },
-    {
-      id: 'echo',
-      name: 'Echo',
-      description: 'Masculine, posée',
-      gender: 'Recommandée pour les briefings d\'entretien'
-    }
-  ];
+  const currentProfile = VOICE_PROFILES.find((v) => v.id === selectedVoice) ?? VOICE_PROFILES[0];
 
-  const handleSubmitQuery = async (query: string) => {
-    if (!query.trim() || isProcessing) return;
+  /* ── Submit query to backend ── */
 
-    setIsProcessing(true);
-    setResponse(null);
+  const submitQuery = useCallback(
+    async (query: string) => {
+      const trimmed = query.trim();
+      if (!trimmed || isProcessing) return;
 
-    try {
-      const data = await aiService.voiceAsk(query.trim(), selectedVoice);
-      setResponse(data);
+      setIsProcessing(true);
       setTextQuery('');
-    } catch {
-      setResponse({
-        text_response: 'Désolé, une erreur est survenue. Veuillez réessayer.',
-        audio_url: null,
-        sources: [],
-        mode: 'error',
-      });
-    } finally {
-      setIsProcessing(false);
-    }
-  };
+      stopSpeech();
+      setIsSpeaking(false);
 
-  const handleMicClick = () => {
-    if (isRecording) {
-      setIsRecording(false);
-      // Use Web Speech API for voice-to-text
-      // Falls back to a prompt if not supported
-    } else {
-      setIsRecording(true);
-      setResponse(null);
+      try {
+        const data = await aiService.voiceAsk(trimmed, selectedVoice);
+        const answer: string = data.text_response ?? "Je n'ai pas pu générer de réponse.";
 
-      // Try Web Speech API
-      const SpeechRecognition = (window as unknown as Record<string, unknown>).SpeechRecognition ||
-        (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+        entryCounterRef.current += 1;
+        setConversation((prev) => [
+          {
+            id: entryCounterRef.current,
+            question: trimmed,
+            answer,
+            voice: selectedVoice,
+            timestamp: new Date(),
+          },
+          ...prev,
+        ]);
 
-      if (SpeechRecognition) {
-        const recognition = new (SpeechRecognition as new () => SpeechRecognition)();
-        (recognition as unknown as Record<string, unknown>).lang = 'fr-FR';
-        (recognition as unknown as Record<string, unknown>).continuous = false;
-        (recognition as unknown as Record<string, unknown>).interimResults = false;
-
-        recognition.onresult = (event: SpeechRecognitionEvent) => {
-          const transcript = event.results[0][0].transcript;
-          setTextQuery(transcript);
-          setIsRecording(false);
-          handleSubmitQuery(transcript);
-        };
-
-        recognition.onerror = () => {
-          setIsRecording(false);
-        };
-
-        recognition.onend = () => {
-          setIsRecording(false);
-        };
-
-        recognition.start();
-      } else {
-        setIsRecording(false);
+        setIsSpeaking(true);
+        const utterance = new SpeechSynthesisUtterance(answer);
+        utterance.lang = 'fr-FR';
+        utterance.pitch = currentProfile.pitch;
+        utterance.rate = currentProfile.rate;
+        const voices = window.speechSynthesis.getVoices();
+        const frenchVoice =
+          voices.find((v) => v.lang.startsWith('fr') && v.localService) ??
+          voices.find((v) => v.lang.startsWith('fr'));
+        if (frenchVoice) utterance.voice = frenchVoice;
+        utterance.onend = () => setIsSpeaking(false);
+        utterance.onerror = () => setIsSpeaking(false);
+        window.speechSynthesis.cancel();
+        window.speechSynthesis.speak(utterance);
+      } catch {
+        entryCounterRef.current += 1;
+        setConversation((prev) => [
+          {
+            id: entryCounterRef.current,
+            question: trimmed,
+            answer: "Une erreur s'est produite. Veuillez réessayer.",
+            voice: selectedVoice,
+            timestamp: new Date(),
+          },
+          ...prev,
+        ]);
+      } finally {
+        setIsProcessing(false);
       }
+    },
+    [isProcessing, selectedVoice, currentProfile]
+  );
+
+  /* ── Speech recognition ── */
+
+  const toggleMic = useCallback(() => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+      setIsRecording(false);
+      return;
     }
+
+    const SpeechRecognitionApi =
+      (window as unknown as Record<string, unknown>).SpeechRecognition ??
+      (window as unknown as Record<string, unknown>).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionApi) {
+      alert("La reconnaissance vocale n'est pas supportée par ce navigateur. Utilisez Chrome ou Edge.");
+      return;
+    }
+
+    const recognition = new (SpeechRecognitionApi as new () => SpeechRecognition)();
+    recognition.lang = 'fr-FR';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognitionRef.current = recognition;
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setIsRecording(false);
+      submitQuery(transcript);
+    };
+    recognition.onerror = () => setIsRecording(false);
+    recognition.onend = () => setIsRecording(false);
+
+    setIsRecording(true);
+    recognition.start();
+  }, [isRecording, submitQuery]);
+
+  /* ── Replay TTS for a past entry ── */
+
+  const replayEntry = useCallback(
+    (entry: ConversationEntry) => {
+      const profile = VOICE_PROFILES.find((v) => v.id === entry.voice) ?? currentProfile;
+      setIsSpeaking(true);
+      const utterance = new SpeechSynthesisUtterance(entry.answer);
+      utterance.lang = 'fr-FR';
+      utterance.pitch = profile.pitch;
+      utterance.rate = profile.rate;
+      const voices = window.speechSynthesis.getVoices();
+      const frenchVoice =
+        voices.find((v) => v.lang.startsWith('fr') && v.localService) ??
+        voices.find((v) => v.lang.startsWith('fr'));
+      if (frenchVoice) utterance.voice = frenchVoice;
+      utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    },
+    [currentProfile]
+  );
+
+  const handleStopSpeech = () => {
+    stopSpeech();
+    setIsSpeaking(false);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmitQuery(textQuery);
-    }
+  const handleClearConversation = () => {
+    stopSpeech();
+    setIsSpeaking(false);
+    setConversation([]);
   };
 
-  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
-  const baseUrl = (() => {
-    try {
-      return new URL(apiBaseUrl).origin;
-    } catch {
-      return 'http://localhost:8000';
-    }
-  })();
+  /* ── Render ── */
 
   return (
     <DashboardLayout>
-      <div className="max-w-4xl mx-auto py-8 px-4">
+      <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+
+        {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          className="text-center"
         >
-          {/* Header */}
-          <div className="text-center mb-8">
-            <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-              className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary to-purple-600 rounded-2xl mb-4"
-            >
-              <Volume2 className="w-8 h-8 text-white" />
-            </motion.div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Assistant Vocal IA
-            </h1>
-            <p className="text-muted-foreground">
-              Posez vos questions par texte ou vocalement et recevez des réponses instantanées
-            </p>
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-purple-600 mb-3">
+            <Volume2 className="w-7 h-7 text-white" />
           </div>
+          <h1 className="text-2xl font-bold text-foreground">Assistant Vocal RH</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Posez vos questions par texte ou par micro, obtenez des réponses lues à voix haute
+          </p>
+        </motion.div>
 
-          {/* Voice Selection */}
-          <Card className="mb-8">
-            <div className="p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-primary" />
-                Sélectionnez une voix
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {voices.map((voice) => (
-                  <motion.button
-                    key={voice.id}
-                    onClick={() => setSelectedVoice(voice.id)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className={`p-4 rounded-lg border-2 transition-all text-left ${
-                      selectedVoice === voice.id
-                        ? 'border-primary bg-secondary/5'
-                        : 'border-border bg-card hover:border-secondary/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-foreground">{voice.name}</h3>
-                      {selectedVoice === voice.id && (
-                        <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      {voice.description}
-                    </p>
-                    <p className="text-xs text-muted-foreground italic">
-                      {voice.gender}
-                    </p>
-                  </motion.button>
-                ))}
-              </div>
+        {/* Voice selection */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-primary" />
+              Voix de l'assistant
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 gap-3">
+              {VOICE_PROFILES.map((profile) => (
+                <button
+                  key={profile.id}
+                  onClick={() => setSelectedVoice(profile.id)}
+                  className={cn(
+                    'rounded-lg border-2 p-3 text-left transition-all',
+                    selectedVoice === profile.id
+                      ? 'border-primary bg-primary/5'
+                      : 'border-border hover:border-primary/40'
+                  )}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-semibold text-sm text-foreground">{profile.name}</span>
+                    {selectedVoice === profile.id && (
+                      <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{profile.description}</p>
+                  <p className="text-xs text-muted-foreground/70 mt-1 italic">{profile.useCase}</p>
+                </button>
+              ))}
             </div>
-          </Card>
+          </CardContent>
+        </Card>
 
-          {/* Text Input + Mic */}
-          <Card className="mb-8">
-            <div className="p-6">
-              <div className="flex items-center gap-4">
-                <div className="flex-1 relative">
-                  <input
-                    type="text"
-                    value={textQuery}
-                    onChange={(e) => setTextQuery(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Posez votre question ici..."
-                    disabled={isProcessing}
-                    className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-secondary/50 disabled:opacity-50"
-                  />
-                </div>
-                <motion.button
-                  onClick={() => handleSubmitQuery(textQuery)}
-                  disabled={isProcessing || !textQuery.trim()}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="w-12 h-12 rounded-full bg-primary text-white flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isProcessing ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    <Send className="w-5 h-5" />
-                  )}
-                </motion.button>
-                <motion.button
-                  onClick={handleMicClick}
-                  disabled={isProcessing}
-                  whileHover={{ scale: isProcessing ? 1 : 1.05 }}
-                  whileTap={{ scale: isProcessing ? 1 : 0.95 }}
-                  className={`w-12 h-12 rounded-full flex items-center justify-center transition-all disabled:opacity-50 ${
-                    isRecording
-                      ? 'bg-red-500 shadow-lg shadow-red-500/50'
-                      : 'bg-gradient-to-br from-primary to-purple-600'
-                  }`}
-                >
-                  {isRecording ? (
-                    <MicOff className="w-5 h-5 text-white" />
-                  ) : (
-                    <Mic className="w-5 h-5 text-white" />
-                  )}
-                </motion.button>
-              </div>
+        {/* Input zone */}
+        <Card>
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={textQuery}
+                onChange={(e) => setTextQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    submitQuery(textQuery);
+                  }
+                }}
+                placeholder="Votre question (ou cliquez sur le micro)..."
+                disabled={isProcessing || isRecording}
+                className="flex-1 px-4 py-2.5 rounded-lg border border-border bg-background text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+              />
+              <Button
+                onClick={() => submitQuery(textQuery)}
+                disabled={isProcessing || !textQuery.trim() || isRecording}
+                size="icon"
+                className="shrink-0"
+              >
+                {isProcessing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
+              </Button>
+              <motion.button
+                onClick={toggleMic}
+                disabled={isProcessing}
+                whileTap={{ scale: 0.93 }}
+                className={cn(
+                  'shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors',
+                  isRecording
+                    ? 'bg-red-500 shadow-lg shadow-red-500/30'
+                    : 'bg-gradient-to-br from-primary to-purple-600'
+                )}
+              >
+                {isRecording ? (
+                  <MicOff className="w-4 h-4 text-white" />
+                ) : (
+                  <Mic className="w-4 h-4 text-white" />
+                )}
+              </motion.button>
+            </div>
+
+            <AnimatePresence>
               {isRecording && (
                 <motion.p
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="mt-3 text-sm text-red-500 text-center"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-2 text-xs text-red-500 text-center"
                 >
-                  En écoute... Parlez maintenant
+                  En écoute... parlez maintenant
                 </motion.p>
               )}
-            </div>
-          </Card>
+            </AnimatePresence>
+          </CardContent>
+        </Card>
 
-          {/* Response Section */}
-          {response && (
+        {/* TTS status bar */}
+        <AnimatePresence>
+          {isSpeaking && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 px-4 py-2"
             >
-              <Card>
-                <div className="p-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-primary flex items-center justify-center">
-                      <Volume2 className="w-6 h-6 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-3">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          Assistant Vocal ({voices.find(v => v.id === selectedVoice)?.name})
-                        </h3>
-                        {response.mode === 'simulated' && (
-                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">
-                            Mode simulé
-                          </span>
-                        )}
-                        <motion.div
-                          className="flex gap-1"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                        >
-                          {[0, 1, 2].map((i) => (
-                            <motion.div
-                              key={i}
-                              className="w-1 h-4 bg-primary rounded-full"
-                              animate={{ scaleY: [1, 1.5, 1] }}
-                              transition={{
-                                duration: 0.5,
-                                repeat: Infinity,
-                                delay: i * 0.15
-                              }}
-                            />
-                          ))}
-                        </motion.div>
-                      </div>
-                      <p className="text-foreground leading-relaxed whitespace-pre-wrap">
-                        {response.text_response}
-                      </p>
-
-                      {/* Audio Player */}
-                      {response.audio_url && (
-                        <div className="mt-4">
-                          <audio
-                            ref={audioRef}
-                            controls
-                            autoPlay
-                            className="w-full"
-                            src={`${baseUrl}${response.audio_url}`}
-                          />
-                        </div>
-                      )}
-
-                      {/* Sources */}
-                      {response.sources && response.sources.length > 0 && (
-                        <div className="mt-4 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground font-medium mb-1">Sources:</p>
-                          <div className="flex flex-wrap gap-1">
-                            {response.sources.map((source, i) => (
-                              <span key={i} className="text-xs bg-muted px-2 py-0.5 rounded">
-                                {source}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
+              <div className="flex items-center gap-2 text-sm text-primary">
+                <Radio className="w-4 h-4 animate-pulse" />
+                <span>Lecture en cours — {currentProfile.name}</span>
+                <div className="flex gap-0.5">
+                  {[0, 1, 2, 3].map((i) => (
+                    <motion.span
+                      key={i}
+                      className="block h-3 w-0.5 rounded-full bg-primary"
+                      animate={{ scaleY: [1, 2, 1] }}
+                      transition={{ duration: 0.5, repeat: Infinity, delay: i * 0.1 }}
+                    />
+                  ))}
                 </div>
-              </Card>
+              </div>
+              <Button variant="ghost" size="sm" onClick={handleStopSpeech} className="h-7 px-2 text-xs">
+                <VolumeX className="w-3 h-3 mr-1" />
+                Arrêter
+              </Button>
             </motion.div>
           )}
+        </AnimatePresence>
 
-          {/* Instructions */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mt-8"
-          >
-            <Card className="bg-secondary/5 border-secondary/20">
-              <div className="p-6">
-                <h3 className="text-sm font-semibold text-foreground mb-3">
-                  Exemples de questions
-                </h3>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  {[
-                    'Comment fonctionne le processus de recrutement?',
-                    'Comment puis-je poser une demande de congé?',
-                    'Quels sont les avantages offerts par l\'entreprise?',
-                    'Comment se préparer pour l\'entretien technique?',
-                  ].map((question, i) => (
-                    <li key={i} className="flex items-start gap-2">
-                      <span className="text-primary mt-0.5">•</span>
-                      <button
-                        onClick={() => {
-                          setTextQuery(question);
-                          handleSubmitQuery(question);
-                        }}
-                        className="text-left hover:text-primary transition-colors"
-                      >
-                        {question}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+        {/* Conversation history */}
+        <AnimatePresence>
+          {conversation.length > 0 && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Historique ({conversation.length})
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearConversation}
+                  className="h-7 px-2 text-xs text-muted-foreground"
+                >
+                  <RefreshCcw className="w-3 h-3 mr-1" />
+                  Effacer
+                </Button>
               </div>
+
+              {conversation.map((entry) => (
+                <motion.div
+                  key={entry.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <Card className="border-l-4 border-l-primary/40">
+                    <CardContent className="pt-4 pb-3">
+                      {/* Question */}
+                      <div className="flex items-start gap-2 mb-3">
+                        <div className="h-6 w-6 shrink-0 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-foreground">
+                          Q
+                        </div>
+                        <p className="text-sm text-foreground">{entry.question}</p>
+                      </div>
+                      {/* Answer */}
+                      <div className="flex items-start gap-2">
+                        <div className="h-6 w-6 shrink-0 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center">
+                          <Volume2 className="w-3 h-3 text-white" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-foreground leading-relaxed">{entry.answer}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center gap-1.5">
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                {VOICE_PROFILES.find((v) => v.id === entry.voice)?.name}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground">
+                                {entry.timestamp.toLocaleTimeString('fr-FR', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => replayEntry(entry)}
+                              className="h-6 px-2 text-xs"
+                            >
+                              <Volume2 className="w-3 h-3 mr-1" />
+                              Rejouer
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Example questions */}
+        {conversation.length === 0 && !isProcessing && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.3 } }}>
+            <Card className="bg-muted/30 border-dashed">
+              <CardContent className="pt-4 pb-4">
+                <p className="text-xs font-medium text-muted-foreground mb-3">
+                  Exemples de questions
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {EXAMPLE_QUESTIONS.map((question) => (
+                    <button
+                      key={question}
+                      onClick={() => submitQuery(question)}
+                      className="text-xs px-3 py-1.5 rounded-full border border-border bg-background hover:border-primary/50 hover:text-primary transition-colors text-foreground"
+                    >
+                      {question}
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
             </Card>
           </motion.div>
-        </motion.div>
+        )}
       </div>
     </DashboardLayout>
   );
-};
-
-export default VoiceAssistantPage;
+}
