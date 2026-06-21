@@ -58,4 +58,8 @@ class FormationSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at"]
 
     def get_participants_count(self, obj: Formation) -> int:
+        # .all() lit le prefetch cache si participations a été prefetch_related ;
+        # évite N requêtes supplémentaires lors de la sérialisation d'une liste.
+        if "participations" in getattr(obj, "_prefetched_objects_cache", {}):
+            return len(obj.participations.all())
         return obj.participations.count()
