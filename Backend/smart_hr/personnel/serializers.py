@@ -5,6 +5,7 @@ from smart_hr.personnel.models import Department
 from smart_hr.personnel.models import DepartureReason
 from smart_hr.personnel.models import Diploma
 from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import FamilyMember
 from smart_hr.personnel.models import FamilyStatus
 from smart_hr.personnel.models import Nationality
 from smart_hr.personnel.models import Position
@@ -244,3 +245,38 @@ class ContractSerializer(serializers.ModelSerializer):
         if salary is not None and salary <= 0:
             raise serializers.ValidationError({"salary": "Le salaire doit être supérieur à zéro."})
         return data
+
+
+class FamilyMemberSerializer(serializers.ModelSerializer):
+    """Serializer pour les membres de la famille d'un employé."""
+
+    relationship_display = serializers.CharField(
+        source="get_relationship_display",
+        read_only=True,
+    )
+    age = serializers.SerializerMethodField()
+
+    class Meta:
+        model = FamilyMember
+        fields = [
+            "id",
+            "employee",
+            "relationship",
+            "relationship_display",
+            "first_name",
+            "last_name",
+            "date_of_birth",
+            "gender",
+            "age",
+            "created_at",
+        ]
+        read_only_fields = ["created_at"]
+
+    def get_age(self, obj: FamilyMember) -> int | None:
+        if not obj.date_of_birth:
+            return None
+        from django.utils import timezone
+
+        today = timezone.now().date()
+        born = obj.date_of_birth
+        return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
