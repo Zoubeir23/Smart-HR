@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -21,6 +23,11 @@ class PayrollSerializer(serializers.ModelSerializer):
         source="employee.user.email",
         read_only=True,
     )
+    status_display = serializers.CharField(
+        source="get_status_display",
+        read_only=True,
+    )
+    gross_salary = serializers.SerializerMethodField()
 
     class Meta:
         model = Payroll
@@ -34,12 +41,17 @@ class PayrollSerializer(serializers.ModelSerializer):
             "base_salary",
             "bonuses",
             "deductions",
+            "gross_salary",
             "net_salary",
             "status",
+            "status_display",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["net_salary", "created_at", "updated_at"]
+        read_only_fields = ["net_salary", "gross_salary", "created_at", "updated_at"]
+
+    def get_gross_salary(self, obj: Payroll) -> Decimal:
+        return obj.base_salary + obj.bonuses
 
     def validate_month(self, value: str) -> str:
         """Valide le format YYYY-MM."""
