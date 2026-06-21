@@ -5,24 +5,34 @@ import api from './api';
 export interface Position {
   id: number;
   title: string;
-  department: number | null;
+  service: number | null;
+  service_name: string;
   department_name: string;
+  profile_type: 'cadre' | 'non_cadre';
+  indicative_salary: number;
   employee_count: number;
 }
 
 export interface PositionCreatePayload {
   title: string;
-  department?: number | null;
+  service?: number | null;
+  profile_type?: 'cadre' | 'non_cadre';
+  indicative_salary?: number;
 }
 
 export interface PositionUpdatePayload {
   title?: string;
-  department?: number | null;
+  service?: number | null;
+  profile_type?: 'cadre' | 'non_cadre';
+  indicative_salary?: number;
 }
 
 export const positionService = {
-  getAll: async (): Promise<Position[]> => {
-    const { data } = await api.get('/personnel/positions/');
+  getAll: async (serviceId?: number, departmentId?: number): Promise<Position[]> => {
+    const params: Record<string, number> = {};
+    if (serviceId) params.service = serviceId;
+    if (departmentId) params.department = departmentId;
+    const { data } = await api.get('/personnel/positions/', { params });
     return data?.results ?? data;
   },
 
