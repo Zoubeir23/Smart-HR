@@ -13,6 +13,7 @@ import {
   BarChart3,
   MessageSquare,
   Mic,
+  Volume2,
   Settings,
   PanelLeftClose,
   PanelLeft,
@@ -96,6 +97,7 @@ const navigationGroups: NavGroup[] = [
       { title: 'Analyse Churn', href: '/ai-insights', icon: BarChart3, roles: ['ADMIN', 'RH'] },
       { title: 'Chat IA', href: '/ai-chat', icon: MessageSquare, roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'] },
       { title: 'Recruteur IA', href: '/recruteur-ia', icon: Mic, roles: ['ADMIN', 'RH'] },
+      { title: 'Assistant Vocal', href: '/voice-assistant', icon: Volume2, roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'] },
     ],
   },
   {
