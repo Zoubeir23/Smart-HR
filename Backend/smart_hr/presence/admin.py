@@ -13,10 +13,11 @@ class AttendanceAdmin(admin.ModelAdmin):
         "check_in",
         "check_out",
         "status",
+        "absence_type",
         "note",
         "created_at",
     ]
-    list_filter = ["status", "date", "employee__department"]
+    list_filter = ["status", "absence_type", "date", "employee__department"]
     search_fields = [
         "employee__user__first_name",
         "employee__user__last_name",
