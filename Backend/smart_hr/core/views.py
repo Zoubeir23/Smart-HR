@@ -46,6 +46,7 @@ class AuditLogListView(APIView):
         except ValueError:
             limit = _AUDIT_LOG_PAGE_SIZE
 
+        total_count = queryset.count()
         logs = queryset[:limit]
 
         data = [
@@ -69,7 +70,7 @@ class AuditLogListView(APIView):
             for log in logs
         ]
 
-        return Response({"count": len(data), "results": data})
+        return Response({"count": total_count, "returned": len(data), "results": data})
 
 
 class NotificationListView(APIView):
