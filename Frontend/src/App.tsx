@@ -26,8 +26,10 @@ import EmployeeListPage from "@/pages/employees/EmployeeListPage";
 import EmployeeCreatePage from "@/pages/employees/EmployeeCreatePage";
 import EmployeeDetailPage from "@/pages/employees/EmployeeDetailPage";
 import DepartmentPage from "@/pages/employees/DepartmentPage";
+import ServicePage from "@/pages/employees/ServicePage";
 import PositionPage from "@/pages/employees/PositionPage";
 import ContractPage from "@/pages/employees/ContractPage";
+import ReferenceTablesPage from "@/pages/employees/ReferenceTablesPage";
 import LeaveListPage from "@/pages/leaves/LeaveListPage";
 import TaskBoardPage from "@/pages/tasks/TaskBoardPage";
 import AttendancePage from "@/pages/attendance/AttendancePage";
@@ -163,10 +165,28 @@ const App = () => (
               />
 
               <Route
+                path="/services"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <ServicePage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
                 path="/positions"
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
                     <PositionPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/reference-tables"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <ReferenceTablesPage />
                   </ProtectedRoute>
                 }
               />

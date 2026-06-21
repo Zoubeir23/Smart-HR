@@ -2,13 +2,53 @@ from rest_framework import serializers
 
 from smart_hr.personnel.models import Contract
 from smart_hr.personnel.models import Department
+from smart_hr.personnel.models import DepartureReason
+from smart_hr.personnel.models import Diploma
 from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import FamilyStatus
+from smart_hr.personnel.models import Nationality
 from smart_hr.personnel.models import Position
+from smart_hr.personnel.models import Service
+
+# ---------------------------------------------------------------------------
+# Tables de référence
+# ---------------------------------------------------------------------------
+
+
+class NationalitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Nationality
+        fields = ["id", "name", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+
+class FamilyStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = FamilyStatus
+        fields = ["id", "label", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+
+class DiplomaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Diploma
+        fields = ["id", "label", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+
+class DepartureReasonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DepartureReason
+        fields = ["id", "label", "created_at", "updated_at"]
+        read_only_fields = ["created_at", "updated_at"]
+
+
+# ---------------------------------------------------------------------------
+# Hiérarchie structurelle
+# ---------------------------------------------------------------------------
 
 
 class DepartmentSerializer(serializers.ModelSerializer):
-    """Serializer de base pour un département."""
-
     employee_count = serializers.SerializerMethodField()
 
     class Meta:
@@ -21,46 +61,92 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class DepartmentDetailSerializer(DepartmentSerializer):
-    """Serializer enrichi avec la liste des postes et la masse salariale."""
+    """Serializer enrichi avec services, postes et masse salariale."""
 
-    positions = serializers.SerializerMethodField()
+    services = serializers.SerializerMethodField()
     total_salary = serializers.SerializerMethodField()
 
     class Meta(DepartmentSerializer.Meta):
-        fields = [*DepartmentSerializer.Meta.fields, "positions", "total_salary"]
+        fields = [*DepartmentSerializer.Meta.fields, "services", "total_salary"]
 
-    def get_positions(self, obj: Department) -> list:
-        """Retourne les postes rattachés au département."""
-        return list(
-            obj.positions.values("id", "title"),
-        )
+    def get_services(self, obj: Department) -> list:
+        return list(obj.services.values("id", "name"))
 
     def get_total_salary(self, obj: Department) -> float:
         return float(sum(e.salary or 0 for e in obj.employees.all() if e.status == Employee.Status.ACTIVE))
 
 
-class PositionSerializer(serializers.ModelSerializer):
-    """Serializer pour un poste de travail."""
-
+class ServiceSerializer(serializers.ModelSerializer):
     department_name = serializers.CharField(source="department.name", read_only=True)
+    employee_count = serializers.SerializerMethodField()
+    position_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Service
+        fields = [
+            "id",
+            "name",
+            "description",
+            "department",
+            "department_name",
+            "employee_count",
+            "position_count",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["created_at", "updated_at"]
+
+    def get_employee_count(self, obj: Service) -> int:
+        return obj.employees.filter(status=Employee.Status.ACTIVE).count()
+
+    def get_position_count(self, obj: Service) -> int:
+        return obj.positions.count()
+
+
+class PositionSerializer(serializers.ModelSerializer):
+    service_name = serializers.CharField(source="service.name", read_only=True)
+    department_name = serializers.SerializerMethodField()
+    department_id = serializers.SerializerMethodField()
     employee_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Position
-        fields = ["id", "title", "department", "department_name", "employee_count"]
+        fields = [
+            "id",
+            "title",
+            "service",
+            "service_name",
+            "department_id",
+            "department_name",
+            "profile_type",
+            "indicative_salary",
+            "employee_count",
+        ]
+
+    def get_department_name(self, obj: Position) -> str:
+        return obj.service.department.name if obj.service else ""
+
+    def get_department_id(self, obj: Position) -> int | None:
+        return obj.service.department_id if obj.service else None
 
     def get_employee_count(self, obj: Position) -> int:
-        """Nombre d'employés occupant ce poste."""
         return obj.employees.filter(status=Employee.Status.ACTIVE).count()
 
 
-class EmployeeSerializer(serializers.ModelSerializer):
-    """Serializer complet : exposé uniquement aux rôles ADMIN et RH."""
+# ---------------------------------------------------------------------------
+# Employé
+# ---------------------------------------------------------------------------
 
+
+class EmployeeSerializer(serializers.ModelSerializer):
     user_email = serializers.EmailField(source="user.email", read_only=True)
     user_full_name = serializers.CharField(source="user.get_full_name", read_only=True)
     department_name = serializers.CharField(source="department.name", read_only=True)
+    service_name = serializers.CharField(source="service.name", read_only=True)
     position_title = serializers.CharField(source="position.title", read_only=True)
+    nationality_name = serializers.CharField(source="nationality.name", read_only=True)
+    family_status_label = serializers.CharField(source="family_status.label", read_only=True)
+    diploma_label = serializers.CharField(source="diploma.label", read_only=True)
 
     class Meta:
         model = Employee
@@ -69,8 +155,11 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "user",
             "user_email",
             "user_full_name",
+            "matricule",
             "department",
             "department_name",
+            "service",
+            "service_name",
             "position",
             "position_title",
             "hire_date",
@@ -78,13 +167,20 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "status",
             "date_of_birth",
             "cin",
+            "cnss_number",
             "address",
             "emergency_contact",
+            "nationality",
+            "nationality_name",
+            "family_status",
+            "family_status_label",
+            "diploma",
+            "diploma_label",
             "churn_risk",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["churn_risk", "created_at", "updated_at"]
+        read_only_fields = ["matricule", "churn_risk", "created_at", "updated_at"]
 
     def to_representation(self, instance):
         """Remplace le FK user par un objet imbriqué en lecture."""

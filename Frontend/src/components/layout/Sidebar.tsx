@@ -58,7 +58,9 @@ const navigationGroups: NavGroup[] = [
     items: [
       { title: 'Employés', href: '/employees', icon: Users, roles: ['ADMIN', 'RH'] },
       { title: 'Départements', href: '/departments', icon: Briefcase, roles: ['ADMIN', 'RH'] },
+      { title: 'Services', href: '/services', icon: Briefcase, roles: ['ADMIN', 'RH'] },
       { title: 'Postes', href: '/positions', icon: Briefcase, roles: ['ADMIN', 'RH'] },
+      { title: 'Référentiels', href: '/reference-tables', icon: Briefcase, roles: ['ADMIN', 'RH'] },
       { title: 'Contrats', href: '/contracts', icon: FileText, roles: ['ADMIN', 'RH'] },
       { title: 'Congés', href: '/leaves', icon: Calendar, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
       { title: 'Tâches', href: '/tasks', icon: ClipboardList, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
