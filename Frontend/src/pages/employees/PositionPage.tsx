@@ -16,8 +16,10 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { positionService, type Position } from '@/services/positionService';
 import { departmentService } from '@/services/departmentService';
+import { serviceService, type Service } from '@/services/serviceService';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,10 +30,17 @@ interface Department {
 
 interface PositionForm {
   title: string;
-  department: number | null;
+  service: number | null;
+  profile_type: 'cadre' | 'non_cadre';
+  indicative_salary: number;
 }
 
-const EMPTY_FORM: PositionForm = { title: '', department: null };
+const EMPTY_FORM: PositionForm = {
+  title: '',
+  service: null,
+  profile_type: 'non_cadre',
+  indicative_salary: 0,
+};
 
 export default function PositionPage() {
   const { user } = useAuth();
@@ -44,11 +53,13 @@ export default function PositionPage() {
   const [editTarget, setEditTarget] = useState<Position | null>(null);
   const [form, setForm] = useState<PositionForm>(EMPTY_FORM);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  // Pour la sélection en cascade dans le formulaire
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
 
   // ── Data ──────────────────────────────────────────────────────────
   const { data: positionsData, isLoading } = useQuery({
     queryKey: ['positions'],
-    queryFn: positionService.getAll,
+    queryFn: () => positionService.getAll(),
   });
 
   const { data: departmentsData } = useQuery({
@@ -56,8 +67,17 @@ export default function PositionPage() {
     queryFn: departmentService.getAll,
   });
 
+  const { data: servicesData } = useQuery({
+    queryKey: ['services', selectedDepartmentId],
+    queryFn: () => serviceService.getAll(selectedDepartmentId ?? undefined),
+    enabled: selectedDepartmentId !== null,
+  });
+
   const positions: Position[] = positionsData?.results ?? (Array.isArray(positionsData) ? positionsData : []);
   const departments: Department[] = departmentsData?.results ?? departmentsData ?? [];
+  const filteredServices: Service[] = Array.isArray(servicesData)
+    ? servicesData
+    : (servicesData?.results ?? []);
 
   // ── Mutations ─────────────────────────────────────────────────────
   const invalidatePositions = () => queryClient.invalidateQueries({ queryKey: ['positions'] });
@@ -85,12 +105,19 @@ export default function PositionPage() {
   function openCreate() {
     setEditTarget(null);
     setForm(EMPTY_FORM);
+    setSelectedDepartmentId(null);
     setShowForm(true);
   }
 
   function openEdit(position: Position) {
     setEditTarget(position);
-    setForm({ title: position.title, department: position.department });
+    setForm({
+      title: position.title,
+      service: position.service,
+      profile_type: position.profile_type,
+      indicative_salary: position.indicative_salary,
+    });
+    setSelectedDepartmentId(null);
     setShowForm(true);
   }
 
@@ -98,6 +125,7 @@ export default function PositionPage() {
     setShowForm(false);
     setEditTarget(null);
     setForm(EMPTY_FORM);
+    setSelectedDepartmentId(null);
   }
 
   function handleSubmit() {
@@ -129,14 +157,12 @@ export default function PositionPage() {
         transition={{ duration: 0.4 }}
         className="space-y-6"
       >
-        {/* ── Header ── */}
+        {/* En-tête */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Postes</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              {canEdit
-                ? 'Gérez les postes de l\'entreprise — RH / Admin uniquement.'
-                : 'Liste des postes de l\'entreprise.'}
+              Niveau 3 de l'arborescence : Département ➔ Service ➔ <span className="font-semibold text-foreground">Poste</span>
             </p>
           </div>
           {canEdit && (
@@ -147,7 +173,7 @@ export default function PositionPage() {
           )}
         </div>
 
-        {/* ── KPIs ── */}
+        {/* KPIs */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="border border-border bg-card rounded-xl shadow-sm p-4 flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
@@ -171,7 +197,7 @@ export default function PositionPage() {
           </div>
         </div>
 
-        {/* ── Grille des postes ── */}
+        {/* Grille des postes */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <AnimatePresence>
             {positions.map((position) => (
@@ -190,9 +216,9 @@ export default function PositionPage() {
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-foreground truncate">{position.title}</h3>
-                      {position.department_name && (
+                      {position.service_name && (
                         <p className="text-xs text-muted-foreground truncate mt-0.5">
-                          {position.department_name}
+                          {position.department_name} / {position.service_name}
                         </p>
                       )}
                     </div>
@@ -219,11 +245,16 @@ export default function PositionPage() {
                   )}
                 </div>
 
-                <div className="flex items-center gap-2 pt-1 border-t border-border">
-                  <Users className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <span className="text-sm text-muted-foreground">
-                    <strong className="text-foreground">{position.employee_count}</strong> employé(s) actif(s)
-                  </span>
+                <div className="flex items-center justify-between pt-1 border-t border-border">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <span className="text-sm text-muted-foreground">
+                      <strong className="text-foreground">{position.employee_count}</strong> employé(s) actif(s)
+                    </span>
+                  </div>
+                  <Badge variant={position.profile_type === 'cadre' ? 'default' : 'secondary'} className="text-xs">
+                    {position.profile_type === 'cadre' ? 'Cadre' : 'Non-cadre'}
+                  </Badge>
                 </div>
               </motion.div>
             ))}
@@ -244,16 +275,15 @@ export default function PositionPage() {
         )}
       </motion.div>
 
-      {/* ══ Modale Création / Édition ══ */}
+      {/* Modale Création / Édition avec sélection en cascade */}
       <Dialog open={showForm} onOpenChange={(open) => !open && closeForm()}>
-        <DialogContent className="max-w-sm w-full">
+        <DialogContent className="max-w-md w-full">
           <DialogHeader>
-            <DialogTitle>
-              {editTarget ? 'Modifier le poste' : 'Nouveau poste'}
-            </DialogTitle>
+            <DialogTitle>{editTarget ? 'Modifier le poste' : 'Nouveau poste'}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
+            {/* 1. Intitulé */}
             <div className="space-y-1.5">
               <Label htmlFor="position-title">
                 Intitulé du poste <span className="text-destructive">*</span>
@@ -266,19 +296,19 @@ export default function PositionPage() {
               />
             </div>
 
+            {/* 2. Sélection Département (cascade step 1) */}
             <div className="space-y-1.5">
               <Label htmlFor="position-department">Département</Label>
               <Select
-                value={form.department !== null ? String(form.department) : 'none'}
-                onValueChange={(value) =>
-                  setForm((previous) => ({
-                    ...previous,
-                    department: value === 'none' ? null : Number(value),
-                  }))
-                }
+                value={selectedDepartmentId?.toString() ?? 'none'}
+                onValueChange={(value) => {
+                  const departmentId = value === 'none' ? null : Number(value);
+                  setSelectedDepartmentId(departmentId);
+                  setForm((previous) => ({ ...previous, service: null }));
+                }}
               >
                 <SelectTrigger id="position-department">
-                  <SelectValue placeholder="Aucun département" />
+                  <SelectValue placeholder="Sélectionner un département" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">Aucun département</SelectItem>
@@ -289,6 +319,67 @@ export default function PositionPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* 3. Sélection Service (cascade step 2) — apparaît après le choix du département */}
+            <div className="space-y-1.5">
+              <Label htmlFor="position-service">Service</Label>
+              <Select
+                value={form.service !== null ? String(form.service) : 'none'}
+                onValueChange={(value) =>
+                  setForm((previous) => ({
+                    ...previous,
+                    service: value === 'none' ? null : Number(value),
+                  }))
+                }
+                disabled={!selectedDepartmentId && !editTarget?.service}
+              >
+                <SelectTrigger id="position-service">
+                  <SelectValue placeholder={selectedDepartmentId ? 'Sélectionner un service' : 'Choisir un département d\'abord'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucun service</SelectItem>
+                  {filteredServices.map((service) => (
+                    <SelectItem key={service.id} value={String(service.id)}>
+                      {service.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 4. Profil (cadre / non-cadre) */}
+            <div className="space-y-1.5">
+              <Label htmlFor="position-profile">Profil</Label>
+              <Select
+                value={form.profile_type}
+                onValueChange={(value: 'cadre' | 'non_cadre') =>
+                  setForm((previous) => ({ ...previous, profile_type: value }))
+                }
+              >
+                <SelectTrigger id="position-profile">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="non_cadre">Non-cadre</SelectItem>
+                  <SelectItem value="cadre">Cadre</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* 5. Salaire indicatif */}
+            <div className="space-y-1.5">
+              <Label htmlFor="position-salary">Salaire indicatif (FCFA)</Label>
+              <Input
+                id="position-salary"
+                type="number"
+                min={0}
+                value={form.indicative_salary}
+                onChange={(e) =>
+                  setForm((previous) => ({ ...previous, indicative_salary: Number(e.target.value) }))
+                }
+                placeholder="0"
+              />
             </div>
           </div>
 
@@ -304,7 +395,7 @@ export default function PositionPage() {
         </DialogContent>
       </Dialog>
 
-      {/* ══ Confirmation Suppression ══ */}
+      {/* Confirmation Suppression */}
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
