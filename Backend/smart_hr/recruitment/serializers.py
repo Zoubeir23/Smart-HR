@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from smart_hr.recruitment.models import Application
+from smart_hr.recruitment.models import ApplicationDocument
 from smart_hr.recruitment.models import JobOffer
 
 
@@ -50,6 +51,8 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "skills_extracted",
             "ai_summary",
             "gdpr_consent",
+            "search_keywords",
+            "onboarded",
             "created_at",
         ]
         read_only_fields = [
@@ -58,6 +61,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "matching_score",
             "skills_extracted",
             "ai_summary",
+            "onboarded",
             "created_at",
         ]
 
@@ -87,3 +91,31 @@ class ApplicationSerializer(serializers.ModelSerializer):
         if mime != "application/pdf":
             raise serializers.ValidationError("Le CV doit être un fichier PDF valide.")
         return value
+
+
+class ApplicationDocumentSerializer(serializers.ModelSerializer):
+    document_type_display = serializers.CharField(
+        source="get_document_type_display",
+        read_only=True,
+    )
+    file_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ApplicationDocument
+        fields = [
+            "id",
+            "application",
+            "document_type",
+            "document_type_display",
+            "label",
+            "file",
+            "file_url",
+            "created_at",
+        ]
+        read_only_fields = ["created_at"]
+
+    def get_file_url(self, obj: ApplicationDocument) -> str | None:
+        request = self.context.get("request")
+        if obj.file and request:
+            return request.build_absolute_uri(obj.file.url)
+        return None

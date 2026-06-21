@@ -91,6 +91,15 @@ class Application(TimeStampedModel):
         default=False,
         help_text="Le candidat a consenti au traitement de son CV par l'IA (RGPD).",
     )
+    search_keywords = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Mots-clés de recherche déclarés par le candidat (compétences, domaines).",
+    )
+    onboarded = models.BooleanField(
+        default=False,
+        help_text="True si le candidat a été transformé en employé via l'onboarding automatique.",
+    )
 
     class Meta:
         verbose_name = "Candidature"
@@ -100,3 +109,37 @@ class Application(TimeStampedModel):
 
     def __str__(self):
         return f"{self.candidate.get_full_name()} → {self.job_offer.title}"
+
+
+class ApplicationDocument(TimeStampedModel):
+    """Pièces jointes complémentaires liées à une candidature (GED Recrutement)."""
+
+    class DocumentType(models.TextChoices):
+        PHOTO = "photo", "Photo"
+        DIPLOMA = "diploma", "Diplôme"
+        ID_CARD = "id_card", "Pièce d'identité"
+        OTHER = "other", "Autre"
+
+    application = models.ForeignKey(
+        Application,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+    document_type = models.CharField(
+        max_length=20,
+        choices=DocumentType.choices,
+        default=DocumentType.OTHER,
+    )
+    label = models.CharField(max_length=200, blank=True, help_text="Description courte du document")
+    file = models.FileField(
+        upload_to="recruitment_documents/",
+        validators=[validate_file_size],
+    )
+
+    class Meta:
+        verbose_name = "Document de candidature"
+        verbose_name_plural = "Documents de candidature"
+        ordering = ["document_type", "created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.get_document_type_display()} — {self.application}"
