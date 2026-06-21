@@ -9,7 +9,7 @@ from smart_hr.users.permissions import IsRH
 class FormationViewSet(viewsets.ModelViewSet):
     """API CRUD des formations et de leurs réunions associées."""
 
-    queryset = Formation.objects.prefetch_related("meetings").all()
+    queryset = Formation.objects.prefetch_related("meetings", "participations").all()
     serializer_class = FormationSerializer
 
     def get_permissions(self):
