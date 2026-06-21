@@ -55,6 +55,7 @@ import AnalyticsPage from "@/pages/analytics/AnalyticsPage";
 import ChurnDashboardPage from "@/pages/ai-insights/ChurnDashboardPage";
 import AIChatPage from "@/pages/ai/AIChatPage";
 import RecruteurIAPage from "@/pages/ai/RecruteurIAPage";
+import VoiceAssistantPage from "@/pages/ai/VoiceAssistantPage";
 
 // Calendrier
 import CalendarPage from "@/pages/calendar/CalendarPage";
@@ -368,6 +369,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
                     <RecruteurIAPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/voice-assistant"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE']}>
+                    <VoiceAssistantPage />
                   </ProtectedRoute>
                 }
               />
