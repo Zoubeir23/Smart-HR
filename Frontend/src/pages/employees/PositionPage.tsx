@@ -117,7 +117,7 @@ export default function PositionPage() {
       profile_type: position.profile_type,
       indicative_salary: position.indicative_salary,
     });
-    setSelectedDepartmentId(null);
+    setSelectedDepartmentId(position.department_id ?? null);
     setShowForm(true);
   }
 
