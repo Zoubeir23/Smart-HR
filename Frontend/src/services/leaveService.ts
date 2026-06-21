@@ -35,7 +35,23 @@ export const leaveService = {
     return data;
   },
 
+  update: async (id: number, data: Record<string, unknown>) => {
+    const { data: result } = await api.patch(`/conge/leave-requests/${id}/`, data);
+    return result;
+  },
+
   delete: async (id: number) => {
     await api.delete(`/conge/leave-requests/${id}/`);
+  },
+
+  getBalance: async (params?: { year?: number; employee_id?: number }) => {
+    const { data } = await api.get('/conge/leave-requests/balance/', { params });
+    return data as {
+      year: number;
+      annual_allowance: number;
+      days_taken: number;
+      days_pending: number;
+      days_remaining: number;
+    };
   },
 };

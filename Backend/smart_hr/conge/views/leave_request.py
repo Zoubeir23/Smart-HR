@@ -1,5 +1,6 @@
 import logging
 
+from django.utils.timezone import now
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -8,6 +9,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from smart_hr.conge.models import DEDUCTIBLE_LEAVE_TYPES
 from smart_hr.conge.models import LeaveRequest
 from smart_hr.conge.serializers import LeaveRequestSerializer
 from smart_hr.personnel.models import Employee
@@ -113,6 +115,55 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         """L'employé ne peut supprimer que ses propres demandes PENDING."""
         self._assert_employee_can_modify_pending(instance)
         instance.delete()
+
+    @action(detail=False, methods=["get"])
+    def balance(self, request):
+        """Solde de congés de l'employé connecté (ou ?employee_id=X pour RH/Admin).
+
+        Query params :
+        - year (int) : année souhaitée (défaut = année courante)
+        - employee_id (int) : uniquement pour Admin/RH
+        """
+        try:
+            year = int(request.query_params.get("year", now().year))
+        except ValueError:
+            return Response(
+                {"detail": "Le paramètre year doit être un entier."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        employee_id = request.query_params.get("employee_id")
+
+        if request.user.role in [User.Role.ADMIN, User.Role.RH] and employee_id:
+            try:
+                employee = Employee.objects.get(id=employee_id)
+            except Employee.DoesNotExist:
+                return Response({"detail": "Employé introuvable."}, status=status.HTTP_404_NOT_FOUND)
+        else:
+            try:
+                employee = Employee.objects.get(user=request.user)
+            except Employee.DoesNotExist:
+                return Response({"detail": "Aucun profil employé."}, status=status.HTTP_404_NOT_FOUND)
+
+        base = LeaveRequest.objects.filter(employee=employee, leave_type__in=DEDUCTIBLE_LEAVE_TYPES)
+
+        approved_leaves = base.filter(status=LeaveRequest.Status.APPROVED, start_date__year=year)
+        pending_leaves = base.filter(status=LeaveRequest.Status.PENDING, start_date__year=year)
+
+        days_taken = sum(leave.duration_working_days for leave in approved_leaves)
+        days_pending = sum(leave.duration_working_days for leave in pending_leaves)
+
+        annual_allowance = 30  # allocation standard — à personnaliser si besoin
+        days_remaining = max(0, annual_allowance - days_taken)
+
+        return Response(
+            {
+                "year": year,
+                "annual_allowance": annual_allowance,
+                "days_taken": days_taken,
+                "days_pending": days_pending,
+                "days_remaining": days_remaining,
+            },
+        )
 
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
