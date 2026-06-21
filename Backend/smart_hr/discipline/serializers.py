@@ -66,9 +66,7 @@ class DisciplinaryActionSerializer(serializers.ModelSerializer):
                     {"suspension_start": "Les dates de suspension sont obligatoires pour une mise à pied."}
                 )
             if suspension_end < suspension_start:
-                raise serializers.ValidationError(
-                    {"suspension_end": "La date de fin doit être postérieure à la date de début."}
-                )
+                raise serializers.ValidationError({"suspension_end": "La date de fin doit être postérieure à la date de début."})
         else:
             attrs["suspension_start"] = None
             attrs["suspension_end"] = None
