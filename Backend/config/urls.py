@@ -83,6 +83,7 @@ urlpatterns = [
     path("api/v1/ai-engine/", include("smart_hr.ai_engine.urls")),
     path("api/v1/agents/", include("smart_hr.ai_agents.urls")),
     path("api/v1/discipline/", include("smart_hr.discipline.urls")),
+    path("api/v1/communication/", include("smart_hr.communication.urls")),
     # Media files — accès protégé par JWT
     path("media/<path:path>", ProtectedMediaView.as_view(), name="protected-media"),
     # OpenAPI / Swagger — documentation interactive
