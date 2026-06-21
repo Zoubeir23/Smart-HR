@@ -7,6 +7,7 @@ export interface Position {
   title: string;
   service: number | null;
   service_name: string;
+  department_id: number | null;
   department_name: string;
   profile_type: 'cadre' | 'non_cadre';
   indicative_salary: number;
