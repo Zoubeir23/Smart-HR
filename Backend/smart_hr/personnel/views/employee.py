@@ -217,3 +217,72 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             for entry in monthly
         ]
         return Response({"retention_stats": data})
+
+    @action(detail=True, methods=["post"], url_path="anonymize")
+    def anonymize(self, request, pk=None):
+        """
+        POST /api/v1/personnel/employees/{id}/anonymize/
+        RGPD droit a l'oubli : anonymise les donnees personnelles d'un ancien employe
+        inactif. Seuls les donnees RH agreg (historique paiement, anciennete) sont preservees.
+        Reserve aux Admin uniquement.
+        """
+        from smart_hr.users.models import User
+
+        if request.user.role != User.Role.ADMIN:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        employee = self.get_object()
+
+        if employee.status not in {Employee.Status.INACTIVE, Employee.Status.TERMINATED}:
+            return Response(
+                {"detail": "Seuls les employes inactifs ou termines peuvent etre anonymises."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if employee.anonymized:
+            return Response(
+                {"detail": "Cet employe a deja ete anonymise."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        employee_user = employee.user
+        original_repr = str(employee)
+
+        employee.cin = ""
+        employee.address = ""
+        employee.nationality = None
+        employee.date_of_birth = None
+        employee.emergency_contact = ""
+        employee.anonymized = True
+        employee.save(
+            update_fields=[
+                "cin",
+                "address",
+                "nationality",
+                "date_of_birth",
+                "emergency_contact",
+                "anonymized",
+                "updated_at",
+            ],
+        )
+
+        employee_user.first_name = f"Employe_{employee.pk}"
+        employee_user.last_name = "[anonymise]"
+        employee_user.tel = ""
+        employee_user.save(update_fields=["first_name", "last_name", "tel"])
+
+        log_audit_action(
+            performed_by=request.user,
+            action=AuditLog.Action.DELETE,
+            model_name="Employee",
+            object_id=str(employee.pk),
+            object_repr=original_repr,
+            details={"raison": "Anonymisation RGPD", "status": employee.status},
+        )
+
+        logger.info("Employe %s anonymise (RGPD) par %s", employee.pk, request.user.email)
+
+        return Response(
+            {"detail": "Donnees personnelles anonymisees avec succes.", "id": employee.pk},
+            status=status.HTTP_200_OK,
+        )

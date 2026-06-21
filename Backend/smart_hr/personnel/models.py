@@ -158,7 +158,8 @@ class Employee(TimeStampedModel):
     class Status(models.TextChoices):
         ACTIVE = "active", "Actif"
         INACTIVE = "inactive", "Inactif"
-        ON_LEAVE = "on_leave", "En congé"
+        ON_LEAVE = "on_leave", "En conge"
+        TERMINATED = "terminated", "Contrat termine"
 
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -232,11 +233,15 @@ class Employee(TimeStampedModel):
     )
     is_department_manager = models.BooleanField(
         default=False,
-        help_text="Désigne cet employé comme responsable de son département (N+1).",
+        help_text="Designe cet employe comme responsable de son departement (N+1).",
+    )
+    anonymized = models.BooleanField(
+        default=False,
+        help_text="True si les donnees personnelles ont ete purgees (RGPD droit a l'oubli).",
     )
 
     class Meta:
-        verbose_name = "Employé"
+        verbose_name = "Employe"
         verbose_name_plural = "Employés"
 
     def __str__(self) -> str:
