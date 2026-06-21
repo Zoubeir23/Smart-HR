@@ -17,6 +17,11 @@ class AttendanceSerializer(serializers.ModelSerializer):
     )
     duration_hours = serializers.SerializerMethodField()
 
+    absence_type_display = serializers.CharField(
+        source="get_absence_type_display",
+        read_only=True,
+    )
+
     class Meta:
         model = Attendance
         fields = [
@@ -29,6 +34,8 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "check_out",
             "duration_hours",
             "status",
+            "absence_type",
+            "absence_type_display",
             "note",
             "created_at",
         ]
@@ -49,13 +56,23 @@ class AttendanceSerializer(serializers.ModelSerializer):
         return None
 
     def validate(self, attrs):
-        """Vérifie que check_out est bien après check_in."""
+        """Vérifie cohérence check_out > check_in et absence_type renseigné si absent."""
         check_in = attrs.get("check_in")
         check_out = attrs.get("check_out")
         if check_in and check_out and check_out <= check_in:
             raise serializers.ValidationError(
                 {"check_out": "L'heure de sortie doit être après l'heure d'arrivée."},
             )
+
+        att_status = attrs.get("status")
+        absence_type = attrs.get("absence_type")
+        if att_status == Attendance.Status.ABSENT and not absence_type:
+            raise serializers.ValidationError(
+                {"absence_type": "Précisez si l'absence est signalée ou non."},
+            )
+        if att_status != Attendance.Status.ABSENT and absence_type:
+            attrs["absence_type"] = None
+
         return attrs
 
 
