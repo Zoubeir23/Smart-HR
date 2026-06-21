@@ -1,8 +1,10 @@
 import logging
+from decimal import Decimal
 
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import Sum
+from django.utils.timezone import now as timezone_now
 from rest_framework import filters
 from rest_framework import status
 from rest_framework import viewsets
@@ -73,6 +75,20 @@ class PayrollViewSet(viewsets.ModelViewSet):
         if old_status != Payroll.Status.PAID and payroll.status == Payroll.Status.PAID:
             self._notify_employee_payslip_paid(payroll)
 
+    @staticmethod
+    def _compute_seniority_bonus(base_salary: Decimal, hire_date, reference_date) -> Decimal:
+        """Calcule la prime d'ancienneté : 1 % du salaire brut par année, plafonnée à 15 %.
+
+        Retourne 0 si hire_date est absent.
+        """
+        if not hire_date:
+            return Decimal("0")
+        years = (reference_date - hire_date).days // 365
+        if years <= 0:
+            return Decimal("0")
+        rate = min(years, 15) * Decimal("0.01")
+        return (base_salary * rate).quantize(Decimal("0.01"))
+
     def _notify_employee_payslip_paid(self, payroll: Payroll) -> None:
         """Notifie l'employé qu'une fiche de paie vient d'être réglée."""
         employee_user = payroll.employee.user
@@ -133,15 +149,17 @@ class PayrollViewSet(viewsets.ModelViewSet):
 
         created_count = 0
         skipped_count = 0
+        reference_date = timezone_now().date()
 
         with transaction.atomic():
             for employee in employees_qs:
+                seniority_bonus = self._compute_seniority_bonus(employee.salary, employee.hire_date, reference_date)
                 _, created = Payroll.objects.get_or_create(
                     employee=employee,
                     month=month,
                     defaults={
                         "base_salary": employee.salary,
-                        "bonuses": 0,
+                        "bonuses": seniority_bonus,
                         "deductions": 0,
                         "status": Payroll.Status.PENDING,
                     },
