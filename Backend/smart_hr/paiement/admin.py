@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.timezone import now
 
 from smart_hr.paiement.models import Payroll
 
@@ -33,13 +34,13 @@ class PayrollAdmin(admin.ModelAdmin):
     @admin.action(description="✅ Marquer comme Payé")
     def mark_as_paid(self, request, queryset):
         """Action en masse : passe les fiches sélectionnées à l'état 'paid'."""
-        updated = queryset.update(status=Payroll.Status.PAID)
+        updated = queryset.update(status=Payroll.Status.PAID, updated_at=now())
         self.message_user(request, f"{updated} fiche(s) de paie marquée(s) comme payée(s).")
 
     @admin.action(description="⚙️ Marquer comme Traité")
     def mark_as_processed(self, request, queryset):
         """Action en masse : passe les fiches sélectionnées à l'état 'processed'."""
-        updated = queryset.update(status=Payroll.Status.PROCESSED)
+        updated = queryset.update(status=Payroll.Status.PROCESSED, updated_at=now())
         self.message_user(request, f"{updated} fiche(s) de paie marquée(s) comme traitée(s).")
 
     def get_queryset(self, request):
