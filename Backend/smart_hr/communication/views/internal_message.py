@@ -47,13 +47,14 @@ class InternalMessageViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        allowed_audiences = ROLE_TO_AUDIENCE_MAP.get(user.role, [InternalMessage.TargetAudience.ALL])
-
         base = InternalMessage.objects.select_related("author")
 
         if user.role in [User.Role.ADMIN, User.Role.RH]:
             queryset = base
+        elif user.role not in ROLE_TO_AUDIENCE_MAP:
+            return InternalMessage.objects.none()
         else:
+            allowed_audiences = ROLE_TO_AUDIENCE_MAP[user.role]
             queryset = base.filter(
                 is_published=True,
                 target_audience__in=allowed_audiences,
