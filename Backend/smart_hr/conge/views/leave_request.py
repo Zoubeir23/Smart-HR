@@ -124,7 +124,13 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         - year (int) : année souhaitée (défaut = année courante)
         - employee_id (int) : uniquement pour Admin/RH
         """
-        year = int(request.query_params.get("year", now().year))
+        try:
+            year = int(request.query_params.get("year", now().year))
+        except ValueError:
+            return Response(
+                {"detail": "Le paramètre year doit être un entier."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         employee_id = request.query_params.get("employee_id")
 
         if request.user.role in [User.Role.ADMIN, User.Role.RH] and employee_id:
