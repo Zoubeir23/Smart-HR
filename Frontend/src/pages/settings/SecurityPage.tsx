@@ -375,7 +375,7 @@ export default function SecurityPage() {
                 Actualiser
               </Button>
               <span className="ml-auto text-sm text-muted-foreground">
-                {auditData?.count ?? 0} entrées
+                {auditData?.returned ?? 0} / {auditData?.count ?? 0} entrées
               </span>
             </div>
 
