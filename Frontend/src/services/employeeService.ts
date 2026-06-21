@@ -54,4 +54,25 @@ export const employeeService = {
     const { data } = await api.get('/personnel/positions/');
     return data;
   },
+
+  getFamilyMembers: async (employeeId: number) => {
+    const { data } = await api.get('/personnel/family-members/', { params: { employee: employeeId } });
+    return data?.results ?? data ?? [];
+  },
+
+  addFamilyMember: async (memberData: {
+    employee: number;
+    relationship: string;
+    first_name: string;
+    last_name: string;
+    date_of_birth?: string;
+    gender?: string;
+  }) => {
+    const { data } = await api.post('/personnel/family-members/', memberData);
+    return data;
+  },
+
+  deleteFamilyMember: async (id: number) => {
+    await api.delete(`/personnel/family-members/${id}/`);
+  },
 };
