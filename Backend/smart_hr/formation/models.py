@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 from smart_hr.core.models import TimeStampedModel
@@ -47,6 +48,44 @@ class Meeting(TimeStampedModel):
 
     def __str__(self):
         return f"Meeting: {self.title} for {self.formation.title} ({self.start_time})"
+
+
+class Participation(TimeStampedModel):
+    class Status(models.TextChoices):
+        ENROLLED = "enrolled", "Inscrit"
+        COMPLETED = "completed", "Terminé"
+        ABSENT = "absent", "Absent"
+
+    employee = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="training_participations",
+        verbose_name="Employé",
+    )
+    formation = models.ForeignKey(
+        Formation,
+        on_delete=models.CASCADE,
+        related_name="participations",
+        verbose_name="Formation",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.ENROLLED,
+        verbose_name="Statut",
+    )
+    enrolled_at = models.DateField(auto_now_add=True, verbose_name="Date d'inscription")
+    completed_at = models.DateField(null=True, blank=True, verbose_name="Date de complétion")
+    notes = models.TextField(blank=True, verbose_name="Observations")
+
+    class Meta:
+        unique_together = [("employee", "formation")]
+        ordering = ["-enrolled_at"]
+        verbose_name = "Participation"
+        verbose_name_plural = "Participations"
+
+    def __str__(self) -> str:
+        return f"{self.employee} → {self.formation.title} ({self.get_status_display()})"
 
 
 class ZoomToken(TimeStampedModel):
