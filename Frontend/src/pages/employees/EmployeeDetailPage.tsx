@@ -13,8 +13,15 @@ import {
   AlertTriangle,
   Loader2,
   Pencil,
+  Users,
+  FileText,
+  Plus,
+  Trash2,
+  Upload,
+  X,
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
+import { documentService } from '@/services/documentService';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -105,6 +112,14 @@ export default function EmployeeDetailPage() {
     status: '',
     address: '',
   });
+  const [showAddFamilyMemberForm, setShowAddFamilyMemberForm] = useState(false);
+  const [familyMemberForm, setFamilyMemberForm] = useState({
+    relationship: 'child',
+    first_name: '',
+    last_name: '',
+    date_of_birth: '',
+    gender: '',
+  });
 
   const { data: employee, isLoading } = useQuery({
     queryKey: ['employee', id],
@@ -126,6 +141,35 @@ export default function EmployeeDetailPage() {
 
   const departments = departmentsData?.results ?? departmentsData ?? [];
   const positions = positionsData?.results ?? positionsData ?? [];
+
+  const { data: familyMembersData, refetch: refetchFamilyMembers } = useQuery({
+    queryKey: ['family-members', id],
+    queryFn: () => employeeService.getFamilyMembers(Number(id)),
+    enabled: !!id,
+  });
+  const familyMembers: Array<{
+    id: number;
+    relationship: string;
+    relationship_display: string;
+    first_name: string;
+    last_name: string;
+    date_of_birth: string | null;
+    gender: string;
+    age: number | null;
+  }> = familyMembersData ?? [];
+
+  const { data: employeeDocuments, refetch: refetchDocuments } = useQuery({
+    queryKey: ['employee-documents', id],
+    queryFn: () => documentService.getAll({ employee: Number(id) }),
+    enabled: !!id,
+  });
+  const documents: Array<{
+    id: number;
+    name: string;
+    document_type: string;
+    file: string;
+    created_at: string;
+  }> = employeeDocuments?.results ?? employeeDocuments ?? [];
 
   const updateMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) => employeeService.update(Number(id), data),
@@ -150,6 +194,49 @@ export default function EmployeeDetailPage() {
       toast.error('Erreur lors de la désactivation.');
     },
   });
+
+  const addFamilyMemberMutation = useMutation({
+    mutationFn: () => employeeService.addFamilyMember({
+      employee: Number(id),
+      relationship: familyMemberForm.relationship,
+      first_name: familyMemberForm.first_name,
+      last_name: familyMemberForm.last_name,
+      date_of_birth: familyMemberForm.date_of_birth || undefined,
+      gender: familyMemberForm.gender || undefined,
+    }),
+    onSuccess: () => {
+      refetchFamilyMembers();
+      setShowAddFamilyMemberForm(false);
+      setFamilyMemberForm({ relationship: 'child', first_name: '', last_name: '', date_of_birth: '', gender: '' });
+      toast.success('Membre de la famille ajouté.');
+    },
+    onError: () => toast.error('Erreur lors de l\'ajout.'),
+  });
+
+  const deleteFamilyMemberMutation = useMutation({
+    mutationFn: (memberId: number) => employeeService.deleteFamilyMember(memberId),
+    onSuccess: () => { refetchFamilyMembers(); toast.success('Membre supprimé.'); },
+    onError: () => toast.error('Erreur lors de la suppression.'),
+  });
+
+  const deleteDocumentMutation = useMutation({
+    mutationFn: (docId: number) => documentService.delete(docId),
+    onSuccess: () => { refetchDocuments(); toast.success('Document supprimé.'); },
+    onError: () => toast.error('Erreur lors de la suppression du document.'),
+  });
+
+  const handleDocumentUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('employee', String(id));
+    formData.append('name', file.name);
+    formData.append('file', file);
+    formData.append('document_type', 'other');
+    documentService.upload(formData)
+      .then(() => { refetchDocuments(); toast.success('Document uploadé.'); })
+      .catch(() => toast.error('Erreur lors de l\'upload.'));
+  };
 
   // Ouvre automatiquement la modale d'édition si l'URL contient ?edit=true
   // (déclenché depuis le menu EmployeeCard → "Modifier")
@@ -386,6 +473,22 @@ export default function EmployeeDetailPage() {
                   {statusLabels[employee?.status as keyof typeof statusLabels] ?? 'Inconnu'}
                 </Badge>
 
+                {/* Matricule + CNSS */}
+                {(employee?.matricule || employee?.cnss_number) && (
+                  <div className="mt-3 flex flex-wrap gap-2 justify-center">
+                    {employee?.matricule && (
+                      <Badge variant="secondary" className="font-mono text-xs">
+                        {employee.matricule}
+                      </Badge>
+                    )}
+                    {employee?.cnss_number && (
+                      <Badge variant="outline" className="font-mono text-xs">
+                        CNSS {employee.cnss_number}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
                 {/* Contact Info */}
                 <div className="mt-6 w-full space-y-3 border-t border-border pt-6">
                   <div className="flex items-center gap-3 text-sm">
@@ -400,6 +503,12 @@ export default function EmployeeDetailPage() {
                     <MapPin className="h-4 w-4 text-muted-foreground" />
                     <span className="text-foreground">{employee?.address ?? employee?.department_name ?? 'Non disponible'}</span>
                   </div>
+                  {employee?.cin && (
+                    <div className="flex items-center gap-3 text-sm">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-foreground">CIN : {employee.cin}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-3 text-sm">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-foreground">
@@ -536,6 +645,183 @@ export default function EmployeeDetailPage() {
                       <Badge variant="outline" className={leaveStatusStyles[leave.status]}>
                         {leaveStatusLabels[leave.status]}
                       </Badge>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* Situation familiale */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.45 }}
+            >
+              <Card className="border border-border shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Users className="h-5 w-5 text-primary" />
+                    Situation familiale
+                  </CardTitle>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddFamilyMemberForm((previous) => !previous)}
+                    className="gap-1"
+                  >
+                    {showAddFamilyMemberForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+                    {showAddFamilyMemberForm ? 'Annuler' : 'Ajouter'}
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {showAddFamilyMemberForm && (
+                    <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Lien</Label>
+                          <Select
+                            value={familyMemberForm.relationship}
+                            onValueChange={(value) => setFamilyMemberForm((previous) => ({ ...previous, relationship: value }))}
+                          >
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="spouse">Conjoint(e)</SelectItem>
+                              <SelectItem value="child">Enfant</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Genre</Label>
+                          <Select
+                            value={familyMemberForm.gender}
+                            onValueChange={(value) => setFamilyMemberForm((previous) => ({ ...previous, gender: value }))}
+                          >
+                            <SelectTrigger className="h-8 text-sm">
+                              <SelectValue placeholder="—" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="M">Masculin</SelectItem>
+                              <SelectItem value="F">Féminin</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <Label className="text-xs">Prénom <span className="text-destructive">*</span></Label>
+                          <Input
+                            className="h-8 text-sm"
+                            value={familyMemberForm.first_name}
+                            onChange={(e) => setFamilyMemberForm((previous) => ({ ...previous, first_name: e.target.value }))}
+                            placeholder="Prénom"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Nom <span className="text-destructive">*</span></Label>
+                          <Input
+                            className="h-8 text-sm"
+                            value={familyMemberForm.last_name}
+                            onChange={(e) => setFamilyMemberForm((previous) => ({ ...previous, last_name: e.target.value }))}
+                            placeholder="Nom"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Date de naissance</Label>
+                        <Input
+                          type="date"
+                          className="h-8 text-sm"
+                          value={familyMemberForm.date_of_birth}
+                          onChange={(e) => setFamilyMemberForm((previous) => ({ ...previous, date_of_birth: e.target.value }))}
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        className="w-full"
+                        disabled={!familyMemberForm.first_name || !familyMemberForm.last_name || addFamilyMemberMutation.isPending}
+                        onClick={() => addFamilyMemberMutation.mutate()}
+                      >
+                        {addFamilyMemberMutation.isPending && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                        Enregistrer
+                      </Button>
+                    </div>
+                  )}
+
+                  {familyMembers.length === 0 && !showAddFamilyMemberForm && (
+                    <p className="py-4 text-center text-sm text-muted-foreground">Aucun membre de la famille enregistré.</p>
+                  )}
+
+                  {familyMembers.map((member) => (
+                    <div key={member.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+                      <div>
+                        <p className="font-medium text-foreground">
+                          {member.first_name} {member.last_name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {member.relationship_display}
+                          {member.age !== null ? ` · ${member.age} ans` : ''}
+                          {member.date_of_birth ? ` · né(e) le ${new Date(member.date_of_birth).toLocaleDateString('fr-FR')}` : ''}
+                        </p>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                        onClick={() => deleteFamilyMemberMutation.mutate(member.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            {/* GED — Archivage électronique */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+            >
+              <Card className="border border-border shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <FileText className="h-5 w-5 text-primary" />
+                    Archivage électronique (GED)
+                  </CardTitle>
+                  <label className="cursor-pointer">
+                    <input type="file" className="sr-only" onChange={handleDocumentUpload} />
+                    <Button variant="outline" size="sm" className="gap-1 pointer-events-none">
+                      <Upload className="h-3.5 w-3.5" />
+                      Ajouter
+                    </Button>
+                  </label>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {documents.length === 0 && (
+                    <p className="py-4 text-center text-sm text-muted-foreground">Aucun document archivé.</p>
+                  )}
+                  {documents.map((doc) => (
+                    <div key={doc.id} className="flex items-center justify-between rounded-lg bg-muted/50 p-3">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{doc.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(doc.created_at).toLocaleDateString('fr-FR')}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-destructive shrink-0"
+                        onClick={() => deleteDocumentMutation.mutate(doc.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
                     </div>
                   ))}
                 </CardContent>
