@@ -342,3 +342,57 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=True, methods=["post"], url_path="anonymize")
+    def anonymize(self, request, pk=None):
+        """
+        POST /api/v1/recruitment/applications/{id}/anonymize/
+        RGPD droit à l'oubli : anonymise les données personnelles d'une candidature
+        rejetée ou refusée. Seuls le statut et le score sont conservés (statistiques).
+        Réservé aux Admin/RH.
+        """
+        from smart_hr.core.models import log_audit_action
+
+        application = self.get_object()
+
+        if application.status not in {Application.Status.REJECTED, Application.Status.WITHDRAWN}:
+            return Response(
+                {"detail": "Seules les candidatures rejetées ou retirées peuvent être anonymisées."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if application.anonymized:
+            return Response(
+                {"detail": "Cette candidature a déjà été anonymisée."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if application.cv:
+            try:
+                application.cv.delete(save=False)
+            except Exception:
+                logger.exception("Impossible de supprimer le CV pour la candidature %s", application.pk)
+
+        application.ai_summary = "[données anonymisées - RGPD]"
+        application.skills_extracted = []
+        application.cover_letter = ""
+        application.anonymized = True
+        application.save(
+            update_fields=["cv", "ai_summary", "skills_extracted", "cover_letter", "anonymized", "updated_at"],
+        )
+
+        log_audit_action(
+            performed_by=request.user,
+            action="DELETE",
+            model_name="Application",
+            object_id=str(application.pk),
+            object_repr=f"Candidature #{application.pk} — {application.job_offer.title}",
+            details={"raison": "Anonymisation RGPD", "status": application.status},
+        )
+
+        logger.info("Candidature %s anonymisée (RGPD) par %s", application.pk, request.user.email)
+
+        return Response(
+            {"detail": "Candidature anonymisée avec succès.", "id": application.pk},
+            status=status.HTTP_200_OK,
+        )
