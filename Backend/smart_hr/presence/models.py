@@ -13,6 +13,10 @@ class Attendance(TimeStampedModel):
         LATE = "late", "En retard"
         HALF_DAY = "half_day", "Demi-journée"
 
+    class AbsenceType(models.TextChoices):
+        JUSTIFIED = "justified", "Absence signalée"
+        UNJUSTIFIED = "unjustified", "Absence non signalée"
+
     employee = models.ForeignKey(
         Employee,
         on_delete=models.CASCADE,
@@ -25,6 +29,13 @@ class Attendance(TimeStampedModel):
         max_length=10,
         choices=Status.choices,
         default=Status.PRESENT,
+    )
+    absence_type = models.CharField(
+        max_length=12,
+        choices=AbsenceType.choices,
+        null=True,
+        blank=True,
+        help_text="Renseigné uniquement si statut = Absent.",
     )
     note = models.TextField(blank=True)
 
