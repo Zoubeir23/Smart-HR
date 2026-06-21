@@ -1,4 +1,5 @@
 from rest_framework import viewsets
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 
 from smart_hr.recruitment.models import ApplicationDocument
@@ -37,3 +38,12 @@ class ApplicationDocumentViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return [IsAuthenticated()]
         return [IsRH()]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        application = serializer.validated_data["application"]
+        if user.role not in ["ADMIN", "RH"] and application.candidate != user:
+            raise PermissionDenied(
+                "Vous ne pouvez déposer des documents que pour votre propre candidature.",
+            )
+        serializer.save()
