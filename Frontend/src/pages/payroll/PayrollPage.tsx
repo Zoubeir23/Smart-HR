@@ -117,6 +117,68 @@ function formatMonthLabel(monthParam: string): string {
   return `${label} ${year}`;
 }
 
+function printPayslip(record: PayrollRecord): void {
+  const monthLabel = formatMonthLabel(record.month);
+  const statusLabel = STATUS_CONFIG[record.status]?.label ?? record.status;
+  const generatedOn = new Date().toLocaleDateString('fr-FR');
+
+  const html = `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Bulletin de paie — ${record.employee_name} — ${monthLabel}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 48px; color: #1c1410; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #D62828; padding-bottom: 16px; margin-bottom: 24px; }
+    .brand { color: #D62828; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+    .employee-name { font-size: 18px; font-weight: 700; margin: 0 0 4px; }
+    .meta { font-size: 13px; color: #555; }
+    .period-label { font-size: 12px; color: #888; margin-bottom: 4px; }
+    .period { font-size: 16px; font-weight: 700; }
+    .status { display: inline-block; margin-top: 8px; padding: 3px 10px; background: #e8f5e9; color: #2e7d32; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 11px 0; font-size: 14px; border-bottom: 1px solid #eee; }
+    td.amount { text-align: right; font-weight: 600; }
+    td.bonus  { color: #2e7d32; }
+    td.deduct { color: #c62828; }
+    tr.total td { font-size: 16px; font-weight: 700; border-bottom: none; border-top: 2px solid #1c1410; padding-top: 14px; }
+    tr.total td.amount { color: #D62828; }
+    .footer { margin-top: 48px; font-size: 11px; color: #aaa; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <div class="brand">Smart-HR</div>
+      <p class="employee-name">${record.employee_name}</p>
+      <p class="meta">${record.employee_email ?? ''}</p>
+      <p class="meta">${record.department_name || 'Sans département'}</p>
+    </div>
+    <div style="text-align:right">
+      <div class="period-label">Période</div>
+      <div class="period">${monthLabel}</div>
+      <span class="status">${statusLabel}</span>
+    </div>
+  </div>
+  <table>
+    <tr><td>Salaire de base</td><td class="amount">${formatCurrency(record.base_salary)}</td></tr>
+    <tr><td>Primes / Ancienneté</td><td class="amount bonus">+ ${formatCurrency(record.bonuses)}</td></tr>
+    <tr><td>Déductions</td><td class="amount deduct">- ${formatCurrency(record.deductions)}</td></tr>
+    <tr class="total"><td>Net à payer</td><td class="amount">${formatCurrency(record.net_salary)}</td></tr>
+  </table>
+  <div class="footer">Document généré le ${generatedOn} — Smart-HR · Confidentiel</div>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank', 'width=800,height=600');
+  if (!printWindow) return;
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
+  printWindow.close();
+}
+
 function exportToCSV(records: PayrollRecord[], monthParam: string): void {
   const headers = ['Employé', 'Email', 'Département', 'Mois', 'Brut', 'Primes', 'Déductions', 'Net', 'Statut'];
   const rows = records.map((r) => [
@@ -819,7 +881,7 @@ export default function PayrollPage() {
             <Button variant="outline" onClick={() => setSlipRecord(null)}>
               <X className="mr-1 h-4 w-4" /> Fermer
             </Button>
-            <Button onClick={() => window.print()} className="gap-2">
+            <Button onClick={() => slipRecord && printPayslip(slipRecord)} className="gap-2">
               <Printer className="h-4 w-4" /> Imprimer
             </Button>
           </DialogFooter>
