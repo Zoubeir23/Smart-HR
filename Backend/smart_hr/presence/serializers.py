@@ -17,11 +17,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
     )
     duration_hours = serializers.SerializerMethodField()
 
-    absence_type_display = serializers.CharField(
-        source="get_absence_type_display",
-        read_only=True,
-        allow_null=True,
-    )
+    absence_type_display = serializers.SerializerMethodField()
 
     class Meta:
         model = Attendance
@@ -41,6 +37,10 @@ class AttendanceSerializer(serializers.ModelSerializer):
             "created_at",
         ]
         read_only_fields = ["created_at"]
+
+    def get_absence_type_display(self, obj: Attendance) -> str | None:
+        """Retourne le libellé du type d'absence, ou None si non applicable."""
+        return obj.get_absence_type_display() or None
 
     def get_duration_hours(self, obj: Attendance) -> float | None:
         """Calcule la durée en heures entre check_in et check_out."""
@@ -76,7 +76,7 @@ class AttendanceSerializer(serializers.ModelSerializer):
                 {"absence_type": "Précisez si l'absence est signalée ou non."},
             )
         if att_status != Attendance.Status.ABSENT and "absence_type" in attrs:
-            attrs["absence_type"] = None
+            attrs["absence_type"] = ""
 
         return attrs
 
