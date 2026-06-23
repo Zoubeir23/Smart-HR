@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.utils import translation
 from rest_framework import serializers
 
 from smart_hr.paiement.models import BulletinPaie
@@ -68,7 +69,12 @@ class BulletinPaieSerializer(serializers.ModelSerializer):
         ]
 
     def get_periode_display(self, obj: BulletinPaie) -> str:
-        return obj.periode.strftime("%B %Y") if obj.periode else ""
+        if not obj.periode:
+            return ""
+        with translation.override("fr"):
+            from django.utils.formats import date_format
+
+            return date_format(obj.periode, "F Y")
 
 
 class PayrollSerializer(serializers.ModelSerializer):
