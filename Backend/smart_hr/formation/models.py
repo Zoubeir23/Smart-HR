@@ -1,4 +1,3 @@
-from django.conf import settings
 from django.db import models
 
 from smart_hr.core.models import TimeStampedModel
@@ -57,7 +56,7 @@ class Participation(TimeStampedModel):
         ABSENT = "absent", "Absent"
 
     employee = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        "personnel.Employee",
         on_delete=models.CASCADE,
         related_name="training_participations",
         verbose_name="Employé",

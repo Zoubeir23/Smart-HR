@@ -29,7 +29,7 @@ class PerformanceEvaluationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        base = PerformanceEvaluation.objects.select_related("employee", "reviewer")
+        base = PerformanceEvaluation.objects.select_related("employee__user", "reviewer__user")
 
         if user.role in [User.Role.ADMIN, User.Role.RH]:
             year = self.request.query_params.get("year")

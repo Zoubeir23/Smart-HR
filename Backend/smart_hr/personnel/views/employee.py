@@ -17,7 +17,7 @@ from smart_hr.personnel.models import Employee
 from smart_hr.personnel.serializers import EmployeeSelfSerializer
 from smart_hr.personnel.serializers import EmployeeSerializer
 from smart_hr.users.models import User
-from smart_hr.users.permissions import IsRH
+from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +62,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         """Applique des permissions plus strictes pour les actions d'écriture."""
         if self.action in ["list", "retrieve", "me"]:
             return [IsAuthenticated()]
-        return [IsRH()]
+        return [IsRHOrDepartmentManager()]
 
     def perform_create(self, serializer):
         """Crée l'employé puis envoie ses identifiants par email."""
@@ -139,6 +139,46 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 {"detail": "Profil employé non trouvé pour cet utilisateur."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+
+    @action(detail=True, methods=["post"], url_path="set-manager")
+    def set_manager(self, request, pk=None):
+        """
+        POST /api/v1/personnel/employees/{id}/set-manager/
+        Nomme ou retire le statut de manager de département (Admin/RH uniquement).
+        Body : {"is_manager": true} ou {"is_manager": false}
+        """
+        if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        employee = self.get_object()
+        is_manager = request.data.get("is_manager")
+
+        if is_manager is None:
+            return Response(
+                {"detail": "Le champ 'is_manager' (true/false) est obligatoire."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not isinstance(is_manager, bool):
+            return Response(
+                {"detail": "Le champ 'is_manager' doit être un booléen (true ou false)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if is_manager and not employee.department:
+            return Response(
+                {"detail": "Impossible de nommer manager un employé sans département assigné."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        employee.is_department_manager = is_manager
+        employee.save(update_fields=["is_department_manager", "updated_at"])
+
+        action_label = "nommé manager" if is_manager else "retiré du poste de manager"
+        logger.info("Employé %s %s par %s", employee.pk, action_label, request.user.email)
+
+        serializer = self.get_serializer(employee)
+        return Response(serializer.data)
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
@@ -270,6 +310,25 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         employee_user.last_name = "[anonymise]"
         employee_user.tel = ""
         employee_user.save(update_fields=["first_name", "last_name", "tel"])
+
+        # Cascade RGPD : anonymiser les données personnelles dans les relations
+        from smart_hr.conge.models import LeaveRequest
+
+        LeaveRequest.objects.filter(employee=employee).update(reason="[anonymise]")
+
+        try:
+            from smart_hr.presence.models import Attendance
+
+            Attendance.objects.filter(employee=employee).update(notes="[anonymise]")
+        except Exception:
+            pass
+
+        try:
+            from smart_hr.paiement.models import Payroll
+
+            Payroll.objects.filter(employee=employee).update(notes="[anonymise]")
+        except Exception:
+            pass
 
         log_audit_action(
             performed_by=request.user,

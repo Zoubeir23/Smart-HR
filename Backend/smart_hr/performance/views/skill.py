@@ -25,7 +25,7 @@ class SkillViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        base = Skill.objects.select_related("employee")
+        base = Skill.objects.select_related("employee__user")
 
         if user.role in [User.Role.ADMIN, User.Role.RH]:
             employee_id = self.request.query_params.get("employee_id")

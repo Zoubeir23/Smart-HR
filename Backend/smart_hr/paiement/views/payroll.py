@@ -17,7 +17,7 @@ from smart_hr.paiement.models import Payroll
 from smart_hr.paiement.serializers import PayrollBulkGenerateSerializer
 from smart_hr.paiement.serializers import PayrollSerializer
 from smart_hr.personnel.models import Employee
-from smart_hr.users.permissions import IsRH
+from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +64,32 @@ class PayrollViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Protège les actions d'écriture pour RH/Admin uniquement."""
         if self.action in ["create", "update", "partial_update", "destroy", "bulk_generate"]:
-            return [IsRH()]
+            return [IsRHOrDepartmentManager()]
         return [IsAuthenticated()]
+
+    @staticmethod
+    def _get_manager_department(user):
+        """Retourne le département du manager, ou None si RH/Admin."""
+        from smart_hr.users.models import User
+
+        if user.role in [User.Role.ADMIN, User.Role.RH]:
+            return None
+        try:
+            profile = user.employee_profile
+        except AttributeError:
+            return None
+        return profile.department if profile.is_department_manager else None
+
+    def perform_create(self, serializer):
+        """Crée une fiche de paie en vérifiant que le manager agit sur son département."""
+        manager_dept = self._get_manager_department(self.request.user)
+        if manager_dept is not None:
+            employee = serializer.validated_data.get("employee")
+            if employee and employee.department != manager_dept:
+                from rest_framework.exceptions import PermissionDenied
+
+                raise PermissionDenied("Vous ne pouvez créer des fiches que pour votre département.")
+        serializer.save()
 
     def perform_update(self, serializer):
         """Envoie une notification e-mail quand une paie passe à l'état 'paid'."""
@@ -139,6 +163,16 @@ class PayrollViewSet(viewsets.ModelViewSet):
         serializer_input.is_valid(raise_exception=True)
         month = serializer_input.validated_data["month"]
         dept_id = serializer_input.validated_data.get("department_id")
+
+        # Un manager ne peut générer que pour son propre département.
+        manager_dept = self._get_manager_department(request.user)
+        if manager_dept is not None:
+            if dept_id and int(dept_id) != manager_dept.pk:
+                return Response(
+                    {"detail": "Vous ne pouvez générer des fiches que pour votre département."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            dept_id = manager_dept.pk
 
         employees_qs = Employee.objects.filter(status=Employee.Status.ACTIVE).select_related(
             "user",
