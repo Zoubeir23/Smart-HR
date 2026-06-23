@@ -276,6 +276,17 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+    @staticmethod
+    def _check_onboard_preconditions(application) -> str | None:
+        """Retourne un message d'erreur si l'onboarding est impossible, None sinon."""
+        if application.status != Application.Status.ACCEPTED:
+            return "Seules les candidatures acceptées peuvent être onboardées."
+        if application.onboarded:
+            return "Ce candidat a déjà été transformé en employé."
+        if hasattr(application.candidate, "employee_profile"):
+            return "Un profil employé existe déjà pour cet utilisateur."
+        return None
+
     @action(detail=True, methods=["post"], url_path="onboard", permission_classes=[IsRH])
     def onboard(self, request, pk=None):
         """
@@ -292,31 +303,17 @@ class ApplicationViewSet(viewsets.ModelViewSet):
 
         application = self.get_object()
 
-        if application.status != Application.Status.ACCEPTED:
-            return Response(
-                {"detail": "Seules les candidatures acceptées peuvent être onboardées."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if application.onboarded:
-            return Response(
-                {"detail": "Ce candidat a déjà été transformé en employé."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        precondition_error = self._check_onboard_preconditions(application)
+        if precondition_error is not None:
+            return Response({"detail": precondition_error}, status=status.HTTP_400_BAD_REQUEST)
 
         candidate_user = application.candidate
 
-        if hasattr(candidate_user, "employee_profile"):
-            return Response(
-                {"detail": "Un profil employé existe déjà pour cet utilisateur."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
         department_id = request.data.get("department_id")
         position_id = request.data.get("position_id")
-        salary = request.data.get("salary")
+        salary_raw = request.data.get("salary")
 
-        if not department_id or not position_id or salary is None:
+        if not department_id or not position_id or salary_raw is None:
             return Response(
                 {"detail": "Les champs department_id, position_id et salary sont obligatoires."},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -333,10 +330,10 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Poste introuvable."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            salary = float(salary)
-            if salary < 0:
-                raise ValueError
+            salary = float(salary_raw)
         except (ValueError, TypeError):
+            salary = -1
+        if salary < 0:
             return Response({"detail": "Le salaire doit être un nombre positif."}, status=status.HTTP_400_BAD_REQUEST)
 
         Employee.objects.create(
