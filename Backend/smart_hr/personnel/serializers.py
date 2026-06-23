@@ -148,6 +148,7 @@ class EmployeeSerializer(serializers.ModelSerializer):
     nationality_name = serializers.CharField(source="nationality.name", read_only=True)
     family_status_label = serializers.CharField(source="family_status.label", read_only=True)
     diploma_label = serializers.CharField(source="diploma.label", read_only=True)
+    role_label = serializers.SerializerMethodField()
 
     class Meta:
         model = Employee
@@ -166,6 +167,8 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "hire_date",
             "salary",
             "status",
+            "is_department_manager",
+            "role_label",
             "date_of_birth",
             "cin",
             "cnss_number",
@@ -181,7 +184,19 @@ class EmployeeSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["matricule", "churn_risk", "created_at", "updated_at"]
+        read_only_fields = ["matricule", "churn_risk", "is_department_manager", "role_label", "created_at", "updated_at"]
+
+    def get_role_label(self, obj: Employee) -> str:
+        """Retourne un label lisible combinant rôle et statut manager."""
+        if obj.is_department_manager:
+            return "Manager de département"
+        role_labels = {
+            "ADMIN": "Admin Système",
+            "RH": "Responsable RH",
+            "EMPLOYEE": "Employé",
+            "CANDIDATE": "Candidat",
+        }
+        return role_labels.get(obj.user.role, obj.user.role)
 
     def to_representation(self, instance):
         """Remplace le FK user par un objet imbriqué en lecture."""
