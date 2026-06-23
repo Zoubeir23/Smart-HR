@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ("paiement", "0005_heures_sup_anciennete_licenciement"),
+        ("paiement", "0006_heures_sup_anciennete_licenciement"),
     ]
 
     operations = [
