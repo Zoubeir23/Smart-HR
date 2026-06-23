@@ -31,6 +31,10 @@ class Pays(TimeStampedModel):
         choices=MethodeArrondi.choices,
         default=MethodeArrondi.ROUND,
     )
+    jours_ouvres_par_mois = models.IntegerField(
+        default=26,
+        help_text="Nombre de jours ouvrés de référence par mois (26 au Sénégal/Comores, 22 en France).",
+    )
 
     class Meta:
         verbose_name = "Pays"
@@ -280,6 +284,121 @@ class AllocationRegle(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.nom_allocation} ({self.pays.nom}) — exonéré jusqu'à {self.seuil_exoneration}"
+
+
+# ===========================================================================
+# REGLES TRAVAIL : HEURES SUPPLEMENTAIRES, ANCIENNETE, LICENCIEMENT
+# ===========================================================================
+
+
+class TrancheHeureSupplementaire(TimeStampedModel):
+    """
+    Taux de majoration par tranche d'heures supplémentaires, versionnée par pays.
+    Ex: Senegal art. L.140 -- +15% de la 41e a la 48e heure, +40% au-dela.
+    """
+
+    pays = models.ForeignKey(Pays, on_delete=models.CASCADE, related_name="tranches_heure_supplementaire")
+    heure_debut = models.IntegerField(help_text="Premiere heure de la tranche (ex: 41 pour la 41e heure)")
+    heure_fin = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Derniere heure incluse (null = sans limite superieure)",
+    )
+    taux_majoration = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        help_text="Pourcentage de majoration du taux horaire brut (ex: 25.00 pour +25%)",
+    )
+    contingent_annuel = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Nombre maximal d'heures supplementaires autorisees par an (null = non plafonné)",
+    )
+    date_debut_validite = models.DateField()
+    date_fin_validite = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Tranche d'heure supplémentaire"
+        verbose_name_plural = "Tranches d'heures supplémentaires"
+        ordering = ["pays", "heure_debut", "-date_debut_validite"]
+
+    def __str__(self) -> str:
+        plafond_str = f"{self.heure_fin}h" if self.heure_fin else "∞"
+        return f"{self.pays.nom} — HS [{self.heure_debut}h → {plafond_str}] = +{self.taux_majoration}%"
+
+
+class TranchePrimeAnciennete(TimeStampedModel):
+    """
+    Taux de prime d'anciennete par tranche d'annees de service, versionnee par pays.
+    Base de calcul : salaire de base (ou salaire minimum de la categorie selon convention).
+    Ex: Senegal CCIP -- 3% a partir de 3 ans, +3% par tranche de 3 ans jusqu'a 27%.
+    """
+
+    pays = models.ForeignKey(Pays, on_delete=models.CASCADE, related_name="tranches_prime_anciennete")
+    annees_debut = models.IntegerField(help_text="Annees reevolues ouvrant droit a cette tranche (ex: 3 pour a partir de 3 ans)")
+    annees_fin = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Derniere annee de la tranche (null = sans limite)",
+    )
+    taux = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        help_text="Taux de prime applicable a cette tranche (ex: 3.00 pour 3%)",
+    )
+    plafond_taux = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Taux maximal cumule pour ce pays (ex: 27.00%). Bloque la progression au-dela.",
+    )
+    date_debut_validite = models.DateField()
+    date_fin_validite = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Tranche de prime d'ancienneté"
+        verbose_name_plural = "Tranches de prime d'ancienneté"
+        ordering = ["pays", "annees_debut", "-date_debut_validite"]
+
+    def __str__(self) -> str:
+        fin_str = f"{self.annees_fin} ans" if self.annees_fin else "∞"
+        return f"{self.pays.nom} — Anciennete [{self.annees_debut} → {fin_str}] = {self.taux}%"
+
+
+class TrancheIndemniteLicenciement(TimeStampedModel):
+    """
+    Taux de l'indemnite legale de licenciement par tranche d'anciennete, versionnee par pays.
+    Le taux s'applique par annee d'anciennete sur la base du salaire mensuel moyen brut.
+    Ex: France -- 1/4 mois par annee pour <= 10 ans (= 25%), 1/3 mois au-dela (= 33.33%).
+    """
+
+    pays = models.ForeignKey(Pays, on_delete=models.CASCADE, related_name="tranches_indemnite_licenciement")
+    annees_debut = models.IntegerField(help_text="Premiere annee de la tranche (ex: 1, ou 11 pour la 2eme tranche)")
+    annees_fin = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Derniere annee de la tranche incluse (null = sans limite)",
+    )
+    taux_par_annee = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        help_text="% du salaire mensuel moyen par annee d'anciennete (ex: 25.00 = 1/4 mois)",
+    )
+    anciennete_minimale_mois = models.IntegerField(
+        help_text="Anciennete minimale requise pour ouvrir droit a l'indemnite (en mois)"
+    )
+    date_debut_validite = models.DateField()
+    date_fin_validite = models.DateField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Tranche d'indemnité de licenciement"
+        verbose_name_plural = "Tranches d'indemnité de licenciement"
+        ordering = ["pays", "annees_debut", "-date_debut_validite"]
+
+    def __str__(self) -> str:
+        fin_str = f"{self.annees_fin} ans" if self.annees_fin else "∞"
+        return f"{self.pays.nom} — Licenciement [{self.annees_debut} → {fin_str}] = {self.taux_par_annee}%/an"
 
 
 # ===========================================================================

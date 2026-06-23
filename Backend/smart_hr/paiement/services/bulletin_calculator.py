@@ -34,6 +34,7 @@ from smart_hr.paiement.models import LigneBulletin
 from smart_hr.paiement.models import Pays
 from smart_hr.paiement.models import RegleCotisation
 from smart_hr.paiement.models import TaxeMinimaleForfaitaire
+from smart_hr.presence.models import Attendance
 
 if TYPE_CHECKING:
     from datetime import date
@@ -204,6 +205,34 @@ def calculer_bulletin(
 
     salaire_brut = salaire_de_base
 
+    # ── 1b. Déduction absences injustifiées ──────────────────────────────────
+    nombre_absences_injustifiees = Attendance.objects.filter(
+        employee=employee,
+        date__year=periode.year,
+        date__month=periode.month,
+        status=Attendance.Status.ABSENT,
+        absence_type=Attendance.AbsenceType.UNJUSTIFIED,
+    ).count()
+
+    retenue_absence = Decimal("0")
+    if nombre_absences_injustifiees > 0:
+        jours_ouvres = Decimal(str(pays.jours_ouvres_par_mois))
+        taux_journalier = (salaire_de_base / jours_ouvres).quantize(Decimal("1"), rounding=ROUND_DOWN)
+        retenue_absence = taux_journalier * nombre_absences_injustifiees
+        salaire_brut -= retenue_absence
+        lignes.append(
+            nouvelle_ligne(
+                libelle=f"Retenue absence injustifiée ({nombre_absences_injustifiees} j.)",
+                nature=LigneBulletin.Nature.RETENUE,
+                base=salaire_de_base,
+                taux=Decimal("0"),
+                montant=-retenue_absence,
+            )
+        )
+
+    # Salaire effectivement perçu : base pour toutes les assiettes fiscales et sociales aval.
+    salaire_base_effectif = salaire_de_base - retenue_absence
+
     # ── 2. Allocations personnelles ──────────────────────────────────────────
     total_allocations_imposables = Decimal("0")
     total_allocations_cotisables = Decimal("0")
@@ -252,7 +281,7 @@ def calculer_bulletin(
     snapshot_cotisations = []
 
     for cotisation in cotisations:
-        assiette_brute = salaire_de_base + total_allocations_cotisables
+        assiette_brute = salaire_base_effectif + total_allocations_cotisables
 
         # Calcul de l'assiette en tenant compte du plancher et du plafond.
         # Le plancher sert aux cotisations sur tranche (ex: Agirc-Arrco T2 France) :
@@ -342,7 +371,7 @@ def calculer_bulletin(
     total_abattement_mensuel = Decimal("0")
 
     for abattement in abattements:
-        base_abatt = salaire_de_base + total_allocations_imposables
+        base_abatt = salaire_base_effectif + total_allocations_imposables
 
         if abattement.taux:
             montant_abatt = base_abatt * abattement.taux / Decimal("100")
@@ -360,7 +389,7 @@ def calculer_bulletin(
 
     # ── 6. Net imposable ─────────────────────────────────────────────────────
     net_imposable = (
-        salaire_de_base + total_allocations_imposables - total_cotisations_salariales_deductibles - total_abattement_mensuel
+        salaire_base_effectif + total_allocations_imposables - total_cotisations_salariales_deductibles - total_abattement_mensuel
     )
     net_imposable = max(net_imposable, Decimal("0"))
 
