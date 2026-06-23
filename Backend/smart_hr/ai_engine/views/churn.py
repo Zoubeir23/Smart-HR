@@ -76,7 +76,9 @@ def _employee_to_features(employee: Employee) -> dict:
         tenure_years = round((timezone.now().date() - employee.hire_date).days / 365, 2)
 
     # Nombre de congés approuvés sur les 12 derniers mois
-    one_year_ago = timezone.now().date().replace(year=timezone.now().year - 1)
+    from datetime import timedelta
+
+    one_year_ago = timezone.now().date() - timedelta(days=365)
     leave_count = LeaveRequest.objects.filter(
         employee=employee,
         status=LeaveRequest.Status.APPROVED,
@@ -105,7 +107,7 @@ def _employee_to_features(employee: Employee) -> dict:
     # Nombre de fiches de paie non payées
     unpaid_payroll_count = Payroll.objects.filter(
         employee=employee,
-        status__in=[Payroll.Status.PENDING],
+        status=Payroll.Status.PENDING,
     ).count()
 
     return {
@@ -119,8 +121,8 @@ def _employee_to_features(employee: Employee) -> dict:
     }
 
 
-def _explain_prediction(model, features: dict) -> tuple[str, list[str]]:
-    """Retourne le facteur principal et le top-3 des facteurs via feature_importances_."""
+def _explain_prediction(model, features: dict) -> tuple[str, str, list[str]]:
+    """Retourne (main_feature_key, main_label, top_3_labels) via feature_importances_."""
     try:
         importances = model.feature_importances_
         ranked = sorted(
@@ -129,25 +131,21 @@ def _explain_prediction(model, features: dict) -> tuple[str, list[str]]:
             reverse=True,
         )
         top_features = [col for col, _ in ranked[:3]]
-        main_feature = top_features[0]
-        main_label = _FEATURE_LABELS.get(main_feature, main_feature)
+        main_feature_key = top_features[0]
+        main_label = _FEATURE_LABELS.get(main_feature_key, main_feature_key)
         top_labels = [_FEATURE_LABELS.get(col, col) for col in top_features]
-        return main_label, top_labels
+        return main_feature_key, main_label, top_labels
     except Exception:
-        return "Facteur indéterminé", list(features.keys())
+        return "", "Facteur indéterminé", []
 
 
-def _build_recommendations(risk_score: float, main_risk_factor: str) -> list[str]:
-    """Génère des recommandations basées sur le score et le facteur principal."""
+def _build_recommendations(risk_score: float, main_feature_key: str) -> list[str]:
+    """Génère des recommandations basées sur le score et la clé feature principale."""
     if risk_score < 40:
         return []
-    feature_key = next(
-        (k for k, v in _FEATURE_LABELS.items() if v == main_risk_factor),
-        None,
-    )
     recommendations = []
-    if feature_key and feature_key in _RECOMMENDATIONS:
-        recommendations.append(_RECOMMENDATIONS[feature_key])
+    if main_feature_key in _RECOMMENDATIONS:
+        recommendations.append(_RECOMMENDATIONS[main_feature_key])
     if risk_score >= 70:
         recommendations.append("Planifier un entretien individuel en priorité.")
     return recommendations
@@ -233,8 +231,8 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
             else:
                 risk_level = ChurnPrediction.RiskLevel.LOW
 
-            main_risk_factor, top_factors = _explain_prediction(model, features)
-            recommendations = _build_recommendations(risk_score, main_risk_factor)
+            main_feature_key, main_risk_factor, top_factors = _explain_prediction(model, features)
+            recommendations = _build_recommendations(risk_score, main_feature_key)
 
             prediction = ChurnPrediction.objects.create(
                 employee=employee,
