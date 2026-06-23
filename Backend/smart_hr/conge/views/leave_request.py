@@ -1,5 +1,6 @@
 import logging
 
+from django.db import transaction
 from django.utils.timezone import now
 from rest_framework import status
 from rest_framework import viewsets
@@ -273,3 +274,119 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             target_url=f"/conges/{leave.pk}/",
         )
         return Response({"status": "rejected"}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=["post"], url_path="bulk-approve", permission_classes=[IsRHOrDepartmentManager])
+    def bulk_approve(self, request):
+        """Approuve en masse une liste de demandes de congé.
+
+        Corps : {"ids": [1, 2, 3]}
+        Retourne le décompte : approved, skipped (déjà traitées), rejected (solde insuffisant).
+        """
+        ids = request.data.get("ids")
+        if not isinstance(ids, list) or not ids:
+            return Response(
+                {"detail": "Fournir une liste d'identifiants non vide dans 'ids'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        leaves = LeaveRequest.objects.filter(pk__in=ids).select_related("employee__user", "employee")
+        approved_ids: list[int] = []
+        skipped_ids: list[int] = []
+        insufficient_ids: list[dict] = []
+
+        with transaction.atomic():
+            for leave in leaves:
+                if leave.status != LeaveRequest.Status.PENDING:
+                    skipped_ids.append(leave.pk)
+                    continue
+
+                if leave.is_deductible:
+                    insufficient_year = self._check_leave_balance_by_year(leave)
+                    if insufficient_year is not None:
+                        year, days_remaining, days_requested = insufficient_year
+                        insufficient_ids.append(
+                            {
+                                "id": leave.pk,
+                                "detail": (
+                                    f"Solde insuffisant pour {year} : {days_remaining}j disponibles, {days_requested}j demandés."
+                                ),
+                            }
+                        )
+                        continue
+
+                leave.status = LeaveRequest.Status.APPROVED
+                leave.approved_by = request.user
+                leave.save(update_fields=["status", "approved_by"])
+
+                Notification.objects.create(
+                    recipient=leave.employee.user,
+                    notification_type=Notification.NotificationType.LEAVE_APPROVED,
+                    title="Congé approuvé",
+                    message=(
+                        f"Votre demande de {leave.get_leave_type_display()} du "
+                        f"{leave.start_date} au {leave.end_date} a été approuvée."
+                    ),
+                    target_url=f"/conges/{leave.pk}/",
+                )
+                approved_ids.append(leave.pk)
+
+        return Response(
+            {
+                "approved": len(approved_ids),
+                "approved_ids": approved_ids,
+                "skipped_not_pending": len(skipped_ids),
+                "skipped_ids": skipped_ids,
+                "rejected_insufficient_balance": len(insufficient_ids),
+                "rejected_details": insufficient_ids,
+            },
+            status=status.HTTP_200_OK,
+        )
+
+    @action(detail=False, methods=["post"], url_path="bulk-reject", permission_classes=[IsRHOrDepartmentManager])
+    def bulk_reject(self, request):
+        """Rejette en masse une liste de demandes de congé.
+
+        Corps : {"ids": [1, 2, 3]}
+        Retourne le décompte : rejected, skipped (déjà traitées).
+        """
+        ids = request.data.get("ids")
+        if not isinstance(ids, list) or not ids:
+            return Response(
+                {"detail": "Fournir une liste d'identifiants non vide dans 'ids'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        leaves = LeaveRequest.objects.filter(pk__in=ids).select_related("employee__user")
+        rejected_ids: list[int] = []
+        skipped_ids: list[int] = []
+
+        with transaction.atomic():
+            for leave in leaves:
+                if leave.status != LeaveRequest.Status.PENDING:
+                    skipped_ids.append(leave.pk)
+                    continue
+
+                leave.status = LeaveRequest.Status.REJECTED
+                leave.save(update_fields=["status"])
+
+                Notification.objects.create(
+                    recipient=leave.employee.user,
+                    notification_type=Notification.NotificationType.LEAVE_REJECTED,
+                    title="Congé refusé",
+                    message=(
+                        f"Votre demande de {leave.get_leave_type_display()} du "
+                        f"{leave.start_date} au {leave.end_date} a été refusée."
+                    ),
+                    target_url=f"/conges/{leave.pk}/",
+                )
+                rejected_ids.append(leave.pk)
+
+        return Response(
+            {
+                "rejected": len(rejected_ids),
+                "rejected_ids": rejected_ids,
+                "skipped_not_pending": len(skipped_ids),
+                "skipped_ids": skipped_ids,
+            },
+            status=status.HTTP_200_OK,
+        )
