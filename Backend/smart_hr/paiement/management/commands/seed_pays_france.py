@@ -1,15 +1,19 @@
 """
-Commande de seeding des règles de cotisations sociales pour la France (secteur privé, 2024).
+Commande de seeding des règles fiscales et sociales pour la France (secteur privé, 2024).
 
 Sources officielles :
-- CNAV (retraite base) : salarial 6,90% / patronal 8,55% — plafond T1 = 3 864 €/mois (1×PSS)
-- Agirc-Arrco T1 (retraite complémentaire) : salarial 3,15% / patronal 4,72% — jusqu'au PSS
-- Agirc-Arrco T2 (retraite complémentaire) : salarial 8,64% / patronal 12,95%
-  — plancher 3 864 € (1×PSS), plafond 30 912 € (8×PSS)
-- Assurance maladie : salarial 0% / patronal 13% (taux plein, sans plafond)
+- SMIC : 1 766,92 €/mois (1er janvier 2024)
+- CNAV (retraite base) : salarial 6,90% / patronal 8,55% -- plafond 3 864 EUR/mois (1xPSS)
+- Agirc-Arrco T1 : salarial 3,15% / patronal 4,72% -- jusqu'au PSS
+- Agirc-Arrco T2 : salarial 8,64% / patronal 12,95% -- de 3 864 EUR a 30 912 EUR (8xPSS)
+- Assurance maladie : salarial 0% / patronal 13% (taux plein, deplafonne)
+- Bareme IR 2024 (revenus 2023, par part, source DGFiP) :
+  * 0 - 11 294 EUR : 0%   * 11 295 - 28 797 EUR : 11%   * 28 798 - 82 341 EUR : 30%
+  * 82 342 - 177 106 EUR : 41%   * > 177 106 EUR : 45%
+- Abattement professionnel : 10% du revenu brut, plancher 448 €, plafond 12 829 €/an (2024)
+- Quotient familial : couple +2 parts, chaque enfant +0,5 part (3ème +1 part)
 
-Périmètre : secteur privé uniquement. Les régimes fonction publique (CNRACL) ne sont pas inclus.
-L'IR/PAS (prélèvement à la source) sera implémenté séparément via BaremeImpot.
+Périmètre : secteur privé uniquement. CNRACL (fonctionnaires) non inclus.
 
 Usage :
     python manage.py seed_pays_france
@@ -23,20 +27,23 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 
+from smart_hr.paiement.models import AbattementRegle
+from smart_hr.paiement.models import BaremeImpot
 from smart_hr.paiement.models import CategorieConvention
+from smart_hr.paiement.models import ChargesFamiliales
 from smart_hr.paiement.models import Pays
 from smart_hr.paiement.models import RegleCotisation
 from smart_hr.paiement.models import SalaireMinimum
 
 DATE_DEBUT = datetime.date(2024, 1, 1)
 
-# Plafond mensuel de la Sécurité Sociale 2024 (valeur officielle URSSAF)
+# Plafond mensuel de la Sécurité Sociale 2024 (URSSAF)
 PLAFOND_SECURITE_SOCIALE = Decimal("3864")
 PLAFOND_AGIRC_T2 = PLAFOND_SECURITE_SOCIALE * 8  # 30 912 €
 
 
 class Command(BaseCommand):
-    help = "Initialise les cotisations sociales France (secteur privé) pour 2024."
+    help = "Initialise les règles fiscales et sociales France (secteur privé) pour 2024."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -81,11 +88,11 @@ class Command(BaseCommand):
             date_debut_validite=DATE_DEBUT,
             defaults={"valeur": Decimal("1766.92")},
         )
-        self._log("SMIC", "1 766,92 €/mois (SMIC 2024 au 1er janvier)", smig_created)
+        self._log("SMIC", "1 766,92 €/mois (au 1er janvier 2024)", smig_created)
 
         # ── Cotisations sociales secteur privé ────────────────────────────────
-        # (nom, code, taux_sal, taux_pat, plancher, plafond, deductible)
         cotisations = [
+            # (nom, code, taux_sal, taux_pat, plancher, plafond, deductible)
             (
                 "CNAV — Retraite de base (T1)",
                 "CNAV-T1",
@@ -140,12 +147,70 @@ class Command(BaseCommand):
             )
             self._log("Cotisation", nom, created)
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                "\n✓ Seeding France terminé. Cotisations sociales secteur privé 2024 chargées."
-                "\n  Barème IR/PAS et charges familiales à implémenter séparément."
+        # ── Barème IR 2024 (par part fiscale, revenus annuels) ────────────────
+        # Source : DGFiP, barème progressif applicable aux revenus 2023
+        ir_tranches = [
+            # (plancher, plafond, taux%)
+            (Decimal("0"), Decimal("11294"), Decimal("0")),
+            (Decimal("11294"), Decimal("28797"), Decimal("11")),
+            (Decimal("28797"), Decimal("82341"), Decimal("30")),
+            (Decimal("82341"), Decimal("177106"), Decimal("41")),
+            (Decimal("177106"), None, Decimal("45")),
+        ]
+
+        for plancher, plafond, taux in ir_tranches:
+            BaremeImpot.objects.get_or_create(
+                pays=france,
+                plancher=plancher,
+                date_debut_validite=DATE_DEBUT,
+                defaults={"plafond": plafond, "taux": taux},
             )
+        self._log("IR", "5 tranches chargées (barème DGFiP 2024)", True)
+
+        # ── Abattement professionnel ──────────────────────────────────────────
+        # 10% du revenu brut imposable, plancher 448 € et plafond 12 829 €/an (2024)
+        AbattementRegle.objects.get_or_create(
+            pays=france,
+            nom="Abattement forfaitaire professionnel",
+            date_debut_validite=DATE_DEBUT,
+            defaults={
+                "taux": Decimal("10"),
+                "plafond_annuel": Decimal("12829"),
+                "plancher_annuel": Decimal("448"),
+            },
         )
+        self._log("Abattement", "10% (plancher 448 € / plafond 12 829 €/an)", True)
+
+        # ── Quotient familial (parts fiscales IR) ─────────────────────────────
+        # Règles standard 2024 : couple = 2 parts, +0,5 par enfant (1er et 2ème),
+        # +1 part à partir du 3ème enfant.
+        charges = [
+            # (situation, nb_enfants, nb_parts, reduction_fixe)
+            ("Célibataire", 0, Decimal("1.0"), Decimal("0")),
+            ("Divorcé(e)", 0, Decimal("1.0"), Decimal("0")),
+            ("Veuf(ve)", 0, Decimal("1.0"), Decimal("0")),
+            ("Marié(e)", 0, Decimal("2.0"), Decimal("0")),
+            ("Célibataire", 1, Decimal("1.5"), Decimal("0")),
+            ("Célibataire", 2, Decimal("2.0"), Decimal("0")),
+            ("Célibataire", 3, Decimal("3.0"), Decimal("0")),
+            ("Célibataire", 4, Decimal("4.0"), Decimal("0")),
+            ("Marié(e)", 1, Decimal("2.5"), Decimal("0")),
+            ("Marié(e)", 2, Decimal("3.0"), Decimal("0")),
+            ("Marié(e)", 3, Decimal("4.0"), Decimal("0")),
+            ("Marié(e)", 4, Decimal("5.0"), Decimal("0")),
+        ]
+
+        for situation, nb_enfants, nb_parts, reduction in charges:
+            ChargesFamiliales.objects.get_or_create(
+                pays=france,
+                situation_matrimoniale=situation,
+                nombre_enfants=nb_enfants,
+                date_debut_validite=DATE_DEBUT,
+                defaults={"nombre_parts": nb_parts, "reduction_impot_fixe": reduction},
+            )
+        self._log("Charges familiales", f"{len(charges)} configurations chargées", True)
+
+        self.stdout.write(self.style.SUCCESS("\n✓ Seeding France terminé. Règles fiscales et sociales 2024 prêtes."))
 
     def _log(self, model: str, nom: str, created: bool) -> None:
         status = self.style.SUCCESS("créé") if created else self.style.WARNING("existait déjà")
