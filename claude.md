@@ -1434,3 +1434,17 @@ Pour maximiser le nombre de contributions (carrés verts) sur GitHub de manière
 - **Commits atomiques par fichier :** Ne faites jamais de commit global regroupant tous les fichiers modifiés (ex: `git commit -am '...'`).
 - **Un commit = un fichier :** Pour chaque fichier modifié, effectuez un `git add <fichier>` suivi d'un `git commit -m '<message approprié>'` individuel.
 - **Objectif :** Cela permet de générer de multiples contributions légitimes pour le profil GitHub du développeur.
+
+## 13. PRE-COMMIT OBLIGATOIRE AVANT TOUT PUSH (RÈGLE ABSOLUE)
+
+**AVANT CHAQUE `git push`, sans exception :**
+
+```bash
+cd Backend && .venv/bin/pre-commit run --all-files
+```
+
+- Si des fichiers sont modifiés par pre-commit (format, lint), les committer avant de pusher.
+- Relancer pre-commit jusqu'à obtenir **tous les checks verts**.
+- Ne jamais pusher si pre-commit échoue — le CI backend échouera systématiquement.
+
+**Pourquoi :** Le CI GitHub Actions exécute exactement les mêmes hooks. Un push sans pre-commit = CI rouge garanti.
