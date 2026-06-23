@@ -276,23 +276,19 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @action(detail=True, methods=["post"], url_path="onboard")
+    @action(detail=True, methods=["post"], url_path="onboard", permission_classes=[IsRH])
     def onboard(self, request, pk=None):
         """
         POST /api/v1/recruitment/applications/{id}/onboard/
 
-        Transforme un candidat accepté en employé actif :
-        - Crée un profil Employee lié à son compte utilisateur
-        - Change le rôle User de CANDIDATE à EMPLOYEE
-        - Marque la candidature comme onboardée (onboarded=True)
-
-        Contraintes :
-        - La candidature doit être au statut 'accepted'
-        - L'onboarding ne peut être effectué qu'une seule fois
+        Transforme un candidat accepté en employé actif.
+        Champs requis dans le body : department_id, position_id, salary.
         """
         from django.utils import timezone
 
+        from smart_hr.personnel.models import Department
         from smart_hr.personnel.models import Employee
+        from smart_hr.personnel.models import Position
 
         application = self.get_object()
 
@@ -316,13 +312,43 @@ class ApplicationViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        department_id = request.data.get("department_id")
+        position_id = request.data.get("position_id")
+        salary = request.data.get("salary")
+
+        if not department_id or not position_id or salary is None:
+            return Response(
+                {"detail": "Les champs department_id, position_id et salary sont obligatoires."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            department = Department.objects.get(id=department_id)
+        except Department.DoesNotExist:
+            return Response({"detail": "Département introuvable."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            position = Position.objects.get(id=position_id)
+        except Position.DoesNotExist:
+            return Response({"detail": "Poste introuvable."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            salary = float(salary)
+            if salary < 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            return Response({"detail": "Le salaire doit être un nombre positif."}, status=status.HTTP_400_BAD_REQUEST)
+
         Employee.objects.create(
             user=candidate_user,
             hire_date=timezone.now().date(),
             status=Employee.Status.ACTIVE,
+            department=department,
+            position=position,
+            salary=salary,
         )
 
-        candidate_user.role = "EMPLOYEE"
+        candidate_user.role = candidate_user.Role.EMPLOYEE
         candidate_user.save(update_fields=["role"])
 
         application.onboarded = True
