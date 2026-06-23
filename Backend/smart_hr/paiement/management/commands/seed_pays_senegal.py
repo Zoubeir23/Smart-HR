@@ -14,6 +14,7 @@ Usage :
     python manage.py seed_pays_senegal
     python manage.py seed_pays_senegal --reset   # Supprime et recrée toutes les données
 """
+
 from __future__ import annotations
 
 import datetime
@@ -21,16 +22,14 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 
-from smart_hr.paiement.models import (
-    AbattementRegle,
-    BaremeImpot,
-    CategorieConvention,
-    ChargesFamiliales,
-    Pays,
-    RegleCotisation,
-    SalaireMinimum,
-    TaxeMinimaleForfaitaire,
-)
+from smart_hr.paiement.models import AbattementRegle
+from smart_hr.paiement.models import BaremeImpot
+from smart_hr.paiement.models import CategorieConvention
+from smart_hr.paiement.models import ChargesFamiliales
+from smart_hr.paiement.models import Pays
+from smart_hr.paiement.models import RegleCotisation
+from smart_hr.paiement.models import SalaireMinimum
+from smart_hr.paiement.models import TaxeMinimaleForfaitaire
 
 DATE_DEBUT = datetime.date(2024, 1, 1)
 
@@ -69,23 +68,19 @@ class Command(BaseCommand):
         self._log("Pays", "Sénégal", created)
 
         # ── Catégories de convention ──────────────────────────────────────────
-        non_cadre, created = CategorieConvention.objects.get_or_create(
-            nom="Non-Cadre", pays=senegal
-        )
+        _, created = CategorieConvention.objects.get_or_create(nom="Non-Cadre", pays=senegal)
         self._log("Catégorie", "Non-Cadre", created)
 
-        cadre, created = CategorieConvention.objects.get_or_create(
-            nom="Cadre", pays=senegal
-        )
+        cadre, created = CategorieConvention.objects.get_or_create(nom="Cadre", pays=senegal)
         self._log("Catégorie", "Cadre", created)
 
         # ── Salaire minimum (SMIG) ────────────────────────────────────────────
-        SalaireMinimum.objects.get_or_create(
+        _, smig_created = SalaireMinimum.objects.get_or_create(
             pays=senegal,
             date_debut_validite=DATE_DEBUT,
             defaults={"valeur": Decimal("63238")},
         )
-        self._log("SMIG", "63 238 FCFA/mois", created)
+        self._log("SMIG", "63 238 FCFA/mois", smig_created)
 
         # ── Cotisations sociales ──────────────────────────────────────────────
         cotisations = [
@@ -93,28 +88,34 @@ class Command(BaseCommand):
             (
                 "IPRES — Régime Général",
                 "IPRES-RG",
-                Decimal("5.6"), Decimal("8.4"),
+                Decimal("5.6"),
+                Decimal("8.4"),
                 Decimal("630000"),
-                True, None,
+                True,
+                None,
             ),
             (
                 "IPRES — Régime Cadre",
                 "IPRES-RC",
-                Decimal("2.4"), Decimal("3.6"),
+                Decimal("2.4"),
+                Decimal("3.6"),
                 Decimal("2016000"),
-                True, cadre,
+                True,
+                cadre,
             ),
             (
                 "CSS — Allocations familiales",
                 "CSS-AF",
-                Decimal("0"), Decimal("7"),
+                Decimal("0"),
+                Decimal("7"),
                 Decimal("63000"),
-                False, None,
+                False,
+                None,
             ),
         ]
 
         for nom, code, taux_sal, taux_pat, plafond, deductible, categorie in cotisations:
-            obj, created = RegleCotisation.objects.get_or_create(
+            _, created = RegleCotisation.objects.get_or_create(
                 pays=senegal,
                 nom_cotisation=nom,
                 date_debut_validite=DATE_DEBUT,
@@ -213,10 +214,9 @@ class Command(BaseCommand):
             )
         self._log("Charges familiales", f"{len(charges)} configurations chargées", True)
 
-        self.stdout.write(self.style.SUCCESS(
-            "\n✓ Seeding Sénégal terminé. "
-            "Les règles fiscales 2024 sont prêtes pour le moteur de paie."
-        ))
+        self.stdout.write(
+            self.style.SUCCESS("\n✓ Seeding Sénégal terminé. Les règles fiscales 2024 sont prêtes pour le moteur de paie.")
+        )
 
     def _log(self, model: str, nom: str, created: bool) -> None:
         status = self.style.SUCCESS("créé") if created else self.style.WARNING("existait déjà")
