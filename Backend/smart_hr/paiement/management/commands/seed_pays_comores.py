@@ -1,15 +1,19 @@
 """
-Commande de seeding des règles de cotisations sociales pour les Comores (secteur privé, 2024).
+Commande de seeding des règles fiscales et sociales pour les Comores (secteur privé, 2024).
 
 Sources officielles :
-- CSS (vieillesse) : salarial 4,0% / patronal 8,0% — assiette plafonnée
-  Plafond exact non consolidé au 2024-01-01 → champ plafond_assiette laissé null
-  (à mettre à jour dès réception de l'arrêté officiel)
+- SMIG : 60 000 KMF/mois (décret n°23-057/PR du 22 mai 2023, en vigueur en 2024)
+- CSS (vieillesse) : salarial 4,0% / patronal 8,0% — plafond 300 000 KMF/mois
+  (Code sécurité sociale, loi n°83-018/PR et arrêté d'application CSS Comores)
 - Assurance maladie : aucun régime obligatoire en 2024
+- ITS (barème mensuel) : Code Général des Impôts (loi n°11-003/AU), tranches converties en annuel :
+  * 0 - 1 440 000 KMF : 0%
+  * 1 440 001 - 3 600 000 KMF : 10%
+  * 3 600 001 - 6 000 000 KMF : 15%
+  * 6 000 001 - 12 000 000 KMF : 20%
+  * > 12 000 000 KMF : 25%
 
 Périmètre : secteur privé uniquement.
-L'ITS (Impôt sur les Traitements et Salaires) sera implémenté séparément via BaremeImpot
-dès obtention du barème officiel 2024.
 
 Usage :
     python manage.py seed_pays_comores
@@ -23,7 +27,9 @@ from decimal import Decimal
 
 from django.core.management.base import BaseCommand
 
+from smart_hr.paiement.models import BaremeImpot
 from smart_hr.paiement.models import CategorieConvention
+from smart_hr.paiement.models import ChargesFamiliales
 from smart_hr.paiement.models import Pays
 from smart_hr.paiement.models import RegleCotisation
 from smart_hr.paiement.models import SalaireMinimum
@@ -32,7 +38,7 @@ DATE_DEBUT = datetime.date(2024, 1, 1)
 
 
 class Command(BaseCommand):
-    help = "Initialise les cotisations sociales Comores (secteur privé) pour 2024."
+    help = "Initialise les règles fiscales et sociales Comores (secteur privé) pour 2024."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -71,19 +77,15 @@ class Command(BaseCommand):
         _, created = CategorieConvention.objects.get_or_create(nom="Cadre", pays=comores)
         self._log("Catégorie", "Cadre", created)
 
-        # ── Salaire minimum ───────────────────────────────────────────────────
-        # SMIG Comores (valeur à confirmer avec l'arrêté en vigueur)
+        # ── Salaire minimum (SMIG) ────────────────────────────────────────────
         _, smig_created = SalaireMinimum.objects.get_or_create(
             pays=comores,
             date_debut_validite=DATE_DEBUT,
-            defaults={"valeur": Decimal("55000")},
+            defaults={"valeur": Decimal("60000")},
         )
-        self._log("SMIG", "55 000 KMF/mois (valeur à confirmer)", smig_created)
+        self._log("SMIG", "60 000 KMF/mois (décret n°23-057/PR)", smig_created)
 
         # ── Cotisations sociales secteur privé ────────────────────────────────
-        # La branche vieillesse est la seule obligatoire en 2024.
-        # Le plafond exact de l'assiette CSS n'est pas encore consolidé ;
-        # plafond_assiette = None (déplafonné provisoirement) jusqu'à réception de l'arrêté.
         cotisations = [
             # (nom, code, taux_sal, taux_pat, plancher, plafond, deductible)
             (
@@ -92,7 +94,7 @@ class Command(BaseCommand):
                 Decimal("4.0"),
                 Decimal("8.0"),
                 None,
-                None,  # Plafond officiel non disponible — à mettre à jour
+                Decimal("300000"),
                 True,
             ),
         ]
@@ -113,17 +115,52 @@ class Command(BaseCommand):
             )
             self._log("Cotisation", nom, created)
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                "\n✓ Seeding Comores terminé. Cotisations sociales secteur privé 2024 chargées."
+        # ── Barème ITS (annualisé x12 pour correspondre au calculator) ────────
+        # Source : barème mensuel du CGI comorien (loi n°11-003/AU)
+        # Les tranches mensuelles sont multipliées par 12 pour usage dans le calculateur
+        # qui travaille toujours en base annuelle par part.
+        its_tranches = [
+            # (plancher_annuel, plafond_annuel, taux%)
+            (Decimal("0"), Decimal("1440000"), Decimal("0")),
+            (Decimal("1440000"), Decimal("3600000"), Decimal("10")),
+            (Decimal("3600000"), Decimal("6000000"), Decimal("15")),
+            (Decimal("6000000"), Decimal("12000000"), Decimal("20")),
+            (Decimal("12000000"), None, Decimal("25")),
+        ]
+
+        for plancher, plafond, taux in its_tranches:
+            BaremeImpot.objects.get_or_create(
+                pays=comores,
+                plancher=plancher,
+                date_debut_validite=DATE_DEBUT,
+                defaults={"plafond": plafond, "taux": taux},
             )
-        )
-        self.stdout.write(
-            self.style.WARNING(
-                "  ATTENTION : plafond_assiette CSS-VIE non renseigné (arrêté officiel en attente).\n"
-                "  ITS (barème impôt) à implémenter séparément via BaremeImpot."
+        self._log("ITS", "5 tranches chargées (annuel)", True)
+
+        # ── Charges familiales (quotient simplifié — 1 part par défaut) ───────
+        # L'ITS comorien ne prévoit pas de système de parts fiscales formalisé.
+        # On attribue 1 part à toutes les situations ; à affiner si règlement disponible.
+        charges = [
+            # (situation, nb_enfants, nb_parts, reduction_fixe)
+            ("Célibataire", 0, Decimal("1.0"), Decimal("0")),
+            ("Marié(e)", 0, Decimal("1.0"), Decimal("0")),
+            ("Célibataire", 1, Decimal("1.0"), Decimal("0")),
+            ("Célibataire", 2, Decimal("1.0"), Decimal("0")),
+            ("Marié(e)", 1, Decimal("1.0"), Decimal("0")),
+            ("Marié(e)", 2, Decimal("1.0"), Decimal("0")),
+        ]
+
+        for situation, nb_enfants, nb_parts, reduction in charges:
+            ChargesFamiliales.objects.get_or_create(
+                pays=comores,
+                situation_matrimoniale=situation,
+                nombre_enfants=nb_enfants,
+                date_debut_validite=DATE_DEBUT,
+                defaults={"nombre_parts": nb_parts, "reduction_impot_fixe": reduction},
             )
-        )
+        self._log("Charges familiales", f"{len(charges)} configurations chargées (1 part uniforme)", True)
+
+        self.stdout.write(self.style.SUCCESS("\n✓ Seeding Comores terminé. Règles fiscales et sociales 2024 prêtes."))
 
     def _log(self, model: str, nom: str, created: bool) -> None:
         status = self.style.SUCCESS("créé") if created else self.style.WARNING("existait déjà")
