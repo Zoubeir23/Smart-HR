@@ -1,10 +1,11 @@
 """
 Commande de seeding des règles fiscales du Sénégal (exercice 2024-2026).
 
-Données de référence :
+Données de référence (sources officielles 2024) :
 - SMIG : 63 238 FCFA/mois (décret 2023)
-- IPRES RG : salarial 5,6% / patronal 8,4% — plafond 630 000 FCFA
+- IPRES RG : salarial 5,6% / patronal 8,4% — plafond 600 000 FCFA/mois
 - IPRES RC (cadres) : salarial 2,4% / patronal 3,6%
+- RAM/CSS (assurance maladie) : salarial 1,0% / patronal 3,0% — plafond 600 000 FCFA/mois
 - CSS (allocations familiales) : patronal 7% — plafond 63 000 FCFA
 - TRIMF : taxe minimale forfaitaire mensuelle par tranche
 - IGR : barème progressif annuel par part fiscale
@@ -84,13 +85,14 @@ class Command(BaseCommand):
 
         # ── Cotisations sociales ──────────────────────────────────────────────
         cotisations = [
-            # (nom, code, taux_sal, taux_pat, plafond, deductible, categorie)
+            # (nom, code, taux_sal, taux_pat, plancher, plafond, deductible, categorie)
             (
                 "IPRES — Régime Général",
                 "IPRES-RG",
                 Decimal("5.6"),
                 Decimal("8.4"),
-                Decimal("630000"),
+                None,
+                Decimal("600000"),
                 True,
                 None,
             ),
@@ -99,22 +101,34 @@ class Command(BaseCommand):
                 "IPRES-RC",
                 Decimal("2.4"),
                 Decimal("3.6"),
+                None,
                 Decimal("2016000"),
                 True,
                 cadre,
+            ),
+            (
+                "RAM — Assurance maladie",
+                "RAM-CSS",
+                Decimal("1.0"),
+                Decimal("3.0"),
+                None,
+                Decimal("600000"),
+                True,
+                None,
             ),
             (
                 "CSS — Allocations familiales",
                 "CSS-AF",
                 Decimal("0"),
                 Decimal("7"),
+                None,
                 Decimal("63000"),
                 False,
                 None,
             ),
         ]
 
-        for nom, code, taux_sal, taux_pat, plafond, deductible, categorie in cotisations:
+        for nom, code, taux_sal, taux_pat, plancher, plafond, deductible, categorie in cotisations:
             _, created = RegleCotisation.objects.get_or_create(
                 pays=senegal,
                 nom_cotisation=nom,
@@ -123,6 +137,7 @@ class Command(BaseCommand):
                     "code_declaration": code,
                     "taux_salarial": taux_sal,
                     "taux_patronal": taux_pat,
+                    "plancher_assiette": plancher,
                     "plafond_assiette": plafond,
                     "est_deductible_base_imposable": deductible,
                     "categorie": categorie,
