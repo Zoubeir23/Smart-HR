@@ -1,7 +1,16 @@
 """Management command : entraîne le modèle Random Forest de prédiction de churn.
 
-Génère 1 500 samples synthétiques réalistes, entraîne le modèle, et sauve
-le fichier .pkl dans ai_engine/ml_models/churn_model.pkl.
+Génère 1 500 samples synthétiques basés sur les features réelles de l'application,
+entraîne le modèle, et sauve le fichier .pkl dans ai_engine/ml_models/churn_model.pkl.
+
+Features utilisées (dans l'ordre attendu par _employee_to_features) :
+    0. salary                — salaire en FCFA
+    1. tenure_years          — ancienneté en années
+    2. leave_count           — congés approuvés (12 derniers mois)
+    3. absence_count         — absences (12 derniers mois)
+    4. disciplinary_count    — actions disciplinaires totales
+    5. avg_performance_score — score de performance moyen (0-100)
+    6. unpaid_payroll_count  — fiches de paie non payées
 
 Usage :
     python manage.py train_churn_model
@@ -28,50 +37,75 @@ def _generate_synthetic_data(
     n_samples: int,
     rng: np.random.Generator,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Génère des données synthétiques réalistes pour le churn RH.
-
-    Features (dans l'ordre attendu par _employee_to_features) :
-        0. salary        : float  — salaire en FCFA [100_000, 2_000_000]
-        1. tenure_years  : float  — ancienneté en années [0, 20]
-        2. status_active : int    — 1 si actif, 0 sinon
-        3. has_department: int    — 1 si rattaché à un service
-        4. has_position  : int    — 1 si un poste est défini
+    """Génère des données synthétiques réalistes basées sur les 7 features réelles.
 
     Logique churn (target = 1 = démission probable) :
-        - risque élevé   : salary < 400_000 ET tenure < 3 ans
-        - risque moyen   : salary < 600_000 OU tenure < 2 ans (non cumulatif)
-        - risque faible  : reste de la population
+        - Risque élevé   : salaire bas ET ancienneté courte
+        - Risque élevé   : absences fréquentes OU actions disciplinaires
+        - Risque élevé   : performance faible ET fiches impayées
+        - Risque faible  : salaire correct + ancienneté longue + bonne performance
     """
+    # salary : FCFA [100_000, 2_000_000]
     salary = rng.uniform(100_000, 2_000_000, n_samples)
-    tenure = rng.uniform(0, 20, n_samples)
-    status_active = rng.choice([0, 1], n_samples, p=[0.1, 0.9])
-    has_department = rng.choice([0, 1], n_samples, p=[0.05, 0.95])
-    has_position = rng.choice([0, 1], n_samples, p=[0.08, 0.92])
+    # tenure_years : [0, 20]
+    tenure_years = rng.uniform(0, 20, n_samples)
+    # leave_count : [0, 15] congés approuvés sur 12 mois
+    leave_count = rng.integers(0, 16, n_samples).astype(float)
+    # absence_count : [0, 20] absences sur 12 mois
+    absence_count = rng.integers(0, 21, n_samples).astype(float)
+    # disciplinary_count : [0, 5]
+    disciplinary_count = rng.integers(0, 6, n_samples).astype(float)
+    # avg_performance_score : [0, 100]
+    avg_performance_score = rng.uniform(0, 100, n_samples)
+    # unpaid_payroll_count : [0, 6]
+    unpaid_payroll_count = rng.integers(0, 7, n_samples).astype(float)
 
-    # Probabilité de churn selon les features
+    # Probabilité de churn selon combinaison de facteurs
     churn_proba = np.zeros(n_samples)
 
-    high_risk = (salary < 400_000) & (tenure < 3)
-    medium_risk = ~high_risk & ((salary < 600_000) | (tenure < 2))
+    # Facteur 1 : salaire bas + ancienneté courte → risque fort
+    low_salary_new = (salary < 400_000) & (tenure_years < 3)
+    churn_proba[low_salary_new] += rng.uniform(0.35, 0.55, low_salary_new.sum())
 
-    churn_proba[high_risk] = rng.uniform(0.65, 0.95, high_risk.sum())
-    churn_proba[medium_risk] = rng.uniform(0.25, 0.55, medium_risk.sum())
-    churn_proba[~high_risk & ~medium_risk] = rng.uniform(
-        0.02,
-        0.20,
-        (~high_risk & ~medium_risk).sum(),
-    )
+    # Facteur 2 : absences fréquentes (> 5/an) → signal fort de désengagement
+    high_absence = absence_count > 5
+    churn_proba[high_absence] += rng.uniform(0.20, 0.40, high_absence.sum())
 
-    # Inactifs ont un risque légèrement plus élevé
-    churn_proba[status_active == 0] = np.clip(
-        churn_proba[status_active == 0] + 0.15,
-        0.0,
-        1.0,
-    )
+    # Facteur 3 : actions disciplinaires (> 1) → instabilité
+    has_discipline = disciplinary_count > 1
+    churn_proba[has_discipline] += rng.uniform(0.15, 0.30, has_discipline.sum())
+
+    # Facteur 4 : performance faible (< 40) → frustration
+    low_perf = avg_performance_score < 40
+    churn_proba[low_perf] += rng.uniform(0.10, 0.25, low_perf.sum())
+
+    # Facteur 5 : fiches impayées (> 2) → insatisfaction financière
+    unpaid = unpaid_payroll_count > 2
+    churn_proba[unpaid] += rng.uniform(0.15, 0.30, unpaid.sum())
+
+    # Facteur 6 : salaire moyen + ancienneté courte → risque modéré
+    medium_risk = ~low_salary_new & (salary < 600_000) & (tenure_years < 2)
+    churn_proba[medium_risk] += rng.uniform(0.10, 0.20, medium_risk.sum())
+
+    # Bruit de base : tout le monde a un risque minimum
+    churn_proba += rng.uniform(0.01, 0.08, n_samples)
+
+    # Clamp [0, 1]
+    churn_proba = np.clip(churn_proba, 0.0, 1.0)
 
     target = (rng.uniform(0, 1, n_samples) < churn_proba).astype(int)
 
-    X = np.column_stack([salary, tenure, status_active, has_department, has_position])
+    X = np.column_stack(
+        [
+            salary,
+            tenure_years,
+            leave_count,
+            absence_count,
+            disciplinary_count,
+            avg_performance_score,
+            unpaid_payroll_count,
+        ]
+    )
     return X, target
 
 
@@ -80,7 +114,7 @@ class Command(BaseCommand):
 
     def handle(self, *args: object, **options: object) -> None:
         self.stdout.write(
-            self.style.MIGRATE_HEADING("=== Entraînement du modèle churn ==="),
+            self.style.MIGRATE_HEADING("=== Entraînement du modèle churn (7 features réelles) ==="),
         )
 
         rng = np.random.default_rng(RANDOM_STATE)
@@ -120,5 +154,5 @@ class Command(BaseCommand):
         joblib.dump(model, MODEL_PATH)
 
         self.stdout.write(
-            self.style.SUCCESS(f"Modele sauvegarde : {MODEL_PATH}"),
+            self.style.SUCCESS(f"Modèle sauvegardé : {MODEL_PATH}"),
         )
