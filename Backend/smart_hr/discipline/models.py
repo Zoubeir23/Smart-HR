@@ -64,6 +64,13 @@ class DisciplinaryAction(TimeStampedModel):
     def __str__(self) -> str:
         return f"{self.get_action_type_display()} — {self.employee} ({self.issued_date})"
 
+    def save(self, *args, **kwargs) -> None:
+        super().save(*args, **kwargs)
+        if self.action_type == self.ActionType.SUSPENSION:
+            Employee.objects.filter(pk=self.employee_id).update(status=Employee.Status.SUSPENDED)
+        elif self.action_type == self.ActionType.DISMISSAL:
+            Employee.objects.filter(pk=self.employee_id).update(status=Employee.Status.TERMINATED)
+
     @property
     def suspension_duration_days(self) -> int | None:
         """Durée de la mise à pied en jours calendaires."""
