@@ -86,14 +86,10 @@ class IsRHOrDepartmentManager(BasePermission):
         elif hasattr(obj, "assignee") and obj.assignee is not None:
             target_employee = obj.assignee
         elif hasattr(obj, "department"):
-            # obj est un Employee
-            if obj.user_id == request.user.id:
-                return False
-            return obj.department == manager_profile.department
+            # obj est un Employee : un manager ne peut pas s'auto-modifier
+            return obj.user_id != request.user.id and obj.department == manager_profile.department
         else:
             return False
 
         # Un manager ne peut pas agir sur ses propres données.
-        if target_employee.user_id == request.user.id:
-            return False
-        return target_employee.department == manager_profile.department
+        return target_employee.user_id != request.user.id and target_employee.department == manager_profile.department
