@@ -125,11 +125,7 @@ class Command(BaseCommand):
             self._log("Licenciement (indicatif)", f"[{annees_debut} -> {fin_str}] {taux}%/an", created)
 
         self.stdout.write(self.style.SUCCESS("\n✓ Regles travail Comores 2024 chargees."))
-        self.stdout.write(
-            self.style.WARNING(
-                "  RAPPEL : indemnite de licenciement = pratique observee, pas de bareme legal."
-            )
-        )
+        self.stdout.write(self.style.WARNING("  RAPPEL : indemnite de licenciement = pratique observee, pas de bareme legal."))
 
     def _log(self, model: str, nom: str, created: bool) -> None:
         status = self.style.SUCCESS("cree") if created else self.style.WARNING("existait deja")
