@@ -8,6 +8,7 @@ from rest_framework.response import Response
 from smart_hr.tache.models import Task
 from smart_hr.tache.serializers import TaskSerializer
 from smart_hr.users.permissions import IsRH
+from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 
 class TaskViewSet(viewsets.ModelViewSet):
@@ -29,7 +30,7 @@ class TaskViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Restreint les opérations d'écriture aux rôles RH/Admin."""
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            return [IsRH()]
+            return [IsRHOrDepartmentManager()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):

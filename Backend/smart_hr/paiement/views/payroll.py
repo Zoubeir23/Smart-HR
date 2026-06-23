@@ -18,6 +18,7 @@ from smart_hr.paiement.serializers import PayrollBulkGenerateSerializer
 from smart_hr.paiement.serializers import PayrollSerializer
 from smart_hr.personnel.models import Employee
 from smart_hr.users.permissions import IsRH
+from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ class PayrollViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Protège les actions d'écriture pour RH/Admin uniquement."""
         if self.action in ["create", "update", "partial_update", "destroy", "bulk_generate"]:
-            return [IsRH()]
+            return [IsRHOrDepartmentManager()]
         return [IsAuthenticated()]
 
     def perform_update(self, serializer):
