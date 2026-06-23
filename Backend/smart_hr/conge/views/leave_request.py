@@ -12,6 +12,7 @@ from rest_framework.response import Response
 from smart_hr.conge.models import DEDUCTIBLE_LEAVE_TYPES
 from smart_hr.conge.models import LeaveRequest
 from smart_hr.conge.serializers import LeaveRequestSerializer
+from smart_hr.core.models import Notification
 from smart_hr.personnel.models import Employee
 from smart_hr.users.models import User
 from smart_hr.users.permissions import IsRHOrDepartmentManager
@@ -202,6 +203,17 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         leave.status = LeaveRequest.Status.APPROVED
         leave.approved_by = request.user
         leave.save()
+
+        Notification.objects.create(
+            recipient=leave.employee.user,
+            notification_type=Notification.NotificationType.LEAVE_APPROVED,
+            title="Congé approuvé",
+            message=(
+                f"Votre demande de {leave.get_leave_type_display()} "
+                f"du {leave.start_date} au {leave.end_date} a été approuvée."
+            ),
+            target_url=f"/conges/{leave.pk}/",
+        )
         return Response({"status": "approved"})
 
     @action(detail=True, methods=["post"])
@@ -218,4 +230,15 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
 
         leave.status = LeaveRequest.Status.REJECTED
         leave.save()
+
+        Notification.objects.create(
+            recipient=leave.employee.user,
+            notification_type=Notification.NotificationType.LEAVE_REJECTED,
+            title="Congé refusé",
+            message=(
+                f"Votre demande de {leave.get_leave_type_display()} "
+                f"du {leave.start_date} au {leave.end_date} a été refusée."
+            ),
+            target_url=f"/conges/{leave.pk}/",
+        )
         return Response({"status": "rejected"}, status=status.HTTP_200_OK)
