@@ -17,7 +17,6 @@ from smart_hr.paiement.models import Payroll
 from smart_hr.paiement.serializers import PayrollBulkGenerateSerializer
 from smart_hr.paiement.serializers import PayrollSerializer
 from smart_hr.personnel.models import Employee
-from smart_hr.users.permissions import IsRH
 from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 logger = logging.getLogger(__name__)
