@@ -11,7 +11,6 @@ from smart_hr.discipline.models import DisciplinaryAction
 from smart_hr.discipline.serializers import DisciplinaryActionSerializer
 from smart_hr.personnel.models import Employee
 from smart_hr.users.models import User
-from smart_hr.users.permissions import IsRH
 from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 logger = logging.getLogger(__name__)
