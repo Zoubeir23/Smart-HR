@@ -19,7 +19,9 @@ def predict_all_employees_task() -> dict:
 
     from smart_hr.ai_engine.models import ChurnPrediction
     from smart_hr.ai_engine.views.churn import FEATURE_COLUMNS
+    from smart_hr.ai_engine.views.churn import _build_recommendations
     from smart_hr.ai_engine.views.churn import _employee_to_features
+    from smart_hr.ai_engine.views.churn import _explain_prediction
     from smart_hr.ai_engine.views.churn import _load_model
     from smart_hr.personnel.models import Employee
 
@@ -43,12 +45,15 @@ def predict_all_employees_task() -> dict:
                 if risk_score >= 40
                 else ChurnPrediction.RiskLevel.LOW
             )
+            main_feature_key, main_risk_factor, top_factors = _explain_prediction(model, features)
+            recommendations = _build_recommendations(risk_score, main_feature_key)
             ChurnPrediction.objects.create(
                 employee=employee,
                 risk_score=risk_score,
                 risk_level=risk_level,
-                factors=list(features.keys()),
-                recommendations=["Évaluer les conditions de travail"] if risk_score >= 70 else [],
+                main_risk_factor=main_risk_factor,
+                factors=top_factors,
+                recommendations=recommendations,
             )
             Employee.objects.filter(pk=employee.pk).update(churn_risk=risk_score)
             count += 1

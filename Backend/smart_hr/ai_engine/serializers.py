@@ -31,6 +31,7 @@ class ChurnPredictionSerializer(serializers.ModelSerializer):
             "tenure",
             "risk_score",
             "risk_level",
+            "main_risk_factor",
             "factors",
             "recommendations",
             "created_at",

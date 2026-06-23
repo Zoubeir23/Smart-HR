@@ -17,7 +17,13 @@ class ChurnPrediction(TimeStampedModel):
     )
     risk_score = models.FloatField(help_text="Score de risque 0-100")
     risk_level = models.CharField(max_length=10, choices=RiskLevel.choices)
-    factors = models.JSONField(default=list, help_text="Facteurs de risque")
+    main_risk_factor = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Cause principale affichée à l'utilisateur",
+    )
+    factors = models.JSONField(default=list, help_text="Top-3 facteurs de risque")
     recommendations = models.JSONField(default=list, help_text="Recommandations")
 
     class Meta:
