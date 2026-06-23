@@ -389,7 +389,13 @@ class BulletinPaie(TimeStampedModel):
         verbose_name = "Bulletin de paie"
         verbose_name_plural = "Bulletins de paie"
         ordering = ["-periode", "employee"]
-        unique_together = ["employee", "periode"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "periode"],
+                condition=~models.Q(statut="ANNULE"),
+                name="unique_bulletin_actif_par_employe_periode",
+            )
+        ]
 
     def save(self, *args, **kwargs) -> None:
         if self.pk and self.statut == self.Statut.VERROUILLE:
