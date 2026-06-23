@@ -34,6 +34,7 @@ from smart_hr.paiement.models import LigneBulletin
 from smart_hr.paiement.models import Pays
 from smart_hr.paiement.models import RegleCotisation
 from smart_hr.paiement.models import TaxeMinimaleForfaitaire
+from smart_hr.presence.models import Attendance
 
 if TYPE_CHECKING:
     from datetime import date
@@ -203,6 +204,31 @@ def calculer_bulletin(
     )
 
     salaire_brut = salaire_de_base
+
+    # ── 1b. Déduction absences injustifiées ──────────────────────────────────
+    nombre_absences_injustifiees = Attendance.objects.filter(
+        employee=employee,
+        date__year=periode.year,
+        date__month=periode.month,
+        status=Attendance.Status.ABSENT,
+        absence_type=Attendance.AbsenceType.UNJUSTIFIED,
+    ).count()
+
+    retenue_absence = Decimal("0")
+    if nombre_absences_injustifiees > 0:
+        jours_ouvres = Decimal(str(pays.jours_ouvres_par_mois))
+        taux_journalier = (salaire_de_base / jours_ouvres).quantize(Decimal("1"), rounding=ROUND_DOWN)
+        retenue_absence = taux_journalier * nombre_absences_injustifiees
+        salaire_brut -= retenue_absence
+        lignes.append(
+            nouvelle_ligne(
+                libelle=f"Retenue absence injustifiée ({nombre_absences_injustifiees} j.)",
+                nature=LigneBulletin.Nature.RETENUE,
+                base=salaire_de_base,
+                taux=Decimal("0"),
+                montant=-retenue_absence,
+            )
+        )
 
     # ── 2. Allocations personnelles ──────────────────────────────────────────
     total_allocations_imposables = Decimal("0")
