@@ -253,7 +253,22 @@ def calculer_bulletin(
 
     for cotisation in cotisations:
         assiette_brute = salaire_de_base + total_allocations_cotisables
-        assiette = min(assiette_brute, cotisation.plafond_assiette) if cotisation.plafond_assiette else assiette_brute
+
+        # Calcul de l'assiette en tenant compte du plancher et du plafond.
+        # Le plancher sert aux cotisations sur tranche (ex: Agirc-Arrco T2 France) :
+        # la cotisation ne porte que sur la fraction du salaire AU-DESSUS du plancher.
+        if cotisation.plancher_assiette and assiette_brute <= cotisation.plancher_assiette:
+            assiette = Decimal("0")
+        elif cotisation.plancher_assiette:
+            tranche_au_dessus_plancher = assiette_brute - cotisation.plancher_assiette
+            if cotisation.plafond_assiette:
+                assiette = min(tranche_au_dessus_plancher, cotisation.plafond_assiette - cotisation.plancher_assiette)
+            else:
+                assiette = tranche_au_dessus_plancher
+        elif cotisation.plafond_assiette:
+            assiette = min(assiette_brute, cotisation.plafond_assiette)
+        else:
+            assiette = assiette_brute
 
         montant_salarial = (assiette * cotisation.taux_salarial / Decimal("100")).quantize(Decimal("1"), rounding=ROUND_DOWN)
         montant_patronal = (assiette * cotisation.taux_patronal / Decimal("100")).quantize(Decimal("1"), rounding=ROUND_DOWN)
@@ -290,6 +305,7 @@ def calculer_bulletin(
                 "nom": cotisation.nom_cotisation,
                 "taux_salarial": str(cotisation.taux_salarial),
                 "taux_patronal": str(cotisation.taux_patronal),
+                "plancher_assiette": str(cotisation.plancher_assiette) if cotisation.plancher_assiette else None,
                 "plafond_assiette": str(cotisation.plafond_assiette) if cotisation.plafond_assiette else None,
             }
         )

@@ -109,6 +109,13 @@ class RegleCotisation(TimeStampedModel):
         blank=True,
         help_text="Plafond mensuel de l'assiette de calcul (null = déplafonné)",
     )
+    plancher_assiette = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Plancher mensuel de l'assiette (null = depuis 0). Utilisé pour les tranches T2 (ex: Agirc-Arrco T2 France).",
+    )
     est_deductible_base_imposable = models.BooleanField(
         default=True,
         help_text="Si False, la retenue n'est pas déductible de l'assiette IGR (ex: TRIMF)",
