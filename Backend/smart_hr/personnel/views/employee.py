@@ -18,6 +18,7 @@ from smart_hr.personnel.serializers import EmployeeSelfSerializer
 from smart_hr.personnel.serializers import EmployeeSerializer
 from smart_hr.users.models import User
 from smart_hr.users.permissions import IsRH
+from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 logger = logging.getLogger(__name__)
 
@@ -62,7 +63,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         """Applique des permissions plus strictes pour les actions d'écriture."""
         if self.action in ["list", "retrieve", "me"]:
             return [IsAuthenticated()]
-        return [IsRH()]
+        return [IsRHOrDepartmentManager()]
 
     def perform_create(self, serializer):
         """Crée l'employé puis envoie ses identifiants par email."""
@@ -270,6 +271,25 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         employee_user.last_name = "[anonymise]"
         employee_user.tel = ""
         employee_user.save(update_fields=["first_name", "last_name", "tel"])
+
+        # Cascade RGPD : anonymiser les données personnelles dans les relations
+        from smart_hr.conge.models import LeaveRequest
+
+        LeaveRequest.objects.filter(employee=employee).update(reason="[anonymise]")
+
+        try:
+            from smart_hr.presence.models import Attendance
+
+            Attendance.objects.filter(employee=employee).update(notes="[anonymise]")
+        except Exception:
+            pass
+
+        try:
+            from smart_hr.paiement.models import Payroll
+
+            Payroll.objects.filter(employee=employee).update(notes="[anonymise]")
+        except Exception:
+            pass
 
         log_audit_action(
             performed_by=request.user,
