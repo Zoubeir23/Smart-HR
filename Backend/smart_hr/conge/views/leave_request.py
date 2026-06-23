@@ -191,12 +191,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             days_remaining = annual_allowance - days_taken
             if leave.duration_working_days > days_remaining:
                 return Response(
-                    {
-                        "detail": (
-                            f"Solde insuffisant : {days_remaining}j disponibles, "
-                            f"{leave.duration_working_days}j demandés."
-                        )
-                    },
+                    {"detail": (f"Solde insuffisant : {days_remaining}j disponibles, {leave.duration_working_days}j demandés.")},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
@@ -209,8 +204,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             notification_type=Notification.NotificationType.LEAVE_APPROVED,
             title="Congé approuvé",
             message=(
-                f"Votre demande de {leave.get_leave_type_display()} "
-                f"du {leave.start_date} au {leave.end_date} a été approuvée."
+                f"Votre demande de {leave.get_leave_type_display()} du {leave.start_date} au {leave.end_date} a été approuvée."
             ),
             target_url=f"/conges/{leave.pk}/",
         )
@@ -236,8 +230,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             notification_type=Notification.NotificationType.LEAVE_REJECTED,
             title="Congé refusé",
             message=(
-                f"Votre demande de {leave.get_leave_type_display()} "
-                f"du {leave.start_date} au {leave.end_date} a été refusée."
+                f"Votre demande de {leave.get_leave_type_display()} du {leave.start_date} au {leave.end_date} a été refusée."
             ),
             target_url=f"/conges/{leave.pk}/",
         )
