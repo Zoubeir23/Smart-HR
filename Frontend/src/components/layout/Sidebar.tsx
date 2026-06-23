@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -23,11 +24,16 @@ import {
   Scale,
   Megaphone,
   TrendingUp,
+  ChevronDown,
+  Archive,
+  Award,
+  Building2,
+  Database,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
-import { NavGroup, UserRole, USER_ROLES } from '@/types';
+import { NavGroup, NavItem, UserRole, USER_ROLES } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -60,33 +66,65 @@ const navigationGroups: NavGroup[] = [
   {
     title: 'Gestion RH',
     items: [
-      { title: 'Employés', href: '/employees', icon: Users, roles: ['ADMIN', 'RH'] },
-      { title: 'Départements', href: '/departments', icon: Briefcase, roles: ['ADMIN', 'RH'] },
-      { title: 'Services', href: '/services', icon: Briefcase, roles: ['ADMIN', 'RH'] },
-      { title: 'Postes', href: '/positions', icon: Briefcase, roles: ['ADMIN', 'RH'] },
-      { title: 'Référentiels', href: '/reference-tables', icon: Briefcase, roles: ['ADMIN', 'RH'] },
-      { title: 'Contrats', href: '/contracts', icon: FileText, roles: ['ADMIN', 'RH'] },
-      { title: 'Congés', href: '/leaves', icon: Calendar, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-      { title: 'Tâches', href: '/tasks', icon: ClipboardList, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-      { title: 'Présences', href: '/attendance', icon: Clock, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-      { title: 'Paie', href: '/payroll', icon: CreditCard, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-      { title: 'Discipline', href: '/discipline', icon: Scale, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-      { title: 'Communication', href: '/communication', icon: Megaphone, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-      { title: 'Performance', href: '/performance', icon: TrendingUp, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-    ],
-  },
-  {
-    title: 'Documents & Formation',
-    items: [
-      { title: 'Documents', href: '/documents', icon: FileText, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-      { title: 'Formations', href: '/training', icon: GraduationCap, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+      {
+        title: 'Personnel ATS',
+        icon: Users,
+        roles: ['ADMIN', 'RH'],
+        children: [
+          { title: 'Liste des actifs', href: '/employees', icon: Users, roles: ['ADMIN', 'RH'] },
+          { title: 'Ex-fonctionnaires', href: '/employees?archived=true', icon: Archive, roles: ['ADMIN', 'RH'] },
+        ],
+      },
+      {
+        title: 'Carrières & Absences',
+        icon: TrendingUp,
+        roles: ['ADMIN', 'RH', 'EMPLOYEE'],
+        children: [
+          { title: 'Congés', href: '/leaves', icon: Calendar, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+          { title: 'Présences', href: '/attendance', icon: Clock, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+          { title: 'Performance', href: '/performance', icon: TrendingUp, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+          { title: 'Tâches', href: '/tasks', icon: ClipboardList, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+        ],
+      },
+      {
+        title: 'Gestion Financière',
+        icon: CreditCard,
+        roles: ['ADMIN', 'RH', 'EMPLOYEE'],
+        children: [
+          { title: 'Paie', href: '/payroll', icon: CreditCard, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+          { title: 'Primes de rendement', href: '/payroll', icon: Award, roles: ['ADMIN', 'RH'] },
+        ],
+      },
+      {
+        title: 'Documents Admin',
+        icon: FileText,
+        roles: ['ADMIN', 'RH', 'EMPLOYEE'],
+        children: [
+          { title: 'Documents', href: '/documents', icon: FileText, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+          { title: 'Formations', href: '/training', icon: GraduationCap, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+        ],
+      },
+      {
+        title: 'Organisation',
+        icon: Building2,
+        roles: ['ADMIN', 'RH'],
+        children: [
+          { title: 'Départements', href: '/departments', icon: Building2, roles: ['ADMIN', 'RH'] },
+          { title: 'Services', href: '/services', icon: Briefcase, roles: ['ADMIN', 'RH'] },
+          { title: 'Postes', href: '/positions', icon: Briefcase, roles: ['ADMIN', 'RH'] },
+          { title: 'Référentiels', href: '/reference-tables', icon: Database, roles: ['ADMIN', 'RH'] },
+          { title: 'Contrats', href: '/contracts', icon: FileText, roles: ['ADMIN', 'RH'] },
+          { title: 'Discipline', href: '/discipline', icon: Scale, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+          { title: 'Communication', href: '/communication', icon: Megaphone, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+        ],
+      },
     ],
   },
   {
     title: 'Recrutement',
     items: [
+      { title: "Offres d'emploi", href: '/jobs', icon: Briefcase, roles: ['ADMIN', 'RH', 'CANDIDATE'] },
       { title: 'Candidatures', href: '/applications', icon: Users, roles: ['ADMIN', 'RH'] },
-      { title: 'Offres d\'emploi', href: '/jobs', icon: Briefcase, roles: ['ADMIN', 'RH', 'CANDIDATE'] },
       { title: 'Mes candidatures', href: '/my-applications', icon: FileText, roles: ['CANDIDATE'] },
     ],
   },
@@ -115,19 +153,234 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const navigate = useNavigate();
   const { user, logout, hasRole } = useAuth();
   const { theme, setTheme } = useTheme();
+  const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
   const normalizedRole = typeof user?.role === 'string' ? user.role.toUpperCase() : '';
   const hasValidRole = USER_ROLES.includes(normalizedRole as UserRole);
 
-  const isActive = (href: string) =>
-    location.pathname === href || location.pathname.startsWith(href + '/');
+  const isActive = (href: string) => {
+    const path = href.split('?')[0];
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  const isDropdownActive = (children: NavItem[]): boolean =>
+    children.some(child => !!child.href && isActive(child.href));
+
+  // Auto-open the dropdown that contains the current active route
+  useEffect(() => {
+    setOpenDropdowns(prev => {
+      const autoOpen = new Set<string>();
+      navigationGroups.forEach(group => {
+        group.items.forEach(item => {
+          if (item.children && item.children.some(child => {
+            if (!child.href) return false;
+            const path = child.href.split('?')[0];
+            return location.pathname === path || location.pathname.startsWith(path + '/');
+          })) {
+            autoOpen.add(item.title);
+          }
+        });
+      });
+      return new Set([...prev, ...autoOpen]);
+    });
+  }, [location.pathname]);
+
+  const toggleDropdown = (title: string) => {
+    setOpenDropdowns(prev => {
+      const next = new Set(prev);
+      if (next.has(title)) {
+        next.delete(title);
+      } else {
+        next.add(title);
+      }
+      return next;
+    });
+  };
 
   const filteredGroups = navigationGroups
-    .map((group) => ({
+    .map(group => ({
       ...group,
-      items: group.items.filter((item) => hasRole(item.roles)),
+      items: group.items
+        .map(item => {
+          if (item.children) {
+            const filteredChildren = item.children.filter(child => hasRole(child.roles));
+            if (filteredChildren.length === 0) return null;
+            return { ...item, children: filteredChildren };
+          }
+          return hasRole(item.roles) ? item : null;
+        })
+        .filter((item): item is NavItem => item !== null),
     }))
-    .filter((group) => group.items.length > 0);
+    .filter(group => group.items.length > 0);
+
+  const renderNavItem = (item: NavItem) => {
+    const Icon = item.icon;
+
+    // ── Dropdown parent item ──────────────────────────────────────────
+    if (item.children) {
+      const isOpen = openDropdowns.has(item.title);
+      const hasActiveChild = isDropdownActive(item.children);
+
+      if (collapsed) {
+        const firstChild = item.children[0];
+        return (
+          <Tooltip key={item.title} delayDuration={0}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => firstChild?.href && navigate(firstChild.href.split('?')[0])}
+                className={cn(
+                  'group/item flex w-full items-center justify-center rounded-lg p-2 transition-all duration-150',
+                  hasActiveChild
+                    ? 'bg-gradient-to-r from-[#D62828] to-[#e63c3c] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
+                    : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                )}
+              >
+                <div className={cn(
+                  'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all duration-150',
+                  hasActiveChild ? 'bg-white/15' : 'group-hover/item:bg-sidebar-accent-foreground/10'
+                )}>
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                </div>
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right">{item.title}</TooltipContent>
+          </Tooltip>
+        );
+      }
+
+      return (
+        <div key={item.title}>
+          <button
+            onClick={() => toggleDropdown(item.title)}
+            className={cn(
+              'group/item relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
+              hasActiveChild
+                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+            )}
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all duration-150 group-hover/item:bg-sidebar-accent-foreground/10">
+              <Icon className="h-4 w-4 flex-shrink-0" />
+            </div>
+            <AnimatePresence mode="wait">
+              <motion.span
+                key="text"
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.2 }}
+                className="flex-1 truncate text-left"
+              >
+                {item.title}
+              </motion.span>
+            </AnimatePresence>
+            <motion.div
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+              className="shrink-0"
+            >
+              <ChevronDown className="h-3.5 w-3.5 opacity-50" />
+            </motion.div>
+          </button>
+
+          <AnimatePresence initial={false}>
+            {isOpen && (
+              <motion.div
+                key="dropdown-children"
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                style={{ overflow: 'hidden' }}
+                className="mt-0.5 ml-3 space-y-0.5 border-l border-sidebar-border pl-3"
+              >
+                {item.children.map(child => {
+                  const ChildIcon = child.icon;
+                  const childActive = !!child.href && isActive(child.href);
+                  return (
+                    <Link
+                      key={`${child.href}-${child.title}`}
+                      to={child.href || '#'}
+                      className={cn(
+                        'group/child flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-all duration-150',
+                        childActive
+                          ? 'bg-gradient-to-r from-[#D62828] to-[#e63c3c] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
+                          : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                      )}
+                    >
+                      <ChildIcon className="h-3.5 w-3.5 shrink-0" />
+                      <span className="truncate">{child.title}</span>
+                    </Link>
+                  );
+                })}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    }
+
+    // ── Regular link item ─────────────────────────────────────────────
+    const active = !!item.href && isActive(item.href);
+
+    const linkContent = (
+      <Link
+        to={item.href || '#'}
+        className={cn(
+          'group/item relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
+          collapsed && 'justify-center px-2',
+          active
+            ? 'bg-gradient-to-r from-[#D62828] to-[#e63c3c] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
+            : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+        )}
+      >
+        <div className={cn(
+          'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all duration-150',
+          active ? 'bg-white/15' : 'group-hover/item:bg-sidebar-accent-foreground/10'
+        )}>
+          <Icon className="h-4 w-4 flex-shrink-0" />
+        </div>
+        <AnimatePresence mode="wait">
+          {!collapsed && (
+            <motion.span
+              key="text"
+              initial={{ opacity: 0, x: -8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.2 }}
+              className="truncate"
+            >
+              {item.title}
+            </motion.span>
+          )}
+        </AnimatePresence>
+        {!collapsed && item.badge !== undefined && (
+          <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
+            {item.badge}
+          </span>
+        )}
+        {active && !collapsed && (
+          <motion.div
+            layoutId="active-indicator"
+            className="absolute right-2.5 h-1.5 w-1.5 rounded-full bg-white/70"
+          />
+        )}
+      </Link>
+    );
+
+    if (collapsed) {
+      return (
+        <Tooltip key={item.href} delayDuration={0}>
+          <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+          <TooltipContent side="right">
+            {item.title}
+            {item.badge !== undefined && ` (${item.badge})`}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+    return <div key={item.href}>{linkContent}</div>;
+  };
 
   return (
     <motion.aside
@@ -136,7 +389,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className="fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-sidebar-border bg-sidebar sidebar-grid-overlay"
     >
-      {/* Header : Logo + Toggle (toggle cohérent dans les deux états) */}
+      {/* Header : Logo + Toggle */}
       <div
         className={cn(
           'border-b border-sidebar-border',
@@ -153,30 +406,18 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           )}
         >
           {collapsed ? (
-            <img
-              src="/logo-icon.svg"
-              alt="Smart-HR"
-              className="h-9 w-9 flex-shrink-0"
-            />
+            <img src="/logo-icon.svg" alt="Smart-HR" className="h-9 w-9 flex-shrink-0" />
           ) : (
             theme === 'dark' ? (
               <div className="flex items-center gap-2">
-                <img
-                  src="/logo-icon.svg"
-                  alt="Smart-HR"
-                  className="h-9 w-9 flex-shrink-0"
-                />
+                <img src="/logo-icon.svg" alt="Smart-HR" className="h-9 w-9 flex-shrink-0" />
                 <span className="truncate text-[17px] font-extrabold leading-none tracking-tight">
                   <span className="text-white">Smart</span>
                   <span className="text-primary">-HR</span>
                 </span>
               </div>
             ) : (
-              <img
-                src="/logo-lockup.svg"
-                alt="Smart-HR"
-                className="h-9 w-auto"
-              />
+              <img src="/logo-lockup.svg" alt="Smart-HR" className="h-9 w-auto" />
             )
           )}
         </Link>
@@ -201,7 +442,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         </Tooltip>
       </div>
 
-      {/* Utilitaires : Recherche, Notifications (mode étendu) */}
+      {/* Notifications (mode étendu) */}
       {!collapsed && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -240,70 +481,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 </div>
               )}
               <div className="space-y-0.5">
-                {group.items.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.href);
-
-                  const linkContent = (
-                    <Link
-                      to={item.href}
-                      className={cn(
-                        'group/item relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
-                        collapsed && 'justify-center px-2',
-                        active
-                          ? 'bg-gradient-to-r from-[#D62828] to-[#e63c3c] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
-                          : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                      )}
-                    >
-                      <div className={cn(
-                        'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all duration-150',
-                        active
-                          ? 'bg-white/15'
-                          : 'group-hover/item:bg-sidebar-accent-foreground/10'
-                      )}>
-                        <Icon className="h-4 w-4 flex-shrink-0" />
-                      </div>
-                      <AnimatePresence mode="wait">
-                        {!collapsed && (
-                          <motion.span
-                            key="text"
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -8 }}
-                            transition={{ duration: 0.2 }}
-                            className="truncate"
-                          >
-                            {item.title}
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                      {!collapsed && item.badge !== undefined && (
-                        <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-xs font-medium text-destructive-foreground">
-                          {item.badge}
-                        </span>
-                      )}
-                      {active && !collapsed && (
-                        <motion.div
-                          layoutId="active-indicator"
-                          className="absolute right-2.5 h-1.5 w-1.5 rounded-full bg-white/70"
-                        />
-                      )}
-                    </Link>
-                  );
-
-                  if (collapsed) {
-                    return (
-                      <Tooltip key={item.href} delayDuration={0}>
-                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                        <TooltipContent side="right">
-                          {item.title}
-                          {item.badge !== undefined && ` (${item.badge})`}
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  }
-                  return <div key={item.href}>{linkContent}</div>;
-                })}
+                {group.items.map(item => renderNavItem(item))}
               </div>
             </div>
           ))}
@@ -359,9 +537,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
         )}
 
         <div className="flex items-center gap-1">
-          {!collapsed && (
-            <div className="flex-1" />
-          )}
+          {!collapsed && <div className="flex-1" />}
           {collapsed ? (
             <Tooltip delayDuration={0}>
               <TooltipTrigger asChild>
@@ -389,7 +565,6 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           )}
         </div>
       </div>
-
     </motion.aside>
   );
 }
