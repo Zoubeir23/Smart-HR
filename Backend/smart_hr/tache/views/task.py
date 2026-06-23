@@ -7,7 +7,6 @@ from rest_framework.response import Response
 
 from smart_hr.tache.models import Task
 from smart_hr.tache.serializers import TaskSerializer
-from smart_hr.users.permissions import IsRH
 from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 
