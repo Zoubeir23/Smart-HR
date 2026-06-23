@@ -140,6 +140,46 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
+    @action(detail=True, methods=["post"], url_path="set-manager")
+    def set_manager(self, request, pk=None):
+        """
+        POST /api/v1/personnel/employees/{id}/set-manager/
+        Nomme ou retire le statut de manager de département (Admin/RH uniquement).
+        Body : {"is_manager": true} ou {"is_manager": false}
+        """
+        if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
+            return Response(status=status.HTTP_403_FORBIDDEN)
+
+        employee = self.get_object()
+        is_manager = request.data.get("is_manager")
+
+        if is_manager is None:
+            return Response(
+                {"detail": "Le champ 'is_manager' (true/false) est obligatoire."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if not isinstance(is_manager, bool):
+            return Response(
+                {"detail": "Le champ 'is_manager' doit être un booléen (true ou false)."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if is_manager and not employee.department:
+            return Response(
+                {"detail": "Impossible de nommer manager un employé sans département assigné."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        employee.is_department_manager = is_manager
+        employee.save(update_fields=["is_department_manager", "updated_at"])
+
+        action_label = "nommé manager" if is_manager else "retiré du poste de manager"
+        logger.info("Employé %s %s par %s", employee.pk, action_label, request.user.email)
+
+        serializer = self.get_serializer(employee)
+        return Response(serializer.data)
+
     @action(detail=False, methods=["get"])
     def stats(self, request):
         """KPIs globaux sur les employés (réservé RH/Admin)."""
