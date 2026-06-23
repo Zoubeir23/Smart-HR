@@ -232,6 +232,27 @@ class Employee(TimeStampedModel):
         blank=True,
         help_text="Score de risque 0-100",
     )
+    # --- Champs moteur de paie multi-pays ---
+    pays = models.ForeignKey(
+        "paiement.Pays",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="employes",
+        help_text="Pays fiscal de rattachement (détermine les règles de cotisation et d'imposition)",
+    )
+    categorie_convention = models.ForeignKey(
+        "paiement.CategorieConvention",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="employes",
+        help_text="Statut salarial : Cadre, Non-Cadre… (impacte les plafonds de cotisation)",
+    )
+    nombre_enfants = models.IntegerField(
+        default=0,
+        help_text="Nombre d'enfants à charge (utilisé pour le quotient familial IGR)",
+    )
     is_department_manager = models.BooleanField(
         default=False,
         help_text="Designe cet employe comme responsable de son departement (N+1).",
