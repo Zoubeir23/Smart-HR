@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from django.conf import settings
 from django.core.validators import MaxValueValidator
 from django.core.validators import MinValueValidator
 from django.db import models
 
 from smart_hr.core.models import TimeStampedModel
+from smart_hr.personnel.models import Employee
 
 
 class Skill(TimeStampedModel):
@@ -17,7 +17,7 @@ class Skill(TimeStampedModel):
         OTHER = "other", "Autre"
 
     employee = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        Employee,
         on_delete=models.CASCADE,
         related_name="skills",
         verbose_name="Employé",
@@ -53,13 +53,13 @@ class PerformanceEvaluation(TimeStampedModel):
         APPROVED = "approved", "Validée"
 
     employee = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        Employee,
         on_delete=models.CASCADE,
         related_name="performance_evaluations",
         verbose_name="Employé évalué",
     )
     reviewer = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        Employee,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
