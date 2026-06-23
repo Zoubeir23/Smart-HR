@@ -73,7 +73,7 @@ class BulletinPaieViewSet(viewsets.ReadOnlyModelViewSet):
             "pays_nom": employee.pays.nom if employee.pays else "",
             "devise": employee.pays.devise if employee.pays else "FCFA",
             "hire_date": employee.hire_date.strftime("%d/%m/%Y") if employee.hire_date else "",
-            "periode_display": bulletin.periode.strftime("%B %Y"),
+            "periode": bulletin.periode,
             "lignes_gains": lignes_gains,
             "lignes_retenues": lignes_retenues,
             "lignes_info": lignes_info,
