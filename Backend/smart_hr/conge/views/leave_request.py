@@ -5,6 +5,7 @@ from django.utils.timezone import now
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import APIException
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
@@ -289,13 +290,20 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        leaves = LeaveRequest.objects.filter(pk__in=ids).select_related("employee__user", "employee")
+        leaves = LeaveRequest.objects.filter(pk__in=ids).select_related("employee__user", "employee__department")
         approved_ids: list[int] = []
         skipped_ids: list[int] = []
+        unauthorized_ids: list[int] = []
         insufficient_ids: list[dict] = []
 
         with transaction.atomic():
             for leave in leaves:
+                try:
+                    self.check_object_permissions(request, leave)
+                except (PermissionDenied, APIException):
+                    unauthorized_ids.append(leave.pk)
+                    continue
+
                 if leave.status != LeaveRequest.Status.PENDING:
                     skipped_ids.append(leave.pk)
                     continue
@@ -336,6 +344,8 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                 "approved_ids": approved_ids,
                 "skipped_not_pending": len(skipped_ids),
                 "skipped_ids": skipped_ids,
+                "unauthorized": len(unauthorized_ids),
+                "unauthorized_ids": unauthorized_ids,
                 "rejected_insufficient_balance": len(insufficient_ids),
                 "rejected_details": insufficient_ids,
             },
@@ -356,12 +366,19 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        leaves = LeaveRequest.objects.filter(pk__in=ids).select_related("employee__user")
+        leaves = LeaveRequest.objects.filter(pk__in=ids).select_related("employee__user", "employee__department")
         rejected_ids: list[int] = []
         skipped_ids: list[int] = []
+        unauthorized_ids: list[int] = []
 
         with transaction.atomic():
             for leave in leaves:
+                try:
+                    self.check_object_permissions(request, leave)
+                except (PermissionDenied, APIException):
+                    unauthorized_ids.append(leave.pk)
+                    continue
+
                 if leave.status != LeaveRequest.Status.PENDING:
                     skipped_ids.append(leave.pk)
                     continue
@@ -387,6 +404,8 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                 "rejected_ids": rejected_ids,
                 "skipped_not_pending": len(skipped_ids),
                 "skipped_ids": skipped_ids,
+                "unauthorized": len(unauthorized_ids),
+                "unauthorized_ids": unauthorized_ids,
             },
             status=status.HTTP_200_OK,
         )
