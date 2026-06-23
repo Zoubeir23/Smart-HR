@@ -230,6 +230,9 @@ def calculer_bulletin(
             )
         )
 
+    # Salaire effectivement perçu : base pour toutes les assiettes fiscales et sociales aval.
+    salaire_base_effectif = salaire_de_base - retenue_absence
+
     # ── 2. Allocations personnelles ──────────────────────────────────────────
     total_allocations_imposables = Decimal("0")
     total_allocations_cotisables = Decimal("0")
@@ -278,7 +281,7 @@ def calculer_bulletin(
     snapshot_cotisations = []
 
     for cotisation in cotisations:
-        assiette_brute = salaire_de_base + total_allocations_cotisables
+        assiette_brute = salaire_base_effectif + total_allocations_cotisables
 
         # Calcul de l'assiette en tenant compte du plancher et du plafond.
         # Le plancher sert aux cotisations sur tranche (ex: Agirc-Arrco T2 France) :
@@ -368,7 +371,7 @@ def calculer_bulletin(
     total_abattement_mensuel = Decimal("0")
 
     for abattement in abattements:
-        base_abatt = salaire_de_base + total_allocations_imposables
+        base_abatt = salaire_base_effectif + total_allocations_imposables
 
         if abattement.taux:
             montant_abatt = base_abatt * abattement.taux / Decimal("100")
@@ -386,7 +389,7 @@ def calculer_bulletin(
 
     # ── 6. Net imposable ─────────────────────────────────────────────────────
     net_imposable = (
-        salaire_de_base + total_allocations_imposables - total_cotisations_salariales_deductibles - total_abattement_mensuel
+        salaire_base_effectif + total_allocations_imposables - total_cotisations_salariales_deductibles - total_abattement_mensuel
     )
     net_imposable = max(net_imposable, Decimal("0"))
 
