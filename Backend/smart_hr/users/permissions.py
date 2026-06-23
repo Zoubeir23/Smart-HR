@@ -77,9 +77,23 @@ class IsRHOrDepartmentManager(BasePermission):
             return False
         if not manager_profile.is_department_manager or not manager_profile.department:
             return False
-        # obj est une LeaveRequest. Le manager peut traiter les demandes des membres
-        # de son département, MAIS jamais la sienne (séparation des tâches : une
-        # demande de congé d'un manager doit être validée par RH/Admin).
-        if obj.employee.user_id == request.user.id:
+
+        # Résolution générique du département de l'objet cible.
+        # Supporte : LeaveRequest/DisciplinaryAction/Payroll (obj.employee),
+        # Employee (obj directement), Task (obj.assignee).
+        if hasattr(obj, "employee") and obj.employee is not None:
+            target_employee = obj.employee
+        elif hasattr(obj, "assignee") and obj.assignee is not None:
+            target_employee = obj.assignee
+        elif hasattr(obj, "department"):
+            # obj est un Employee
+            if obj.user_id == request.user.id:
+                return False
+            return obj.department == manager_profile.department
+        else:
             return False
-        return obj.employee.department == manager_profile.department
+
+        # Un manager ne peut pas agir sur ses propres données.
+        if target_employee.user_id == request.user.id:
+            return False
+        return target_employee.department == manager_profile.department
