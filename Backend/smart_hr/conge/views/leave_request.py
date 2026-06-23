@@ -166,6 +166,47 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             },
         )
 
+    @staticmethod
+    def _working_days_in_year(leave, year: int) -> int:
+        """Compte les jours ouvrés du congé qui tombent dans l'année donnée."""
+        from datetime import date
+        from datetime import timedelta
+
+        start = max(leave.start_date, date(year, 1, 1))
+        end = min(leave.end_date, date(year, 12, 31))
+        if start > end:
+            return 0
+        count = 0
+        current = start
+        while current <= end:
+            if current.weekday() < 5:
+                count += 1
+            current += timedelta(days=1)
+        return count
+
+    def _check_leave_balance_by_year(self, leave):
+        """Vérifie le solde pour chaque année calendaire couverte par le congé.
+
+        Retourne (year, days_remaining, days_requested) si insuffisant, sinon None.
+        """
+        annual_allowance = 30
+        years = {leave.start_date.year, leave.end_date.year}
+        for year in sorted(years):
+            days_in_year = self._working_days_in_year(leave, year)
+            if days_in_year == 0:
+                continue
+            approved_leaves = LeaveRequest.objects.filter(
+                employee=leave.employee,
+                status=LeaveRequest.Status.APPROVED,
+                leave_type__in=DEDUCTIBLE_LEAVE_TYPES,
+                start_date__year=year,
+            )
+            days_taken = sum(l.duration_working_days for l in approved_leaves)
+            days_remaining = annual_allowance - days_taken
+            if days_in_year > days_remaining:
+                return (year, days_remaining, days_in_year)
+        return None
+
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
         """Approuve une demande de congé (RH, Admin ou Manager du département)."""
@@ -179,19 +220,16 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             )
 
         if leave.is_deductible:
-            year = leave.start_date.year
-            approved_leaves = LeaveRequest.objects.filter(
-                employee=leave.employee,
-                status=LeaveRequest.Status.APPROVED,
-                leave_type__in=DEDUCTIBLE_LEAVE_TYPES,
-                start_date__year=year,
-            )
-            days_taken = sum(l.duration_working_days for l in approved_leaves)
-            annual_allowance = 30
-            days_remaining = annual_allowance - days_taken
-            if leave.duration_working_days > days_remaining:
+            insufficient_year = self._check_leave_balance_by_year(leave)
+            if insufficient_year is not None:
+                year, days_remaining, days_requested = insufficient_year
                 return Response(
-                    {"detail": (f"Solde insuffisant : {days_remaining}j disponibles, {leave.duration_working_days}j demandés.")},
+                    {
+                        "detail": (
+                            f"Solde insuffisant pour {year} : {days_remaining}j disponibles, "
+                            f"{days_requested}j demandés sur cette année."
+                        )
+                    },
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
