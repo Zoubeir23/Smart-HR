@@ -31,6 +31,10 @@ class Pays(TimeStampedModel):
         choices=MethodeArrondi.choices,
         default=MethodeArrondi.ROUND,
     )
+    jours_ouvres_par_mois = models.IntegerField(
+        default=26,
+        help_text="Nombre de jours ouvrés de référence par mois (26 au Sénégal/Comores, 22 en France).",
+    )
 
     class Meta:
         verbose_name = "Pays"
