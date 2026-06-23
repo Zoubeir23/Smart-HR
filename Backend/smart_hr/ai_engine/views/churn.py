@@ -13,17 +13,38 @@ from smart_hr.users.permissions import IsRH
 
 logger = logging.getLogger(__name__)
 
-# Chemin vers le modèle ML entraîné
 MODEL_PATH = Path(__file__).resolve().parent.parent / "ml_models" / "churn_model.pkl"
 
 # Ordre des colonnes correspondant exactement à l'entraînement du modèle
 FEATURE_COLUMNS = [
     "salary",
     "tenure_years",
-    "status_active",
-    "has_department",
-    "has_position",
+    "leave_count",
+    "absence_count",
+    "disciplinary_count",
+    "avg_performance_score",
+    "unpaid_payroll_count",
 ]
+
+_FEATURE_LABELS = {
+    "salary": "Salaire bas",
+    "tenure_years": "Ancienneté courte",
+    "leave_count": "Nombre élevé de congés",
+    "absence_count": "Absences fréquentes",
+    "disciplinary_count": "Actions disciplinaires",
+    "avg_performance_score": "Score de performance faible",
+    "unpaid_payroll_count": "Fiches de paie impayées",
+}
+
+_RECOMMENDATIONS = {
+    "salary": "Envisager une révision salariale pour cet employé.",
+    "tenure_years": "Renforcer l'engagement dès les premières années (onboarding, mentorat).",
+    "leave_count": "Investiguer les raisons d'une utilisation intensive des congés.",
+    "absence_count": "Planifier un entretien pour comprendre les absences répétées.",
+    "disciplinary_count": "Mettre en place un plan d'accompagnement disciplinaire.",
+    "avg_performance_score": "Proposer un plan de développement des compétences.",
+    "unpaid_payroll_count": "Vérifier et régulariser les retards de paiement.",
+}
 
 
 def _load_model():
@@ -40,41 +61,68 @@ def _load_model():
 
 
 def _employee_to_features(employee: Employee) -> dict:
-    """Convertit un Employee en dictionnaire de features pour le modèle."""
+    """Extrait les features réelles depuis les données de l'employé en DB."""
     from django.utils import timezone
 
-    tenure_years = 0
+    from smart_hr.conge.models import LeaveRequest
+    from smart_hr.discipline.models import DisciplinaryAction
+    from smart_hr.paiement.models import Payroll
+    from smart_hr.performance.models import PerformanceEvaluation
+    from smart_hr.presence.models import Attendance
+
+    # Ancienneté
+    tenure_years = 0.0
     if employee.hire_date:
-        tenure_years = (timezone.now().date() - employee.hire_date).days / 365
+        tenure_years = round((timezone.now().date() - employee.hire_date).days / 365, 2)
+
+    # Nombre de congés approuvés sur les 12 derniers mois
+    from datetime import timedelta
+
+    one_year_ago = timezone.now().date() - timedelta(days=365)
+    leave_count = LeaveRequest.objects.filter(
+        employee=employee,
+        status=LeaveRequest.Status.APPROVED,
+        start_date__gte=one_year_ago,
+    ).count()
+
+    # Nombre d'absences sur les 12 derniers mois
+    absence_count = Attendance.objects.filter(
+        employee=employee,
+        status=Attendance.Status.ABSENT,
+        date__gte=one_year_ago,
+    ).count()
+
+    # Nombre d'actions disciplinaires
+    disciplinary_count = DisciplinaryAction.objects.filter(employee=employee).count()
+
+    # Score de performance moyen (0 si aucune évaluation)
+    perf_scores = list(
+        PerformanceEvaluation.objects.filter(
+            employee=employee,
+            global_score__isnull=False,
+        ).values_list("global_score", flat=True)
+    )
+    avg_performance_score = round(sum(perf_scores) / len(perf_scores), 2) if perf_scores else 50.0
+
+    # Nombre de fiches de paie non payées
+    unpaid_payroll_count = Payroll.objects.filter(
+        employee=employee,
+        status=Payroll.Status.PENDING,
+    ).count()
 
     return {
-        "salary": float(employee.salary),
-        "tenure_years": round(tenure_years, 2),
-        "status_active": 1 if employee.status == "active" else 0,
-        "has_department": 1 if employee.department_id else 0,
-        "has_position": 1 if employee.position_id else 0,
+        "salary": float(employee.salary) if employee.salary else 0.0,
+        "tenure_years": tenure_years,
+        "leave_count": leave_count,
+        "absence_count": absence_count,
+        "disciplinary_count": disciplinary_count,
+        "avg_performance_score": avg_performance_score,
+        "unpaid_payroll_count": unpaid_payroll_count,
     }
 
 
-_FEATURE_LABELS = {
-    "salary": "Salaire bas",
-    "tenure_years": "Ancienneté courte",
-    "status_active": "Statut inactif",
-    "has_department": "Département non assigné",
-    "has_position": "Poste non défini",
-}
-
-_RECOMMENDATIONS = {
-    "salary": "Envisager une révision salariale pour cet employé.",
-    "tenure_years": "Renforcer l'engagement dès les premières années (onboarding, mentorat).",
-    "status_active": "Vérifier la situation administrative de l'employé.",
-    "has_department": "Assigner l'employé à un département pour améliorer son intégration.",
-    "has_position": "Définir un poste clair pour réduire l'incertitude professionnelle.",
-}
-
-
-def _explain_prediction(model, features: dict) -> tuple[str, list[str]]:
-    """Retourne le facteur principal et le top-3 des facteurs de risque via feature_importances_."""
+def _explain_prediction(model, features: dict) -> tuple[str, str, list[str]]:
+    """Retourne (main_feature_key, main_label, top_3_labels) via feature_importances_."""
     try:
         importances = model.feature_importances_
         ranked = sorted(
@@ -83,25 +131,21 @@ def _explain_prediction(model, features: dict) -> tuple[str, list[str]]:
             reverse=True,
         )
         top_features = [col for col, _ in ranked[:3]]
-        main_feature = top_features[0]
-        main_label = _FEATURE_LABELS.get(main_feature, main_feature)
+        main_feature_key = top_features[0]
+        main_label = _FEATURE_LABELS.get(main_feature_key, main_feature_key)
         top_labels = [_FEATURE_LABELS.get(col, col) for col in top_features]
-        return main_label, top_labels
+        return main_feature_key, main_label, top_labels
     except Exception:
-        return "Facteur indéterminé", list(features.keys())
+        return "", "Facteur indéterminé", []
 
 
-def _build_recommendations(risk_score: float, main_risk_factor: str) -> list[str]:
-    """Génère des recommandations basées sur le score et le facteur principal."""
+def _build_recommendations(risk_score: float, main_feature_key: str) -> list[str]:
+    """Génère des recommandations basées sur le score et la clé feature principale."""
     if risk_score < 40:
         return []
-    feature_key = next(
-        (k for k, v in _FEATURE_LABELS.items() if v == main_risk_factor),
-        None,
-    )
     recommendations = []
-    if feature_key and feature_key in _RECOMMENDATIONS:
-        recommendations.append(_RECOMMENDATIONS[feature_key])
+    if main_feature_key in _RECOMMENDATIONS:
+        recommendations.append(_RECOMMENDATIONS[main_feature_key])
     if risk_score >= 70:
         recommendations.append("Planifier un entretien individuel en priorité.")
     return recommendations
@@ -187,21 +231,20 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
             else:
                 risk_level = ChurnPrediction.RiskLevel.LOW
 
-            # #60 — Explainability : facteur principal via feature_importances_
-            main_risk_factor, top_factors = _explain_prediction(model, features)
-            recommendations = _build_recommendations(risk_score, main_risk_factor)
+            main_feature_key, main_risk_factor, top_factors = _explain_prediction(model, features)
+            recommendations = _build_recommendations(risk_score, main_feature_key)
 
             prediction = ChurnPrediction.objects.create(
                 employee=employee,
                 risk_score=risk_score,
                 risk_level=risk_level,
+                main_risk_factor=main_risk_factor,
                 factors=top_factors,
                 recommendations=recommendations,
             )
             employee.churn_risk = risk_score
             employee.save(update_fields=["churn_risk"])
 
-            # #73 — Alerte email RH si risque élevé
             if risk_level == ChurnPrediction.RiskLevel.HIGH:
                 _notify_rh_high_churn_risk(employee, risk_score, main_risk_factor)
 
@@ -219,14 +262,13 @@ class ChurnPredictionViewSet(viewsets.ReadOnlyModelViewSet):
     def predict_all(self, request):
         """Déclenche la prédiction churn globale.
 
-        Utilise Celery si un broker est disponible ; sinon (dev sans Redis)
-        bascule en exécution synchrone au lieu de renvoyer une erreur 500.
+        Utilise Celery si un broker est disponible ; sinon bascule en exécution synchrone.
         """
         from smart_hr.ai_engine.tasks import predict_all_employees_task
 
         try:
             predict_all_employees_task.delay()
-        except Exception:  # broker indisponible : repli synchrone
+        except Exception:
             logger.warning(
                 "Broker Celery indisponible — exécution synchrone de la prédiction churn globale.",
             )
