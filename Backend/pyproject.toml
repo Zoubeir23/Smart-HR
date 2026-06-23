@@ -34,6 +34,7 @@ dependencies = [
   "drf-spectacular>=0.27.0",
   "flower==2.0.1",
   "google-genai>=1.0.0",
+  "gtts>=2.5.0",
   "gunicorn==25.1.0",
   "hiredis==3.3.0",
   "joblib>=1.4.0",
