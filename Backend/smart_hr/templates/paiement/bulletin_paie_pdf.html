@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bulletin de Paie — {{ periode_display }}</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 2cm 1.8cm;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 10pt;
+        color: #1a1a1a;
+        line-height: 1.5;
+      }
+
+      /* ── En-tête ── */
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 3px solid #d62828;
+        padding-bottom: 14px;
+        margin-bottom: 20px;
+      }
+
+      .header-company {
+        font-size: 16pt;
+        font-weight: 700;
+        color: #d62828;
+        letter-spacing: 1px;
+      }
+
+      .header-title {
+        text-align: right;
+      }
+
+      .header-title h1 {
+        font-size: 14pt;
+        font-weight: 700;
+        color: #1a1a1a;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .header-title .periode {
+        font-size: 11pt;
+        color: #555;
+        margin-top: 2px;
+      }
+
+      /* ── Bloc salarié ── */
+      .employee-block {
+        display: flex;
+        gap: 20px;
+        background: #f8f8f8;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 12px 16px;
+        margin-bottom: 20px;
+      }
+
+      .employee-block .col {
+        flex: 1;
+      }
+
+      .employee-block .label {
+        font-size: 8pt;
+        color: #888;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .employee-block .value {
+        font-size: 10pt;
+        font-weight: 600;
+        color: #1a1a1a;
+      }
+
+      /* ── Table des lignes ── */
+      .section-title {
+        font-size: 9pt;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #d62828;
+        border-bottom: 1px solid #d62828;
+        padding-bottom: 4px;
+        margin-bottom: 6px;
+        margin-top: 16px;
+      }
+
+      table.lignes {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 9pt;
+      }
+
+      table.lignes thead tr {
+        background: #1a1a1a;
+        color: #fff;
+      }
+
+      table.lignes thead th {
+        padding: 6px 8px;
+        text-align: left;
+        font-weight: 600;
+        font-size: 8pt;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+      }
+
+      table.lignes thead th.right {
+        text-align: right;
+      }
+
+      table.lignes tbody tr {
+        border-bottom: 1px solid #ebebeb;
+      }
+
+      table.lignes tbody tr:nth-child(even) {
+        background: #fafafa;
+      }
+
+      table.lignes tbody td {
+        padding: 5px 8px;
+        vertical-align: middle;
+      }
+
+      table.lignes tbody td.right {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+
+      table.lignes tbody td.retenue {
+        color: #c0392b;
+      }
+
+      /* ── Récapitulatif ── */
+      .recap {
+        margin-top: 20px;
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .recap table {
+        width: 340px;
+        border-collapse: collapse;
+        font-size: 10pt;
+      }
+
+      .recap table tr {
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .recap table td {
+        padding: 6px 10px;
+      }
+
+      .recap table td.label {
+        color: #555;
+      }
+
+      .recap table td.value {
+        text-align: right;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .recap table tr.net-a-payer {
+        background: #1a1a1a;
+        color: #fff;
+      }
+
+      .recap table tr.net-a-payer td {
+        font-size: 12pt;
+        font-weight: 700;
+      }
+
+      /* ── Mentions légales ── */
+      .footer {
+        margin-top: 28px;
+        border-top: 1px solid #e0e0e0;
+        padding-top: 10px;
+        font-size: 8pt;
+        color: #888;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- En-tête -->
+    <div class="header">
+      <div class="header-company">Smart-HR</div>
+      <div class="header-title">
+        <h1>Bulletin de paie</h1>
+        <div class="periode">{{ periode_display }}</div>
+      </div>
+    </div>
+
+    <!-- Informations salarié -->
+    <div class="employee-block">
+      <div class="col">
+        <div class="label">Salarié</div>
+        <div class="value">{{ employee_full_name }}</div>
+      </div>
+      <div class="col">
+        <div class="label">Matricule</div>
+        <div class="value">{{ employee_matricule }}</div>
+      </div>
+      <div class="col">
+        <div class="label">Poste</div>
+        <div class="value">{{ position|default:"—" }}</div>
+      </div>
+      <div class="col">
+        <div class="label">Département</div>
+        <div class="value">{{ department|default:"—" }}</div>
+      </div>
+      <div class="col">
+        <div class="label">Date d'embauche</div>
+        <div class="value">{{ hire_date|default:"—" }}</div>
+      </div>
+      <div class="col">
+        <div class="label">Pays fiscal</div>
+        <div class="value">{{ pays_nom|default:"—" }}</div>
+      </div>
+    </div>
+
+    <!-- Gains -->
+    {% if lignes_gains %}
+    <div class="section-title">Éléments de rémunération</div>
+    <table class="lignes">
+      <thead>
+        <tr>
+          <th>Libellé</th>
+          <th class="right">Base ({{ devise }})</th>
+          <th class="right">Taux %</th>
+          <th class="right">Montant ({{ devise }})</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes_gains %}
+        <tr>
+          <td>{{ ligne.libelle }}</td>
+          <td class="right">{{ ligne.base|floatformat:0 }}</td>
+          <td class="right">{% if ligne.taux %}{{ ligne.taux }}{% else %}—{% endif %}</td>
+          <td class="right">{{ ligne.montant|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Retenues -->
+    {% if lignes_retenues %}
+    <div class="section-title">Retenues et cotisations</div>
+    <table class="lignes">
+      <thead>
+        <tr>
+          <th>Libellé</th>
+          <th class="right">Base ({{ devise }})</th>
+          <th class="right">Taux %</th>
+          <th class="right">Montant ({{ devise }})</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes_retenues %}
+        <tr>
+          <td>{{ ligne.libelle }}</td>
+          <td class="right">{{ ligne.base|floatformat:0 }}</td>
+          <td class="right">{% if ligne.taux %}{{ ligne.taux }}{% else %}—{% endif %}</td>
+          <td class="right retenue">{{ ligne.montant|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Informatifs -->
+    {% if lignes_info %}
+    <div class="section-title">Informations</div>
+    <table class="lignes">
+      <thead>
+        <tr>
+          <th>Libellé</th>
+          <th class="right">Valeur ({{ devise }})</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for ligne in lignes_info %}
+        <tr>
+          <td>{{ ligne.libelle }}</td>
+          <td class="right">{{ ligne.montant|floatformat:0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Récapitulatif -->
+    <div class="recap">
+      <table>
+        <tr>
+          <td class="label">Salaire brut</td>
+          <td class="value">{{ bulletin.salaire_brut|floatformat:0 }} {{ devise }}</td>
+        </tr>
+        <tr>
+          <td class="label">Cotisations salariales</td>
+          <td class="value">{{ bulletin.cotisations_salariales|floatformat:0 }} {{ devise }}</td>
+        </tr>
+        <tr>
+          <td class="label">Net imposable</td>
+          <td class="value">{{ bulletin.net_imposable|floatformat:0 }} {{ devise }}</td>
+        </tr>
+        <tr>
+          <td class="label">Impôt sur le revenu</td>
+          <td class="value">{{ bulletin.impot|floatformat:0 }} {{ devise }}</td>
+        </tr>
+        <tr class="net-a-payer">
+          <td class="label">NET À PAYER</td>
+          <td class="value">{{ bulletin.net_a_payer|floatformat:0 }} {{ devise }}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Pied de page -->
+    <div class="footer">
+      Document généré le {{ today }} &mdash; Bulletin n° {{ bulletin.id }} &mdash; Smart-HR SIRH
+    </div>
+  </body>
+</html>
