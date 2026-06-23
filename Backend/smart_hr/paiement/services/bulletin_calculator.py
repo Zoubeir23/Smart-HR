@@ -12,27 +12,28 @@ Pipeline séquentiel :
   8. Net à payer
   9. Persistance atomique du BulletinPaie + LigneBulletin
 """
+
 from __future__ import annotations
 
-import json
-from decimal import ROUND_DOWN, ROUND_FLOOR, ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN
+from decimal import ROUND_FLOOR
+from decimal import ROUND_HALF_UP
+from decimal import Decimal
 from typing import TYPE_CHECKING
 
 from django.db import transaction
 from django.db.models import Q
 
-from smart_hr.paiement.models import (
-    AbattementRegle,
-    AllocationEmploye,
-    BaremeImpot,
-    BulletinPaie,
-    ChargesFamiliales,
-    HistoriqueSalaire,
-    LigneBulletin,
-    Pays,
-    RegleCotisation,
-    TaxeMinimaleForfaitaire,
-)
+from smart_hr.paiement.models import AbattementRegle
+from smart_hr.paiement.models import AllocationEmploye
+from smart_hr.paiement.models import BaremeImpot
+from smart_hr.paiement.models import BulletinPaie
+from smart_hr.paiement.models import ChargesFamiliales
+from smart_hr.paiement.models import HistoriqueSalaire
+from smart_hr.paiement.models import LigneBulletin
+from smart_hr.paiement.models import Pays
+from smart_hr.paiement.models import RegleCotisation
+from smart_hr.paiement.models import TaxeMinimaleForfaitaire
 
 if TYPE_CHECKING:
     from datetime import date
@@ -49,9 +50,7 @@ def _filtre_date_active(queryset, date_reference: date):
     """Filtre un queryset sur date_debut_validite <= date <= date_fin_validite."""
     return queryset.filter(
         date_debut_validite__lte=date_reference,
-    ).filter(
-        Q(date_fin_validite__isnull=True) | Q(date_fin_validite__gte=date_reference)
-    )
+    ).filter(Q(date_fin_validite__isnull=True) | Q(date_fin_validite__gte=date_reference))
 
 
 def _get_salaire_actif(employee: Employee, date_reference: date) -> Decimal:
@@ -72,11 +71,7 @@ def _get_salaire_actif(employee: Employee, date_reference: date) -> Decimal:
 
 
 def _get_smig_actif(pays: Pays, date_reference: date) -> Decimal | None:
-    smig = (
-        _filtre_date_active(pays.salaires_minimum.all(), date_reference)
-        .order_by("-date_debut_validite")
-        .first()
-    )
+    smig = _filtre_date_active(pays.salaires_minimum.all(), date_reference).order_by("-date_debut_validite").first()
     return smig.valeur if smig else None
 
 
@@ -165,14 +160,11 @@ def calculer_bulletin(
     pays: Pays | None = employee.pays
     if pays is None:
         raise ValueError(
-            f"L'employé {employee} n'a pas de pays fiscal renseigné. "
-            "Renseignez le champ 'pays' avant de générer un bulletin."
+            f"L'employé {employee} n'a pas de pays fiscal renseigné. Renseignez le champ 'pays' avant de générer un bulletin."
         )
 
     categorie = employee.categorie_convention
-    situation_matrimoniale: str = (
-        employee.family_status.label if employee.family_status else "Célibataire"
-    )
+    situation_matrimoniale: str = employee.family_status.label if employee.family_status else "Célibataire"
     nombre_enfants: int = employee.nombre_enfants
 
     lignes: list[LigneBulletin] = []
@@ -197,17 +189,18 @@ def calculer_bulletin(
     smig = _get_smig_actif(pays, periode)
     if smig and salaire_de_base < smig:
         raise ValueError(
-            f"Salaire brut {salaire_de_base} {pays.devise} "
-            f"inférieur au SMIG ({smig} {pays.devise}) pour {pays.nom}."
+            f"Salaire brut {salaire_de_base} {pays.devise} inférieur au SMIG ({smig} {pays.devise}) pour {pays.nom}."
         )
 
-    lignes.append(nouvelle_ligne(
-        libelle="Salaire de base",
-        nature=LigneBulletin.Nature.GAIN,
-        base=Decimal("0"),
-        taux=Decimal("0"),
-        montant=salaire_de_base,
-    ))
+    lignes.append(
+        nouvelle_ligne(
+            libelle="Salaire de base",
+            nature=LigneBulletin.Nature.GAIN,
+            base=Decimal("0"),
+            taux=Decimal("0"),
+            montant=salaire_de_base,
+        )
+    )
 
     salaire_brut = salaire_de_base
 
@@ -215,12 +208,14 @@ def calculer_bulletin(
     total_allocations_imposables = Decimal("0")
     total_allocations_cotisables = Decimal("0")
 
-    attributions = AllocationEmploye.objects.filter(
-        employee=employee,
-        date_debut__lte=periode,
-    ).filter(
-        Q(date_fin__isnull=True) | Q(date_fin__gte=periode)
-    ).select_related("regle")
+    attributions = (
+        AllocationEmploye.objects.filter(
+            employee=employee,
+            date_debut__lte=periode,
+        )
+        .filter(Q(date_fin__isnull=True) | Q(date_fin__gte=periode))
+        .select_related("regle")
+    )
 
     for attribution in attributions:
         montant_allocation = attribution.montant_effectif
@@ -235,69 +230,69 @@ def calculer_bulletin(
         total_allocations_imposables += montant_imposable
         total_allocations_cotisables += montant_cotisable
 
-        lignes.append(nouvelle_ligne(
-            libelle=regle.nom_allocation,
-            nature=LigneBulletin.Nature.GAIN,
-            base=montant_allocation,
-            taux=Decimal("0"),
-            montant=montant_allocation,
-        ))
+        lignes.append(
+            nouvelle_ligne(
+                libelle=regle.nom_allocation,
+                nature=LigneBulletin.Nature.GAIN,
+                base=montant_allocation,
+                taux=Decimal("0"),
+                montant=montant_allocation,
+            )
+        )
 
     # ── 3. Cotisations ───────────────────────────────────────────────────────
     cotisations = _filtre_date_active(
-        RegleCotisation.objects.filter(pays=pays).filter(
-            Q(categorie__isnull=True) | Q(categorie=categorie)
-        ),
+        RegleCotisation.objects.filter(pays=pays).filter(Q(categorie__isnull=True) | Q(categorie=categorie)),
         periode,
     ).order_by("nom_cotisation")
 
+    total_cotisations_salariales = Decimal("0")
     total_cotisations_salariales_deductibles = Decimal("0")
     total_cotisations_patronales = Decimal("0")
     snapshot_cotisations = []
 
     for cotisation in cotisations:
         assiette_brute = salaire_de_base + total_allocations_cotisables
-        assiette = (
-            min(assiette_brute, cotisation.plafond_assiette)
-            if cotisation.plafond_assiette
-            else assiette_brute
-        )
+        assiette = min(assiette_brute, cotisation.plafond_assiette) if cotisation.plafond_assiette else assiette_brute
 
-        montant_salarial = (assiette * cotisation.taux_salarial / Decimal("100")).quantize(
-            Decimal("1"), rounding=ROUND_DOWN
-        )
-        montant_patronal = (assiette * cotisation.taux_patronal / Decimal("100")).quantize(
-            Decimal("1"), rounding=ROUND_DOWN
-        )
+        montant_salarial = (assiette * cotisation.taux_salarial / Decimal("100")).quantize(Decimal("1"), rounding=ROUND_DOWN)
+        montant_patronal = (assiette * cotisation.taux_patronal / Decimal("100")).quantize(Decimal("1"), rounding=ROUND_DOWN)
 
         if montant_salarial > 0:
-            lignes.append(nouvelle_ligne(
-                libelle=cotisation.nom_cotisation,
-                nature=LigneBulletin.Nature.RETENUE,
-                base=assiette,
-                taux=cotisation.taux_salarial,
-                montant=-montant_salarial,
-            ))
+            lignes.append(
+                nouvelle_ligne(
+                    libelle=cotisation.nom_cotisation,
+                    nature=LigneBulletin.Nature.RETENUE,
+                    base=assiette,
+                    taux=cotisation.taux_salarial,
+                    montant=-montant_salarial,
+                )
+            )
+            total_cotisations_salariales += montant_salarial
             if cotisation.est_deductible_base_imposable:
                 total_cotisations_salariales_deductibles += montant_salarial
 
         if montant_patronal > 0:
-            lignes.append(nouvelle_ligne(
-                libelle=f"{cotisation.nom_cotisation} (patronal)",
-                nature=LigneBulletin.Nature.INFO,
-                base=assiette,
-                taux=cotisation.taux_patronal,
-                montant=montant_patronal,
-            ))
+            lignes.append(
+                nouvelle_ligne(
+                    libelle=f"{cotisation.nom_cotisation} (patronal)",
+                    nature=LigneBulletin.Nature.INFO,
+                    base=assiette,
+                    taux=cotisation.taux_patronal,
+                    montant=montant_patronal,
+                )
+            )
             total_cotisations_patronales += montant_patronal
 
-        snapshot_cotisations.append({
-            "id": cotisation.pk,
-            "nom": cotisation.nom_cotisation,
-            "taux_salarial": str(cotisation.taux_salarial),
-            "taux_patronal": str(cotisation.taux_patronal),
-            "plafond_assiette": str(cotisation.plafond_assiette) if cotisation.plafond_assiette else None,
-        })
+        snapshot_cotisations.append(
+            {
+                "id": cotisation.pk,
+                "nom": cotisation.nom_cotisation,
+                "taux_salarial": str(cotisation.taux_salarial),
+                "taux_patronal": str(cotisation.taux_patronal),
+                "plafond_assiette": str(cotisation.plafond_assiette) if cotisation.plafond_assiette else None,
+            }
+        )
 
     # ── 4. Taxe minimale forfaitaire (TRIMF…) ────────────────────────────────
     taxes_minimales = _filtre_date_active(
@@ -313,13 +308,15 @@ def calculer_bulletin(
             break
 
     if montant_taxe_minimale > 0:
-        lignes.append(nouvelle_ligne(
-            libelle="Taxe minimale forfaitaire",
-            nature=LigneBulletin.Nature.RETENUE,
-            base=salaire_brut,
-            taux=Decimal("0"),
-            montant=-montant_taxe_minimale,
-        ))
+        lignes.append(
+            nouvelle_ligne(
+                libelle="Taxe minimale forfaitaire",
+                nature=LigneBulletin.Nature.RETENUE,
+                base=salaire_brut,
+                taux=Decimal("0"),
+                montant=-montant_taxe_minimale,
+            )
+        )
 
     # ── 5. Abattements professionnels ────────────────────────────────────────
     abattements = _filtre_date_active(
@@ -347,10 +344,7 @@ def calculer_bulletin(
 
     # ── 6. Net imposable ─────────────────────────────────────────────────────
     net_imposable = (
-        salaire_de_base
-        + total_allocations_imposables
-        - total_cotisations_salariales_deductibles
-        - total_abattement_mensuel
+        salaire_de_base + total_allocations_imposables - total_cotisations_salariales_deductibles - total_abattement_mensuel
     )
     net_imposable = max(net_imposable, Decimal("0"))
 
@@ -370,21 +364,18 @@ def calculer_bulletin(
     impot_mensuel = (impot_annuel / 12).quantize(Decimal("1"), rounding=ROUND_DOWN)
 
     if impot_mensuel > 0:
-        lignes.append(nouvelle_ligne(
-            libelle="Impôt sur le revenu (IGR)",
-            nature=LigneBulletin.Nature.RETENUE,
-            base=net_imposable,
-            taux=Decimal("0"),
-            montant=-impot_mensuel,
-        ))
+        lignes.append(
+            nouvelle_ligne(
+                libelle="Impôt sur le revenu (IGR)",
+                nature=LigneBulletin.Nature.RETENUE,
+                base=net_imposable,
+                taux=Decimal("0"),
+                montant=-impot_mensuel,
+            )
+        )
 
     # ── 8. Net à payer ───────────────────────────────────────────────────────
-    net_a_payer = (
-        salaire_brut
-        - total_cotisations_salariales_deductibles
-        - montant_taxe_minimale
-        - impot_mensuel
-    )
+    net_a_payer = salaire_brut - total_cotisations_salariales - montant_taxe_minimale - impot_mensuel
 
     regles_snapshot = {
         "periode": str(periode),
@@ -397,7 +388,7 @@ def calculer_bulletin(
         employee=employee,
         periode=periode,
         salaire_brut=salaire_brut,
-        cotisations_salariales=total_cotisations_salariales_deductibles + montant_taxe_minimale,
+        cotisations_salariales=total_cotisations_salariales + montant_taxe_minimale,
         cotisations_patronales=total_cotisations_patronales,
         net_imposable=net_imposable,
         impot=impot_mensuel,
@@ -415,10 +406,14 @@ def emettre_bulletin(employee: Employee, periode: date) -> BulletinPaie:
     Calcule et persiste le bulletin de paie de manière atomique.
     Lève une ValueError si un bulletin non-annulé existe déjà pour cette période.
     """
-    bulletin_existant = BulletinPaie.objects.filter(
-        employee=employee,
-        periode=periode,
-    ).exclude(statut=BulletinPaie.Statut.ANNULE).first()
+    bulletin_existant = (
+        BulletinPaie.objects.filter(
+            employee=employee,
+            periode=periode,
+        )
+        .exclude(statut=BulletinPaie.Statut.ANNULE)
+        .first()
+    )
 
     if bulletin_existant:
         raise ValueError(
@@ -446,10 +441,7 @@ def creer_bulletin_correctif(bulletin_original: BulletinPaie) -> BulletinPaie:
         BulletinPaie.Statut.EMIS,
         BulletinPaie.Statut.VALIDE,
     ):
-        raise ValueError(
-            f"Seuls les bulletins EMIS ou VALIDES peuvent être corrigés. "
-            f"Statut actuel : {bulletin_original.statut}"
-        )
+        raise ValueError(f"Seuls les bulletins EMIS ou VALIDES peuvent être corrigés. Statut actuel : {bulletin_original.statut}")
 
     bulletin_original.statut = BulletinPaie.Statut.ANNULE
     bulletin_original.save()
