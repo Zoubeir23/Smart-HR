@@ -65,6 +65,7 @@ class Command(BaseCommand):
         senegal.devise = "FCFA"
         senegal.arrondi_impot = 100
         senegal.methode_arrondi = Pays.MethodeArrondi.FLOOR
+        senegal.jours_ouvres_par_mois = 26
         senegal.save()
         self._log("Pays", "Sénégal", created)
 
