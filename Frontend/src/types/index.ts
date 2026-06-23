@@ -132,10 +132,11 @@ export interface ChurnPrediction {
 // Navigation items type
 export interface NavItem {
   title: string;
-  href: string;
+  href?: string;
   icon: React.ComponentType<{ className?: string }>;
   roles: UserRole[];
   badge?: number;
+  children?: NavItem[];
 }
 
 export interface NavGroup {
