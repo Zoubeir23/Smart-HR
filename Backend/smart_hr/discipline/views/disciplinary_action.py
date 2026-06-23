@@ -11,7 +11,7 @@ from smart_hr.discipline.models import DisciplinaryAction
 from smart_hr.discipline.serializers import DisciplinaryActionSerializer
 from smart_hr.personnel.models import Employee
 from smart_hr.users.models import User
-from smart_hr.users.permissions import IsRH
+from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 logger = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class DisciplinaryActionViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Lecture : tout utilisateur authentifié. Écriture : RH/Admin uniquement."""
         if self.action in ["create", "update", "partial_update", "destroy"]:
-            return [IsRH()]
+            return [IsRHOrDepartmentManager()]
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):

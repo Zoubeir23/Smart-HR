@@ -276,53 +276,76 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
-    @action(detail=True, methods=["post"], url_path="onboard")
+    @staticmethod
+    def _check_onboard_preconditions(application) -> str | None:
+        """Retourne un message d'erreur si l'onboarding est impossible, None sinon."""
+        if application.status != Application.Status.ACCEPTED:
+            return "Seules les candidatures acceptées peuvent être onboardées."
+        if application.onboarded:
+            return "Ce candidat a déjà été transformé en employé."
+        if hasattr(application.candidate, "employee_profile"):
+            return "Un profil employé existe déjà pour cet utilisateur."
+        return None
+
+    @action(detail=True, methods=["post"], url_path="onboard", permission_classes=[IsRH])
     def onboard(self, request, pk=None):
         """
         POST /api/v1/recruitment/applications/{id}/onboard/
 
-        Transforme un candidat accepté en employé actif :
-        - Crée un profil Employee lié à son compte utilisateur
-        - Change le rôle User de CANDIDATE à EMPLOYEE
-        - Marque la candidature comme onboardée (onboarded=True)
-
-        Contraintes :
-        - La candidature doit être au statut 'accepted'
-        - L'onboarding ne peut être effectué qu'une seule fois
+        Transforme un candidat accepté en employé actif.
+        Champs requis dans le body : department_id, position_id, salary.
         """
         from django.utils import timezone
 
+        from smart_hr.personnel.models import Department
         from smart_hr.personnel.models import Employee
+        from smart_hr.personnel.models import Position
 
         application = self.get_object()
 
-        if application.status != Application.Status.ACCEPTED:
-            return Response(
-                {"detail": "Seules les candidatures acceptées peuvent être onboardées."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if application.onboarded:
-            return Response(
-                {"detail": "Ce candidat a déjà été transformé en employé."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        precondition_error = self._check_onboard_preconditions(application)
+        if precondition_error is not None:
+            return Response({"detail": precondition_error}, status=status.HTTP_400_BAD_REQUEST)
 
         candidate_user = application.candidate
 
-        if hasattr(candidate_user, "employee_profile"):
+        department_id = request.data.get("department_id")
+        position_id = request.data.get("position_id")
+        salary_raw = request.data.get("salary")
+
+        if not department_id or not position_id or salary_raw is None:
             return Response(
-                {"detail": "Un profil employé existe déjà pour cet utilisateur."},
+                {"detail": "Les champs department_id, position_id et salary sont obligatoires."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+
+        try:
+            department = Department.objects.get(id=department_id)
+        except Department.DoesNotExist:
+            return Response({"detail": "Département introuvable."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            position = Position.objects.get(id=position_id)
+        except Position.DoesNotExist:
+            return Response({"detail": "Poste introuvable."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            salary = float(salary_raw)
+        except (ValueError, TypeError):
+            salary = -1
+        if salary < 0:
+            return Response({"detail": "Le salaire doit être un nombre positif."}, status=status.HTTP_400_BAD_REQUEST)
 
         Employee.objects.create(
             user=candidate_user,
             hire_date=timezone.now().date(),
             status=Employee.Status.ACTIVE,
+            department=department,
+            position=position,
+            salary=salary,
         )
 
-        candidate_user.role = "EMPLOYEE"
+        candidate_user.role = candidate_user.Role.EMPLOYEE
         candidate_user.save(update_fields=["role"])
 
         application.onboarded = True

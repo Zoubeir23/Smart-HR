@@ -64,6 +64,36 @@ class DisciplinaryAction(TimeStampedModel):
     def __str__(self) -> str:
         return f"{self.get_action_type_display()} — {self.employee} ({self.issued_date})"
 
+    def save(self, *args, **kwargs) -> None:
+        is_new = self.pk is None
+        previous_action_type = None
+        if not is_new:
+            previous_action_type = DisciplinaryAction.objects.filter(pk=self.pk).values_list("action_type", flat=True).first()
+
+        super().save(*args, **kwargs)
+
+        action_type_changed = is_new or (previous_action_type != self.action_type)
+        if not action_type_changed:
+            return
+
+        if self.action_type == self.ActionType.SUSPENSION:
+            Employee.objects.filter(pk=self.employee_id).update(status=Employee.Status.SUSPENDED)
+        elif self.action_type == self.ActionType.DISMISSAL:
+            Employee.objects.filter(pk=self.employee_id).update(status=Employee.Status.TERMINATED)
+        elif previous_action_type in (self.ActionType.SUSPENSION, self.ActionType.DISMISSAL):
+            # L'action a été reclassifiée vers un type sans impact sur le statut :
+            # on ne peut restaurer qu'à ACTIVE si aucune autre sanction active ne justifie SUSPENDED/TERMINATED.
+            has_other_blocking_action = (
+                DisciplinaryAction.objects.filter(
+                    employee_id=self.employee_id,
+                    action_type__in=[self.ActionType.SUSPENSION, self.ActionType.DISMISSAL],
+                )
+                .exclude(pk=self.pk)
+                .exists()
+            )
+            if not has_other_blocking_action:
+                Employee.objects.filter(pk=self.employee_id).update(status=Employee.Status.ACTIVE)
+
     @property
     def suspension_duration_days(self) -> int | None:
         """Durée de la mise à pied en jours calendaires."""

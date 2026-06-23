@@ -26,7 +26,8 @@ class SkillSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def get_employee_name(self, obj: Skill) -> str:
-        return f"{obj.employee.first_name} {obj.employee.last_name}".strip() or obj.employee.email
+        user = obj.employee.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
 
 
 class PerformanceEvaluationSerializer(serializers.ModelSerializer):
@@ -55,11 +56,13 @@ class PerformanceEvaluationSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at", "updated_at"]
 
     def get_employee_name(self, obj: PerformanceEvaluation) -> str:
-        return f"{obj.employee.first_name} {obj.employee.last_name}".strip() or obj.employee.email
+        user = obj.employee.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
 
     def get_reviewer_name(self, obj: PerformanceEvaluation) -> str:
         if obj.reviewer:
-            return f"{obj.reviewer.first_name} {obj.reviewer.last_name}".strip() or obj.reviewer.email
+            user = obj.reviewer.user
+            return f"{user.first_name} {user.last_name}".strip() or user.email
         return "—"
 
     def validate_year(self, value: int) -> int:

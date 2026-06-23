@@ -159,6 +159,7 @@ class Employee(TimeStampedModel):
         ACTIVE = "active", "Actif"
         INACTIVE = "inactive", "Inactif"
         ON_LEAVE = "on_leave", "En conge"
+        SUSPENDED = "suspended", "Suspendu"
         TERMINATED = "terminated", "Contrat termine"
 
     user = models.OneToOneField(
