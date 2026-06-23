@@ -17,7 +17,6 @@ from smart_hr.personnel.models import Employee
 from smart_hr.personnel.serializers import EmployeeSelfSerializer
 from smart_hr.personnel.serializers import EmployeeSerializer
 from smart_hr.users.models import User
-from smart_hr.users.permissions import IsRH
 from smart_hr.users.permissions import IsRHOrDepartmentManager
 
 logger = logging.getLogger(__name__)
