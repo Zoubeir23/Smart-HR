@@ -170,6 +170,35 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         """Approuve une demande de congé (RH, Admin ou Manager du département)."""
         leave = self.get_object()
         self.check_object_permissions(request, leave)
+
+        if leave.status != LeaveRequest.Status.PENDING:
+            return Response(
+                {"detail": "Seules les demandes en attente peuvent être approuvées."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if leave.is_deductible:
+            year = leave.start_date.year
+            approved_leaves = LeaveRequest.objects.filter(
+                employee=leave.employee,
+                status=LeaveRequest.Status.APPROVED,
+                leave_type__in=DEDUCTIBLE_LEAVE_TYPES,
+                start_date__year=year,
+            )
+            days_taken = sum(l.duration_working_days for l in approved_leaves)
+            annual_allowance = 30
+            days_remaining = annual_allowance - days_taken
+            if leave.duration_working_days > days_remaining:
+                return Response(
+                    {
+                        "detail": (
+                            f"Solde insuffisant : {days_remaining}j disponibles, "
+                            f"{leave.duration_working_days}j demandés."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
         leave.status = LeaveRequest.Status.APPROVED
         leave.approved_by = request.user
         leave.save()
@@ -180,7 +209,13 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         """Rejette une demande de congé (RH, Admin ou Manager du département)."""
         leave = self.get_object()
         self.check_object_permissions(request, leave)
+
+        if leave.status != LeaveRequest.Status.PENDING:
+            return Response(
+                {"detail": "Seules les demandes en attente peuvent être refusées."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         leave.status = LeaveRequest.Status.REJECTED
-        leave.approved_by = request.user
         leave.save()
         return Response({"status": "rejected"}, status=status.HTTP_200_OK)
