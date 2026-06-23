@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('paiement', '0004_bulletin_paie_partial_unique_constraint'),
+        ('paiement', '0005_regle_cotisation_plancher_assiette'),
     ]
 
     operations = [
