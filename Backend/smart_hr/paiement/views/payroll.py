@@ -248,3 +248,33 @@ class PayrollViewSet(viewsets.ModelViewSet):
                 "by_department": by_department,
             },
         )
+
+    @action(detail=False, methods=["get"], url_path="export", permission_classes=[IsRHOrDepartmentManager])
+    def export(self, request):
+        """Export CSV ou XLSX des fiches de paie.
+
+        Query params : format=csv (défaut) | xlsx
+        """
+        from smart_hr.core.export_utils import export_response
+
+        export_format = request.query_params.get("format", "csv").lower()
+        queryset = self.get_queryset().select_related("employee__user", "employee__department")
+
+        rows = [
+            {
+                "ID": payroll.pk,
+                "Employé": payroll.employee.user.get_full_name() or payroll.employee.user.email,
+                "Email employé": payroll.employee.user.email,
+                "Département": payroll.employee.department.name if payroll.employee.department else "",
+                "Mois": payroll.month,
+                "Salaire de base": str(payroll.base_salary),
+                "Primes": str(payroll.bonuses),
+                "Déductions": str(payroll.deductions),
+                "Salaire brut": str(payroll.base_salary + payroll.bonuses),
+                "Salaire net": str(payroll.net_salary),
+                "Statut": payroll.get_status_display(),
+            }
+            for payroll in queryset
+        ]
+
+        return export_response(rows, "fiches-paie", export_format, sheet_name="Paie")

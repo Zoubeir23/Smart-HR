@@ -345,3 +345,34 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             {"detail": "Donnees personnelles anonymisees avec succes.", "id": employee.pk},
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=["get"], url_path="export", permission_classes=[IsRHOrDepartmentManager])
+    def export(self, request):
+        """Export CSV ou XLSX de la liste des employés (RH/Admin uniquement).
+
+        Query params : format=csv (défaut) | xlsx
+        """
+        from smart_hr.core.export_utils import export_response
+
+        export_format = request.query_params.get("format", "csv").lower()
+        queryset = self.get_queryset().select_related("user", "department", "position", "service")
+
+        rows = [
+            {
+                "ID": employee.pk,
+                "Prénom": employee.user.first_name,
+                "Nom": employee.user.last_name,
+                "Email": employee.user.email,
+                "Téléphone": getattr(employee.user, "tel", "") or "",
+                "Département": employee.department.name if employee.department else "",
+                "Service": employee.service.name if employee.service else "",
+                "Poste": employee.position.title if employee.position else "",
+                "Statut": employee.status,
+                "Date d'embauche": str(employee.hire_date) if employee.hire_date else "",
+                "Salaire de base": str(employee.salary) if employee.salary is not None else "",
+                "CIN": employee.cin or "",
+            }
+            for employee in queryset
+        ]
+
+        return export_response(rows, "employes", export_format, sheet_name="Employés")
