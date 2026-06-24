@@ -23,8 +23,8 @@ class OTPVerifyThrottle(UserRateThrottle):
     scope = "otp_verify"
 
 
-class OTPResendThrottle(UserRateThrottle):
-    """3 renvois d'OTP par heure par utilisateur."""
+class OTPResendThrottle(AnonRateThrottle):
+    """3 renvois d'OTP par heure par IP — endpoint AllowAny, utilisateurs non authentifiés."""
 
     rate = "3/hour"
     scope = "otp_resend"
