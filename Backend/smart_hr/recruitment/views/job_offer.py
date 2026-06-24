@@ -8,12 +8,33 @@ from smart_hr.users.permissions import IsRH
 
 
 class JobOfferViewSet(viewsets.ModelViewSet):
-    """API des offres d'emploi, lecture publique et écriture RH/Admin."""
+    """API des offres d'emploi.
 
-    queryset = JobOffer.objects.all()
+    Règles de visibilité :
+    - RH/Admin : toutes les offres (ouvertes et fermées, internes et externes)
+    - Employé (authentifié, rôle EMPLOYEE) : offres ouvertes uniquement (internes + externes)
+    - Candidat (authentifié, rôle CANDIDATE) : offres ouvertes non-internes uniquement
+    - Non authentifié : offres ouvertes non-internes (pour page de carrières publique)
+    """
+
     serializer_class = JobOfferSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ["title", "department", "description"]
+
+    def get_queryset(self):
+        user = self.request.user
+        base = JobOffer.objects.all()
+
+        if not user.is_authenticated:
+            return base.filter(status=JobOffer.Status.OPEN, is_internal=False)
+
+        if user.role in ["ADMIN", "RH"]:
+            return base
+
+        if user.role == "EMPLOYEE":
+            return base.filter(status=JobOffer.Status.OPEN)
+
+        return base.filter(status=JobOffer.Status.OPEN, is_internal=False)
 
     def get_permissions(self):
         """Autorise la consultation publique et protège les actions d'édition."""

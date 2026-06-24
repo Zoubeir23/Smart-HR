@@ -22,6 +22,7 @@ class JobOfferSerializer(serializers.ModelSerializer):
             "requirements_list",
             "salary_range",
             "status",
+            "is_internal",
             "created_by",
             "created_at",
             "applications_count",
