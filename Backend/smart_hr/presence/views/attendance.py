@@ -200,3 +200,31 @@ class AttendanceViewSet(viewsets.ModelViewSet):
                 "by_department": by_department,
             },
         )
+
+    @action(detail=False, methods=["get"], url_path="export", permission_classes=[IsRH])
+    def export(self, request):
+        """Export CSV ou XLSX des présences (RH/Admin uniquement).
+
+        Query params : format=csv (défaut) | xlsx
+        """
+        from smart_hr.core.export_utils import export_response
+
+        export_format = request.query_params.get("format", "csv").lower()
+        queryset = self.get_queryset().select_related("employee__user", "employee__department")
+
+        rows = [
+            {
+                "ID": attendance.pk,
+                "Employé": attendance.employee.user.get_full_name() or attendance.employee.user.email,
+                "Email employé": attendance.employee.user.email,
+                "Département": attendance.employee.department.name if attendance.employee.department else "",
+                "Date": str(attendance.date),
+                "Statut": attendance.get_status_display(),
+                "Heure arrivée": str(attendance.check_in) if attendance.check_in else "",
+                "Heure départ": str(attendance.check_out) if attendance.check_out else "",
+                "Note": attendance.note or "",
+            }
+            for attendance in queryset
+        ]
+
+        return export_response(rows, "presences", export_format, sheet_name="Présences")
