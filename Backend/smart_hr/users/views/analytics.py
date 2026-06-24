@@ -50,9 +50,9 @@ class HRAnalyticsView(APIView):
     permission_classes = [IsRH]
 
     def get(self, request) -> Response:
-        from smart_hr.conge.models import Conge
+        from smart_hr.conge.models import LeaveRequest as Conge
         from smart_hr.personnel.models import Employee
-        from smart_hr.presence.models import Presence
+        from smart_hr.presence.models import Attendance as Presence
 
         employees = Employee.objects.select_related("department", "user").filter(status="active")
 
@@ -129,10 +129,10 @@ class HRAnalyticsView(APIView):
         """Resume des conges de l'annee en cours."""
         current_year = timezone.now().year
         leaves_this_year = conge_model.objects.filter(
-            date_debut__year=current_year,
+            start_date__year=current_year,
         )
         total = leaves_this_year.count()
-        by_status = dict(leaves_this_year.values("statut").annotate(count=Count("id")).values_list("statut", "count"))
+        by_status = dict(leaves_this_year.values("status").annotate(count=Count("id")).values_list("status", "count"))
         return {
             "total": total,
             "approved": by_status.get("approved", 0),
@@ -145,7 +145,7 @@ class HRAnalyticsView(APIView):
         now = timezone.now()
         presences_this_month = presence_model.objects.filter(date__year=now.year, date__month=now.month)
         total = presences_this_month.count()
-        by_status = dict(presences_this_month.values("statut").annotate(count=Count("id")).values_list("statut", "count"))
+        by_status = dict(presences_this_month.values("status").annotate(count=Count("id")).values_list("status", "count"))
         return {
             "total": total,
             "present": by_status.get("present", 0),
