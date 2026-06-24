@@ -195,24 +195,22 @@ class InterviewSessionFeedbackCreateView(APIView):
             for msg in conversation
         ]
 
-        feedback_data: dict = {}
-        recommended = False
-
         try:
             conversation_text = "\n".join(f"{msg['role'].upper()} : {msg['content']}" for msg in sanitized_conversation)
             prompt = _FEEDBACK_PROMPT.format(conversation=conversation_text)
             provider = get_llm_provider()
-            raw = provider.extract_json(prompt).strip()
-            if raw.startswith("```"):
-                raw = raw.split("```")[1]
-                if raw.startswith("json"):
-                    raw = raw[4:]
-                raw = raw.strip()
+            from smart_hr.ai.llm_providers.base import strip_llm_code_fences
+
+            raw = strip_llm_code_fences(provider.extract_json(prompt))
             parsed = json.loads(raw)
-            feedback_data = parsed.get("feedback", parsed)
+            feedback_data: dict = parsed.get("feedback", parsed)
             recommended = bool(feedback_data.get("recommendation", False))
         except Exception:
             logger.exception("Erreur generation feedback session entretien token=%s", token)
+            return Response(
+                {"detail": "Le service d'analyse de feedback est temporairement indisponible."},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE,
+            )
 
         record = InterviewSessionFeedback.objects.create(
             session=session,
@@ -247,7 +245,7 @@ class InterviewSessionListView(APIView):
                 "duration": session.duration,
                 "interview_type": session.interview_type,
                 "status": session.status,
-                "feedbacks_count": session.feedbacks.count(),
+                "feedbacks_count": len(session.feedbacks.all()),
                 "created_at": session.created_at,
             }
             for session in sessions
