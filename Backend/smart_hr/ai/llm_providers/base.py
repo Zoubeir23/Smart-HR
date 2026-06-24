@@ -1,7 +1,22 @@
 from __future__ import annotations
 
+import re
 from abc import ABC
 from abc import abstractmethod
+
+_CODE_FENCE_RE = re.compile(r"```(?:json)?\s*([\s\S]*?)```", re.IGNORECASE)
+
+
+def strip_llm_code_fences(raw: str) -> str:
+    """Extrait le contenu d'un bloc markdown ```json...``` retourné par un LLM.
+
+    Gère les variantes : ```json, ```, et le JSON brut sans balises.
+    """
+    raw = raw.strip()
+    match = _CODE_FENCE_RE.search(raw)
+    if match:
+        return match.group(1).strip()
+    return raw
 
 
 class BaseLLMProvider(ABC):
