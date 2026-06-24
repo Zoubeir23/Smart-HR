@@ -15,6 +15,14 @@ class Document(TimeStampedModel):
         ID_CARD = "id_card", "Carte d'identité"
         OTHER = "other", "Autre"
 
+    class Category(models.TextChoices):
+        ADMINISTRATIVE = "administrative", "Administratif"
+        LEGAL = "legal", "Juridique"
+        TRAINING = "training", "Formation"
+        MEDICAL = "medical", "Médical"
+        FINANCIAL = "financial", "Financier"
+        OTHER = "other", "Autre"
+
     employee = models.ForeignKey(
         Employee,
         on_delete=models.CASCADE,
@@ -25,6 +33,16 @@ class Document(TimeStampedModel):
         max_length=20,
         choices=DocumentType.choices,
         default=DocumentType.OTHER,
+    )
+    category = models.CharField(
+        max_length=30,
+        choices=Category.choices,
+        default=Category.OTHER,
+        help_text="Catégorie métier du document pour faciliter l'organisation.",
+    )
+    version = models.PositiveSmallIntegerField(
+        default=1,
+        help_text="Numéro de version du document (incrémenté manuellement lors d'un remplacement).",
     )
     file = models.FileField(
         upload_to="documents/",
