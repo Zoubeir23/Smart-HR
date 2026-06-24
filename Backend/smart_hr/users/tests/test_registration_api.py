@@ -14,7 +14,7 @@ VERIFY_OTP_URL = "/api/v1/auth/verify-otp/"
 RESEND_OTP_URL = "/api/v1/auth/resend-otp/"
 
 
-@pytest.fixture()
+@pytest.fixture
 def unverified_candidate(db):
     return User.objects.create_user(
         username="unverified_cand",
@@ -25,7 +25,7 @@ def unverified_candidate(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def verified_candidate(db):
     return User.objects.create_user(
         username="verified_cand",
