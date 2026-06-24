@@ -14,17 +14,17 @@ pytestmark = pytest.mark.django_db
 LIST_URL = "/api/v1/personnel/employees/"
 
 
-@pytest.fixture()
+@pytest.fixture
 def department(db):
     return Department.objects.create(name="Engineering")
 
 
-@pytest.fixture()
+@pytest.fixture
 def position(db):
     return Position.objects.create(title="Backend Developer")
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_user(db):
     return User.objects.create_user(
         username="admin_emp",
@@ -35,7 +35,7 @@ def admin_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def rh_user(db):
     return User.objects.create_user(
         username="rh_emp",
@@ -46,7 +46,7 @@ def rh_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee_user(db):
     return User.objects.create_user(
         username="emp_emp",
@@ -57,7 +57,7 @@ def employee_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee(employee_user, department, position):
     return Employee.objects.create(
         user=employee_user,
@@ -68,7 +68,7 @@ def employee(employee_user, department, position):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def rh_employee(rh_user, department):
     return Employee.objects.create(
         user=rh_user,
