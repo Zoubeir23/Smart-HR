@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='application',
             name='internal_note',
-            field=models.TextField(blank=True, help_text='Note interne RH — jamais visible par le candidat.'),
+            field=models.TextField(blank=True, default='', help_text='Note interne RH — jamais visible par le candidat.'),
         ),
     ]
