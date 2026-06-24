@@ -29,7 +29,7 @@ class JobOfferViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        base = JobOffer.objects.annotate(applications_count=Count("applications"))
+        base = JobOffer.objects.annotate(applications_count=Count("applications")).order_by("-created_at")
 
         if not user.is_authenticated:
             return base.filter(status=JobOffer.Status.OPEN, is_internal=False)
