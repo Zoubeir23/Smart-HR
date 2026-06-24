@@ -163,6 +163,7 @@ lint.ignore = [
   "PTH123", # open() → Path.open()
   "RUF012", # Mutable class attributes should be annotated with `typing.ClassVar`
   "S101",   # Use of assert detected
+  "S106",   # Hardcoded password in test fixtures
   "S110",   # try-except-pass (used for optional feature detection)
   # Random
   "S311",   # Standard random for non-security use
