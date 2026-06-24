@@ -122,14 +122,17 @@ class InterviewSessionDetailView(APIView):
 
     def get(self, request, token) -> Response:
         try:
-            session = InterviewSession.objects.get(
-                token=token,
-                status=InterviewSession.Status.ACTIVE,
-            )
+            session = InterviewSession.objects.get(token=token)
         except InterviewSession.DoesNotExist:
             return Response(
                 {"detail": "Lien d'entretien invalide ou expire."},
                 status=status.HTTP_404_NOT_FOUND,
+            )
+
+        if session.status == InterviewSession.Status.CLOSED:
+            return Response(
+                {"detail": "Cette session d'entretien est terminee."},
+                status=status.HTTP_410_GONE,
             )
 
         return Response(
