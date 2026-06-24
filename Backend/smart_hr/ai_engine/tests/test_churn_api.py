@@ -18,7 +18,7 @@ LIST_URL = "/api/v1/ai-engine/churn-predictions/"
 HIGH_RISK_URL = "/api/v1/ai-engine/churn-predictions/high-risk/"
 
 
-@pytest.fixture()
+@pytest.fixture
 def rh_user(db):
     return User.objects.create_user(
         username="rh_churn",
@@ -29,7 +29,7 @@ def rh_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee_user(db):
     return User.objects.create_user(
         username="emp_churn",
@@ -40,17 +40,17 @@ def employee_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def department(db):
     return Department.objects.create(name="Tech Churn")
 
 
-@pytest.fixture()
+@pytest.fixture
 def position(db):
     return Position.objects.create(title="Développeur Churn")
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee(employee_user, department, position):
     return Employee.objects.create(
         user=employee_user,
@@ -61,7 +61,7 @@ def employee(employee_user, department, position):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def churn_prediction(employee):
     return ChurnPrediction.objects.create(
         employee=employee,
@@ -73,7 +73,7 @@ def churn_prediction(employee):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def low_risk_prediction(employee):
     return ChurnPrediction.objects.create(
         employee=employee,
