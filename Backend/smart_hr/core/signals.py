@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 import threading
 
+from django.db import transaction
 from django.db.models.signals import post_delete
 from django.db.models.signals import post_save
 from django.dispatch import receiver
@@ -26,9 +27,18 @@ def _create_notification(*, recipient_id: int, notification_type: str, title: st
 
 
 def _send_email_async(func, **kwargs) -> None:
-    """Lance l'envoi email dans un thread séparé pour ne pas bloquer la requête."""
-    thread = threading.Thread(target=func, kwargs=kwargs, daemon=True)
-    thread.start()
+    """Lance l'envoi email dans un thread non-daemon après commit de la transaction.
+
+    Non-daemon : le process attend la fin du thread lors d'un shutdown gracieux.
+    on_commit : l'email n'est envoyé que si la transaction DB a été validée — évite
+    les emails fantômes pour des enregistrements finalement rollbackés.
+    """
+
+    def _spawn():
+        thread = threading.Thread(target=func, kwargs=kwargs, daemon=False)
+        thread.start()
+
+    transaction.on_commit(_spawn)
 
 
 def _get_rh_and_admin_users():
