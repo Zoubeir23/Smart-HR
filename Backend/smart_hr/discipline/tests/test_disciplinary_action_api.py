@@ -112,9 +112,7 @@ class TestDisciplinaryActionVisibility:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 2
 
-    def test_employee_sees_only_own_actions(
-        self, db, employee_user, warning_action, reprimand_action
-    ):
+    def test_employee_sees_only_own_actions(self, db, employee_user, warning_action, reprimand_action):
         client = APIClient()
         client.force_authenticate(user=employee_user)
         response = client.get(LIST_URL)
@@ -122,9 +120,7 @@ class TestDisciplinaryActionVisibility:
         assert response.data["count"] == 1
         assert response.data["results"][0]["reason"] == "Retards répétés"
 
-    def test_employee_without_employee_profile_sees_nothing(
-        self, db, reprimand_action
-    ):
+    def test_employee_without_employee_profile_sees_nothing(self, db, reprimand_action):
         user_no_profile = User.objects.create_user(
             username="no_profile_disc",
             email="no_profile_disc@test.com",
@@ -150,9 +146,7 @@ class TestDisciplinaryActionVisibility:
         assert response.status_code == status.HTTP_200_OK
         assert response.data["count"] == 1
 
-    def test_rh_can_filter_by_employee_id(
-        self, db, rh_user, employee, warning_action, reprimand_action
-    ):
+    def test_rh_can_filter_by_employee_id(self, db, rh_user, employee, warning_action, reprimand_action):
         client = APIClient()
         client.force_authenticate(user=rh_user)
         response = client.get(LIST_URL, {"employee_id": employee.pk})
