@@ -1,5 +1,4 @@
 import pytest
-from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -9,7 +8,7 @@ from smart_hr.users.models import User
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def rh_user(db):
     return User.objects.create_user(
         username="rh_test",
@@ -20,7 +19,7 @@ def rh_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def candidate_user(db):
     return User.objects.create_user(
         username="cand_test",
@@ -31,7 +30,7 @@ def candidate_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee_user(db):
     return User.objects.create_user(
         username="emp_test",
@@ -42,7 +41,7 @@ def employee_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def job_offer(rh_user):
     return JobOffer.objects.create(
         title="Développeur Django",
@@ -54,7 +53,7 @@ def job_offer(rh_user):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def internal_job_offer(rh_user):
     return JobOffer.objects.create(
         title="Poste Interne Senior",
