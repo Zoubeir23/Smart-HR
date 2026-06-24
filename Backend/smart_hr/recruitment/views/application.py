@@ -14,6 +14,7 @@ from smart_hr.core.email_service import send_application_status_email
 from smart_hr.core.email_service import send_interview_invitation_email
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.serializers import ApplicationSerializer
+from smart_hr.recruitment.serializers import CandidateApplicationSerializer
 from smart_hr.recruitment.services.cv_analysis_service import analyze_cv_against_job_offer
 from smart_hr.recruitment.services.cv_analysis_service import extract_text_from_pdf
 from smart_hr.recruitment.services.cv_analysis_service import generate_interview_questions_from_cv
@@ -27,6 +28,12 @@ class ApplicationViewSet(viewsets.ModelViewSet):
     """Gestion des candidatures avec analyse IA de CV et notifications email."""
 
     serializer_class = ApplicationSerializer
+
+    def get_serializer_class(self):
+        """Masque internal_note aux candidats — seuls RH/Admin ont le serializer complet."""
+        if self.request.user.role in ["ADMIN", "RH"]:
+            return ApplicationSerializer
+        return CandidateApplicationSerializer
 
     def get_queryset(self):
         """Retourne toutes les candidatures pour RH/Admin, sinon celles du candidat.
