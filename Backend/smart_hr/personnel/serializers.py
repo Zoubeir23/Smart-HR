@@ -212,14 +212,30 @@ class EmployeeSerializer(serializers.ModelSerializer):
         return data
 
 
-class EmployeeSelfSerializer(EmployeeSerializer):
-    """Serializer restreint pour le profil personnel d'un employé.
+_PII_FIELDS = {"cin", "cnss_number", "address", "emergency_contact"}
+_RH_ONLY_FIELDS = {"churn_risk"}
 
-    Exclut churn_risk (score interne RH non destiné à l'employé).
+
+class EmployeeListSerializer(EmployeeSerializer):
+    """Serializer pour la liste des employés (RH/Admin) — exclut les champs PII sensibles.
+
+    CIN, CNSS, adresse et contact d'urgence ne sont exposés qu'en détail (retrieve),
+    jamais en bulk listing pour limiter la surface d'exposition des données personnelles.
     """
 
     class Meta(EmployeeSerializer.Meta):
-        fields = [f for f in EmployeeSerializer.Meta.fields if f != "churn_risk"]
+        fields = [f for f in EmployeeSerializer.Meta.fields if f not in _PII_FIELDS]
+
+
+class EmployeeSelfSerializer(EmployeeSerializer):
+    """Serializer pour le profil personnel d'un employé (son propre compte).
+
+    Exclut churn_risk (score interne RH) mais conserve les champs PII
+    car l'employé consulte ses propres données.
+    """
+
+    class Meta(EmployeeSerializer.Meta):
+        fields = [f for f in EmployeeSerializer.Meta.fields if f not in _RH_ONLY_FIELDS]
 
 
 class ContractSerializer(serializers.ModelSerializer):
