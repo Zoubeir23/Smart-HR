@@ -2,9 +2,79 @@ from __future__ import annotations
 
 from decimal import Decimal
 
+from django.utils import translation
 from rest_framework import serializers
 
+from smart_hr.paiement.models import BulletinPaie
+from smart_hr.paiement.models import LigneBulletin
 from smart_hr.paiement.models import Payroll
+
+
+class LigneBulletinSerializer(serializers.ModelSerializer):
+    nature_display = serializers.CharField(source="get_nature_display", read_only=True)
+
+    class Meta:
+        model = LigneBulletin
+        fields = ["id", "libelle", "nature", "nature_display", "base", "taux", "montant", "ordre_affichage"]
+        read_only_fields = fields
+
+
+class BulletinPaieSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    employee_matricule = serializers.CharField(source="employee.matricule", read_only=True)
+    department_name = serializers.CharField(source="employee.department.name", read_only=True, default="")
+    position_title = serializers.CharField(source="employee.position.title", read_only=True, default="")
+    pays_nom = serializers.CharField(source="employee.pays.nom", read_only=True, default="")
+    devise = serializers.CharField(source="employee.pays.devise", read_only=True, default="")
+    statut_display = serializers.CharField(source="get_statut_display", read_only=True)
+    periode_display = serializers.SerializerMethodField()
+    lignes = LigneBulletinSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = BulletinPaie
+        fields = [
+            "id",
+            "employee",
+            "employee_name",
+            "employee_matricule",
+            "department_name",
+            "position_title",
+            "pays_nom",
+            "devise",
+            "periode",
+            "periode_display",
+            "salaire_brut",
+            "cotisations_salariales",
+            "cotisations_patronales",
+            "net_imposable",
+            "impot",
+            "net_a_payer",
+            "statut",
+            "statut_display",
+            "lignes",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = [
+            "salaire_brut",
+            "cotisations_salariales",
+            "cotisations_patronales",
+            "net_imposable",
+            "impot",
+            "net_a_payer",
+            "statut_display",
+            "lignes",
+            "created_at",
+            "updated_at",
+        ]
+
+    def get_periode_display(self, obj: BulletinPaie) -> str:
+        if not obj.periode:
+            return ""
+        with translation.override("fr"):
+            from django.utils.formats import date_format
+
+            return date_format(obj.periode, "F Y")
 
 
 class PayrollSerializer(serializers.ModelSerializer):
