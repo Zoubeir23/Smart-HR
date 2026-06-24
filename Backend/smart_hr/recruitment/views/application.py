@@ -419,3 +419,18 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             {"detail": "Candidature anonymisée avec succès.", "id": application.pk},
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=True, methods=["patch"], url_path="add-note", permission_classes=[IsRH])
+    def add_note(self, request, pk=None):
+        """Ajoute ou met à jour la note interne RH sur une candidature (jamais visible par le candidat).
+
+        Body : { "internal_note": "..." }
+        """
+        application = self.get_object()
+        note = request.data.get("internal_note", "")
+        application.internal_note = note
+        application.save(update_fields=["internal_note", "updated_at"])
+        return Response(
+            {"id": application.pk, "internal_note": application.internal_note},
+            status=status.HTTP_200_OK,
+        )
