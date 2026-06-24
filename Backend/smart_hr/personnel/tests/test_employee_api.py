@@ -163,7 +163,7 @@ class TestEmployeeSearch:
     def test_search_by_name(self, rh_user, employee):
         client = APIClient()
         client.force_authenticate(user=rh_user)
-        name = employee_user_name = employee.user.first_name or employee.user.username
+        name = employee.user.first_name or employee.user.username
         response = client.get(LIST_URL + f"?search={name}")
         assert response.status_code == status.HTTP_200_OK
 
