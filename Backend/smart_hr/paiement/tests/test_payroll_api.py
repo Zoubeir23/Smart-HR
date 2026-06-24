@@ -16,7 +16,7 @@ pytestmark = pytest.mark.django_db
 LIST_URL = "/api/v1/paiement/payrolls/"
 
 
-@pytest.fixture()
+@pytest.fixture
 def rh_user(db):
     return User.objects.create_user(
         username="rh_payroll",
@@ -27,7 +27,7 @@ def rh_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee_user(db):
     return User.objects.create_user(
         username="emp_payroll",
@@ -38,17 +38,17 @@ def employee_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def department(db):
     return Department.objects.create(name="Paie Dept")
 
 
-@pytest.fixture()
+@pytest.fixture
 def position(db):
     return Position.objects.create(title="Analyste Paie")
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee(employee_user, department, position):
     return Employee.objects.create(
         user=employee_user,
@@ -59,7 +59,7 @@ def employee(employee_user, department, position):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def payroll(employee):
     return Payroll.objects.create(
         employee=employee,
