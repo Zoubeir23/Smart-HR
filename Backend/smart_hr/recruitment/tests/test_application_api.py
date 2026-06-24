@@ -1,5 +1,3 @@
-import io
-
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
@@ -12,7 +10,7 @@ from smart_hr.users.models import User
 pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture()
+@pytest.fixture
 def rh_user(db):
     return User.objects.create_user(
         username="rh_app",
@@ -23,7 +21,7 @@ def rh_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def candidate_user(db):
     return User.objects.create_user(
         username="cand_app",
@@ -34,7 +32,7 @@ def candidate_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def other_candidate(db):
     return User.objects.create_user(
         username="cand2_app",
@@ -45,7 +43,7 @@ def other_candidate(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def open_job(rh_user):
     return JobOffer.objects.create(
         title="Dev Backend",
@@ -56,13 +54,13 @@ def open_job(rh_user):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def fake_cv():
     content = b"%PDF-1.4 fake pdf content for testing purposes"
     return SimpleUploadedFile("cv_test.pdf", content, content_type="application/pdf")
 
 
-@pytest.fixture()
+@pytest.fixture
 def application(candidate_user, open_job, fake_cv):
     return Application.objects.create(
         job_offer=open_job,
