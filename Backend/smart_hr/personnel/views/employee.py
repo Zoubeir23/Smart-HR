@@ -369,7 +369,7 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 "Poste": employee.position.title if employee.position else "",
                 "Statut": employee.status,
                 "Date d'embauche": str(employee.hire_date) if employee.hire_date else "",
-                "Salaire de base": str(employee.salary) if employee.salary else "",
+                "Salaire de base": str(employee.salary) if employee.salary is not None else "",
                 "CIN": employee.cin or "",
             }
             for employee in queryset
