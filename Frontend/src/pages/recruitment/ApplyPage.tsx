@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
@@ -47,6 +47,15 @@ const ApplyPage = () => {
 
   const [fileName, setFileName] = useState<string>('');
   const [submitted, setSubmitted] = useState(false);
+  const navigationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (navigationTimerRef.current !== null) {
+        clearTimeout(navigationTimerRef.current);
+      }
+    };
+  }, []);
 
   const { data: jobOffer, isLoading: isLoadingJob, error: jobError } = useQuery({
     queryKey: ['job', jobId],
@@ -74,7 +83,7 @@ const ApplyPage = () => {
         title: 'Candidature envoyée',
         description: 'Votre candidature a bien été enregistrée.',
       });
-      setTimeout(() => navigate('/my-applications'), 3000);
+      navigationTimerRef.current = setTimeout(() => navigate('/my-applications'), 3000);
     },
     onError: (err: Error & { response?: { data?: { detail?: string } } }) => {
       const apiMessage = err?.response?.data?.detail;
