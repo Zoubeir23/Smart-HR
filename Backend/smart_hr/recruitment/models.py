@@ -105,6 +105,11 @@ class Application(TimeStampedModel):
         default=False,
         help_text="True si les donnees personnelles ont ete purgees (RGPD droit a l'oubli).",
     )
+    internal_note = models.TextField(
+        blank=True,
+        default="",
+        help_text="Note interne RH — jamais visible par le candidat.",
+    )
 
     class Meta:
         verbose_name = "Candidature"

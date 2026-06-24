@@ -30,6 +30,8 @@ class JobOfferSerializer(serializers.ModelSerializer):
 
 
 class ApplicationSerializer(serializers.ModelSerializer):
+    """Serializer complet — réservé aux RH/Admin (expose internal_note)."""
+
     candidate_name = serializers.CharField(
         source="candidate.get_full_name",
         read_only=True,
@@ -53,6 +55,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "gdpr_consent",
             "search_keywords",
             "onboarded",
+            "internal_note",
             "created_at",
         ]
         read_only_fields = [
@@ -91,6 +94,13 @@ class ApplicationSerializer(serializers.ModelSerializer):
         if mime != "application/pdf":
             raise serializers.ValidationError("Le CV doit être un fichier PDF valide.")
         return value
+
+
+class CandidateApplicationSerializer(ApplicationSerializer):
+    """Serializer restreint pour les candidats — omet internal_note."""
+
+    class Meta(ApplicationSerializer.Meta):
+        fields = [f for f in ApplicationSerializer.Meta.fields if f != "internal_note"]
 
 
 class ApplicationDocumentSerializer(serializers.ModelSerializer):
