@@ -16,12 +16,16 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 from smart_hr.conge.models import LeaveRequest
+from smart_hr.formation.models import Formation
+from smart_hr.formation.models import Meeting
 from smart_hr.paiement.models import Payroll
 from smart_hr.personnel.models import Department
 from smart_hr.personnel.models import Employee
 from smart_hr.personnel.models import Position
+from smart_hr.presence.models import Attendance
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.models import JobOffer
 from smart_hr.tache.models import Task
@@ -510,6 +514,8 @@ class Command(BaseCommand):
             job_offers = self._seed_job_offers(rh_user)
             self._seed_applications(job_offers)
             self._seed_payrolls(employees)
+            self._seed_attendance(employees)
+            self._seed_formations()
 
         self.stdout.write(
             self.style.SUCCESS("\n Smart-HR demo data seeded successfully!\n"),
@@ -894,6 +900,172 @@ class Command(BaseCommand):
                     created_count += 1
 
         self.stdout.write(f"    + {created_count} payroll records created")
+
+    # ------------------------------------------------------------------
+    # Attendance (7 derniers jours ouvrés)
+    # ------------------------------------------------------------------
+
+    def _seed_attendance(self, employees: list) -> None:
+        self.stdout.write("  Creating attendance records (last 7 days)...")
+        today = date.today()
+        created_count = 0
+
+        for employee in employees[:8]:
+            for days_ago in range(7):
+                record_date = today - timedelta(days=days_ago)
+                if record_date.weekday() >= 5:
+                    continue
+
+                emp_index = employees.index(employee)
+                if days_ago == 3 and emp_index == 1:
+                    status = Attendance.Status.LATE
+                elif days_ago == 5 and emp_index == 2:
+                    status = Attendance.Status.ABSENT
+                else:
+                    status = Attendance.Status.PRESENT
+
+                check_in = "08:30:00" if status != Attendance.Status.ABSENT else None
+                check_out = "17:30:00" if status != Attendance.Status.ABSENT else None
+
+                _, created = Attendance.objects.get_or_create(
+                    employee=employee,
+                    date=record_date,
+                    defaults={
+                        "check_in": check_in,
+                        "check_out": check_out,
+                        "status": status,
+                    },
+                )
+                if created:
+                    created_count += 1
+
+        self.stdout.write(f"    + {created_count} attendance records created")
+
+    # ------------------------------------------------------------------
+    # Formations & Meetings
+    # ------------------------------------------------------------------
+
+    def _seed_formations(self) -> None:
+        self.stdout.write("  Creating formations and meetings...")
+        today = date.today()
+        created_count = 0
+
+        formations_data = [
+            {
+                "title": "Formation Django REST Framework Avancé",
+                "description": ("Maîtriser les ViewSets, Serializers, Permissions et l'optimisation des requêtes avec DRF."),
+                "start_date": timezone.make_aware(
+                    timezone.datetime(today.year, today.month, today.day, 9, 0) - timedelta(days=14),
+                ),
+                "end_date": timezone.make_aware(
+                    timezone.datetime(today.year, today.month, today.day, 17, 0) - timedelta(days=12),
+                ),
+                "instructor": "Dr. Ibrahima Sow",
+                "meetings": [
+                    {
+                        "title": "Introduction et ViewSets",
+                        "start_time": timezone.make_aware(
+                            timezone.datetime(today.year, today.month, today.day, 9, 0) - timedelta(days=14),
+                        ),
+                        "end_time": timezone.make_aware(
+                            timezone.datetime(today.year, today.month, today.day, 12, 0) - timedelta(days=14),
+                        ),
+                        "status": Meeting.Status.COMPLETED,
+                    },
+                    {
+                        "title": "Authentification JWT et Permissions",
+                        "start_time": timezone.make_aware(
+                            timezone.datetime(today.year, today.month, today.day, 14, 0) - timedelta(days=14),
+                        ),
+                        "end_time": timezone.make_aware(
+                            timezone.datetime(today.year, today.month, today.day, 17, 0) - timedelta(days=14),
+                        ),
+                        "status": Meeting.Status.COMPLETED,
+                    },
+                ],
+            },
+            {
+                "title": "Atelier React + TypeScript pour développeurs Backend",
+                "description": (
+                    "Introduction au développement frontend avec React 18 et TypeScript. "
+                    "Focus sur les hooks, React Query et l'intégration avec une API REST."
+                ),
+                "start_date": timezone.make_aware(
+                    timezone.datetime(today.year, today.month, today.day, 9, 0) + timedelta(days=7),
+                ),
+                "end_date": timezone.make_aware(
+                    timezone.datetime(today.year, today.month, today.day, 17, 0) + timedelta(days=9),
+                ),
+                "instructor": "Mme Aïssatou Diallo",
+                "meetings": [
+                    {
+                        "title": "React Hooks et State Management",
+                        "start_time": timezone.make_aware(
+                            timezone.datetime(today.year, today.month, today.day, 9, 0) + timedelta(days=7),
+                        ),
+                        "end_time": timezone.make_aware(
+                            timezone.datetime(today.year, today.month, today.day, 12, 0) + timedelta(days=7),
+                        ),
+                        "status": Meeting.Status.SCHEDULED,
+                        "meeting_link": "https://zoom.us/j/demo123456",
+                    },
+                ],
+            },
+            {
+                "title": "Sécurité des Applications Web",
+                "description": (
+                    "Découvrez les failles OWASP Top 10 et comment les prévenir. "
+                    "Authentification sécurisée, protection CSRF, XSS, injection SQL."
+                ),
+                "start_date": timezone.make_aware(
+                    timezone.datetime(today.year, today.month, today.day, 9, 0) + timedelta(days=21),
+                ),
+                "end_date": timezone.make_aware(
+                    timezone.datetime(today.year, today.month, today.day, 17, 0) + timedelta(days=22),
+                ),
+                "instructor": "M. Omar Ba",
+                "meetings": [
+                    {
+                        "title": "OWASP Top 10 et bonnes pratiques",
+                        "start_time": timezone.make_aware(
+                            timezone.datetime(today.year, today.month, today.day, 9, 0) + timedelta(days=21),
+                        ),
+                        "end_time": timezone.make_aware(
+                            timezone.datetime(today.year, today.month, today.day, 17, 0) + timedelta(days=21),
+                        ),
+                        "status": Meeting.Status.SCHEDULED,
+                        "meeting_link": "https://zoom.us/j/demo789012",
+                    },
+                ],
+            },
+        ]
+
+        for formation_data in formations_data:
+            meetings = formation_data.pop("meetings", [])
+            formation, created = Formation.objects.get_or_create(
+                title=formation_data["title"],
+                defaults={
+                    "description": formation_data["description"],
+                    "start_date": formation_data["start_date"],
+                    "end_date": formation_data["end_date"],
+                    "instructor": formation_data["instructor"],
+                },
+            )
+            label = "+" if created else "~"
+            self.stdout.write(f"    {label} {formation.title}")
+            if created:
+                created_count += 1
+                for meeting_data in meetings:
+                    Meeting.objects.create(
+                        formation=formation,
+                        title=meeting_data["title"],
+                        start_time=meeting_data["start_time"],
+                        end_time=meeting_data["end_time"],
+                        status=meeting_data["status"],
+                        meeting_link=meeting_data.get("meeting_link"),
+                    )
+
+        self.stdout.write(f"    + {created_count} formations created")
 
     # ------------------------------------------------------------------
     # Summary
