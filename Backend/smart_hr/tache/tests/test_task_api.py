@@ -15,17 +15,17 @@ pytestmark = pytest.mark.django_db
 LIST_URL = "/api/v1/tache/tasks/"
 
 
-@pytest.fixture()
+@pytest.fixture
 def department(db):
     return Department.objects.create(name="Dev")
 
 
-@pytest.fixture()
+@pytest.fixture
 def position(db):
     return Position.objects.create(title="Développeur")
 
 
-@pytest.fixture()
+@pytest.fixture
 def rh_user(db):
     return User.objects.create_user(
         username="rh_task",
@@ -36,7 +36,7 @@ def rh_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee_user(db):
     return User.objects.create_user(
         username="emp_task",
@@ -47,7 +47,7 @@ def employee_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee(employee_user, department, position):
     return Employee.objects.create(
         user=employee_user,
@@ -57,7 +57,7 @@ def employee(employee_user, department, position):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def task(employee, rh_user):
     return Task.objects.create(
         title="Implémenter le module paie",
