@@ -53,6 +53,7 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "gdpr_consent",
             "search_keywords",
             "onboarded",
+            "internal_note",
             "created_at",
         ]
         read_only_fields = [
