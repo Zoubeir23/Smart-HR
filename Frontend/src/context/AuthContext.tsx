@@ -89,10 +89,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             isLoading: false,
           });
         })
-        .catch(() => {
+        .catch((error: unknown) => {
+          console.error('[AuthContext] Échec de la récupération du profil utilisateur :', error);
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
-          setState(prev => ({ ...prev, isLoading: false }));
+          setState(prev => ({ ...prev, isAuthenticated: false, user: null, accessToken: null, refreshToken: null, isLoading: false }));
         });
     } else {
       setState(prev => ({ ...prev, isLoading: false }));
