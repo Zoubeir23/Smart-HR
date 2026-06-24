@@ -409,3 +409,33 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+    @action(detail=False, methods=["get"], url_path="export", permission_classes=[IsRHOrDepartmentManager])
+    def export(self, request):
+        """Export CSV ou XLSX des demandes de congés.
+
+        Query params : format=csv (défaut) | xlsx
+        """
+        from smart_hr.core.export_utils import export_response
+
+        export_format = request.query_params.get("format", "csv").lower()
+        queryset = self.get_queryset().select_related("employee__user", "approved_by")
+
+        rows = [
+            {
+                "ID": leave.pk,
+                "Employé": leave.employee.user.get_full_name() or leave.employee.user.email,
+                "Email employé": leave.employee.user.email,
+                "Type de congé": leave.get_leave_type_display(),
+                "Date début": str(leave.start_date),
+                "Date fin": str(leave.end_date),
+                "Jours ouvrés": leave.duration_working_days,
+                "Statut": leave.get_status_display(),
+                "Motif": leave.reason or "",
+                "Approuvé par": leave.approved_by.get_full_name() if leave.approved_by else "",
+                "Date création": str(leave.created_at.date()),
+            }
+            for leave in queryset
+        ]
+
+        return export_response(rows, "conges", export_format, sheet_name="Congés")
