@@ -52,10 +52,6 @@ class JobOffer(TimeStampedModel):
         return f"{self.title} ({self.get_status_display()})"
 
     @property
-    def applications_count(self):
-        return self.applications.count()
-
-    @property
     def requirements_list(self):
         return [r.strip() for r in self.requirements.split("\n") if r.strip()]
 
