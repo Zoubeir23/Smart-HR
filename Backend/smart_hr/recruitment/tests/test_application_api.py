@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
@@ -199,13 +201,15 @@ class TestApplicationStatusUpdate:
 
 
 class TestApplicationAnalyzeCV:
-    def test_analyze_cv_triggers_analysis(self, rh_user, application):
+    @patch("smart_hr.recruitment.views.application.analyze_cv_async")
+    def test_analyze_cv_triggers_analysis(self, mock_task, rh_user, application):
         client = APIClient()
         client.force_authenticate(user=rh_user)
         url = f"{LIST_URL}{application.pk}/analyze-cv/"
         response = client.post(url)
-        assert response.status_code == status.HTTP_200_OK
-        assert "matching_score" in response.data
+        assert response.status_code == status.HTTP_202_ACCEPTED
+        assert response.data["application_id"] == application.pk
+        mock_task.delay.assert_called_once_with(application.pk)
 
     def test_candidate_cannot_trigger_analysis(self, candidate_user, application):
         client = APIClient()
