@@ -50,9 +50,9 @@ class HRAnalyticsView(APIView):
     permission_classes = [IsRH]
 
     def get(self, request) -> Response:
-        from smart_hr.conge.models import Conge
+        from smart_hr.conge.models import LeaveRequest as Conge
         from smart_hr.personnel.models import Employee
-        from smart_hr.presence.models import Presence
+        from smart_hr.presence.models import Attendance as Presence
 
         employees = Employee.objects.select_related("department", "user").filter(status="active")
 
