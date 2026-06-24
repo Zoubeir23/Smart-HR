@@ -1,9 +1,10 @@
+import io
 import logging
 import os
 import uuid
-from pathlib import Path
 
-from django.conf import settings
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -99,24 +100,21 @@ def _generate_voice_response(question: str) -> str:
 
 
 def _generate_audio_file(text: str, voice: str) -> str | None:
-    """Génère un fichier MP3 via gTTS et retourne le chemin relatif MEDIA.
+    """Génère un fichier MP3 via gTTS et le persiste via default_storage (local ou S3/MinIO).
 
-    Retourne None si gTTS échoue (pas d'internet, quota, etc.).
+    Retourne le chemin de stockage relatif, ou None si gTTS échoue.
     """
     try:
         from gtts import gTTS
 
         lang = _GTTS_LANG_MAP.get(voice, "fr")
-        audio_dir = Path(settings.MEDIA_ROOT) / "audio"
-        audio_dir.mkdir(parents=True, exist_ok=True)
-
-        filename = f"voice_{uuid.uuid4().hex}.mp3"
-        filepath = audio_dir / filename
-
+        buffer = io.BytesIO()
         tts = gTTS(text=text, lang=lang)
-        tts.save(str(filepath))
+        tts.write_to_fp(buffer)
+        buffer.seek(0)
 
-        return f"audio/{filename}"
+        storage_path = f"audio/voice_{uuid.uuid4().hex}.mp3"
+        return default_storage.save(storage_path, ContentFile(buffer.read()))
     except Exception as exc:
         logger.warning("gTTS indisponible, audio_url sera None : %s", exc)
         return None
@@ -151,7 +149,7 @@ class VoiceAskView(APIView):
 
         audio_url = None
         if audio_relative_path:
-            audio_url = request.build_absolute_uri(settings.MEDIA_URL + audio_relative_path)
+            audio_url = default_storage.url(audio_relative_path)
 
         return Response(
             {
