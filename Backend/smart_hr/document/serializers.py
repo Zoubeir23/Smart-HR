@@ -17,6 +17,8 @@ class DocumentSerializer(serializers.ModelSerializer):
             "employee_name",
             "name",
             "document_type",
+            "category",
+            "version",
             "file",
             "uploaded_by",
             "created_at",
