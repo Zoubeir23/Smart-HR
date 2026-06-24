@@ -20,7 +20,6 @@ class SecurityHeadersMiddleware:
     def __call__(self, request):
         response = self.get_response(request)
         response.setdefault("X-Content-Type-Options", "nosniff")
-        response.setdefault("X-XSS-Protection", "1; mode=block")
         response.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
         response.setdefault(
             "Permissions-Policy",
