@@ -14,6 +14,7 @@ from smart_hr.core.email_service import send_employee_credentials_email
 from smart_hr.core.models import AuditLog
 from smart_hr.core.models import log_audit_action
 from smart_hr.personnel.models import Employee
+from smart_hr.personnel.serializers import EmployeeListSerializer
 from smart_hr.personnel.serializers import EmployeeSelfSerializer
 from smart_hr.personnel.serializers import EmployeeSerializer
 from smart_hr.users.models import User
@@ -52,9 +53,16 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         return qs.filter(user=user)
 
     def get_serializer_class(self):
-        """Utilise le serializer restreint pour les employés non-RH."""
+        """Sélectionne le serializer selon le rôle et l'action.
+
+        - list (RH/Admin) → EmployeeListSerializer : pas de PII en bulk
+        - retrieve (RH/Admin) → EmployeeSerializer : PII complète sur le détail
+        - tout (non-RH) → EmployeeSelfSerializer : profil propre sans churn_risk
+        """
         user = self.request.user
         if user.role in [User.Role.ADMIN, User.Role.RH]:
+            if self.action == "list":
+                return EmployeeListSerializer
             return EmployeeSerializer
         return EmployeeSelfSerializer
 
