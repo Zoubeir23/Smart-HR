@@ -5,6 +5,7 @@ import logging
 from django.db.models import Avg
 from django.db.models import Count
 from rest_framework import filters
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -45,7 +46,7 @@ class PerformanceEvaluationViewSet(viewsets.ModelViewSet):
                 base = base.filter(employee_id=employee_id)
             return base
 
-        return base.filter(employee=user)
+        return base.filter(employee__user=user)
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
@@ -53,13 +54,19 @@ class PerformanceEvaluationViewSet(viewsets.ModelViewSet):
         return [IsAuthenticated()]
 
     def perform_create(self, serializer):
-        serializer.save(reviewer=self.request.user)
+        try:
+            from smart_hr.personnel.models import Employee
+
+            reviewer_employee = Employee.objects.get(user=self.request.user)
+            serializer.save(reviewer=reviewer_employee)
+        except Employee.DoesNotExist:
+            serializer.save()
 
     @action(detail=False, methods=["get"], url_path="stats")
     def stats(self, request):
         """Statistiques agrégées (RH/Admin uniquement)."""
         if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
-            return Response(status=403)
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
         total = PerformanceEvaluation.objects.count()
         average_score = PerformanceEvaluation.objects.filter(global_score__isnull=False).aggregate(avg=Avg("global_score"))["avg"]
