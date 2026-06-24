@@ -107,6 +107,7 @@ class Application(TimeStampedModel):
     )
     internal_note = models.TextField(
         blank=True,
+        default="",
         help_text="Note interne RH — jamais visible par le candidat.",
     )
 
