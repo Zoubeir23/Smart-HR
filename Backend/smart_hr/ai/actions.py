@@ -94,14 +94,10 @@ def extract_leave_parameters(question: str) -> dict:
 
     try:
         from smart_hr.ai.llm_providers import get_llm_provider
+        from smart_hr.ai.llm_providers.base import strip_llm_code_fences
 
         provider = get_llm_provider()
-        raw = provider.extract_json(prompt)
-        if raw.startswith("```"):
-            raw = raw.split("```")[1]
-            if raw.startswith("json"):
-                raw = raw[4:]
-            raw = raw.strip()
+        raw = strip_llm_code_fences(provider.extract_json(prompt))
         return json.loads(raw)
     except Exception as exc:
         logger.warning("Extraction LLM des paramètres congé échouée : %s", exc)
