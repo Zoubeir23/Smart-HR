@@ -2,6 +2,7 @@ volumes:
   vps_postgres_data: {}
   vps_redis_data: {}
   vps_django_media: {}
+  vps_minio_data: {}
 
 networks:
   dokploy-network:
@@ -42,6 +43,7 @@ services:
     depends_on:
       - postgres
       - redis
+      - minio
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings.production
       - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY}
@@ -87,6 +89,42 @@ services:
     <<: *django
     image: smart_hr_vps_celeryworker
     command: /start-celeryworker
+
+  # ─── MinIO (S3-compatible storage) ─────────────────────────────────────────
+  minio:
+    image: minio/minio:latest
+    volumes:
+      - vps_minio_data:/data
+    environment:
+      - MINIO_ROOT_USER=${MINIO_ACCESS_KEY}
+      - MINIO_ROOT_PASSWORD=${MINIO_SECRET_KEY}
+    command: server /data --console-address ":9001"
+    networks:
+      - default
+      - dokploy-network
+    expose:
+      - "9000"
+      - "9001"
+    restart: unless-stopped
+
+  # ─── MinIO Init (crée le bucket au premier démarrage) ───────────────────────
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      mc alias set myminio http://minio:9000 $$MINIO_ACCESS_KEY $$MINIO_SECRET_KEY;
+      mc mb --ignore-existing myminio/$$MINIO_BUCKET_NAME;
+      mc anonymous set public myminio/$$MINIO_BUCKET_NAME;
+      exit 0;
+      "
+    environment:
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
+    restart: on-failure
 
   # ─── Frontend React + nginx ─────────────────────────────────────────────────
   frontend:
