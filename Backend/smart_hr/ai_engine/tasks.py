@@ -64,17 +64,20 @@ def predict_all_employees_task() -> dict:
     return {"status": "ok", "processed": count}
 
 
-@shared_task(name="smart_hr.ai_engine.tasks.retrain_churn_model_task")
+@shared_task(
+    name="smart_hr.ai_engine.tasks.retrain_churn_model_task",
+    autoretry_for=(Exception,),
+    max_retries=3,
+    retry_backoff=60,
+    retry_backoff_max=300,
+)
 def retrain_churn_model_task() -> None:
     """Ré-entraîne le modèle Random Forest de prédiction churn.
 
     Planifié chaque lundi à 02h00 via CELERY_BEAT_SCHEDULE.
     Peut aussi être déclenché manuellement via l'API /api/v1/ai-engine/retrain/.
+    Retente automatiquement jusqu'à 3 fois en cas d'échec (backoff 60s→300s).
     """
     logger.info("Début du ré-entraînement automatique du modèle churn")
-    try:
-        call_command("train_churn_model")
-        logger.info("Ré-entraînement du modèle churn terminé avec succès")
-    except Exception:
-        logger.exception("Échec du ré-entraînement du modèle churn")
-        raise
+    call_command("train_churn_model")
+    logger.info("Ré-entraînement du modèle churn terminé avec succès")

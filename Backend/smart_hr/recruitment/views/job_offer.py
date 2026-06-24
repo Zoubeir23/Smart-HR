@@ -1,3 +1,4 @@
+from django.db.models import Count
 from rest_framework import filters
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -28,7 +29,7 @@ class JobOfferViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        base = JobOffer.objects.all()
+        base = JobOffer.objects.annotate(applications_count=Count("applications"))
 
         if not user.is_authenticated:
             return base.filter(status=JobOffer.Status.OPEN, is_internal=False)
