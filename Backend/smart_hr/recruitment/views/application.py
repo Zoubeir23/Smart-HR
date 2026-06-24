@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework import viewsets
@@ -15,9 +16,9 @@ from smart_hr.core.email_service import send_interview_invitation_email
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.serializers import ApplicationSerializer
 from smart_hr.recruitment.serializers import CandidateApplicationSerializer
-from smart_hr.recruitment.services.cv_analysis_service import analyze_cv_against_job_offer
 from smart_hr.recruitment.services.cv_analysis_service import extract_text_from_pdf
 from smart_hr.recruitment.services.cv_analysis_service import generate_interview_questions_from_cv
+from smart_hr.recruitment.tasks import analyze_cv_async
 from smart_hr.users.permissions import IsCandidate
 from smart_hr.users.permissions import IsRH
 
@@ -89,53 +90,21 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             )
 
         application = serializer.save(candidate=self.request.user)
-        self._run_cv_analysis(application)
+        transaction.on_commit(lambda: analyze_cv_async.delay(application.pk))
         self._notify_candidate_application_received(application)
-
-    # ─── Analyse NLP ─────────────────────────────────────────────────────────
-
-    def _run_cv_analysis(self, application: Application) -> None:
-        """Analyse le CV par IA et met à jour matching_score, skills_extracted, ai_summary."""
-        try:
-            job_offer = application.job_offer
-            cv_text = extract_text_from_pdf(application.cv)
-
-            result = analyze_cv_against_job_offer(
-                cv_text=cv_text,
-                cover_letter=application.cover_letter or "",
-                job_title=job_offer.title,
-                job_requirements=job_offer.requirements or "",
-                job_description=job_offer.description or "",
-            )
-
-            application.matching_score = result["matching_score"]
-            application.skills_extracted = result["skills_extracted"]
-            application.ai_summary = result["ai_summary"]
-            application.save(
-                update_fields=["matching_score", "skills_extracted", "ai_summary"],
-            )
-
-            logger.info(
-                "Analyse CV terminée pour application %s — score : %.1f%%",
-                application.pk,
-                result["matching_score"],
-            )
-        except Exception:
-            logger.exception(
-                "Erreur lors de l'analyse CV pour application %s",
-                application.pk,
-            )
 
     @action(detail=True, methods=["post"], url_path="analyze-cv")
     def analyze_cv(self, request, pk=None):
         """
         POST /api/v1/recruitment/applications/{id}/analyze-cv/
-        Relance l'analyse IA du CV pour une candidature existante (RH uniquement).
+        Relance l'analyse IA du CV en arrière-plan (Celery) pour une candidature existante (RH uniquement).
         """
         application = self.get_object()
-        self._run_cv_analysis(application)
-        serializer = self.get_serializer(application)
-        return Response(serializer.data)
+        analyze_cv_async.delay(application.pk)
+        return Response(
+            {"detail": "Analyse CV lancée en arrière-plan.", "application_id": application.pk},
+            status=status.HTTP_202_ACCEPTED,
+        )
 
     # ─── Notifications ───────────────────────────────────────────────────────
 
