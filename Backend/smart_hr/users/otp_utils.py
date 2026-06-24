@@ -3,6 +3,7 @@ import hmac
 import secrets
 
 from django.conf import settings
+from django.db import transaction
 from django.db.models import F
 from django.utils import timezone
 
@@ -82,9 +83,10 @@ def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:  #
         remaining = OTPCode.MAX_FAILED_ATTEMPTS - otp.failed_attempts
         return False, f"Code OTP incorrect. {remaining} tentative(s) restante(s)."
 
-    otp.is_used = True
-    otp.save(update_fields=["is_used"])
-    user.is_email_verified = True
-    user.save(update_fields=["is_email_verified"])
+    with transaction.atomic():
+        otp.is_used = True
+        otp.save(update_fields=["is_used"])
+        user.is_email_verified = True
+        user.save(update_fields=["is_email_verified"])
 
     return True, ""
