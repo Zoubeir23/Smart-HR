@@ -149,7 +149,7 @@ def _generate_matricule() -> str:
     bloc transaction.atomic().
     """
     year = timezone.now().year
-    last = Employee.objects.select_for_update().filter(matricule__startswith=f"EMP-{year}-").order_by("matricule").last()
+    last = Employee.objects.select_for_update().filter(matricule__startswith=f"EMP-{year}-").order_by("id").last()
     sequence = int(last.matricule.split("-")[-1]) + 1 if last else 1
     return f"EMP-{year}-{sequence:04d}"
 
