@@ -146,7 +146,7 @@ class TestResendOTPView:
 
     @patch("smart_hr.users.views.registration.OTPResendThrottle.allow_request", return_value=True)
     @patch("smart_hr.users.views.registration.send_otp_verification_email")
-    def test_unverified_receives_new_otp(self, mock_send_email, _mock_throttle, unverified_candidate):
+    def test_unverified_receives_new_otp(self, mock_send_email, mock_throttle, unverified_candidate):
         client = APIClient()
         response = client.post(RESEND_OTP_URL, {"email": unverified_candidate.email}, format="json")
         assert response.status_code == status.HTTP_200_OK
