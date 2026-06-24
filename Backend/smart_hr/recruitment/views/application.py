@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import status
 from rest_framework import viewsets
@@ -89,7 +90,7 @@ class ApplicationViewSet(viewsets.ModelViewSet):
             )
 
         application = serializer.save(candidate=self.request.user)
-        analyze_cv_async.delay(application.pk)
+        transaction.on_commit(lambda: analyze_cv_async.delay(application.pk))
         self._notify_candidate_application_received(application)
 
     @action(detail=True, methods=["post"], url_path="analyze-cv")
