@@ -1,3 +1,4 @@
+from django.db.models import Sum
 from rest_framework import serializers
 
 from smart_hr.personnel.models import Contract
@@ -58,7 +59,7 @@ class DepartmentSerializer(serializers.ModelSerializer):
         read_only_fields = ["created_at", "updated_at"]
 
     def get_employee_count(self, obj: Department) -> int:
-        return sum(1 for e in obj.employees.all() if e.status == Employee.Status.ACTIVE)
+        return obj.employees.filter(status=Employee.Status.ACTIVE).count()
 
 
 class DepartmentDetailSerializer(DepartmentSerializer):
@@ -74,7 +75,8 @@ class DepartmentDetailSerializer(DepartmentSerializer):
         return list(obj.services.values("id", "name"))
 
     def get_total_salary(self, obj: Department) -> float:
-        return float(sum(e.salary or 0 for e in obj.employees.all() if e.status == Employee.Status.ACTIVE))
+        result = obj.employees.filter(status=Employee.Status.ACTIVE).aggregate(total=Sum("salary"))
+        return float(result["total"] or 0)
 
 
 class ServiceSerializer(serializers.ModelSerializer):

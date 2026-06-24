@@ -5,6 +5,7 @@ import logging
 from django.db.models import Count
 from django.db.models import Q
 from rest_framework import filters
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -88,7 +89,7 @@ class InternalMessageViewSet(viewsets.ModelViewSet):
     def stats(self, request):
         """Statistiques des communications (RH/Admin uniquement)."""
         if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
-            return Response(status=403)
+            return Response(status=status.HTTP_403_FORBIDDEN)
 
         total = InternalMessage.objects.count()
         published_count = InternalMessage.objects.filter(is_published=True).count()
