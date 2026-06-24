@@ -1,7 +1,6 @@
 from rest_framework import filters
 from rest_framework import viewsets
 from rest_framework.permissions import AllowAny
-from rest_framework.permissions import IsAuthenticated
 
 from smart_hr.recruitment.models import JobOffer
 from smart_hr.recruitment.serializers import JobOfferSerializer
@@ -41,9 +40,7 @@ class JobOfferViewSet(viewsets.ModelViewSet):
         """Autorise la consultation publique et protège les actions d'édition."""
         if self.action in ["list", "retrieve"]:
             return [AllowAny()]
-        if self.action in ["create", "update", "partial_update", "destroy"]:
-            return [IsRH()]
-        return [IsAuthenticated()]
+        return [IsRH()]
 
     def perform_create(self, serializer):
         """Associe le créateur connecté à l'offre au moment de la création."""
