@@ -10,7 +10,7 @@ ADMIN_LIST_URL = "/api/v1/auth/admin/users/"
 ANALYTICS_URL = "/api/v1/stats/overview/"
 
 
-@pytest.fixture()
+@pytest.fixture
 def admin_user(db):
     return User.objects.create_user(
         username="admin_mgmt",
@@ -22,7 +22,7 @@ def admin_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def rh_user(db):
     return User.objects.create_user(
         username="rh_mgmt",
@@ -34,7 +34,7 @@ def rh_user(db):
     )
 
 
-@pytest.fixture()
+@pytest.fixture
 def employee_user(db):
     return User.objects.create_user(
         username="emp_mgmt",
