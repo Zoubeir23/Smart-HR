@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 
 from django.db import transaction
 from django.utils.timezone import now
@@ -189,22 +190,29 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     def _check_leave_balance_by_year(self, leave):
         """Vérifie le solde pour chaque année calendaire couverte par le congé.
 
+        Charge toutes les années concernées en une seule requête DB au lieu
+        d'une requête par année, puis calcule les jours pris en mémoire.
         Retourne (year, days_remaining, days_requested) si insuffisant, sinon None.
         """
         annual_allowance = 30
-        years = {leave.start_date.year, leave.end_date.year}
-        for year in sorted(years):
+        years = sorted({leave.start_date.year, leave.end_date.year})
+
+        all_approved = LeaveRequest.objects.filter(
+            employee=leave.employee,
+            status=LeaveRequest.Status.APPROVED,
+            leave_type__in=DEDUCTIBLE_LEAVE_TYPES,
+            start_date__year__in=years,
+        )
+
+        days_taken_by_year: dict[int, int] = defaultdict(int)
+        for past_leave in all_approved:
+            days_taken_by_year[past_leave.start_date.year] += past_leave.duration_working_days
+
+        for year in years:
             days_in_year = self._working_days_in_year(leave, year)
             if days_in_year == 0:
                 continue
-            approved_leaves = LeaveRequest.objects.filter(
-                employee=leave.employee,
-                status=LeaveRequest.Status.APPROVED,
-                leave_type__in=DEDUCTIBLE_LEAVE_TYPES,
-                start_date__year=year,
-            )
-            days_taken = sum(l.duration_working_days for l in approved_leaves)
-            days_remaining = annual_allowance - days_taken
+            days_remaining = annual_allowance - days_taken_by_year[year]
             if days_in_year > days_remaining:
                 return (year, days_remaining, days_in_year)
         return None
