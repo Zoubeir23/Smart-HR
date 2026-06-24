@@ -33,6 +33,10 @@ class JobOffer(TimeStampedModel):
         choices=Status.choices,
         default=Status.OPEN,
     )
+    is_internal = models.BooleanField(
+        default=False,
+        help_text="Offre réservée aux employés actuels (mobilité interne) — non visible des candidats externes.",
+    )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
