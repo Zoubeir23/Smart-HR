@@ -1,3 +1,4 @@
+import React, { Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -8,73 +9,79 @@ import { ThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import AutoSEO from "@/components/common/AutoSEO";
 
-// Pages Auth
+// Pages Auth (chargement immédiat — nécessaires avant authentification)
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
 import EmailVerificationPage from "@/pages/auth/EmailVerificationPage";
 import ForgotPasswordPage from "@/pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
-
-// Dashboards
-import AdminDashboard from "@/pages/dashboard/AdminDashboard";
-import HRDashboard from "@/pages/dashboard/HRDashboard";
-import EmployeeDashboard from "@/pages/dashboard/EmployeeDashboard";
-import CandidateDashboard from "@/pages/dashboard/CandidateDashboard";
-
-// Pages RH
-import EmployeeListPage from "@/pages/employees/EmployeeListPage";
-import EmployeeCreatePage from "@/pages/employees/EmployeeCreatePage";
-import EmployeeDetailPage from "@/pages/employees/EmployeeDetailPage";
-import DepartmentPage from "@/pages/employees/DepartmentPage";
-import ServicePage from "@/pages/employees/ServicePage";
-import PositionPage from "@/pages/employees/PositionPage";
-import ContractPage from "@/pages/employees/ContractPage";
-import ReferenceTablesPage from "@/pages/employees/ReferenceTablesPage";
-import LeaveListPage from "@/pages/leaves/LeaveListPage";
-import TaskBoardPage from "@/pages/tasks/TaskBoardPage";
-import AttendancePage from "@/pages/attendance/AttendancePage";
-import PayrollPage from "@/pages/payroll/PayrollPage";
-import DisciplinePage from "@/pages/discipline/DisciplinePage";
-import CommunicationPage from "@/pages/communication/CommunicationPage";
-import PerformancePage from "@/pages/performance/PerformancePage";
-
-// Documents & Formation
-import DocumentsPage from "@/pages/documents/DocumentsPage";
-import TrainingPage from "@/pages/training/TrainingPage";
-
-// Pages Recrutement
-import JobOfferListPage from "@/pages/recruitment/JobOfferListPage";
-import ApplyPage from "@/pages/recruitment/ApplyPage";
-import ApplicationTrackingPage from "@/pages/recruitment/ApplicationTrackingPage";
-import ApplicationsManagementPage from "@/pages/recruitment/ApplicationsManagementPage";
-
-// Analytics
-import AnalyticsPage from "@/pages/analytics/AnalyticsPage";
-
-// Pages IA
-import ChurnDashboardPage from "@/pages/ai-insights/ChurnDashboardPage";
-import AIChatPage from "@/pages/ai/AIChatPage";
-import RecruteurIAPage from "@/pages/ai/RecruteurIAPage";
-import VoiceAssistantPage from "@/pages/ai/VoiceAssistantPage";
-
-// Calendrier
-import CalendarPage from "@/pages/calendar/CalendarPage";
-
-// Parametres
-import SettingsPage from "@/pages/settings/SettingsPage";
-import SecurityPage from "@/pages/settings/SecurityPage";
-import ProfilePage from "@/pages/settings/ProfilePage";
-import UserManagementPage from "@/pages/admin/UserManagementPage";
-
-// Pages generales
 import NotFoundPage from "@/pages/NotFoundPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LandingPage from "@/pages/LandingPage";
 
-// Pages interview public (sans login)
+// Pages interview public (sans login, chargement immédiat)
 import InterviewLandingPage from "@/pages/interview/InterviewLandingPage";
 import InterviewStartPage from "@/pages/interview/InterviewStartPage";
 import InterviewCompletedPage from "@/pages/interview/InterviewCompletedPage";
+
+// Dashboards (lazy)
+const AdminDashboard = React.lazy(() => import("@/pages/dashboard/AdminDashboard"));
+const HRDashboard = React.lazy(() => import("@/pages/dashboard/HRDashboard"));
+const EmployeeDashboard = React.lazy(() => import("@/pages/dashboard/EmployeeDashboard"));
+const CandidateDashboard = React.lazy(() => import("@/pages/dashboard/CandidateDashboard"));
+
+// Pages RH (lazy)
+const EmployeeListPage = React.lazy(() => import("@/pages/employees/EmployeeListPage"));
+const EmployeeCreatePage = React.lazy(() => import("@/pages/employees/EmployeeCreatePage"));
+const EmployeeDetailPage = React.lazy(() => import("@/pages/employees/EmployeeDetailPage"));
+const DepartmentPage = React.lazy(() => import("@/pages/employees/DepartmentPage"));
+const ServicePage = React.lazy(() => import("@/pages/employees/ServicePage"));
+const PositionPage = React.lazy(() => import("@/pages/employees/PositionPage"));
+const ContractPage = React.lazy(() => import("@/pages/employees/ContractPage"));
+const ReferenceTablesPage = React.lazy(() => import("@/pages/employees/ReferenceTablesPage"));
+const LeaveListPage = React.lazy(() => import("@/pages/leaves/LeaveListPage"));
+const TaskBoardPage = React.lazy(() => import("@/pages/tasks/TaskBoardPage"));
+const AttendancePage = React.lazy(() => import("@/pages/attendance/AttendancePage"));
+const PayrollPage = React.lazy(() => import("@/pages/payroll/PayrollPage"));
+const DisciplinePage = React.lazy(() => import("@/pages/discipline/DisciplinePage"));
+const CommunicationPage = React.lazy(() => import("@/pages/communication/CommunicationPage"));
+const PerformancePage = React.lazy(() => import("@/pages/performance/PerformancePage"));
+
+// Documents & Formation (lazy)
+const DocumentsPage = React.lazy(() => import("@/pages/documents/DocumentsPage"));
+const TrainingPage = React.lazy(() => import("@/pages/training/TrainingPage"));
+
+// Pages Recrutement (lazy)
+const JobOfferListPage = React.lazy(() => import("@/pages/recruitment/JobOfferListPage"));
+const ApplyPage = React.lazy(() => import("@/pages/recruitment/ApplyPage"));
+const ApplicationTrackingPage = React.lazy(() => import("@/pages/recruitment/ApplicationTrackingPage"));
+const ApplicationsManagementPage = React.lazy(() => import("@/pages/recruitment/ApplicationsManagementPage"));
+
+// Analytics (lazy)
+const AnalyticsPage = React.lazy(() => import("@/pages/analytics/AnalyticsPage"));
+
+// Pages IA (lazy)
+const ChurnDashboardPage = React.lazy(() => import("@/pages/ai-insights/ChurnDashboardPage"));
+const AIChatPage = React.lazy(() => import("@/pages/ai/AIChatPage"));
+const RecruteurIAPage = React.lazy(() => import("@/pages/ai/RecruteurIAPage"));
+const VoiceAssistantPage = React.lazy(() => import("@/pages/ai/VoiceAssistantPage"));
+
+// Calendrier (lazy)
+const CalendarPage = React.lazy(() => import("@/pages/calendar/CalendarPage"));
+
+// Paramètres (lazy)
+const SettingsPage = React.lazy(() => import("@/pages/settings/SettingsPage"));
+const SecurityPage = React.lazy(() => import("@/pages/settings/SecurityPage"));
+const ProfilePage = React.lazy(() => import("@/pages/settings/ProfilePage"));
+const UserManagementPage = React.lazy(() => import("@/pages/admin/UserManagementPage"));
+
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+    </div>
+  );
+}
 
 const queryClient = new QueryClient();
 
@@ -107,6 +114,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AutoSEO />
+            <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Routes publiques */}
               <Route path="/login" element={<LoginPage />} />
@@ -422,6 +430,7 @@ const App = () => (
               {/* 404 */}
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
