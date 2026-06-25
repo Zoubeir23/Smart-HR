@@ -27,7 +27,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         prefetch_related("employees", "positions") permet à get_employee_count
         et get_positions dans le serializer de ne pas déclencher de requêtes supplémentaires.
         """
-        return Department.objects.prefetch_related("employees", "positions").all()
+        return Department.objects.prefetch_related("employees", "services").all()
 
     def get_serializer_class(self):
         """Utilise le serializer enrichi pour retrieve, sinon le de base."""
