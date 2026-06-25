@@ -150,7 +150,12 @@ export default function ContractPage() {
   }
 
   const isPending = createMutation.isPending || updateMutation.isPending;
-  const isFormValid = Boolean(form.employee && form.start_date && form.salary);
+  const isFormValid = Boolean(
+    form.employee &&
+      form.start_date &&
+      form.salary &&
+      (form.contract_type === 'CDI' || form.end_date),
+  );
 
   async function downloadContractPdf(contract: Contract) {
     try {
@@ -385,7 +390,11 @@ export default function ContractPage() {
               <Select
                 value={form.contract_type}
                 onValueChange={(value) =>
-                  setForm((previous) => ({ ...previous, contract_type: value as ContractType }))
+                  setForm((previous) => ({
+                    ...previous,
+                    contract_type: value as ContractType,
+                    end_date: value === 'CDI' ? '' : previous.end_date,
+                  }))
                 }
               >
                 <SelectTrigger id="contract-type">
@@ -411,15 +420,19 @@ export default function ContractPage() {
                   onChange={(e) => setForm((previous) => ({ ...previous, start_date: e.target.value }))}
                 />
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="contract-end">Date de fin</Label>
-                <Input
-                  id="contract-end"
-                  type="date"
-                  value={form.end_date}
-                  onChange={(e) => setForm((previous) => ({ ...previous, end_date: e.target.value }))}
-                />
-              </div>
+              {form.contract_type !== 'CDI' && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="contract-end">
+                    Date de fin <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="contract-end"
+                    type="date"
+                    value={form.end_date}
+                    onChange={(e) => setForm((previous) => ({ ...previous, end_date: e.target.value }))}
+                  />
+                </div>
+              )}
             </div>
 
             <div className="space-y-1.5">
