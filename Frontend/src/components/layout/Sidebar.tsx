@@ -156,6 +156,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const normalizedRole = typeof user?.role === 'string' ? user.role.toUpperCase() : '';
   const hasValidRole = USER_ROLES.includes(normalizedRole as UserRole);
 
+  // All hrefs that carry a query string — used to detect when a "clean" sibling
+  // should be deactivated because a more-specific sibling matches the current URL.
+  const queryParamHrefs = navigationGroups
+    .flatMap((g) => g.items)
+    .flatMap((item) => (item.children ?? [item]))
+    .map((item) => item.href ?? '')
+    .filter((href) => href.includes('?'));
+
   const isActive = (href: string) => {
     const [path, query] = href.split('?');
     const pathMatch = location.pathname === path || location.pathname.startsWith(path + '/');
@@ -168,8 +176,18 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
       }
       return true;
     }
+    // No query string on this href: deactivate only if a sibling link with query
+    // params is currently active (i.e. its query params match the current URL).
     const currentParams = new URLSearchParams(location.search);
-    return !currentParams.has('archived');
+    return !queryParamHrefs.some((siblingHref) => {
+      const [siblingPath, siblingQuery] = siblingHref.split('?');
+      if (siblingPath !== path) return false;
+      const siblingParams = new URLSearchParams(siblingQuery);
+      for (const [key, value] of siblingParams.entries()) {
+        if (currentParams.get(key) !== value) return false;
+      }
+      return true;
+    });
   };
 
   const isDropdownActive = (children: NavItem[]): boolean =>
