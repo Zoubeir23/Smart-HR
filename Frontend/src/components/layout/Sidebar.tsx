@@ -26,7 +26,6 @@ import {
   TrendingUp,
   ChevronDown,
   Archive,
-  Award,
   Building2,
   Database,
 } from 'lucide-react';
@@ -92,7 +91,6 @@ const navigationGroups: NavGroup[] = [
         roles: ['ADMIN', 'RH', 'EMPLOYEE'],
         children: [
           { title: 'Paie', href: '/payroll', icon: CreditCard, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
-          { title: 'Primes de rendement', href: '/payroll', icon: Award, roles: ['ADMIN', 'RH'] },
         ],
       },
       {
