@@ -159,8 +159,19 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const hasValidRole = USER_ROLES.includes(normalizedRole as UserRole);
 
   const isActive = (href: string) => {
-    const path = href.split('?')[0];
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    const [path, query] = href.split('?');
+    const pathMatch = location.pathname === path || location.pathname.startsWith(path + '/');
+    if (!pathMatch) return false;
+    if (query) {
+      const hrefParams = new URLSearchParams(query);
+      const currentParams = new URLSearchParams(location.search);
+      for (const [key, value] of hrefParams.entries()) {
+        if (currentParams.get(key) !== value) return false;
+      }
+      return true;
+    }
+    const currentParams = new URLSearchParams(location.search);
+    return !currentParams.has('archived');
   };
 
   const isDropdownActive = (children: NavItem[]): boolean =>
