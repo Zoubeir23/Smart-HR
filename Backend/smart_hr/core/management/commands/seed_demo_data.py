@@ -25,6 +25,7 @@ from smart_hr.paiement.models import Payroll
 from smart_hr.personnel.models import Department
 from smart_hr.personnel.models import Employee
 from smart_hr.personnel.models import Position
+from smart_hr.personnel.models import Service
 from smart_hr.presence.models import Attendance
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.models import JobOffer
@@ -89,14 +90,21 @@ DEPARTMENTS = [
     },
 ]
 
+SERVICES = [
+    {"name": "Développement", "department": "Technologie"},
+    {"name": "Infrastructure", "department": "Technologie"},
+    {"name": "RH Opérationnel", "department": "Ressources Humaines"},
+    {"name": "Business Development", "department": "Commercial"},
+]
+
 POSITIONS = [
-    {"title": "Développeur Backend", "department": "Technologie"},
-    {"title": "Développeur Frontend", "department": "Technologie"},
-    {"title": "DevOps Engineer", "department": "Technologie"},
-    {"title": "Responsable RH", "department": "Ressources Humaines"},
-    {"title": "Chargé de Recrutement", "department": "Ressources Humaines"},
-    {"title": "Commercial Senior", "department": "Commercial"},
-    {"title": "Account Manager", "department": "Commercial"},
+    {"title": "Développeur Backend", "service": "Développement"},
+    {"title": "Développeur Frontend", "service": "Développement"},
+    {"title": "DevOps Engineer", "service": "Infrastructure"},
+    {"title": "Responsable RH", "service": "RH Opérationnel"},
+    {"title": "Chargé de Recrutement", "service": "RH Opérationnel"},
+    {"title": "Commercial Senior", "service": "Business Development"},
+    {"title": "Account Manager", "service": "Business Development"},
 ]
 
 # 15 Senegalese employee profiles (first_name, last_name, salary, dept, position)
@@ -501,13 +509,13 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options) -> None:
-        if options["reset"]:
-            self._reset_data()
-
         with transaction.atomic():
+            if options["reset"]:
+                self._reset_data()
             rh_user = self._seed_users()
             departments = self._seed_departments()
-            positions = self._seed_positions(departments)
+            services = self._seed_services(departments)
+            positions = self._seed_positions(services)
             employees = self._seed_employees(departments, positions)
             self._seed_leaves(employees, rh_user)
             self._seed_tasks(employees, rh_user)
@@ -535,6 +543,7 @@ class Command(BaseCommand):
         LeaveRequest.objects.all().delete()
         Employee.objects.all().delete()
         Position.objects.all().delete()
+        Service.objects.all().delete()
         Department.objects.all().delete()
         User.objects.filter(email__endswith="@smarthr.com").delete()
         # candidate user created by seed
@@ -606,18 +615,38 @@ class Command(BaseCommand):
         return departments
 
     # ------------------------------------------------------------------
+    # Services
+    # ------------------------------------------------------------------
+
+    def _seed_services(self, departments: dict) -> dict:
+        self.stdout.write("  Creating services...")
+        services = {}
+
+        for svc_data in SERVICES:
+            dept = departments.get(svc_data["department"])
+            svc, created = Service.objects.get_or_create(
+                name=svc_data["name"],
+                defaults={"department": dept},
+            )
+            services[svc.name] = svc
+            label = "+" if created else "~"
+            self.stdout.write(f"    {label} {svc.name}")
+
+        return services
+
+    # ------------------------------------------------------------------
     # Positions
     # ------------------------------------------------------------------
 
-    def _seed_positions(self, departments: dict) -> dict:
+    def _seed_positions(self, services: dict) -> dict:
         self.stdout.write("  Creating positions...")
         positions = {}
 
         for pos_data in POSITIONS:
-            dept = departments.get(pos_data["department"])
+            svc = services.get(pos_data["service"])
             pos, created = Position.objects.get_or_create(
                 title=pos_data["title"],
-                defaults={"department": dept},
+                defaults={"service": svc},
             )
             positions[pos.title] = pos
             label = "+" if created else "~"
