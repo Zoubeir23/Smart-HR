@@ -509,10 +509,9 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options) -> None:
-        if options["reset"]:
-            self._reset_data()
-
         with transaction.atomic():
+            if options["reset"]:
+                self._reset_data()
             rh_user = self._seed_users()
             departments = self._seed_departments()
             services = self._seed_services(departments)
