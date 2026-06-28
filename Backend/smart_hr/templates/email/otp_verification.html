@@ -13,38 +13,35 @@
     Bienvenue sur Smart-HR ! Pour finaliser la création de votre compte, veuillez utiliser le code de vérification ci-dessous.
   </p>
   <div class="divider"></div>
-  <!-- Code OTP -->
   <div class="credentials-card" style="text-align: center;">
-    <p class="credentials-title">🔐 Votre code de vérification</p>
-    <div style="margin: 1.5rem 0;">
+    <p class="credentials-title">Votre code de vérification</p>
+    <div style="margin: 1.25rem 0;">
       <p style="font-family: 'Courier New', Courier, monospace;
-                font-size: 2.5rem;
+                font-size: 2.25rem;
                 font-weight: 700;
                 letter-spacing: 0.5rem;
                 color: #D62828;
-                background: rgba(214,40,40,0.05);
-                border: 2px dashed rgba(214,40,40,0.25);
-                border-radius: 10px;
+                background: #fef2f2;
+                border: 2px dashed #fecaca;
+                border-radius: 8px;
                 padding: 1rem 2rem;
                 display: inline-block;
                 margin: 0">{{ otp_code }}</p>
     </div>
-    <p style="font-size: 0.85rem; color: #6b6560; margin-top: 0.75rem;">
+    <p style="font-size: 0.825rem; color: #64748b; margin-top: 0.75rem;">
       Ce code expire dans <strong>{{ expiry_minutes }} minutes</strong>.
     </p>
   </div>
-  <!-- Alerte sécurité -->
   <div class="alert alert-warning">
-    <strong>⚠️ Sécurité :</strong> Ne partagez jamais ce code avec quelqu'un.
+    <strong>Sécurité :</strong> Ne partagez jamais ce code avec quelqu'un.
     Smart-HR ne vous demandera jamais votre code OTP par téléphone ou email.
   </div>
-  <!-- Bouton de vérification -->
   <div class="btn-wrapper">
     <a href="{{ verify_url }}" class="btn">Vérifier mon email →</a>
   </div>
   <div class="divider"></div>
-  <p style="font-size:0.78rem;
-            color:#9b9589;
+  <p style="font-size:0.75rem;
+            color:#94a3b8;
             margin-top:1rem;
             line-height:1.65">
     Si vous n'avez pas créé de compte sur Smart-HR, ignorez cet email.

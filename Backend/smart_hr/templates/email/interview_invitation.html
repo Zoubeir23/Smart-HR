@@ -4,31 +4,32 @@
   Invitation à votre entretien IA — {{ job_title }}
 {% endblock email_title %}
 {% block email_content %}
-  <p class="email-title">Invitation à votre entretien IA</p>
+  <h1 class="email-title">Invitation à votre entretien IA</h1>
   <p class="email-subtitle">
     Bonjour {{ first_name }},
     <br />
     Votre candidature pour le poste de <strong>{{ job_title }}</strong> a retenu notre attention.
     Nous vous invitons à passer un entretien vocal avec notre assistant IA.
   </p>
+  <div class="divider"></div>
   <div class="credentials-card">
     <p class="credentials-title">Détails de votre entretien</p>
     <div class="credential-row">
-      <div class="credential-icon">📆</div>
+      <div class="credential-icon red">P</div>
       <div>
         <p class="credential-label">Poste</p>
         <p class="credential-value">{{ job_title }}</p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">⏱</div>
+      <div class="credential-icon">D</div>
       <div>
         <p class="credential-label">Durée estimée</p>
         <p class="credential-value">{{ duration }}</p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">🏳</div>
+      <div class="credential-icon blue">T</div>
       <div>
         <p class="credential-label">Type d'entretien</p>
         <p class="credential-value">{{ interview_type }}</p>
@@ -62,7 +63,7 @@
     </div>
   </div>
   <div class="btn-wrapper">
-    <a href="{{ interview_link }}" class="btn">Accéder à mon entretien</a>
+    <a href="{{ interview_link }}" class="btn">Accéder à mon entretien →</a>
   </div>
   <div class="alert alert-warning">
     <strong>Ce lien est personnel.</strong> Ne le partagez pas avec d'autres personnes.
