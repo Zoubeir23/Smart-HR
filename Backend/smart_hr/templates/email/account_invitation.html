@@ -6,7 +6,7 @@
   Invitation Smart-HR — Créez votre mot de passe
 {% endblock email_title %}
 {% block email_content %}
-  <h1 class="email-title">Bienvenue sur Smart-HR&nbsp;!</h1>
+  <h1 class="email-title">Bienvenue sur Smart-HR !</h1>
   <p class="email-subtitle">
     Bonjour <strong>{{ first_name }} {{ last_name }}</strong>,
     <br />
@@ -14,30 +14,26 @@
     Pour activer votre accès, vous devez définir votre mot de passe en cliquant sur le bouton ci-dessous.
   </p>
   <div class="divider"></div>
-  <!-- Carte email -->
   <div class="credentials-card">
-    <p class="credentials-title">📧 Votre identifiant de connexion</p>
+    <p class="credentials-title">Votre identifiant de connexion</p>
     <div class="credential-row">
-      <div class="credential-icon">✉</div>
+      <div class="credential-icon blue">@</div>
       <div>
         <p class="credential-label">Adresse email</p>
         <p class="credential-value">{{ email }}</p>
       </div>
     </div>
   </div>
-  <!-- Bouton principal -->
   <div class="btn-wrapper" style="margin: 2rem 0;">
     <a href="{{ invitation_url|urlencode }}" class="btn">Définir mon mot de passe →</a>
   </div>
-  <!-- Alerte expiration -->
   <div class="alert alert-warning">
-    <strong>⏳ Ce lien expire dans {{ expiry_hours }} heures.</strong>
+    <strong>Ce lien expire dans {{ expiry_hours }} heures.</strong>
     Après expiration, contactez votre administrateur pour recevoir un nouvel email d'invitation.
   </div>
   <div class="divider"></div>
-  <!-- Premières étapes -->
   <div class="feature-list">
-    <p class="feature-list-title">📋 Comment accéder à votre espace</p>
+    <p class="feature-list-title">Comment accéder à votre espace</p>
     <div class="feature-item">
       <div class="feature-dot">1</div>
       <div>
@@ -60,8 +56,8 @@
       </div>
     </div>
   </div>
-  <p style="font-size:0.78rem;
-            color:#9b9589;
+  <p style="font-size:0.75rem;
+            color:#94a3b8;
             margin-top:1.5rem;
             line-height:1.65">
     Si vous n'attendiez pas cet email ou pensez l'avoir reçu par erreur,
