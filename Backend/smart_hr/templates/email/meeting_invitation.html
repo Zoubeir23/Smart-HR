@@ -6,7 +6,7 @@
   Invitation — {{ meeting_title }} — Smart-HR
 {% endblock email_title %}
 {% block email_content %}
-  <h1 class="email-title">Vous êtes invité à une réunion 📅</h1>
+  <h1 class="email-title">Vous êtes invité à une réunion</h1>
   <p class="email-subtitle">
     Bonjour <strong>{{ first_name }}</strong>,
     <br />
@@ -14,30 +14,30 @@
   </p>
   <div class="divider"></div>
   <div class="credentials-card">
-    <p class="credentials-title">🗓️ Détails de la réunion</p>
+    <p class="credentials-title">Détails de la réunion</p>
     <div class="credential-row">
-      <div class="credential-icon">📌</div>
+      <div class="credential-icon">T</div>
       <div>
         <p class="credential-label">Titre</p>
         <p class="credential-value">{{ meeting_title }}</p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">🎓</div>
+      <div class="credential-icon blue">F</div>
       <div>
         <p class="credential-label">Formation associée</p>
         <p class="credential-value">{{ formation_title }}</p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">🕐</div>
+      <div class="credential-icon green">D</div>
       <div>
         <p class="credential-label">Début</p>
         <p class="credential-value">{{ start_time }}</p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">🕔</div>
+      <div class="credential-icon">F</div>
       <div>
         <p class="credential-label">Fin</p>
         <p class="credential-value">{{ end_time }}</p>
@@ -45,36 +45,37 @@
     </div>
     {% if meeting_link %}
       <div class="credential-row"
-           style="background: rgba(214,40,40,0.03);
-                  border-color: rgba(214,40,40,0.15)">
-        <div class="credential-icon">🔗</div>
+           style="background:#f0fdf4;
+                  border-color:#bbf7d0">
+        <div class="credential-icon green">L</div>
         <div style="flex:1;">
           <p class="credential-label">Lien de connexion</p>
           <a href="{{ meeting_link }}"
              style="color:#D62828;
                     font-weight:600;
-                    word-break:break-all">{{ meeting_link }}</a>
+                    word-break:break-all;
+                    font-size:0.85rem">{{ meeting_link }}</a>
         </div>
       </div>
     {% endif %}
   </div>
   {% if meeting_link %}
     <div class="alert alert-neutral">
-      <strong>💡 Accès :</strong> Cliquez sur le lien ci-dessus ou sur le bouton ci-dessous pour rejoindre la réunion à l'heure prévue.
+      <strong>Accès :</strong> Cliquez sur le lien ci-dessus ou sur le bouton ci-dessous pour rejoindre la réunion à l'heure prévue.
     </div>
     <div class="btn-wrapper">
       <a href="{{ meeting_link }}" class="btn">Rejoindre la réunion →</a>
     </div>
   {% else %}
     <div class="alert alert-neutral">
-      <strong>📍 Rappel :</strong> Notez cet événement dans votre agenda. Le lien de connexion sera communiqué ultérieurement.
+      <strong>Rappel :</strong> Notez cet événement dans votre agenda. Le lien de connexion sera communiqué ultérieurement.
     </div>
     <div class="btn-wrapper">
       <a href="{{ training_url }}" class="btn">Voir mes formations →</a>
     </div>
   {% endif %}
-  <p style="font-size:0.78rem;
-            color:#9b9589;
+  <p style="font-size:0.75rem;
+            color:#94a3b8;
             margin-top:1.5rem;
             line-height:1.65">
     Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.

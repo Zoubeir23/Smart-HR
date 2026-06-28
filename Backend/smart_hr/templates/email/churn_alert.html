@@ -14,9 +14,9 @@
   </p>
   <div class="divider"></div>
   <div class="credentials-card">
-    <p class="credentials-title">⚠️ Profil à risque</p>
+    <p class="credentials-title">Profil à risque</p>
     <div class="credential-row">
-      <div class="credential-icon">👤</div>
+      <div class="credential-icon">E</div>
       <div>
         <p class="credential-label">Employé</p>
         <p class="credential-value">{{ employee_full_name }}</p>
@@ -24,7 +24,7 @@
     </div>
     {% if employee_department %}
       <div class="credential-row">
-        <div class="credential-icon">🏢</div>
+        <div class="credential-icon blue">D</div>
         <div>
           <p class="credential-label">Département</p>
           <p class="credential-value">{{ employee_department }}</p>
@@ -32,35 +32,30 @@
       </div>
     {% endif %}
     <div class="credential-row">
-      <div class="credential-icon">📊</div>
+      <div class="credential-icon red">%</div>
       <div>
         <p class="credential-label">Score de risque</p>
         <p class="credential-value">
-          <span style="color:#D62828; font-weight:700; font-size:1.2rem;">{{ risk_score|floatformat:0 }}%</span>
+          <span style="color:#D62828; font-weight:700; font-size:1.1rem;">{{ risk_score|floatformat:0 }}%</span>
         </p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">🔍</div>
+      <div class="credential-icon amber">F</div>
       <div>
         <p class="credential-label">Facteur principal identifié</p>
         <p class="credential-value" style="color:#D62828;">{{ main_risk_factor }}</p>
       </div>
     </div>
   </div>
-  <div class="alert"
-       style="background:#fff3cd;
-              border-left:4px solid #f59e0b;
-              padding:1rem;
-              margin:1rem 0;
-              border-radius:6px">
-    <strong>💡 Recommandation :</strong> Planifiez un entretien individuel avec cet employé pour évaluer sa satisfaction et identifier les leviers de rétention.
+  <div class="alert alert-amber">
+    <strong>Recommandation :</strong> Planifiez un entretien individuel avec cet employé pour évaluer sa satisfaction et identifier les leviers de rétention.
   </div>
   <div class="btn-wrapper">
     <a href="{{ dashboard_url }}" class="btn">Voir le tableau de bord churn →</a>
   </div>
-  <p style="font-size:0.78rem;
-            color:#9b9589;
+  <p style="font-size:0.75rem;
+            color:#94a3b8;
             margin-top:1.5rem;
             line-height:1.65">
     Cet email est généré automatiquement par le système IA de Smart-HR. Merci de ne pas y répondre directement.

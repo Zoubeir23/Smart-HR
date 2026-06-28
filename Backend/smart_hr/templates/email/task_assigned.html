@@ -14,9 +14,9 @@
   </p>
   <div class="divider"></div>
   <div class="credentials-card">
-    <p class="credentials-title">✅ Détails de la tâche</p>
+    <p class="credentials-title">Détails de la tâche</p>
     <div class="credential-row">
-      <div class="credential-icon">📌</div>
+      <div class="credential-icon">T</div>
       <div>
         <p class="credential-label">Titre</p>
         <p class="credential-value">{{ task_title }}</p>
@@ -24,31 +24,33 @@
     </div>
     {% if description %}
       <div class="credential-row">
-        <div class="credential-icon">📝</div>
+        <div class="credential-icon">D</div>
         <div>
           <p class="credential-label">Description</p>
-          <p class="credential-value" style="font-size:0.9rem; color:#6b6560;">{{ description|truncatechars:200 }}</p>
+          <p class="credential-value" style="font-weight:400; color:#475569;">{{ description|truncatechars:200 }}</p>
         </div>
       </div>
     {% endif %}
     <div class="credential-row">
-      <div class="credential-icon">🚦</div>
+      <div class="credential-icon {% if priority == 'high' %}red{% elif priority == 'medium' %}amber{% else %}green{% endif %}">
+        P
+      </div>
       <div>
         <p class="credential-label">Priorité</p>
         <p class="credential-value">
           {% if priority == "high" %}
-            <span style="color:#D62828; font-weight:700;">● Haute</span>
+            <span style="color:#D62828; font-weight:700;">Haute</span>
           {% elif priority == "medium" %}
-            <span style="color:#f59e0b; font-weight:700;">● Moyenne</span>
+            <span style="color:#d97706; font-weight:700;">Moyenne</span>
           {% else %}
-            <span style="color:#6b9e6b; font-weight:700;">● Basse</span>
+            <span style="color:#16a34a; font-weight:700;">Basse</span>
           {% endif %}
         </p>
       </div>
     </div>
     {% if due_date %}
       <div class="credential-row">
-        <div class="credential-icon">📅</div>
+        <div class="credential-icon blue">E</div>
         <div>
           <p class="credential-label">Échéance</p>
           <p class="credential-value">{{ due_date }}</p>
@@ -56,7 +58,7 @@
       </div>
     {% endif %}
     <div class="credential-row">
-      <div class="credential-icon">👤</div>
+      <div class="credential-icon">A</div>
       <div>
         <p class="credential-label">Assignée par</p>
         <p class="credential-value">{{ assigned_by }}</p>
@@ -64,13 +66,13 @@
     </div>
   </div>
   <div class="alert alert-neutral">
-    <strong>💡 Rappel :</strong> Connectez-vous à Smart-HR pour voir le détail complet de la tâche et mettre à jour son statut.
+    <strong>Rappel :</strong> Connectez-vous à Smart-HR pour voir le détail complet de la tâche et mettre à jour son statut.
   </div>
   <div class="btn-wrapper">
     <a href="{{ tasks_url }}" class="btn">Voir mes tâches →</a>
   </div>
-  <p style="font-size:0.78rem;
-            color:#9b9589;
+  <p style="font-size:0.75rem;
+            color:#94a3b8;
             margin-top:1.5rem;
             line-height:1.65">
     Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
