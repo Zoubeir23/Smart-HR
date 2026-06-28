@@ -41,49 +41,10 @@
 
       /* ── Header ── */
       .email-header {
-        background: linear-gradient(150deg, #0a1628 0%, #0f1f3d 55%, #111827 100%);
-        padding: 2rem 2.5rem;
+        background: #ffffff;
+        padding: 1.75rem 2.5rem;
         text-align: center;
-      }
-
-      .logo-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.55rem;
-        background: rgba(255, 255, 255, 0.07);
-        border: 1px solid rgba(255, 255, 255, 0.13);
-        border-radius: 10px;
-        padding: 0.55rem 1.1rem;
-      }
-
-      .logo-text {
-        font-size: 1.1rem;
-        font-weight: 800;
-        color: #ffffff;
-        letter-spacing: -0.01em;
-        vertical-align: middle;
-      }
-
-      .logo-text span {
-        color: #D62828;
-      }
-
-      .logo-tagline {
-        display: block;
-        font-size: 0.65rem;
-        color: rgba(255, 255, 255, 0.38);
-        text-transform: uppercase;
-        letter-spacing: 0.1em;
-        margin-top: 0.65rem;
-      }
-
-      .header-divider {
-        width: 32px;
-        height: 2px;
-        background: #D62828;
-        border-radius: 2px;
-        margin: 0.75rem auto 0;
-        opacity: 0.7;
+        border-bottom: 3px solid #D62828;
       }
 
       /* ── Body ── */
@@ -402,18 +363,12 @@
       <div class="email-wrapper">
         <!-- Header -->
         <div class="email-header">
-          <div class="logo-badge">
-            <img src="{{ site_url }}/static/images/logo-icon.svg"
-                 width="30"
-                 height="30"
-                 alt="Smart-HR"
-                 style="display:inline-block;
-                        vertical-align:middle;
-                        flex-shrink:0" />
-            <span class="logo-text">Smart<span>-HR</span></span>
-          </div>
-          <span class="logo-tagline">Votre SIRH Intelligent</span>
-          <div class="header-divider"></div>
+          <img src="{{ site_url }}/static/images/logo.svg"
+               width="160"
+               height="38"
+               alt="Smart-HR"
+               style="display:block;
+                      margin:0 auto" />
         </div>
         <!-- Content -->
         <div class="email-content">
