@@ -10,49 +10,49 @@
   <p class="email-subtitle">Un employé vient de soumettre une demande de congé en attente de votre validation.</p>
   <div class="divider"></div>
   <div class="credentials-card">
-    <p class="credentials-title">📋 Détails de la demande</p>
+    <p class="credentials-title">Détails de la demande</p>
     <div class="credential-row">
-      <div class="credential-icon">👤</div>
+      <div class="credential-icon">E</div>
       <div>
         <p class="credential-label">Employé</p>
         <p class="credential-value">{{ employee_name }}</p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">🏖️</div>
+      <div class="credential-icon blue">C</div>
       <div>
         <p class="credential-label">Type de congé</p>
         <p class="credential-value">{{ leave_type_label }}</p>
       </div>
     </div>
     <div class="credential-row">
-      <div class="credential-icon">📅</div>
+      <div class="credential-icon">D</div>
       <div>
         <p class="credential-label">Période</p>
         <p class="credential-value">
-          {{ start_date }} → {{ end_date }} <span style="color:#9b9589;">({{ days_count }} jour{{ days_count|pluralize }})</span>
+          {{ start_date }} → {{ end_date }} <span style="color:#94a3b8;">({{ days_count }} jour{{ days_count|pluralize }})</span>
         </p>
       </div>
     </div>
     {% if reason %}
       <div class="credential-row">
-        <div class="credential-icon">💬</div>
+        <div class="credential-icon">M</div>
         <div>
           <p class="credential-label">Motif</p>
-          <p class="credential-value">{{ reason }}</p>
+          <p class="credential-value" style="font-weight:400; color:#475569;">{{ reason }}</p>
         </div>
       </div>
     {% endif %}
     <div style="margin-top: 1rem;">
-      <p class="credential-label" style="margin-bottom:0.5rem;">Statut</p>
+      <p class="credential-label" style="margin-bottom:0.4rem;">Statut</p>
       <span class="status-badge"
-            style="background:#fff3cd;
-                   color:#856404;
-                   border:1px solid #ffc107;
-                   border-radius:6px;
-                   padding:4px 12px;
-                   font-size:0.8rem;
-                   font-weight:600">⏳ En attente de validation</span>
+            style="background:#fefce8;
+                   color:#854d0e;
+                   border:1px solid #fde68a;
+                   font-size:0.775rem;
+                   font-weight:700;
+                   padding:0.3rem 0.8rem;
+                   border-radius:999px">En attente de validation</span>
     </div>
   </div>
   <div class="alert alert-neutral">
@@ -61,8 +61,8 @@
   <div class="btn-wrapper">
     <a href="{{ leaves_url }}" class="btn">Gérer les congés →</a>
   </div>
-  <p style="font-size:0.78rem;
-            color:#9b9589;
+  <p style="font-size:0.75rem;
+            color:#94a3b8;
             margin-top:1.5rem;
             line-height:1.65">
     Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
