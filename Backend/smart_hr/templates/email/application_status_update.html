@@ -7,21 +7,21 @@
 {% endblock email_title %}
 {% block email_content %}
   {% if is_accepted %}
-    <h1 class="email-title">Félicitations, vous êtes accepté ! 🎉</h1>
+    <h1 class="email-title">Félicitations, vous êtes accepté !</h1>
     <p class="email-subtitle">
       Bonjour <strong>{{ first_name }}</strong>,
       <br />
       Excellente nouvelle ! Votre candidature pour le poste de <strong>{{ job_title }}</strong> a été retenue.
     </p>
   {% elif is_interview %}
-    <h1 class="email-title">Vous êtes invité à un entretien 📅</h1>
+    <h1 class="email-title">Vous êtes invité à un entretien</h1>
     <p class="email-subtitle">
       Bonjour <strong>{{ first_name }}</strong>,
       <br />
       Votre candidature pour le poste de <strong>{{ job_title }}</strong> a été sélectionnée pour un entretien.
     </p>
   {% elif is_reviewing %}
-    <h1 class="email-title">Votre candidature est en cours d'examen 🔍</h1>
+    <h1 class="email-title">Votre candidature est en cours d'examen</h1>
     <p class="email-subtitle">
       Bonjour <strong>{{ first_name }}</strong>,
       <br />
@@ -32,40 +32,40 @@
     <p class="email-subtitle">
       Bonjour <strong>{{ first_name }}</strong>,
       <br />
-      Nous vous remercions de l'intérêt que vous portez à notre entreprise. Après examen attentif de votre candidature pour le poste de <strong>{{ job_title }}</strong>, nous ne sommes pas en mesure de donner suite à votre candidature.
+      Nous vous remercions de l'intérêt que vous portez à notre entreprise. Après examen attentif de votre candidature pour le poste de <strong>{{ job_title }}</strong>, nous ne sommes pas en mesure de donner suite.
     </p>
   {% endif %}
   <div class="divider"></div>
   <div class="credentials-card">
-    <p class="credentials-title">📋 Détails de votre candidature</p>
-    <div style="margin-bottom: 1.25rem;">
-      <p class="credential-label" style="margin-bottom:0.5rem;">Nouveau statut</p>
+    <p class="credentials-title">Détails de votre candidature</p>
+    <div style="margin-bottom: 1rem;">
+      <p class="credential-label" style="margin-bottom:0.4rem;">Nouveau statut</p>
       {% if is_accepted %}
-        <span class="status-badge status-approved">✓ Accepté</span>
+        <span class="status-badge status-approved">Accepté</span>
       {% elif is_interview %}
         <span class="status-badge"
-              style="background:#e3f2fd;
-                     color:#1565c0;
-                     border:1px solid #90caf9;
-                     border-radius:6px;
-                     padding:4px 12px;
-                     font-size:0.8rem;
-                     font-weight:600">📅 Entretien planifié</span>
+              style="background:#eff6ff;
+                     color:#1d4ed8;
+                     border:1px solid #bfdbfe;
+                     font-size:0.775rem;
+                     font-weight:700;
+                     padding:0.3rem 0.8rem;
+                     border-radius:999px">Entretien planifié</span>
       {% elif is_reviewing %}
         <span class="status-badge"
-              style="background:#f3e5f5;
-                     color:#6a1b9a;
-                     border:1px solid #ce93d8;
-                     border-radius:6px;
-                     padding:4px 12px;
-                     font-size:0.8rem;
-                     font-weight:600">🔍 En cours d'examen</span>
+              style="background:#faf5ff;
+                     color:#6d28d9;
+                     border:1px solid #ddd6fe;
+                     font-size:0.775rem;
+                     font-weight:700;
+                     padding:0.3rem 0.8rem;
+                     border-radius:999px">En cours d'examen</span>
       {% else %}
-        <span class="status-badge status-rejected">✗ Non retenu</span>
+        <span class="status-badge status-rejected">Non retenu</span>
       {% endif %}
     </div>
     <div class="credential-row">
-      <div class="credential-icon">🎯</div>
+      <div class="credential-icon red">P</div>
       <div>
         <p class="credential-label">Poste</p>
         <p class="credential-value">{{ job_title }}</p>
@@ -74,11 +74,11 @@
   </div>
   {% if is_accepted %}
     <div class="alert alert-success">
-      <strong>✅ Prochaine étape :</strong> Notre équipe RH vous contactera prochainement pour les modalités d'intégration. Connectez-vous à votre espace candidat pour plus d'informations.
+      <strong>Prochaine étape :</strong> Notre équipe RH vous contactera prochainement pour les modalités d'intégration. Connectez-vous à votre espace candidat pour plus d'informations.
     </div>
   {% elif is_interview %}
     <div class="alert alert-neutral">
-      <strong>📌 Prochaine étape :</strong> Notre équipe RH vous contactera pour vous communiquer les détails de l'entretien (date, heure, lieu ou lien visio).
+      <strong>Prochaine étape :</strong> Notre équipe RH vous contactera pour vous communiquer les détails de l'entretien (date, heure, lieu ou lien visio).
     </div>
   {% elif is_reviewing %}
     <div class="alert alert-neutral">
@@ -98,8 +98,8 @@
   <div class="btn-wrapper">
     <a href="{{ dashboard_url }}" class="btn">Voir mes candidatures →</a>
   </div>
-  <p style="font-size:0.78rem;
-            color:#9b9589;
+  <p style="font-size:0.75rem;
+            color:#94a3b8;
             margin-top:1.5rem;
             line-height:1.65">
     Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
