@@ -159,12 +159,43 @@ class TestPayrollMarkPaid:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @patch("smart_hr.paiement.views.payroll.send_payslip_paid_email")
-    def test_employee_can_mark_own_payroll_paid(self, mock_email, employee_user, payroll):
+    def test_employee_cannot_mark_own_payroll_paid(self, mock_email, employee_user, payroll):
+        """Marquer une paie comme payée est une action RH/Admin uniquement.
+
+        Auparavant `get_permissions()` retombait sur IsAuthenticated pour cette
+        action, laissant un employé valider sa propre fiche de paie.
+        """
         client = APIClient()
         client.force_authenticate(user=employee_user)
         url = f"{LIST_URL}{payroll.pk}/mark-paid/"
         response = client.post(url)
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        payroll.refresh_from_db()
+        assert payroll.status != Payroll.Status.PAID
+
+
+class TestPayrollExport:
+    def test_rh_can_export_csv(self, rh_user, payroll):
+        client = APIClient()
+        client.force_authenticate(user=rh_user)
+        response = client.get(f"{LIST_URL}export/")
         assert response.status_code == status.HTTP_200_OK
+        assert "text/csv" in response["Content-Type"]
+
+    def test_rh_can_export_xlsx(self, rh_user, payroll):
+        """Régression : `?format=xlsx` renvoyait 404 (collision avec URL_FORMAT_OVERRIDE)."""
+        client = APIClient()
+        client.force_authenticate(user=rh_user)
+        response = client.get(f"{LIST_URL}export/?export_format=xlsx")
+        assert response.status_code == status.HTTP_200_OK
+        assert "spreadsheetml" in response["Content-Type"]
+
+    def test_employee_cannot_export(self, employee_user, payroll):
+        """L'export est réservé aux RH/Admin (permission_classes de l'action)."""
+        client = APIClient()
+        client.force_authenticate(user=employee_user)
+        response = client.get(f"{LIST_URL}export/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
 
 class TestPayrollFilters:

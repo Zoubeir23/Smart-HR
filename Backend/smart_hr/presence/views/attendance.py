@@ -67,8 +67,8 @@ class AttendanceViewSet(viewsets.ModelViewSet):
         return qs.filter(employee__user=user)
 
     def get_permissions(self):
-        """Accès en lecture pour tous les authentifiés, écriture réservée aux RH/Admin."""
-        if self.action in ["create", "update", "partial_update", "destroy"]:
+        """Accès en lecture pour tous les authentifiés, écriture et export réservés aux RH/Admin."""
+        if self.action in ["create", "update", "partial_update", "destroy", "export"]:
             return [IsRH()]
         return [IsAuthenticated()]
 
@@ -205,11 +205,11 @@ class AttendanceViewSet(viewsets.ModelViewSet):
     def export(self, request):
         """Export CSV ou XLSX des présences (RH/Admin uniquement).
 
-        Query params : format=csv (défaut) | xlsx
+        Query params : export_format=csv (défaut) | xlsx
         """
         from smart_hr.core.export_utils import export_response
 
-        export_format = request.query_params.get("format", "csv").lower()
+        export_format = request.query_params.get("export_format", "csv").lower()
         queryset = self.get_queryset().select_related("employee__user", "employee__department")
 
         rows = [
