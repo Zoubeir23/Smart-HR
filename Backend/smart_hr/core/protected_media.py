@@ -1,15 +1,17 @@
 from pathlib import Path
 
 from django.conf import settings
+from django.core.exceptions import PermissionDenied
 from django.http import FileResponse
 from django.http import Http404
 from django.views import View
-from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
 # Préfixes de média soumis à un contrôle de propriété strict.
 _CV_PREFIX = "cvs/"
 _DOCUMENT_PREFIX = "documents/"
+_RECRUITMENT_DOCUMENT_PREFIX = "recruitment_documents/"
+_SENSITIVE_PREFIXES = (_CV_PREFIX, _DOCUMENT_PREFIX, _RECRUITMENT_DOCUMENT_PREFIX)
 _PRIVILEGED_ROLES = ("ADMIN", "RH")
 
 
@@ -17,12 +19,14 @@ class ProtectedMediaView(View):
     """
     Sert les fichiers media aux utilisateurs autorisés.
 
-    Deux niveaux de protection :
+    Trois niveaux de protection :
     1. Path traversal : le chemin résolu doit rester sous MEDIA_ROOT.
     2. Contrôle d'accès objet : un employé/candidat ne peut télécharger que
-       ses propres documents (contrats, fiches) et son propre CV. RH/Admin
-       accèdent à tout. Les autres médias (photos, audio) restent accessibles
-       à tout utilisateur authentifié.
+       ses propres documents (contrats, fiches, pièces de candidature) et son
+       propre CV. RH/Admin accèdent à tout. Les autres médias (photos, audio)
+       restent accessibles à tout utilisateur authentifié.
+    3. Les fichiers sensibles sont servis en pièce jointe (Content-Disposition:
+       attachment) pour empêcher l'exécution de contenu actif dans le navigateur.
 
     Authentification via JWT (header Authorization: Bearer <token>).
     """
@@ -43,7 +47,10 @@ class ProtectedMediaView(View):
         if not full_path.is_file():
             raise Http404
 
-        return FileResponse(full_path.open("rb"))
+        return FileResponse(
+            full_path.open("rb"),
+            as_attachment=path.startswith(_SENSITIVE_PREFIXES),
+        )
 
     @staticmethod
     def _resolve_user(request):
@@ -70,6 +77,14 @@ class ProtectedMediaView(View):
             from smart_hr.document.models import Document
 
             return Document.objects.filter(file=path, employee__user=user).exists()
+
+        if path.startswith(_RECRUITMENT_DOCUMENT_PREFIX):
+            from smart_hr.recruitment.models import ApplicationDocument
+
+            return ApplicationDocument.objects.filter(
+                file=path,
+                application__candidate=user,
+            ).exists()
 
         # Médias non sensibles (photos de profil, audio) : utilisateur authentifié suffit.
         return True
