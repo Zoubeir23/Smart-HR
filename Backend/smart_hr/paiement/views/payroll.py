@@ -62,8 +62,8 @@ class PayrollViewSet(viewsets.ModelViewSet):
         return qs.filter(employee__user=user)
 
     def get_permissions(self):
-        """Protège les actions d'écriture pour RH/Admin uniquement."""
-        if self.action in ["create", "update", "partial_update", "destroy", "bulk_generate"]:
+        """Protège les actions d'écriture, d'export et de mark_paid pour RH/Admin uniquement."""
+        if self.action in ["create", "update", "partial_update", "destroy", "bulk_generate", "export", "mark_paid"]:
             return [IsRHOrDepartmentManager()]
         return [IsAuthenticated()]
 
@@ -253,11 +253,11 @@ class PayrollViewSet(viewsets.ModelViewSet):
     def export(self, request):
         """Export CSV ou XLSX des fiches de paie.
 
-        Query params : format=csv (défaut) | xlsx
+        Query params : export_format=csv (défaut) | xlsx
         """
         from smart_hr.core.export_utils import export_response
 
-        export_format = request.query_params.get("format", "csv").lower()
+        export_format = request.query_params.get("export_format", "csv").lower()
         queryset = self.get_queryset().select_related("employee__user", "employee__department")
 
         rows = [
