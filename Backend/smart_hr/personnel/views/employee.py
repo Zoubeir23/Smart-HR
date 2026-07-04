@@ -358,11 +358,11 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     def export(self, request):
         """Export CSV ou XLSX de la liste des employés (RH/Admin uniquement).
 
-        Query params : format=csv (défaut) | xlsx
+        Query params : export_format=csv (défaut) | xlsx
         """
         from smart_hr.core.export_utils import export_response
 
-        export_format = request.query_params.get("format", "csv").lower()
+        export_format = request.query_params.get("export_format", "csv").lower()
         queryset = self.get_queryset().select_related("user", "department", "position", "service")
 
         rows = [
