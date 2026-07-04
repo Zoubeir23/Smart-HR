@@ -35,7 +35,8 @@ class ParticipationSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "enrolled_at"]
 
     def get_employee_name(self, obj: Participation) -> str:
-        return f"{obj.employee.first_name} {obj.employee.last_name}".strip() or obj.employee.email
+        user = obj.employee.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
 
 
 class FormationSerializer(serializers.ModelSerializer):
