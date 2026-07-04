@@ -24,7 +24,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        base = Participation.objects.select_related("employee", "formation")
+        base = Participation.objects.select_related("employee__user", "formation")
 
         if user.role in [User.Role.ADMIN, User.Role.RH]:
             formation_id = self.request.query_params.get("formation_id")
@@ -35,7 +35,7 @@ class ParticipationViewSet(viewsets.ModelViewSet):
                 base = base.filter(employee_id=employee_id)
             return base
 
-        return base.filter(employee=user)
+        return base.filter(employee__user=user)
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
