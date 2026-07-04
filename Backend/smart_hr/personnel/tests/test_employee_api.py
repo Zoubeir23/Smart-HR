@@ -176,6 +176,14 @@ class TestEmployeeExport:
         assert response.status_code == status.HTTP_200_OK
         assert "text/csv" in response["Content-Type"]
 
+    def test_rh_can_export_employees_xlsx(self, rh_user, employee):
+        """Régression : `?format=xlsx` renvoyait 404 (collision avec URL_FORMAT_OVERRIDE)."""
+        client = APIClient()
+        client.force_authenticate(user=rh_user)
+        response = client.get(f"{LIST_URL}export/?export_format=xlsx")
+        assert response.status_code == status.HTTP_200_OK
+        assert "spreadsheetml" in response["Content-Type"]
+
     def test_employee_cannot_export(self, employee_user, employee):
         client = APIClient()
         client.force_authenticate(user=employee_user)
