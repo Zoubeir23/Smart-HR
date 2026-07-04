@@ -3,6 +3,7 @@ from django.db import models
 
 from smart_hr.core.models import TimeStampedModel
 from smart_hr.core.validators import validate_cv_extension
+from smart_hr.core.validators import validate_document_extension
 from smart_hr.core.validators import validate_file_size
 
 
@@ -143,7 +144,7 @@ class ApplicationDocument(TimeStampedModel):
     label = models.CharField(max_length=200, blank=True, help_text="Description courte du document")
     file = models.FileField(
         upload_to="recruitment_documents/",
-        validators=[validate_file_size],
+        validators=[validate_document_extension, validate_file_size],
     )
 
     class Meta:
