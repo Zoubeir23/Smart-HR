@@ -1,10 +1,13 @@
 import api from './api';
+import { LIST_ALL_PAGE_SIZE } from '@/lib/pagination';
 
 // Backend: /api/v1/paiement/payrolls/
 
 export const payrollService = {
   getAll: async (params?: { month?: string; status?: string; employee_id?: number; department_id?: number }) => {
-    const { data } = await api.get('/paiement/payrolls/', { params });
+    const { data } = await api.get('/paiement/payrolls/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
     return data;
   },
 

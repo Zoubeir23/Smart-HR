@@ -1,4 +1,5 @@
 import api from './api';
+import { LIST_ALL_PAGE_SIZE } from '@/lib/pagination';
 
 // Backend: /api/v1/discipline/actions/
 
@@ -16,7 +17,9 @@ export interface DisciplinaryActionPayload {
 
 export const disciplineService = {
   getAll: async (params?: { employee_id?: number; action_type?: string }) => {
-    const { data } = await api.get('/discipline/actions/', { params });
+    const { data } = await api.get('/discipline/actions/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
     return data;
   },
 

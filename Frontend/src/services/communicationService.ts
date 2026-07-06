@@ -1,4 +1,5 @@
 import api from './api';
+import { LIST_ALL_PAGE_SIZE } from '@/lib/pagination';
 
 // Backend: /api/v1/communication/messages/
 
@@ -19,7 +20,9 @@ export const communicationService = {
     year?: string;
     search?: string;
   }) => {
-    const { data } = await api.get('/communication/messages/', { params });
+    const { data } = await api.get('/communication/messages/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
     return data;
   },
 

@@ -1,8 +1,11 @@
 import api from './api';
+import { LIST_ALL_PAGE_SIZE } from '@/lib/pagination';
 
 export const employeeService = {
   getAll: async (params?: { department?: string; status?: string; search?: string }) => {
-    const { data } = await api.get('/personnel/employees/', { params });
+    const { data } = await api.get('/personnel/employees/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
     return data;
   },
 
