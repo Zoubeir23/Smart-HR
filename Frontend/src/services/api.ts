@@ -33,6 +33,30 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Mutex de rafraîchissement : le backend a ROTATE_REFRESH_TOKENS +
+// BLACKLIST_AFTER_ROTATION, donc si plusieurs requêtes 401 se déclenchent en
+// parallèle (ex. chargement d'un dashboard), seul le premier refresh doit
+// partir sur le réseau — les autres attendent son résultat au lieu de
+// blacklister un refresh token déjà consommé et déconnecter l'utilisateur.
+let refreshPromise: Promise<string> | null = null;
+
+export function refreshAccessToken(refreshToken: string): Promise<string> {
+  if (!refreshPromise) {
+    refreshPromise = axios
+      .post<{ access: string }>(`${API_URL}/auth/token/refresh/`, {
+        refresh: refreshToken,
+      })
+      .then(({ data }) => {
+        localStorage.setItem('access_token', data.access);
+        return data.access;
+      })
+      .finally(() => {
+        refreshPromise = null;
+      });
+  }
+  return refreshPromise;
+}
+
 // Response interceptor: auto-refresh on 401
 api.interceptors.response.use(
   (response) => response,
@@ -45,11 +69,8 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const { data } = await axios.post(`${API_URL}/auth/token/refresh/`, {
-            refresh: refreshToken,
-          });
-          localStorage.setItem('access_token', data.access);
-          originalRequest.headers.Authorization = `Bearer ${data.access}`;
+          const accessToken = await refreshAccessToken(refreshToken);
+          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
           return api(originalRequest);
         } catch {
           // Refresh failed, clear tokens and redirect to login
