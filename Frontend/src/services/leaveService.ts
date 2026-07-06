@@ -1,4 +1,5 @@
 import api from './api';
+import { LIST_ALL_PAGE_SIZE } from '@/lib/pagination';
 
 // Backend: GET/POST /api/v1/conge/leave-requests/
 // Backend: POST /api/v1/conge/leave-requests/{id}/approve/
@@ -6,7 +7,9 @@ import api from './api';
 
 export const leaveService = {
   getAll: async (params?: { status?: string; employee?: number }) => {
-    const { data } = await api.get('/conge/leave-requests/', { params });
+    const { data } = await api.get('/conge/leave-requests/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
     return data;
   },
 
