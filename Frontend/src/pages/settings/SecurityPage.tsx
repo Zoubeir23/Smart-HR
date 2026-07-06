@@ -355,16 +355,16 @@ export default function SecurityPage() {
             <div className="flex items-center gap-3">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <Select
-                value={auditFilters.action ?? ''}
+                value={auditFilters.action ?? 'all'}
                 onValueChange={(value) =>
-                  setAuditFilters((prev) => ({ ...prev, action: value || undefined }))
+                  setAuditFilters((prev) => ({ ...prev, action: value === 'all' ? undefined : value }))
                 }
               >
                 <SelectTrigger className="w-44">
                   <SelectValue placeholder="Toutes les actions" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Toutes les actions</SelectItem>
+                  <SelectItem value="all">Toutes les actions</SelectItem>
                   {Object.entries(ACTION_LABELS).map(([key, meta]) => (
                     <SelectItem key={key} value={key}>{meta.label}</SelectItem>
                   ))}
