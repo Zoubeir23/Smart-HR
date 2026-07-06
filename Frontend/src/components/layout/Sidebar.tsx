@@ -282,11 +282,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             className={cn(
               'group/item relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
               hasActiveChild
-                ? 'bg-sidebar-accent text-sidebar-accent-foreground'
+                ? 'bg-sidebar-primary/10 text-sidebar-primary hover:bg-sidebar-primary/15'
                 : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
             )}
           >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all duration-150 group-hover/item:bg-sidebar-accent-foreground/10">
+            <div className={cn(
+              'flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-all duration-150',
+              hasActiveChild ? 'bg-sidebar-primary/15' : 'group-hover/item:bg-sidebar-accent-foreground/10'
+            )}>
               <Icon className="h-4 w-4 flex-shrink-0" />
             </div>
             <AnimatePresence mode="wait">
