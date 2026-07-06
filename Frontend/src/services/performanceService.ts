@@ -1,4 +1,5 @@
 import api from './api';
+import { LIST_ALL_PAGE_SIZE } from '@/lib/pagination';
 
 // Backend: /api/v1/performance/skills/
 // Backend: /api/v1/performance/evaluations/
@@ -33,7 +34,9 @@ export interface ParticipationPayload {
 export const performanceService = {
   // ── Skills ───────────────────────────────────────────────────────
   getAllSkills: async (params?: { employee_id?: number; category?: string; search?: string }) => {
-    const { data } = await api.get('/performance/skills/', { params });
+    const { data } = await api.get('/performance/skills/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
     return data;
   },
 
@@ -53,7 +56,9 @@ export const performanceService = {
 
   // ── Evaluations ───────────────────────────────────────────────────
   getAllEvaluations: async (params?: { year?: number; status?: string; employee_id?: number; search?: string }) => {
-    const { data } = await api.get('/performance/evaluations/', { params });
+    const { data } = await api.get('/performance/evaluations/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
     return data;
   },
 
