@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search,
   Plus,
@@ -94,6 +94,8 @@ type SortDir = 'asc' | 'desc';
 
 export default function EmployeeListPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isArchivedView = searchParams.get('archived') === 'true';
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('Tous');
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -110,7 +112,12 @@ export default function EmployeeListPage() {
     queryFn: () => employeeService.getDepartments(),
   });
 
-  const employees: Employee[] = useMemo(() => employeesData?.results || employeesData || [], [employeesData]);
+  const employees: Employee[] = useMemo(() => {
+    const allEmployees: Employee[] = employeesData?.results || employeesData || [];
+    return isArchivedView
+      ? allEmployees.filter((employee) => employee.status === 'terminated')
+      : allEmployees.filter((employee) => employee.status !== 'terminated');
+  }, [employeesData, isArchivedView]);
   const departmentsList = useMemo(() => departmentsData?.results ?? departmentsData ?? [], [departmentsData]);
   const departments = useMemo(() => ['Tous', ...departmentsList.map((d: { name: string }) => d.name)], [departmentsList]);
 
@@ -206,9 +213,13 @@ export default function EmployeeListPage() {
         {/* ────── HEADER ────── */}
         <motion.div variants={item} className="flex flex-col gap-3 sm:gap-4 sm:items-end sm:justify-between">
           <div className="space-y-1">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Employés</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              {isArchivedView ? 'Ex-fonctionnaires' : 'Employés'}
+            </h1>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              Gérez et consultez les informations de vos {stats.total} collaborateurs
+              {isArchivedView
+                ? `Consultez les ${stats.total} anciens collaborateurs`
+                : `Gérez et consultez les informations de vos ${stats.total} collaborateurs`}
             </p>
           </div>
           {/* Responsive button layout: stack on mobile, row on tablet+ */}
@@ -217,12 +228,14 @@ export default function EmployeeListPage() {
               <Download className="h-3 w-3 sm:h-4 sm:w-4" />
               Exporter
             </Button>
-            <Button asChild size="sm" className="gap-2 text-xs sm:text-sm bg-gradient-primary">
-              <Link to="/employees/create">
-                <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                Nouvel employé
-              </Link>
-            </Button>
+            {!isArchivedView && (
+              <Button asChild size="sm" className="gap-2 text-xs sm:text-sm bg-gradient-primary">
+                <Link to="/employees/create">
+                  <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Nouvel employé
+                </Link>
+              </Button>
+            )}
           </div>
         </motion.div>
 
@@ -246,6 +259,7 @@ export default function EmployeeListPage() {
         {!isLoading && (
           <>
             {/* ────── STATUS FILTER PILLS ────── */}
+            {!isArchivedView && (
             <motion.div variants={item} className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-4">
               {statuses.map((status) => {
                 const Icon = status.icon;
@@ -276,6 +290,7 @@ export default function EmployeeListPage() {
                 );
               })}
             </motion.div>
+            )}
 
             {/* ────── TOOLBAR ────── */}
             <motion.div variants={item} className="flex flex-col gap-3 sm:gap-0 sm:flex-row sm:items-center sm:justify-between">
@@ -346,9 +361,13 @@ export default function EmployeeListPage() {
                   <div className="mb-4 flex h-12 w-12 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-muted">
                     <Users className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground" />
                   </div>
-                  <h3 className="text-base sm:text-lg font-semibold">Aucun employé trouvé</h3>
+                  <h3 className="text-base sm:text-lg font-semibold">
+                    {isArchivedView ? 'Aucun ex-fonctionnaire' : 'Aucun employé trouvé'}
+                  </h3>
                   <p className="mt-1 max-w-sm text-center text-xs sm:text-sm text-muted-foreground px-3">
-                    Essayez de modifier vos critères de recherche ou réinitialisez les filtres
+                    {isArchivedView
+                      ? "Aucun employé n'a encore quitté l'entreprise."
+                      : 'Essayez de modifier vos critères de recherche ou réinitialisez les filtres'}
                   </p>
                   <Button className="mt-4 sm:mt-6 gap-2 text-sm sm:text-base h-9 sm:h-10" variant="outline" onClick={resetFilters}>
                     Réinitialiser les filtres

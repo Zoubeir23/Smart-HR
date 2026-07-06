@@ -13,6 +13,13 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { GraduationCap, Calendar, Users, Video, Clock, BookOpen, Plus, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -64,6 +71,22 @@ interface NewFormationForm {
   instructor: string;
 }
 
+interface NewMeetingForm {
+  title: string;
+  formation: string;
+  start_time: string;
+  end_time: string;
+  meeting_link: string;
+}
+
+const EMPTY_MEETING_FORM: NewMeetingForm = {
+  title: '',
+  formation: '',
+  start_time: '',
+  end_time: '',
+  meeting_link: '',
+};
+
 export default function TrainingPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -77,6 +100,8 @@ export default function TrainingPage() {
     end_date: '',
     instructor: '',
   });
+  const [isCreateMeetingDialogOpen, setIsCreateMeetingDialogOpen] = useState(false);
+  const [newMeetingForm, setNewMeetingForm] = useState<NewMeetingForm>(EMPTY_MEETING_FORM);
 
   const { data: formationsData, isLoading: isLoadingFormations } = useQuery({
     queryKey: ['formations'],
@@ -114,6 +139,38 @@ export default function TrainingPage() {
       return;
     }
     createMutation.mutate({ ...newFormationForm });
+  };
+
+  const createMeetingMutation = useMutation({
+    mutationFn: (data: Record<string, unknown>) => trainingService.createMeeting(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reunions'] });
+      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      toast.success('Réunion planifiée avec succès.');
+      setIsCreateMeetingDialogOpen(false);
+      setNewMeetingForm(EMPTY_MEETING_FORM);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la planification de la réunion.');
+    },
+  });
+
+  const handleCreateMeetingSubmit = () => {
+    if (!newMeetingForm.title || !newMeetingForm.formation || !newMeetingForm.start_time || !newMeetingForm.end_time) {
+      toast.error('Le titre, la formation et les dates sont obligatoires.');
+      return;
+    }
+    if (new Date(newMeetingForm.end_time) <= new Date(newMeetingForm.start_time)) {
+      toast.error('La date de fin doit être après la date de début.');
+      return;
+    }
+    createMeetingMutation.mutate({
+      title: newMeetingForm.title,
+      formation: Number(newMeetingForm.formation),
+      start_time: newMeetingForm.start_time,
+      end_time: newMeetingForm.end_time,
+      meeting_link: newMeetingForm.meeting_link || null,
+    });
   };
 
   if (isLoadingFormations || isLoadingReunions) {
@@ -291,9 +348,34 @@ export default function TrainingPage() {
         </div>
 
         {/* Prochaines réunions */}
-        {reunions.length > 0 && (
-          <div className="space-y-4">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-foreground">Réunions</h2>
+            {canManage && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsCreateMeetingDialogOpen(true)}
+                disabled={formations.length === 0}
+                title={formations.length === 0 ? "Créez d'abord une formation pour pouvoir y rattacher une réunion." : undefined}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Planifier une réunion
+              </Button>
+            )}
+          </div>
+          {reunions.length === 0 ? (
+            <Card className="border border-dashed border-border shadow-none rounded-lg">
+              <CardContent className="flex flex-col items-center justify-center gap-1 py-10 text-center">
+                <p className="text-sm font-medium text-foreground">Aucune réunion planifiée</p>
+                <p className="text-sm text-muted-foreground">
+                  {canManage
+                    ? 'Planifiez une réunion liée à une formation existante.'
+                    : "Aucune réunion n'est prévue pour le moment."}
+                </p>
+              </CardContent>
+            </Card>
+          ) : (
             <Card className="border border-border shadow-sm rounded-lg">
               <CardContent className="p-0">
                 <div className="divide-y divide-border">
@@ -340,8 +422,8 @@ export default function TrainingPage() {
                 </div>
               </CardContent>
             </Card>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Create Formation Dialog — réservé RH/Admin */}
         {canManage && (
@@ -399,6 +481,78 @@ export default function TrainingPage() {
               <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Annuler</Button>
               <Button onClick={handleCreateSubmit} disabled={createMutation.isPending}>
                 {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Créer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        )}
+
+        {/* Create Meeting Dialog — réservé RH/Admin */}
+        {canManage && (
+        <Dialog open={isCreateMeetingDialogOpen} onOpenChange={setIsCreateMeetingDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Planifier une réunion</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid gap-2">
+                <Label>Titre *</Label>
+                <Input
+                  value={newMeetingForm.title}
+                  onChange={(e) => setNewMeetingForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Ex: Point d'avancement semaine 1"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Formation *</Label>
+                <Select
+                  value={newMeetingForm.formation}
+                  onValueChange={(value) => setNewMeetingForm((prev) => ({ ...prev, formation: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une formation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formations.map((formation) => (
+                      <SelectItem key={formation.id} value={String(formation.id)}>
+                        {formation.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Date de début *</Label>
+                  <Input
+                    type="datetime-local"
+                    value={newMeetingForm.start_time}
+                    onChange={(e) => setNewMeetingForm((prev) => ({ ...prev, start_time: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Date de fin *</Label>
+                  <Input
+                    type="datetime-local"
+                    value={newMeetingForm.end_time}
+                    onChange={(e) => setNewMeetingForm((prev) => ({ ...prev, end_time: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Lien de la réunion</Label>
+                <Input
+                  value={newMeetingForm.meeting_link}
+                  onChange={(e) => setNewMeetingForm((prev) => ({ ...prev, meeting_link: e.target.value }))}
+                  placeholder="Ex: https://meet.google.com/xxx-xxxx-xxx"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsCreateMeetingDialogOpen(false)}>Annuler</Button>
+              <Button onClick={handleCreateMeetingSubmit} disabled={createMeetingMutation.isPending}>
+                {createMeetingMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Créer
               </Button>
             </DialogFooter>

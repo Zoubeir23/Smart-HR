@@ -35,7 +35,7 @@ export interface Employee {
   user_full_name?: string;
   hire_date: string;
   salary: number;
-  status: 'active' | 'inactive' | 'on_leave';
+  status: 'active' | 'inactive' | 'on_leave' | 'suspended' | 'terminated';
   date_of_birth?: string;
   cin?: string;
   address?: string;
