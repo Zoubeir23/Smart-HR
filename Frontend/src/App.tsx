@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import AutoSEO from "@/components/common/AutoSEO";
+import AppErrorBoundary from "@/components/common/AppErrorBoundary";
 
 // Pages Auth (chargement immédiat — nécessaires avant authentification)
 import LoginPage from "@/pages/auth/LoginPage";
@@ -106,7 +107,8 @@ function DashboardRedirect() {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
+  <AppErrorBoundary>
+    <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <AuthProvider>
         <TooltipProvider>
@@ -114,6 +116,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <AutoSEO />
+            <AppErrorBoundary>
             <Suspense fallback={<PageLoader />}>
             <Routes>
               {/* Routes publiques */}
@@ -431,11 +434,13 @@ const App = () => (
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
             </Suspense>
+            </AppErrorBoundary>
           </BrowserRouter>
         </TooltipProvider>
       </AuthProvider>
     </ThemeProvider>
-  </QueryClientProvider>
+    </QueryClientProvider>
+  </AppErrorBoundary>
 );
 
 export default App;
