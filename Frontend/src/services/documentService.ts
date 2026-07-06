@@ -1,10 +1,13 @@
 import api from './api';
+import { LIST_ALL_PAGE_SIZE } from '@/lib/pagination';
 
 // Backend: /api/v1/document/documents/
 
 export const documentService = {
   getAll: async (params?: { employee?: number; document_type?: string }) => {
-    const { data } = await api.get('/document/documents/', { params });
+    const { data } = await api.get('/document/documents/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
     return data;
   },
 
