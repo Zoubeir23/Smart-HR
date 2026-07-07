@@ -11,11 +11,14 @@ import {
   RefreshCcw,
   Radio,
 } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { aiService } from '@/services/aiService';
+import { useToast } from '@/hooks/use-toast';
+import { aiService, VoiceMessageEntry } from '@/services/aiService';
 import { cn } from '@/lib/utils';
+import ConversationSidebar from '@/components/ai/ConversationSidebar';
 
 /* ─── Types ─── */
 
@@ -99,19 +102,78 @@ function stopSpeech(): void {
   if ('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
 
+function voiceMessagesToEntries(messages: VoiceMessageEntry[]): ConversationEntry[] {
+  return messages
+    .map((message) => ({
+      id: message.id,
+      question: message.question,
+      answer: message.response,
+      voice: (VOICE_PROFILES.find((profile) => profile.id === message.voice)?.id ?? 'nova') as VoiceType,
+      timestamp: new Date(message.created_at),
+    }))
+    .reverse();
+}
+
 /* ─── Main component ─── */
 
 export default function VoiceAssistantPage() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
   const [selectedVoice, setSelectedVoice] = useState<VoiceType>('nova');
   const [textQuery, setTextQuery] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [conversation, setConversation] = useState<ConversationEntry[]>([]);
+  const [activeSessionId, setActiveSessionId] = useState<number | null>(null);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const entryCounterRef = useRef(0);
 
   const currentProfile = VOICE_PROFILES.find((v) => v.id === selectedVoice) ?? VOICE_PROFILES[0];
+
+  /* ── Historique de sessions ── */
+
+  const { data: sessions = [] } = useQuery({
+    queryKey: ['voice-sessions'],
+    queryFn: aiService.getVoiceSessions,
+  });
+
+  const startNewSession = useCallback(() => {
+    setActiveSessionId(null);
+    setConversation([]);
+    stopSpeech();
+    setIsSpeaking(false);
+  }, []);
+
+  const selectSession = async (id: number) => {
+    if (id === activeSessionId) return;
+    setActiveSessionId(id);
+    setIsLoadingSession(true);
+    stopSpeech();
+    setIsSpeaking(false);
+    try {
+      const messages = await aiService.getVoiceSessionMessages(id);
+      setConversation(voiceMessagesToEntries(messages));
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de charger cette session.', variant: 'destructive' });
+    } finally {
+      setIsLoadingSession(false);
+    }
+  };
+
+  const deleteSessionMutation = useMutation({
+    mutationFn: (id: number) => aiService.deleteVoiceSession(id),
+    onSuccess: (_data, deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ['voice-sessions'] });
+      if (deletedId === activeSessionId) startNewSession();
+      toast({ title: 'Session supprimée' });
+    },
+    onError: () => {
+      toast({ title: 'Erreur', description: 'Impossible de supprimer cette session.', variant: 'destructive' });
+    },
+  });
 
   /* ── Submit query to backend ── */
 
@@ -126,8 +188,13 @@ export default function VoiceAssistantPage() {
       setIsSpeaking(false);
 
       try {
-        const data = await aiService.voiceAsk(trimmed, selectedVoice);
+        const data = await aiService.voiceAsk(trimmed, selectedVoice, activeSessionId ?? undefined);
         const answer: string = data.text_response ?? "Je n'ai pas pu générer de réponse.";
+
+        if (!activeSessionId && data.session) {
+          setActiveSessionId(data.session);
+        }
+        queryClient.invalidateQueries({ queryKey: ['voice-sessions'] });
 
         entryCounterRef.current += 1;
         setConversation((prev) => [
@@ -171,7 +238,7 @@ export default function VoiceAssistantPage() {
         setIsProcessing(false);
       }
     },
-    [isProcessing, selectedVoice, currentProfile]
+    [isProcessing, selectedVoice, currentProfile, activeSessionId, queryClient]
   );
 
   /* ── Speech recognition ── */
@@ -238,16 +305,22 @@ export default function VoiceAssistantPage() {
     setIsSpeaking(false);
   };
 
-  const handleClearConversation = () => {
-    stopSpeech();
-    setIsSpeaking(false);
-    setConversation([]);
-  };
-
   /* ── Render ── */
 
   return (
-      <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
+    <div className="flex h-[calc(100vh-4rem)] gap-3">
+      <ConversationSidebar
+        items={sessions}
+        activeId={activeSessionId}
+        onSelect={selectSession}
+        onNew={startNewSession}
+        onDelete={(id) => deleteSessionMutation.mutate(id)}
+        newLabel="Nouvelle session"
+        emptyLabel="Aucune session pour le moment."
+        deleteTitle="Supprimer cette session ?"
+        deleteDescription="Cette action est irréversible. Tous les échanges de cette session seront définitivement supprimés."
+      />
+      <div className="max-w-3xl mx-auto py-8 px-4 space-y-6 flex-1 overflow-y-auto">
 
         {/* Header */}
         <motion.div
@@ -396,7 +469,7 @@ export default function VoiceAssistantPage() {
 
         {/* Conversation history */}
         <AnimatePresence>
-          {conversation.length > 0 && (
+          {!isLoadingSession && conversation.length > 0 && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
@@ -405,11 +478,11 @@ export default function VoiceAssistantPage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={handleClearConversation}
+                  onClick={startNewSession}
                   className="h-7 px-2 text-xs text-muted-foreground"
                 >
                   <RefreshCcw className="w-3 h-3 mr-1" />
-                  Effacer
+                  Nouvelle session
                 </Button>
               </div>
 
@@ -467,8 +540,14 @@ export default function VoiceAssistantPage() {
           )}
         </AnimatePresence>
 
+        {isLoadingSession && (
+          <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
+            Chargement de la session…
+          </div>
+        )}
+
         {/* Example questions */}
-        {conversation.length === 0 && !isProcessing && (
+        {!isLoadingSession && conversation.length === 0 && !isProcessing && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1, transition: { delay: 0.3 } }}>
             <Card className="bg-muted/30 border-dashed">
               <CardContent className="pt-4 pb-4">
@@ -491,5 +570,6 @@ export default function VoiceAssistantPage() {
           </motion.div>
         )}
       </div>
+    </div>
   );
 }
