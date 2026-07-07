@@ -10,6 +10,7 @@ import {
   Users,
   Plus,
   Loader2,
+  Sparkles,
 } from 'lucide-react';
 import { recruitmentService } from '@/services/recruitmentService';
 import { Button } from '@/components/ui/button';
@@ -92,6 +93,26 @@ export default function JobOfferListPage() {
   });
 
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
+  const [rawJobDescription, setRawJobDescription] = useState('');
+
+  const generateMutation = useMutation({
+    mutationFn: (jobDescription: string) => recruitmentService.generateJobOffer(jobDescription),
+    onSuccess: (draft) => {
+      setNewOfferForm({
+        title: draft.title || '',
+        department: draft.department || '',
+        location: draft.location || '',
+        job_type: draft.job_type || 'full_time',
+        description: draft.description || '',
+        requirements: draft.requirements || '',
+        salary_range: draft.salary_range || '',
+      });
+      toast.success('Brouillon généré — relisez et ajustez avant de publier.');
+    },
+    onError: () => {
+      toast.error("Impossible de générer l'offre. Réessayez ou complétez le formulaire manuellement.");
+    },
+  });
 
   const isRHOrAdmin = user?.role === 'RH' || user?.role === 'ADMIN';
   const isCandidate = user?.role === 'CANDIDATE';
@@ -103,6 +124,7 @@ export default function JobOfferListPage() {
       toast.success('Offre créée avec succès.');
       setIsCreateDialogOpen(false);
       setNewOfferForm({ title: '', department: '', location: '', job_type: 'full_time', description: '', requirements: '', salary_range: '' });
+      setRawJobDescription('');
     },
     onError: () => {
       toast.error("Erreur lors de la création de l'offre.");
@@ -359,6 +381,33 @@ export default function JobOfferListPage() {
               <DialogTitle>Nouvelle offre d'emploi</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="grid gap-2 rounded-lg border border-dashed border-border p-3">
+                <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Générer un brouillon avec l'IA (optionnel)
+                </Label>
+                <Textarea
+                  value={rawJobDescription}
+                  onChange={(e) => setRawJobDescription(e.target.value)}
+                  placeholder="Collez une fiche de poste brute — l'IA remplit les champs ci-dessous."
+                  rows={2}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="w-fit gap-2"
+                  disabled={!rawJobDescription.trim() || generateMutation.isPending}
+                  onClick={() => generateMutation.mutate(rawJobDescription)}
+                >
+                  {generateMutation.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
+                  Générer
+                </Button>
+              </div>
               <div className="grid gap-2">
                 <Label>Titre du poste *</Label>
                 <Input
