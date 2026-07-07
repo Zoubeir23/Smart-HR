@@ -59,6 +59,23 @@ export interface ChatHistoryEntry {
   created_at: string;
 }
 
+export interface VoiceSession {
+  id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface VoiceMessageEntry {
+  id: number;
+  session: number | null;
+  question: string;
+  response: string;
+  audio_url: string;
+  voice: string;
+  created_at: string;
+}
+
 function normalizeApiBaseUrl(): string {
   const rawApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1') as string;
   const trimmedApiUrl = rawApiUrl.trim().replace(/\/+$/, '');
@@ -130,10 +147,42 @@ export const aiService = {
     }
   },
 
-  voiceAsk: async (question: string, voice: 'nova' | 'alloy' | 'echo' = 'nova') => {
+  voiceAsk: async (question: string, voice: 'nova' | 'alloy' | 'echo' = 'nova', sessionId?: number) => {
     try {
-      const { data } = await api.post('/agents/voice/ask/', { question, voice });
+      const { data } = await api.post('/agents/voice/ask/', {
+        question,
+        voice,
+        ...(sessionId ? { session: sessionId } : {}),
+      });
       return data;
+    } catch (error: unknown) {
+      throw new Error(getAxiosErrorMessage(error));
+    }
+  },
+
+  // ── Historique de sessions (assistant vocal) ────────────────────────────
+
+  getVoiceSessions: async (): Promise<VoiceSession[]> => {
+    try {
+      const { data } = await api.get('/agents/voice/sessions/');
+      return data?.results ?? data ?? [];
+    } catch (error: unknown) {
+      throw new Error(getAxiosErrorMessage(error));
+    }
+  },
+
+  getVoiceSessionMessages: async (sessionId: number): Promise<VoiceMessageEntry[]> => {
+    try {
+      const { data } = await api.get(`/agents/voice/sessions/${sessionId}/messages/`);
+      return data;
+    } catch (error: unknown) {
+      throw new Error(getAxiosErrorMessage(error));
+    }
+  },
+
+  deleteVoiceSession: async (sessionId: number): Promise<void> => {
+    try {
+      await api.delete(`/agents/voice/sessions/${sessionId}/`);
     } catch (error: unknown) {
       throw new Error(getAxiosErrorMessage(error));
     }
