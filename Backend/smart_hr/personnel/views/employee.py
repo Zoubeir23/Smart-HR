@@ -11,12 +11,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.core.email_service import send_employee_credentials_email
+from smart_hr.core.export_utils import build_csv_response
 from smart_hr.core.models import AuditLog
 from smart_hr.core.models import log_audit_action
 from smart_hr.personnel.models import Employee
 from smart_hr.personnel.serializers import EmployeeListSerializer
 from smart_hr.personnel.serializers import EmployeeSelfSerializer
 from smart_hr.personnel.serializers import EmployeeSerializer
+from smart_hr.personnel.services.bulk_import import TEMPLATE_COLUMNS
+from smart_hr.personnel.services.bulk_import import import_employees_from_dataframe
 from smart_hr.users.models import User
 from smart_hr.users.permissions import IsRHOrDepartmentManager
 
@@ -373,3 +376,63 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         ]
 
         return export_response(rows, "employes", export_format, sheet_name="Employés")
+
+    @action(detail=False, methods=["post"], url_path="import", permission_classes=[IsRHOrDepartmentManager])
+    def import_employees(self, request):
+        """
+        POST /api/v1/personnel/employees/import/
+        Body: multipart, champ `file` (.csv ou .xlsx).
+        Crée un compte + une fiche employé par ligne valide. Les lignes en
+        erreur sont rapportées sans bloquer les lignes suivantes.
+        """
+        import pandas as pd
+
+        upload = request.FILES.get("file")
+        if not upload:
+            return Response({"detail": "Aucun fichier fourni."}, status=status.HTTP_400_BAD_REQUEST)
+
+        filename = upload.name.lower()
+        try:
+            if filename.endswith(".csv"):
+                dataframe = pd.read_csv(upload, dtype=str, keep_default_na=False)
+            elif filename.endswith(".xlsx"):
+                dataframe = pd.read_excel(upload, dtype=str).fillna("")
+            else:
+                return Response(
+                    {"detail": "Format non supporté. Utilisez un fichier .csv ou .xlsx."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except Exception:
+            logger.exception("Échec de lecture du fichier d'import employés")
+            return Response(
+                {"detail": "Impossible de lire le fichier. Vérifiez qu'il s'agit d'un CSV ou XLSX valide."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        from smart_hr.personnel.services.bulk_import import REQUIRED_COLUMNS
+
+        missing_columns = REQUIRED_COLUMNS - {c.strip() for c in dataframe.columns}
+        if missing_columns:
+            return Response(
+                {"detail": f"Colonnes manquantes : {', '.join(sorted(missing_columns))}."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        result = import_employees_from_dataframe(dataframe)
+        return Response(result.as_dict())
+
+    @action(detail=False, methods=["get"], url_path="import/template", permission_classes=[IsRHOrDepartmentManager])
+    def import_template(self, request):
+        """GET /api/v1/personnel/employees/import/template/ — modèle CSV à remplir."""
+        example_row = {
+            "email": "prenom.nom@entreprise.com",
+            "prenom": "Prenom",
+            "nom": "Nom",
+            "departement": "Nom exact du département",
+            "poste": "Titre exact du poste (optionnel)",
+            "date_embauche": "2026-01-15",
+            "salaire": "350000",
+            "statut": "active",
+        }
+        example_row = {col: example_row[col] for col in TEMPLATE_COLUMNS}
+        return build_csv_response([example_row], "modele_import_employes.csv")

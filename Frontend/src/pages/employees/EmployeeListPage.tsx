@@ -21,6 +21,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import EmployeeCard from '@/components/employees/EmployeeCard';
+import ImportEmployeesDialog from '@/components/employees/ImportEmployeesDialog';
 import DataPagination, { usePagination } from '@/components/common/DataPagination';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -50,7 +51,7 @@ import {
 import { Employee } from '@/types';
 import { cn } from '@/lib/utils';
 import { employeeService } from '@/services/employeeService';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 /* ─────────── Constants ─────────── */
 
@@ -93,6 +94,7 @@ type SortDir = 'asc' | 'desc';
 
 export default function EmployeeListPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const isArchivedView = searchParams.get('archived') === 'true';
   const [searchQuery, setSearchQuery] = useState('');
@@ -226,6 +228,9 @@ export default function EmployeeListPage() {
               <Download className="h-3 w-3 sm:h-4 sm:w-4" />
               Exporter
             </Button>
+            {!isArchivedView && (
+              <ImportEmployeesDialog onImported={() => queryClient.invalidateQueries({ queryKey: ['employees'] })} />
+            )}
             {!isArchivedView && (
               <Button asChild size="sm" className="gap-2 text-xs sm:text-sm bg-gradient-primary">
                 <Link to="/employees/create">
