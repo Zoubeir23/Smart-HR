@@ -8,6 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.personnel.models import Department
+from smart_hr.personnel.models import Employee
 from smart_hr.personnel.serializers import DepartmentDetailSerializer
 from smart_hr.personnel.serializers import DepartmentSerializer
 from smart_hr.users.permissions import IsRH
@@ -37,9 +38,53 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 
     def get_permissions(self):
         """Lecture ouverte aux authentifiés, écriture réservée RH/Admin."""
-        if self.action in ["list", "retrieve", "stats"]:
+        if self.action in ["list", "retrieve", "stats", "organigramme"]:
             return [IsAuthenticated()]
         return [IsRH()]
+
+    @action(detail=False, methods=["get"])
+    def organigramme(self, request):
+        """Arborescence Département → Service → Poste avec effectifs actifs,
+        pour générer automatiquement l'organigramme visuel (sans re-saisie
+        manuelle — dérivé de la structure déjà existante)."""
+        departments = Department.objects.prefetch_related("services__positions").order_by("name")
+
+        data = []
+        for department in departments:
+            manager = (
+                Employee.objects.filter(department=department, is_department_manager=True, status="active")
+                .select_related("user")
+                .first()
+            )
+            services_data = []
+            for service in department.services.all().order_by("name"):
+                positions_data = [
+                    {
+                        "id": position.pk,
+                        "title": position.title,
+                        "employee_count": Employee.objects.filter(position=position, status="active").count(),
+                    }
+                    for position in service.positions.all().order_by("title")
+                ]
+                services_data.append(
+                    {
+                        "id": service.pk,
+                        "name": service.name,
+                        "employee_count": Employee.objects.filter(service=service, status="active").count(),
+                        "positions": positions_data,
+                    }
+                )
+            data.append(
+                {
+                    "id": department.pk,
+                    "name": department.name,
+                    "employee_count": Employee.objects.filter(department=department, status="active").count(),
+                    "manager_name": manager.user.get_full_name() if manager else None,
+                    "services": services_data,
+                }
+            )
+
+        return Response(data)
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
