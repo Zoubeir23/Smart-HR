@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, Users, Plus, Pencil, Trash2, Check, X } from 'lucide-react';
+import { Building2, Users, Plus, Pencil, Trash2, Check, X, List, Network } from 'lucide-react';
+import OrganigrammeTree from '@/components/employees/OrganigrammeTree';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -43,6 +44,7 @@ export default function DepartmentPage() {
   // RH et Admin peuvent créer / modifier / supprimer
   const canEdit = user?.role === 'RH' || user?.role === 'ADMIN';
 
+  const [viewMode, setViewMode] = useState<'list' | 'organigramme'>('list');
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Department | null>(null);
   const [form, setForm] = useState<DeptForm>(EMPTY_FORM);
@@ -55,6 +57,12 @@ export default function DepartmentPage() {
   });
 
   const departments: Department[] = data?.results ?? data ?? [];
+
+  const { data: organigrammeData, isLoading: isOrganigrammeLoading } = useQuery({
+    queryKey: ['departments', 'organigramme'],
+    queryFn: departmentService.getOrganigramme,
+    enabled: viewMode === 'organigramme',
+  });
 
   // ── Mutations ─────────────────────────────────────────────────────
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['departments'] });
@@ -134,14 +142,48 @@ export default function DepartmentPage() {
                 : 'Liste des départements de l\'entreprise.'}
             </p>
           </div>
-          {canEdit && (
-            <Button onClick={openCreate} className="gap-2 self-start sm:self-auto">
-              <Plus className="h-4 w-4" />
-              Nouveau département
-            </Button>
-          )}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
+              <Button
+                variant={viewMode === 'list' ? 'default' : 'ghost'}
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-3.5 w-3.5" />
+                Liste
+              </Button>
+              <Button
+                variant={viewMode === 'organigramme' ? 'default' : 'ghost'}
+                size="sm"
+                className="gap-1.5"
+                onClick={() => setViewMode('organigramme')}
+              >
+                <Network className="h-3.5 w-3.5" />
+                Organigramme
+              </Button>
+            </div>
+            {canEdit && viewMode === 'list' && (
+              <Button onClick={openCreate} className="gap-2">
+                <Plus className="h-4 w-4" />
+                Nouveau département
+              </Button>
+            )}
+          </div>
         </div>
 
+        {viewMode === 'organigramme' && (
+          isOrganigrammeLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <p className="text-muted-foreground">Génération de l'organigramme…</p>
+            </div>
+          ) : (
+            <OrganigrammeTree departments={organigrammeData ?? []} />
+          )
+        )}
+
+        {viewMode === 'list' && (
+        <>
         {/* ── KPI rapide ── */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="border border-border bg-card rounded-xl shadow-sm p-4 flex items-center gap-3">
@@ -240,6 +282,8 @@ export default function DepartmentPage() {
               </Button>
             )}
           </div>
+        )}
+        </>
         )}
       </motion.div>
 
