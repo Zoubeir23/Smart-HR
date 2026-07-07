@@ -1,7 +1,9 @@
+import datetime
 import logging
 import re
 
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
 from rest_framework import filters
@@ -13,6 +15,8 @@ from rest_framework.response import Response
 
 from smart_hr.paiement.models import BulletinPaie
 from smart_hr.paiement.serializers import BulletinPaieSerializer
+from smart_hr.paiement.services.bulletin_calculator import emettre_bulletin
+from smart_hr.personnel.models import Employee
 from smart_hr.users.permissions import IsRH
 
 logger = logging.getLogger(__name__)
@@ -50,7 +54,43 @@ class BulletinPaieViewSet(viewsets.ReadOnlyModelViewSet):
         return qs.filter(employee__user=user)
 
     def get_permissions(self):
-        return [IsRH()] if self.action == "list" else [IsAuthenticated()]
+        if self.action in ("list", "generer"):
+            return [IsRH()]
+        return [IsAuthenticated()]
+
+    @action(detail=False, methods=["post"], url_path="generer")
+    def generer(self, request):
+        """
+        POST /api/v1/paiement/bulletins/generer/
+        Body: { "employee_id": <int>, "periode": "YYYY-MM-DD" }
+        Calcule et persiste un bulletin de paie via le moteur multi-pays
+        (smart_hr.paiement.services.bulletin_calculator). Réservé RH/Admin.
+        """
+        employee_id = request.data.get("employee_id")
+        periode_str = request.data.get("periode")
+        if not employee_id or not periode_str:
+            return Response(
+                {"detail": "Les champs 'employee_id' et 'periode' sont requis."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        employee = get_object_or_404(Employee, pk=employee_id)
+
+        try:
+            periode = datetime.date.fromisoformat(periode_str)
+        except ValueError:
+            return Response(
+                {"detail": "Le champ 'periode' doit être une date au format YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            bulletin = emettre_bulletin(employee, periode)
+        except ValueError as exc:
+            return Response({"detail": str(exc)}, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer = self.get_serializer(bulletin)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=["get"], url_path="pdf")
     def pdf(self, request, pk=None):
