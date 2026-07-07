@@ -42,6 +42,23 @@ export interface InterviewSessionFeedbackResponse {
   recommended: boolean;
 }
 
+export interface Conversation {
+  id: number;
+  title: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChatHistoryEntry {
+  id: number;
+  conversation: number | null;
+  question: string;
+  response: string;
+  action_type: string;
+  action_data: Record<string, unknown>;
+  created_at: string;
+}
+
 function normalizeApiBaseUrl(): string {
   const rawApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1') as string;
   const trimmedApiUrl = rawApiUrl.trim().replace(/\/+$/, '');
@@ -64,9 +81,12 @@ function getAxiosErrorMessage(error: unknown): string {
 }
 
 export const aiService = {
-  chat: async (question: string) => {
+  chat: async (question: string, conversationId?: number) => {
     try {
-      const { data } = await api.post('/ai/chat/', { question });
+      const { data } = await api.post('/ai/chat/', {
+        question,
+        ...(conversationId ? { conversation: conversationId } : {}),
+      });
       return data;
     } catch (error: unknown) {
       throw new Error(getAxiosErrorMessage(error));
@@ -77,6 +97,34 @@ export const aiService = {
     try {
       const { data } = await api.get('/ai/chat/');
       return data;
+    } catch (error: unknown) {
+      throw new Error(getAxiosErrorMessage(error));
+    }
+  },
+
+  // ── Historique de conversations (chat) ──────────────────────────────────
+
+  getConversations: async (): Promise<Conversation[]> => {
+    try {
+      const { data } = await api.get('/ai/conversations/');
+      return data?.results ?? data ?? [];
+    } catch (error: unknown) {
+      throw new Error(getAxiosErrorMessage(error));
+    }
+  },
+
+  getConversationMessages: async (conversationId: number): Promise<ChatHistoryEntry[]> => {
+    try {
+      const { data } = await api.get(`/ai/conversations/${conversationId}/messages/`);
+      return data;
+    } catch (error: unknown) {
+      throw new Error(getAxiosErrorMessage(error));
+    }
+  },
+
+  deleteConversation: async (conversationId: number): Promise<void> => {
+    try {
+      await api.delete(`/ai/conversations/${conversationId}/`);
     } catch (error: unknown) {
       throw new Error(getAxiosErrorMessage(error));
     }
