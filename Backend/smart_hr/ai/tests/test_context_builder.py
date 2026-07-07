@@ -111,6 +111,37 @@ class TestBuildSystemPromptRHRole:
         assert "Effectif" in prompt
 
 
+class TestBuildSystemPromptRHOwnEmployeeData:
+    def test_rh_who_is_also_an_employee_gets_own_payroll_data(self, department, position):
+        rh_user = UserFactory.create(role=User.Role.RH, first_name="Fatou", last_name="Ndiaye")
+        rh_employee = Employee.objects.create(
+            user=rh_user,
+            department=department,
+            position=position,
+            hire_date=datetime.date(2023, 1, 1),
+            salary=600000,
+            status="active",
+        )
+        from smart_hr.paiement.models import Payroll
+
+        Payroll.objects.create(
+            employee=rh_employee,
+            month="2026-07",
+            base_salary=540000,
+            bonuses=20000,
+            deductions=10000,
+            status="processed",
+        )
+        prompt = build_system_prompt(rh_user)
+        assert "Mes 3 dernières fiches de paie" in prompt
+        assert "550 000 FCFA" in prompt
+
+    def test_rh_without_employee_profile_has_no_personal_section(self, db):
+        rh_user = UserFactory.create(role=User.Role.RH)
+        prompt = build_system_prompt(rh_user)
+        assert "--- Mes données personnelles" not in prompt
+
+
 class TestBuildSystemPromptCandidateRole:
     def test_includes_own_applications(self, db):
         candidate = UserFactory.create(role=User.Role.CANDIDATE)
