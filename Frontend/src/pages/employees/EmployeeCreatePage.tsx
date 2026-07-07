@@ -61,6 +61,7 @@ const employeeCreateFormSchema = z.object({
   status: z.enum(['active', 'inactive', 'on_leave']),
   dateOfBirth: z.string().optional().or(z.literal('')),
   cin: z.string().trim().max(50, 'Le CIN ne peut pas dépasser 50 caractères.').optional().or(z.literal('')),
+  cnssNumber: z.string().trim().max(50, 'Le numéro CNSS ne peut pas dépasser 50 caractères.').optional().or(z.literal('')),
   address: z.string().trim().max(500, 'L\'adresse est trop longue.').optional().or(z.literal('')),
   emergencyContact: z
     .string()
@@ -145,6 +146,7 @@ export default function EmployeeCreatePage() {
       status: 'active',
       dateOfBirth: '',
       cin: '',
+      cnssNumber: '',
       address: '',
       emergencyContact: '',
     },
@@ -196,6 +198,7 @@ export default function EmployeeCreatePage() {
         status: formValues.status,
         date_of_birth: toNullableString(formValues.dateOfBirth),
         cin: formValues.cin?.trim() ?? '',
+        cnss_number: formValues.cnssNumber?.trim() ?? '',
         address: formValues.address?.trim() ?? '',
         emergency_contact: formValues.emergencyContact?.trim() ?? '',
       });
@@ -409,6 +412,13 @@ export default function EmployeeCreatePage() {
                     <Label htmlFor="cin">CIN</Label>
                     <Input id="cin" placeholder="SN123456" {...register('cin')} />
                     <FieldError message={errors.cin?.message} />
+                  </div>
+
+                  {/* Numéro CNSS */}
+                  <div className="space-y-2">
+                    <Label htmlFor="cnssNumber">Numéro CNSS</Label>
+                    <Input id="cnssNumber" placeholder="123456789" {...register('cnssNumber')} />
+                    <FieldError message={errors.cnssNumber?.message} />
                   </div>
 
                   {/* Contact d'urgence */}
