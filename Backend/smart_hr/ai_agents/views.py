@@ -1,6 +1,5 @@
 import io
 import logging
-import os
 import uuid
 
 from django.core.files.base import ContentFile
@@ -10,9 +9,15 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from smart_hr.ai.context_builder import build_system_prompt
+from smart_hr.ai.llm_providers import get_llm_provider
 from smart_hr.core.throttles import AILLMUserThrottle
 
 logger = logging.getLogger(__name__)
+
+_VOICE_FORMAT_INSTRUCTIONS = (
+    "\n\nFORMAT VOCAL : limite ta réponse à 3-4 phrases maximum, sans listes ni markdown, pour une lecture audio fluide."
+)
 
 HR_FAQ = {
     "congé": (
@@ -62,30 +67,17 @@ _GTTS_LANG_MAP = {
 }
 
 
-def _generate_voice_response(question: str) -> str:
-    """Génère une réponse RH via Gemini, avec fallback FAQ local."""
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
-
-    if api_key:
-        try:
-            from google import genai
-
-            gemini_model_name = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
-            client = genai.Client(api_key=api_key)
-            prompt = (
-                "Tu es un assistant RH vocal pour Smart-HR. "
-                "Réponds de manière concise, claire et bienveillante. "
-                "Limite ta réponse à 3-4 phrases maximum pour une écoute confortable. "
-                "Sujet : ressources humaines, recrutement, congés, formations, salaires.\n\n"
-                f"Question : {question}"
-            )
-            response = client.models.generate_content(
-                model=gemini_model_name,
-                contents=prompt,
-            )
-            return response.text
-        except Exception as exc:
-            logger.error("Erreur Gemini pour voice agent : %s", exc)
+def _generate_voice_response(question: str, user) -> str:
+    """Génère une réponse RH via le LLM configuré, avec le même contexte
+    RBAC/données réelles que le chat texte (smart_hr.ai.context_builder).
+    Fallback sur la FAQ statique si le fournisseur LLM est indisponible.
+    """
+    try:
+        provider = get_llm_provider()
+        system_prompt = build_system_prompt(user) + _VOICE_FORMAT_INSTRUCTIONS
+        return provider.generate_response(system_prompt, [], question)
+    except Exception as exc:
+        logger.error("Erreur LLM provider pour voice agent : %s", exc)
 
     question_lower = question.lower()
     for keyword, answer in HR_FAQ.items():
@@ -144,7 +136,7 @@ class VoiceAskView(APIView):
         if voice not in ("nova", "alloy", "echo"):
             voice = "nova"
 
-        text_response = _generate_voice_response(question)
+        text_response = _generate_voice_response(question, request.user)
         audio_relative_path = _generate_audio_file(text_response, voice)
 
         audio_url = None
