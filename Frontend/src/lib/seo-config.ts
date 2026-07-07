@@ -92,7 +92,7 @@ export const SEO_PAGES: Record<string, PageSEOConfig> = {
     noIndex: false,
   }),
 
-  '/application-tracking': d({
+  '/my-applications': d({
     title: `Suivi de candidature | ${SITE_NAME}`,
     description: 'Suivez en temps réel le statut de vos candidatures déposées sur Smart-HR.',
     noIndex: true,
@@ -146,6 +146,30 @@ export const SEO_PAGES: Record<string, PageSEOConfig> = {
     noIndex: true,
   }),
 
+  '/services': d({
+    title: `Services | ${SITE_NAME}`,
+    description: "Gérez les services de vos départements dans l'arborescence Département → Service → Poste.",
+    noIndex: true,
+  }),
+
+  '/positions': d({
+    title: `Postes | ${SITE_NAME}`,
+    description: "Gérez les postes rattachés à chaque service de votre organisation.",
+    noIndex: true,
+  }),
+
+  '/reference-tables': d({
+    title: `Référentiels | ${SITE_NAME}`,
+    description: "Gérez les tables de référence utilisées dans les fiches employés.",
+    noIndex: true,
+  }),
+
+  '/contracts': d({
+    title: `Contrats | ${SITE_NAME}`,
+    description: "Gérez les contrats de travail de vos employés.",
+    noIndex: true,
+  }),
+
   // ─── Congés ────────────────────────────────────────────────────────────────
   '/leaves': d({
     title: `Gestion des congés | ${SITE_NAME}`,
@@ -174,6 +198,25 @@ export const SEO_PAGES: Record<string, PageSEOConfig> = {
     noIndex: true,
   }),
 
+  // ─── Discipline & communication ────────────────────────────────────────────
+  '/discipline': d({
+    title: `Discipline | ${SITE_NAME}`,
+    description: "Suivez et gérez les actions disciplinaires de vos employés.",
+    noIndex: true,
+  }),
+
+  '/communication': d({
+    title: `Communication | ${SITE_NAME}`,
+    description: "Envoyez des messages internes et des annonces à vos équipes.",
+    noIndex: true,
+  }),
+
+  '/performance': d({
+    title: `Performance | ${SITE_NAME}`,
+    description: "Évaluez la performance de vos employés et suivez leurs compétences.",
+    noIndex: true,
+  }),
+
   // ─── Documents ─────────────────────────────────────────────────────────────
   '/documents': d({
     title: `Documents RH | ${SITE_NAME}`,
@@ -199,6 +242,13 @@ export const SEO_PAGES: Record<string, PageSEOConfig> = {
   '/applications': d({
     title: `Gestion des candidatures | ${SITE_NAME}`,
     description: "Gérez toutes les candidatures reçues, consultez les CVs et lancez les entretiens IA.",
+    noIndex: true,
+  }),
+
+  // ─── Analytiques ────────────────────────────────────────────────────────────
+  '/analytics': d({
+    title: `Analytiques RH | ${SITE_NAME}`,
+    description: "Visualisez les KPIs RH de votre entreprise : pyramide des âges, rétention, salaires et plus.",
     noIndex: true,
   }),
 
