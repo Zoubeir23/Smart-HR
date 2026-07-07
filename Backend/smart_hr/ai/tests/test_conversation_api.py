@@ -57,7 +57,8 @@ class TestConversationListCreate:
         client = _authenticated_client(user)
         response = client.get(CONVERSATIONS_URL)
         assert response.status_code == status.HTTP_200_OK
-        titles = [item["title"] for item in response.data["results"]] if "results" in response.data else [item["title"] for item in response.data]
+        results = response.data.get("results", response.data)
+        titles = [item["title"] for item in results]
         assert titles == ["Ma première conversation"]
 
     def test_create_returns_new_conversation_with_default_title(self, user):
@@ -72,7 +73,7 @@ class TestConversationListCreate:
         newer = Conversation.objects.create(user=user, title="Récente")
         client = _authenticated_client(user)
         response = client.get(CONVERSATIONS_URL)
-        results = response.data["results"] if "results" in response.data else response.data
+        results = response.data.get("results", response.data)
         ids = [item["id"] for item in results]
         assert ids.index(newer.id) < ids.index(older.id)
 
