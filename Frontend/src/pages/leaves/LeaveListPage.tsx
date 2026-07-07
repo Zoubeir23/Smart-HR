@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { leaveService } from '@/services/leaveService';
 import { useToast } from '@/hooks/use-toast';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -199,16 +198,13 @@ export default function LeaveListPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center py-16">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -511,6 +507,5 @@ export default function LeaveListPage() {
           </Card>
         )}
       </motion.div>
-    </DashboardLayout>
   );
 }
