@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { documentService } from '@/services/documentService';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -281,18 +280,15 @@ export default function EmployeeDetailPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
           <p className="mt-4 text-muted-foreground">Chargement du profil...</p>
         </div>
-      </DashboardLayout>
     );
   }
 
   if (!employee) {
     return (
-      <DashboardLayout>
         <div className="flex flex-col items-center justify-center py-20">
           <h2 className="text-2xl font-bold text-foreground">Employé introuvable</h2>
           <p className="mt-2 text-muted-foreground">
@@ -305,7 +301,6 @@ export default function EmployeeDetailPage() {
             </Button>
           </Link>
         </div>
-      </DashboardLayout>
     );
   }
 
@@ -316,7 +311,6 @@ export default function EmployeeDetailPage() {
   const leaves: { balance: number; history: { type: string; start: string; end: string; status: string }[] } = employee?.leaves ?? { balance: 0, history: [] };
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -908,6 +902,5 @@ export default function EmployeeDetailPage() {
           </div>
         </div>
       </motion.div>
-    </DashboardLayout>
   );
 }
