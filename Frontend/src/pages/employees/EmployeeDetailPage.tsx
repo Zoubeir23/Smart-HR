@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { documentService } from '@/services/documentService';
+import OnboardingProgramsCard from '@/components/employees/OnboardingProgramsCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -651,6 +652,13 @@ export default function EmployeeDetailPage() {
                 </CardContent>
               </Card>
             </motion.div>
+
+            {/* Intégration & départ */}
+            {id && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.42 }}>
+                <OnboardingProgramsCard employeeId={Number(id)} />
+              </motion.div>
+            )}
 
             {/* Situation familiale */}
             <motion.div
