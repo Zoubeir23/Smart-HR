@@ -55,11 +55,12 @@ def _filtre_date_active(queryset, date_reference: date):
 
 
 def _get_salaire_actif(employee: Employee, date_reference: date) -> Decimal:
+    # HistoriqueSalaire utilise date_debut/date_fin (pas date_debut_validite/
+    # date_fin_validite comme les tables réglementaires Pays/RegleCotisation…) —
+    # _filtre_date_active ne s'applique donc pas ici.
     historique = (
-        _filtre_date_active(
-            HistoriqueSalaire.objects.filter(employee=employee),
-            date_reference,
-        )
+        HistoriqueSalaire.objects.filter(employee=employee, date_debut__lte=date_reference)
+        .filter(Q(date_fin__isnull=True) | Q(date_fin__gte=date_reference))
         .order_by("-date_debut")
         .first()
     )
