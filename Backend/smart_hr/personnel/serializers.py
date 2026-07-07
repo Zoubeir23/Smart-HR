@@ -9,6 +9,8 @@ from smart_hr.personnel.models import Employee
 from smart_hr.personnel.models import FamilyMember
 from smart_hr.personnel.models import FamilyStatus
 from smart_hr.personnel.models import Nationality
+from smart_hr.personnel.models import OnboardingProgram
+from smart_hr.personnel.models import OnboardingStep
 from smart_hr.personnel.models import Position
 from smart_hr.personnel.models import Service
 
@@ -319,3 +321,34 @@ class FamilyMemberSerializer(serializers.ModelSerializer):
         today = timezone.now().date()
         born = obj.date_of_birth
         return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+
+
+class OnboardingStepSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OnboardingStep
+        fields = ["id", "title", "description", "order", "is_completed", "completed_at"]
+        read_only_fields = ["id", "is_completed", "completed_at"]
+
+
+class OnboardingProgramSerializer(serializers.ModelSerializer):
+    employee_full_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    program_type_display = serializers.CharField(source="get_program_type_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    steps = OnboardingStepSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = OnboardingProgram
+        fields = [
+            "id",
+            "employee",
+            "employee_full_name",
+            "program_type",
+            "program_type_display",
+            "title",
+            "status",
+            "status_display",
+            "completed_at",
+            "created_at",
+            "steps",
+        ]
+        read_only_fields = ["id", "status", "completed_at", "created_at"]
