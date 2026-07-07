@@ -373,3 +373,80 @@ class Contract(TimeStampedModel):
         if self.end_date and self.end_date < today:
             return self.ContractStatus.EXPIRED
         return self.ContractStatus.ACTIVE
+
+
+# ---------------------------------------------------------------------------
+# Programmes d'intégration / départ
+# ---------------------------------------------------------------------------
+
+
+class OnboardingProgram(TimeStampedModel):
+    """Programme structuré d'intégration (onboarding) ou de départ (offboarding)
+    assigné à un employé — une liste d'étapes à cocher au fur et à mesure."""
+
+    class ProgramType(models.TextChoices):
+        ONBOARDING = "onboarding", "Intégration"
+        OFFBOARDING = "offboarding", "Départ"
+
+    class Status(models.TextChoices):
+        IN_PROGRESS = "in_progress", "En cours"
+        COMPLETED = "completed", "Terminé"
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="onboarding_programs",
+    )
+    program_type = models.CharField(max_length=15, choices=ProgramType.choices)
+    title = models.CharField(max_length=200)
+    status = models.CharField(max_length=15, choices=Status.choices, default=Status.IN_PROGRESS)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_onboarding_programs",
+    )
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Programme d'intégration/départ"
+        verbose_name_plural = "Programmes d'intégration/départ"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.employee} — {self.get_program_type_display()} : {self.title}"
+
+    def refresh_status(self) -> None:
+        """Marque le programme terminé quand toutes ses étapes sont cochées."""
+        all_completed = self.steps.exists() and not self.steps.filter(is_completed=False).exists()
+        if all_completed and self.status != self.Status.COMPLETED:
+            self.status = self.Status.COMPLETED
+            self.completed_at = timezone.now()
+            self.save(update_fields=["status", "completed_at", "updated_at"])
+        elif not all_completed and self.status != self.Status.IN_PROGRESS:
+            self.status = self.Status.IN_PROGRESS
+            self.completed_at = None
+            self.save(update_fields=["status", "completed_at", "updated_at"])
+
+
+class OnboardingStep(TimeStampedModel):
+    """Étape individuelle d'un programme d'intégration/départ."""
+
+    program = models.ForeignKey(
+        OnboardingProgram,
+        on_delete=models.CASCADE,
+        related_name="steps",
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    order = models.PositiveIntegerField(default=0)
+    is_completed = models.BooleanField(default=False)
+    completed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = "Étape du programme"
+        verbose_name_plural = "Étapes du programme"
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.program} — {self.title}"
