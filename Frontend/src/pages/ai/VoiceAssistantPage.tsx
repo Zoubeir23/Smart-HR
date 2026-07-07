@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Mic,
@@ -130,6 +130,13 @@ export default function VoiceAssistantPage() {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const entryCounterRef = useRef(0);
+  // Toujours à jour — permet de vérifier si l'utilisateur a changé de session
+  // avant que la réponse vocale n'arrive, pour ne pas l'injecter dans le
+  // mauvais historique.
+  const activeSessionIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    activeSessionIdRef.current = activeSessionId;
+  }, [activeSessionId]);
 
   const currentProfile = VOICE_PROFILES.find((v) => v.id === selectedVoice) ?? VOICE_PROFILES[0];
 
@@ -182,19 +189,27 @@ export default function VoiceAssistantPage() {
       const trimmed = query.trim();
       if (!trimmed || isProcessing) return;
 
+      const sessionIdAtSend = activeSessionId;
       setIsProcessing(true);
       setTextQuery('');
       stopSpeech();
       setIsSpeaking(false);
 
       try {
-        const data = await aiService.voiceAsk(trimmed, selectedVoice, activeSessionId ?? undefined);
+        const data = await aiService.voiceAsk(trimmed, selectedVoice, sessionIdAtSend ?? undefined);
         const answer: string = data.text_response ?? "Je n'ai pas pu générer de réponse.";
+        queryClient.invalidateQueries({ queryKey: ['voice-sessions'] });
 
-        if (!activeSessionId && data.session) {
+        // L'utilisateur a peut-être changé de session pendant la génération —
+        // dans ce cas, la réponse est déjà persistée côté serveur, mais on ne
+        // l'injecte pas dans l'historique actuellement affiché.
+        const stillOnSameSession =
+          sessionIdAtSend === null ? activeSessionIdRef.current === null : activeSessionIdRef.current === sessionIdAtSend;
+        if (!stillOnSameSession) return;
+
+        if (sessionIdAtSend === null && data.session) {
           setActiveSessionId(data.session);
         }
-        queryClient.invalidateQueries({ queryKey: ['voice-sessions'] });
 
         entryCounterRef.current += 1;
         setConversation((prev) => [
@@ -223,17 +238,21 @@ export default function VoiceAssistantPage() {
         window.speechSynthesis.cancel();
         window.speechSynthesis.speak(utterance);
       } catch {
-        entryCounterRef.current += 1;
-        setConversation((prev) => [
-          {
-            id: entryCounterRef.current,
-            question: trimmed,
-            answer: "Une erreur s'est produite. Veuillez réessayer.",
-            voice: selectedVoice,
-            timestamp: new Date(),
-          },
-          ...prev,
-        ]);
+        const stillOnSameSession =
+          sessionIdAtSend === null ? activeSessionIdRef.current === null : activeSessionIdRef.current === sessionIdAtSend;
+        if (stillOnSameSession) {
+          entryCounterRef.current += 1;
+          setConversation((prev) => [
+            {
+              id: entryCounterRef.current,
+              question: trimmed,
+              answer: "Une erreur s'est produite. Veuillez réessayer.",
+              voice: selectedVoice,
+              timestamp: new Date(),
+            },
+            ...prev,
+          ]);
+        }
       } finally {
         setIsProcessing(false);
       }
