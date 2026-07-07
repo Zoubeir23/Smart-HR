@@ -5,7 +5,6 @@ import {
   FileText, Bell, ClipboardList, Megaphone,
   Plus, Pencil, Trash2, Search, Check, X, Eye, EyeOff,
 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -218,7 +217,6 @@ export default function CommunicationPage() {
   ];
 
   return (
-    <DashboardLayout>
       <div className="space-y-6 p-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -579,6 +577,5 @@ export default function CommunicationPage() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </DashboardLayout>
   );
 }
