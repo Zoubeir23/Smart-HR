@@ -24,7 +24,6 @@ import { employeeService } from '@/services/employeeService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
 import SearchableSelect from '@/components/common/SearchableSelect';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -408,7 +407,6 @@ const TaskBoardPage = () => {
   };
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -560,7 +558,6 @@ const TaskBoardPage = () => {
           </DndContext>
         )}
       </motion.div>
-    </DashboardLayout>
   );
 };
 

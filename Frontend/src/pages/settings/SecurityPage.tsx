@@ -12,7 +12,6 @@ import {
   Filter,
 } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageHeader from '@/components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -323,7 +322,6 @@ export default function SecurityPage() {
   const auditLogs: AuditLogEntry[] = auditData?.results ?? [];
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -425,6 +423,5 @@ export default function SecurityPage() {
           </TabsContent>
         </Tabs>
       </motion.div>
-    </DashboardLayout>
   );
 }

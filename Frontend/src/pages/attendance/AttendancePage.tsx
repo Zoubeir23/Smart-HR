@@ -5,7 +5,6 @@ import {
   Users, UserCheck, UserX, Clock, Calendar, BarChart2,
   Plus, Pencil, Trash2, X, Check, LogIn, LogOut,
 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import SearchableSelect from '@/components/common/SearchableSelect';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -278,16 +277,14 @@ export default function AttendancePage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Chargement…</p>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -756,6 +753,6 @@ export default function AttendancePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </DashboardLayout>
+    </>
   );
 }

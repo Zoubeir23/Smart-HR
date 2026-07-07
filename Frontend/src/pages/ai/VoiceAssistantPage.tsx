@@ -11,7 +11,6 @@ import {
   RefreshCcw,
   Radio,
 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -248,7 +247,6 @@ export default function VoiceAssistantPage() {
   /* ── Render ── */
 
   return (
-    <DashboardLayout>
       <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
 
         {/* Header */}
@@ -493,6 +491,5 @@ export default function VoiceAssistantPage() {
           </motion.div>
         )}
       </div>
-    </DashboardLayout>
   );
 }

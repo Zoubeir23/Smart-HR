@@ -29,7 +29,6 @@ import { leaveService } from '@/services/leaveService';
 import { taskService } from '@/services/taskService';
 import { trainingService } from '@/services/trainingService';
 import { useAuth } from '@/context/AuthContext';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
@@ -559,7 +558,7 @@ export default function CalendarPage() {
   ];
 
   return (
-    <DashboardLayout>
+    <>
       <div className="flex flex-col h-full">
 
         {/* ================================================================ */}
@@ -702,6 +701,6 @@ export default function CalendarPage() {
       </div>
 
       <EventDetailSheet event={selectedEvent} onClose={() => setSelectedEvent(null)} />
-    </DashboardLayout>
+    </>
   );
 }

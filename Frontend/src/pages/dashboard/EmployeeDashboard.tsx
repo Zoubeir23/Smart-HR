@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -152,16 +151,14 @@ export default function EmployeeDashboard() {
 
   if (isProfileLoading) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Chargement…</p>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       {/* Mobile-first spacing: small gaps on mobile, larger on desktop */}
       <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-4 sm:space-y-6 md:space-y-8">
         {/* Header - Responsive typography */}
@@ -341,6 +338,6 @@ export default function EmployeeDashboard() {
           </motion.div>
         </div>
       </motion.div>
-    </DashboardLayout>
+    </>
   );
 }

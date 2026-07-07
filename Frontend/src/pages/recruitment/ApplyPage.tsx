@@ -12,7 +12,6 @@ import {
   X,
   Tag,
 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { recruitmentService } from '@/services/recruitmentService';
@@ -166,24 +165,20 @@ const ApplyPage = () => {
 
   if (isLoadingJob) {
     return (
-      <DashboardLayout>
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
           <p className="text-muted-foreground">Chargement de l&apos;offre...</p>
         </div>
-      </DashboardLayout>
     );
   }
 
   if (jobError || !jobOffer) {
     return (
-      <DashboardLayout>
         <div className="flex min-h-[calc(100vh-4rem)] flex-col items-center justify-center gap-4">
           <p className="text-muted-foreground">Offre non trouvée.</p>
           <Button variant="outline" onClick={() => navigate('/jobs')}>
             Retour aux offres
           </Button>
         </div>
-      </DashboardLayout>
     );
   }
 
@@ -191,7 +186,6 @@ const ApplyPage = () => {
 
   if (submitted) {
     return (
-      <DashboardLayout>
         <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
@@ -210,12 +204,11 @@ const ApplyPage = () => {
             </p>
           </motion.div>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       {/* Mobile-first responsive max-width and padding */}
       <div className="mx-auto w-full px-0 sm:px-4 md:px-6 lg:max-w-4xl">
         <motion.div
@@ -418,7 +411,7 @@ const ApplyPage = () => {
           </Card>
         </motion.div>
       </div>
-    </DashboardLayout>
+    </>
   );
 };
 

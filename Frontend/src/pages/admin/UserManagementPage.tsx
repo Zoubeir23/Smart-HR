@@ -13,7 +13,6 @@ import {
 } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { useAuth } from '@/context/AuthContext';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -389,7 +388,7 @@ export default function UserManagementPage() {
   const adminCount = allUsers.filter((managedUser) => managedUser.role === 'ADMIN').length;
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <motion.div
@@ -559,6 +558,6 @@ export default function UserManagementPage() {
         onConfirm={(userId, newRole) => updateRoleMutation.mutate({ userId, role: newRole })}
         isPending={updateRoleMutation.isPending}
       />
-    </DashboardLayout>
+    </>
   );
 }

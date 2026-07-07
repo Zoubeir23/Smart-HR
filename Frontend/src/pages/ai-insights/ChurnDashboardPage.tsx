@@ -1,6 +1,5 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -351,19 +350,16 @@ const ChurnDashboardPage = () => {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <div className="flex flex-col items-center justify-center py-24 gap-4">
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}>
             <BrainCircuit className="h-8 w-8 text-primary" />
           </motion.div>
           <p className="text-sm text-muted-foreground">Analyse prédictive en cours...</p>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
         <motion.div
@@ -767,7 +763,6 @@ const ChurnDashboardPage = () => {
           )}
         </AnimatePresence>
       </div>
-    </DashboardLayout>
   );
 };
 

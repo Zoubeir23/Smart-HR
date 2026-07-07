@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -175,11 +174,9 @@ export default function TrainingPage() {
 
   if (isLoadingFormations || isLoadingReunions) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </DashboardLayout>
     );
   }
 
@@ -190,7 +187,6 @@ export default function TrainingPage() {
     .sort((a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime())[0];
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -560,6 +556,5 @@ export default function TrainingPage() {
         </Dialog>
         )}
       </motion.div>
-    </DashboardLayout>
   );
 }

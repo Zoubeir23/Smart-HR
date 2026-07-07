@@ -9,7 +9,6 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageHeader from '@/components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -192,7 +191,6 @@ export default function AnalyticsPage() {
     : null;
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -373,6 +371,5 @@ export default function AnalyticsPage() {
           </Card>
         </div>
       </motion.div>
-    </DashboardLayout>
   );
 }

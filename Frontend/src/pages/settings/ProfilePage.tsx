@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import { User, Mail, Building2 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import PageHeader from '@/components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -23,7 +22,6 @@ export default function ProfilePage() {
   };
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -72,6 +70,5 @@ export default function ProfilePage() {
           </CardContent>
         </Card>
       </motion.div>
-    </DashboardLayout>
   );
 }
