@@ -25,6 +25,11 @@ export const recruitmentService = {
     return data;
   },
 
+  generateJobOffer: async (jobDescription: string): Promise<GeneratedJobOfferDraft> => {
+    const { data } = await api.post('/recruitment/job-offers/generate/', { job_description: jobDescription });
+    return data;
+  },
+
   getApplications: async (params?: { job_offer?: number; status?: string; min_score?: number; ordering?: string }) => {
     const { data } = await api.get('/recruitment/applications/', { params });
     return data;
@@ -69,3 +74,13 @@ export const recruitmentService = {
     await api.delete(`/recruitment/application-documents/${documentId}/`);
   },
 };
+
+export interface GeneratedJobOfferDraft {
+  title: string;
+  department: string;
+  location: string;
+  job_type: string;
+  description: string;
+  requirements: string;
+  salary_range: string;
+}
