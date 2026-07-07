@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 
 import pytest
-
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from smart_hr.ai.context_builder import build_system_prompt
