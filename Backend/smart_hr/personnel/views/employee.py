@@ -319,24 +319,13 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         employee_user.tel = ""
         employee_user.save(update_fields=["first_name", "last_name", "tel"])
 
-        # Cascade RGPD : anonymiser les données personnelles dans les relations
+        # Cascade RGPD : anonymiser les données personnelles dans les relations.
+        # Attendance et Payroll n'ont pas de champ de texte libre contenant des
+        # données personnelles (contrairement à LeaveRequest.reason) — rien à
+        # anonymiser côté ces deux modèles pour l'instant.
         from smart_hr.conge.models import LeaveRequest
 
         LeaveRequest.objects.filter(employee=employee).update(reason="[anonymise]")
-
-        try:
-            from smart_hr.presence.models import Attendance
-
-            Attendance.objects.filter(employee=employee).update(notes="[anonymise]")
-        except Exception:
-            pass
-
-        try:
-            from smart_hr.paiement.models import Payroll
-
-            Payroll.objects.filter(employee=employee).update(notes="[anonymise]")
-        except Exception:
-            pass
 
         log_audit_action(
             performed_by=request.user,
