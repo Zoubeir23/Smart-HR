@@ -106,3 +106,63 @@ class TestVoiceAskResponse:
         with patch("smart_hr.ai_agents.views._generate_audio_file", return_value=None):
             response = client.post(VOICE_ASK_URL, {"question": "avantages entreprise"}, format="json")
         assert response.status_code == status.HTTP_200_OK
+
+
+class _FakeLLMProvider:
+    """Capture le system_prompt reçu, pour vérifier son contenu RBAC/DB sans appel réseau réel."""
+
+    def __init__(self):
+        self.received_system_prompt: str | None = None
+
+    def generate_response(self, system_prompt, history, question):
+        self.received_system_prompt = system_prompt
+        return "Réponse vocale de test."
+
+    def extract_json(self, prompt):
+        return "{}"
+
+
+class TestVoiceAskDatabaseGrounding:
+    """L'assistant vocal doit utiliser le même moteur de contexte RBAC que le
+    chat texte (smart_hr.ai.context_builder), au lieu d'un prompt générique."""
+
+    def test_uses_llm_provider_with_role_scoped_system_prompt(self, db, authenticated_user):
+        fake_provider = _FakeLLMProvider()
+        client = APIClient()
+        client.force_authenticate(user=authenticated_user)
+        with (
+            patch("smart_hr.ai_agents.views._generate_audio_file", return_value=None),
+            patch("smart_hr.ai_agents.views.get_llm_provider", return_value=fake_provider),
+        ):
+            response = client.post(VOICE_ASK_URL, {"question": "Quels sont mes congés ?"}, format="json")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["text_response"] == "Réponse vocale de test."
+        assert fake_provider.received_system_prompt is not None
+        assert "EMPLOYEE" in fake_provider.received_system_prompt
+        assert authenticated_user.email in fake_provider.received_system_prompt or (
+            authenticated_user.get_full_name() in fake_provider.received_system_prompt
+        )
+
+    def test_response_stays_concise_for_voice(self, db, authenticated_user):
+        fake_provider = _FakeLLMProvider()
+        client = APIClient()
+        client.force_authenticate(user=authenticated_user)
+        with (
+            patch("smart_hr.ai_agents.views._generate_audio_file", return_value=None),
+            patch("smart_hr.ai_agents.views.get_llm_provider", return_value=fake_provider),
+        ):
+            client.post(VOICE_ASK_URL, {"question": "congé"}, format="json")
+
+        assert "3-4 phrases" in fake_provider.received_system_prompt
+
+    def test_falls_back_to_faq_when_llm_provider_unavailable(self, db, authenticated_user):
+        client = APIClient()
+        client.force_authenticate(user=authenticated_user)
+        with (
+            patch("smart_hr.ai_agents.views._generate_audio_file", return_value=None),
+            patch("smart_hr.ai_agents.views.get_llm_provider", side_effect=Exception("indisponible")),
+        ):
+            response = client.post(VOICE_ASK_URL, {"question": "formation"}, format="json")
+        assert response.status_code == status.HTTP_200_OK
+        assert "Formations" in response.data["text_response"]
