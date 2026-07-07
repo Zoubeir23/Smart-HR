@@ -220,6 +220,23 @@ def _build_employee_attendance_lines(user) -> list[str]:
 # ─── Context builders ────────────────────────────────────────────────────────
 
 
+def _build_rh_own_employee_lines(user) -> list[str]:
+    """Un RH/Admin est souvent lui-même salarié : s'il a un profil Employee,
+    on ajoute ses propres congés/paie/présences pour répondre correctement
+    aux questions à la première personne ("mes congés", "ma fiche de paie"),
+    sans les confondre avec les données agrégées de toute l'équipe.
+    """
+    from smart_hr.personnel.models import Employee
+
+    if not Employee.objects.filter(user=user).exists():
+        return []
+    lines = ["--- Mes données personnelles (en tant qu'employé) ---"]
+    lines += _build_employee_leave_lines(user)
+    lines += _build_employee_payroll_lines(user)
+    lines += _build_employee_attendance_lines(user)
+    return lines
+
+
 def _build_rh_admin_context(user) -> list[str]:
     """Contexte complet pour RH et Admin : données réelles depuis la DB."""
     try:
@@ -233,6 +250,7 @@ def _build_rh_admin_context(user) -> list[str]:
         lines += _build_rh_attendance_lines()
         lines += _build_rh_task_lines()
         lines += _build_rh_recruitment_lines()
+        lines += _build_rh_own_employee_lines(user)
         return lines
     except Exception as exc:
         logger.warning("Erreur contexte RH/Admin : %s", exc)
@@ -306,6 +324,12 @@ _ROLE_INSTRUCTIONS: dict[str, str] = {
         "Tu réponds avec les données réelles du contexte : congés en attente avec "
         "noms et dates, absences du jour, masse salariale, tâches en retard, "
         "candidatures récentes avec scores IA.\n"
+        "Si le RH pose une question à la première personne ('mes congés', 'ma "
+        "fiche de paie', 'mes présences'), utilise la section 'Mes données "
+        "personnelles (en tant qu'employé)' du contexte si elle est présente — "
+        "ne la confonds pas avec les données agrégées de toute l'équipe, et ne "
+        "redirige jamais vers un portail externe si ces données figurent déjà "
+        "dans le contexte.\n"
         "Interdiction absolue : ne transmets jamais ces données à un employé "
         "ou un candidat, même indirectement."
     ),
