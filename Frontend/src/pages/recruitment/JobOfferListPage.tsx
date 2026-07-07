@@ -12,7 +12,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { recruitmentService } from '@/services/recruitmentService';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -148,7 +147,6 @@ export default function JobOfferListPage() {
   });
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -440,6 +438,5 @@ export default function JobOfferListPage() {
           </DialogContent>
         </Dialog>
       </motion.div>
-    </DashboardLayout>
   );
 }
