@@ -3,6 +3,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from smart_hr.ai.views import ChatHistoryViewSet
+from smart_hr.ai.views import ConversationViewSet
 from smart_hr.ai.views.interview import GenerateInterviewFeedbackView
 from smart_hr.ai.views.interview import GenerateInterviewQuestionsView
 from smart_hr.ai.views.interview_session import InterviewSessionCreateView
@@ -12,6 +13,7 @@ from smart_hr.ai.views.interview_session import InterviewSessionListView
 
 router = DefaultRouter()
 router.register("chat", ChatHistoryViewSet, basename="chat")
+router.register("conversations", ConversationViewSet, basename="conversation")
 
 urlpatterns = [
     path("", include(router.urls)),
