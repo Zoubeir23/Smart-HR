@@ -5,7 +5,6 @@ import {
   Bot,
   User,
   Sparkles,
-  RotateCcw,
   Copy,
   Check,
   Lightbulb,
@@ -17,14 +16,15 @@ import {
   MicOff,
   PhoneForwarded,
 } from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { aiService } from '@/services/aiService';
+import { aiService, ChatHistoryEntry } from '@/services/aiService';
 import { cn } from '@/lib/utils';
+import ConversationSidebar from '@/components/ai/ConversationSidebar';
 
 /* ─────────── Types ─────────── */
 
@@ -68,6 +68,13 @@ const SUGGESTIONS_BY_ROLE: Record<string, { text: string; icon: React.ElementTyp
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+function chatHistoryToMessages(history: ChatHistoryEntry[]): Message[] {
+  return history.flatMap((entry) => [
+    { id: `${entry.id}-q`, text: entry.question, sender: 'user' as const, timestamp: new Date(entry.created_at) },
+    { id: `${entry.id}-r`, text: entry.response, sender: 'ai' as const, timestamp: new Date(entry.created_at) },
+  ]);
 }
 
 /* ─────────── Typing Indicator ─────────── */
@@ -119,21 +126,26 @@ function buildWelcomeMessage(user: { first_name?: string; role?: string } | null
   return roleMessages[role] ?? `${greeting} Je suis l'assistant IA Smart-HR. Comment puis-je vous aider ?`;
 }
 
+function buildWelcomeMessageObject(user: { first_name?: string; role?: string } | null): Message {
+  return {
+    id: 'welcome-' + Date.now(),
+    text: buildWelcomeMessage(user),
+    sender: 'ai',
+    timestamp: new Date(),
+  };
+}
+
 export default function AIChatPage() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const userRole = (user?.role ?? '').toUpperCase();
   const suggestions = SUGGESTIONS_BY_ROLE[userRole] ?? SUGGESTIONS_BY_ROLE['RH'];
 
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'welcome',
-      text: buildWelcomeMessage(user),
-      sender: 'ai',
-      timestamp: new Date(),
-    },
-  ]);
+  const [activeConversationId, setActiveConversationId] = useState<number | null>(null);
+  const [messages, setMessages] = useState<Message[]>([buildWelcomeMessageObject(user)]);
+  const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -145,6 +157,47 @@ export default function AIChatPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // ─── Historique de conversations ──────
+  const { data: conversations = [] } = useQuery({
+    queryKey: ['ai-conversations'],
+    queryFn: aiService.getConversations,
+  });
+
+  const startNewConversation = useCallback(() => {
+    setActiveConversationId(null);
+    setMessages([buildWelcomeMessageObject(user)]);
+    setConfusedCount(0);
+    setShowEscalation(false);
+  }, [user]);
+
+  const selectConversation = async (id: number) => {
+    if (id === activeConversationId) return;
+    setActiveConversationId(id);
+    setIsLoadingConversation(true);
+    setConfusedCount(0);
+    setShowEscalation(false);
+    try {
+      const history = await aiService.getConversationMessages(id);
+      setMessages(history.length > 0 ? chatHistoryToMessages(history) : [buildWelcomeMessageObject(user)]);
+    } catch {
+      toast({ title: 'Erreur', description: 'Impossible de charger cette conversation.', variant: 'destructive' });
+    } finally {
+      setIsLoadingConversation(false);
+    }
+  };
+
+  const deleteConversationMutation = useMutation({
+    mutationFn: (id: number) => aiService.deleteConversation(id),
+    onSuccess: (_data, deletedId) => {
+      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
+      if (deletedId === activeConversationId) startNewConversation();
+      toast({ title: 'Conversation supprimée' });
+    },
+    onError: () => {
+      toast({ title: 'Erreur', description: 'Impossible de supprimer cette conversation.', variant: 'destructive' });
+    },
+  });
 
   // ─── Auto-scroll ──────────────────────
   const scrollToBottom = useCallback(() => {
@@ -189,9 +242,13 @@ export default function AIChatPage() {
   };
 
   const chatMutation = useMutation({
-    mutationFn: (question: string) => aiService.chat(question),
+    mutationFn: (question: string) => aiService.chat(question, activeConversationId ?? undefined),
     onSuccess: (data) => {
       const responseText = data?.response || data?.answer || data?.message || JSON.stringify(data);
+      if (!activeConversationId && data?.conversation) {
+        setActiveConversationId(data.conversation);
+      }
+      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
       setMessages((prev) => [
         ...prev,
         {
@@ -263,20 +320,6 @@ export default function AIChatPage() {
     }
   };
 
-  // ─── Clear Chat ───────────────────────
-  const clearChat = () => {
-    setMessages([
-      {
-        id: 'welcome-' + Date.now(),
-        text: 'Conversation réinitialisée. Comment puis-je vous aider ?',
-        sender: 'ai',
-        timestamp: new Date(),
-      },
-    ]);
-    setConfusedCount(0);
-    setShowEscalation(false);
-  };
-
   // ─── Auto-resize textarea ─────────────
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInputValue(e.target.value);
@@ -325,7 +368,19 @@ export default function AIChatPage() {
   const showSuggestions = messages.length <= 1 && !isTyping;
 
   return (
-      <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden rounded-lg border border-border bg-card">
+    <div className="flex h-[calc(100vh-4rem)] gap-3">
+      <ConversationSidebar
+        items={conversations}
+        activeId={activeConversationId}
+        onSelect={selectConversation}
+        onNew={startNewConversation}
+        onDelete={(id) => deleteConversationMutation.mutate(id)}
+        newLabel="Nouvelle conversation"
+        emptyLabel="Aucune conversation pour le moment."
+        deleteTitle="Supprimer cette conversation ?"
+        deleteDescription="Cette action est irréversible. Tous les messages de ce fil seront définitivement supprimés."
+      />
+      <div className="flex flex-1 flex-col overflow-hidden rounded-lg border border-border bg-card">
         {/* ────── HEADER ────── */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
           <div className="flex items-center gap-3">
@@ -342,24 +397,18 @@ export default function AIChatPage() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-1.5 text-xs text-muted-foreground"
-              onClick={clearChat}
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Effacer
-            </Button>
-          </div>
         </div>
 
         {/* ────── MESSAGES ────── */}
         <div ref={scrollContainerRef} className="relative flex-1 overflow-y-auto">
           <div className="mx-auto max-w-3xl space-y-5 px-5 py-6">
+            {isLoadingConversation && (
+              <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
+                Chargement de la conversation…
+              </div>
+            )}
             <AnimatePresence initial={false}>
-              {messages.map((message) => (
+              {!isLoadingConversation && messages.map((message) => (
                 <motion.div
                   key={message.id}
                   initial={{ opacity: 0, y: 16 }}
@@ -455,7 +504,7 @@ export default function AIChatPage() {
             <AnimatePresence>{isTyping && <TypingBubble />}</AnimatePresence>
 
             {/* ── Suggestion Cards (shown only at start) ── */}
-            {showSuggestions && (
+            {!isLoadingConversation && showSuggestions && (
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -587,5 +636,6 @@ export default function AIChatPage() {
           </p>
         </div>
       </div>
+    </div>
   );
 }
