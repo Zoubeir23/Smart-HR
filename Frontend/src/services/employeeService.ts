@@ -78,4 +78,32 @@ export const employeeService = {
   deleteFamilyMember: async (id: number) => {
     await api.delete(`/personnel/family-members/${id}/`);
   },
+
+  // ── Import en masse ──────────────────────────────────────────────────────
+
+  importEmployees: async (file: File): Promise<BulkImportResult> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const { data } = await api.post('/personnel/employees/import/', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return data;
+  },
+
+  downloadImportTemplate: async (): Promise<Blob> => {
+    const { data } = await api.get('/personnel/employees/import/template/', { responseType: 'blob' });
+    return data;
+  },
 };
+
+export interface BulkImportRowError {
+  row: number;
+  email: string;
+  reason: string;
+}
+
+export interface BulkImportResult {
+  created: number;
+  total_rows: number;
+  errors: BulkImportRowError[];
+}
