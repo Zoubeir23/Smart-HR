@@ -3,12 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import AutoSEO from "@/components/common/AutoSEO";
 import AppErrorBoundary from "@/components/common/AppErrorBoundary";
+import DashboardLayout from "@/components/layout/DashboardLayout";
 
 // Pages Auth (chargement immédiat — nécessaires avant authentification)
 import LoginPage from "@/pages/auth/LoginPage";
@@ -84,6 +85,19 @@ function PageLoader() {
   );
 }
 
+// Layout persistant : Sidebar/Navbar rendus une seule fois, ne remontent pas
+// à chaque navigation entre pages authentifiées (Outlet swap uniquement le
+// contenu). Auparavant chaque page incluait son propre <DashboardLayout>,
+// ce qui démontait/remontait tout le chrome (et son état : sidebar replié,
+// scroll, dropdowns ouverts) à chaque clic dans le menu.
+function AuthenticatedLayout() {
+  return (
+    <DashboardLayout>
+      <Outlet />
+    </DashboardLayout>
+  );
+}
+
 const queryClient = new QueryClient();
 
 // Composant qui redirige vers le bon dashboard selon le role
@@ -134,6 +148,9 @@ const App = () => (
 
               {/* Landing Page à la racine */}
               <Route path="/" element={<LandingPage />} />
+
+              {/* Pages authentifiées : Sidebar/Navbar persistants (voir AuthenticatedLayout) */}
+              <Route element={<AuthenticatedLayout />}>
 
               {/* Dashboard adaptatif selon le role */}
               <Route
@@ -429,6 +446,8 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+
+              </Route>
 
               {/* 404 */}
               <Route path="*" element={<NotFoundPage />} />
