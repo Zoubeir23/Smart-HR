@@ -5,19 +5,37 @@ import uuid
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
 from rest_framework import status
+from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from smart_hr.ai.context_builder import build_system_prompt
 from smart_hr.ai.llm_providers import get_llm_provider
+from smart_hr.ai_agents.models import VoiceMessage
+from smart_hr.ai_agents.models import VoiceSession
+from smart_hr.ai_agents.serializers import VoiceMessageSerializer
+from smart_hr.ai_agents.serializers import VoiceSessionSerializer
 from smart_hr.core.throttles import AILLMUserThrottle
 
 logger = logging.getLogger(__name__)
 
+_TITLE_MAX_LENGTH = 60
+
 _VOICE_FORMAT_INSTRUCTIONS = (
     "\n\nFORMAT VOCAL : limite ta réponse à 3-4 phrases maximum, sans listes ni markdown, pour une lecture audio fluide."
 )
+
+
+def _truncate_title(question: str) -> str:
+    """Titre de session par troncature du premier message — voir smart_hr.ai.views.chat."""
+    question = question.strip()
+    if len(question) <= _TITLE_MAX_LENGTH:
+        return question
+    return question[:_TITLE_MAX_LENGTH].rstrip() + "…"
+
 
 HR_FAQ = {
     "congé": (
@@ -115,15 +133,16 @@ def _generate_audio_file(text: str, voice: str) -> str | None:
 class VoiceAskView(APIView):
     """
     POST /api/v1/agents/voice/ask/
-    Body: { "question": "...", "voice": "nova|alloy|echo" }
+    Body: { "question": "...", "voice": "nova|alloy|echo", "session": <id, optionnel> }
     Retourne une réponse RH textuelle + URL audio MP3 si gTTS disponible.
+    Si aucun `session` n'est fourni, une nouvelle session est créée automatiquement.
     """
 
     permission_classes = [IsAuthenticated]
     throttle_classes = [AILLMUserThrottle]
 
     def post(self, request):
-        """Valide la question, génère la réponse textuelle et l'audio TTS."""
+        """Valide la question, génère la réponse textuelle et l'audio TTS, persiste l'échange."""
         question = request.data.get("question", "").strip()
         voice = request.data.get("voice", "nova")
 
@@ -136,12 +155,31 @@ class VoiceAskView(APIView):
         if voice not in ("nova", "alloy", "echo"):
             voice = "nova"
 
+        session_id = request.data.get("session")
+        if session_id:
+            session = get_object_or_404(VoiceSession, id=session_id, user=request.user)
+        else:
+            session = VoiceSession.objects.create(user=request.user, title=_truncate_title(question))
+
+        is_first_message = not VoiceMessage.objects.filter(session=session).exists()
+        if is_first_message and session.title in ("", "Nouvelle session"):
+            session.title = _truncate_title(question)
+        session.save()
+
         text_response = _generate_voice_response(question, request.user)
         audio_relative_path = _generate_audio_file(text_response, voice)
 
         audio_url = None
         if audio_relative_path:
             audio_url = default_storage.url(audio_relative_path)
+
+        VoiceMessage.objects.create(
+            session=session,
+            question=question,
+            response=text_response,
+            audio_url=audio_url or "",
+            voice=voice,
+        )
 
         return Response(
             {
@@ -150,5 +188,28 @@ class VoiceAskView(APIView):
                 "sources": ["Smart-HR FAQ RH"],
                 "mode": "tts" if audio_url else "text_only",
                 "voice": voice,
+                "session": session.id,
             },
         )
+
+
+class VoiceSessionViewSet(viewsets.ModelViewSet):
+    """Sessions de l'assistant vocal : liste, création, suppression, messages."""
+
+    serializer_class = VoiceSessionSerializer
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "post", "delete", "head", "options"]
+
+    def get_queryset(self):
+        return VoiceSession.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=["get"])
+    def messages(self, request, pk=None):
+        """GET /api/v1/agents/voice/sessions/{id}/messages/ — échanges triés chronologiquement."""
+        session = self.get_object()
+        history = VoiceMessage.objects.filter(session=session).order_by("created_at")
+        serializer = VoiceMessageSerializer(history, many=True)
+        return Response(serializer.data)
