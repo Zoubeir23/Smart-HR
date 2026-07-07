@@ -157,6 +157,13 @@ export default function AIChatPage() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
+  // Toujours à jour (contrairement à une closure figée au moment du .mutate()) —
+  // permet de vérifier si l'utilisateur a changé de conversation avant que la
+  // réponse IA n'arrive, pour ne pas l'injecter dans le mauvais fil.
+  const activeConversationIdRef = useRef<number | null>(null);
+  useEffect(() => {
+    activeConversationIdRef.current = activeConversationId;
+  }, [activeConversationId]);
 
   // ─── Historique de conversations ──────
   const { data: conversations = [] } = useQuery({
@@ -242,13 +249,26 @@ export default function AIChatPage() {
   };
 
   const chatMutation = useMutation({
-    mutationFn: (question: string) => aiService.chat(question, activeConversationId ?? undefined),
-    onSuccess: (data) => {
+    mutationFn: ({ question, conversationId }: { question: string; conversationId: number | null }) =>
+      aiService.chat(question, conversationId ?? undefined),
+    onSuccess: (data, variables) => {
       const responseText = data?.response || data?.answer || data?.message || JSON.stringify(data);
-      if (!activeConversationId && data?.conversation) {
+      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
+      setIsTyping(false);
+
+      // L'utilisateur a peut-être changé de conversation pendant que la
+      // réponse IA était en cours de génération — dans ce cas, la réponse
+      // est déjà persistée côté serveur, mais on ne l'injecte pas dans le
+      // fil actuellement affiché (qui appartient à une autre conversation).
+      const stillOnSameConversation =
+        variables.conversationId === null
+          ? activeConversationIdRef.current === null
+          : activeConversationIdRef.current === variables.conversationId;
+      if (!stillOnSameConversation) return;
+
+      if (variables.conversationId === null && data?.conversation) {
         setActiveConversationId(data.conversation);
       }
-      queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
       setMessages((prev) => [
         ...prev,
         {
@@ -258,7 +278,6 @@ export default function AIChatPage() {
           timestamp: new Date(),
         },
       ]);
-      setIsTyping(false);
 
       if (detectConfusion(responseText)) {
         setConfusedCount((prev) => {
@@ -270,7 +289,14 @@ export default function AIChatPage() {
         setConfusedCount(0);
       }
     },
-    onError: () => {
+    onError: (_error, variables) => {
+      setIsTyping(false);
+      const stillOnSameConversation =
+        variables.conversationId === null
+          ? activeConversationIdRef.current === null
+          : activeConversationIdRef.current === variables.conversationId;
+      if (!stillOnSameConversation) return;
+
       setMessages((prev) => [
         ...prev,
         {
@@ -280,7 +306,6 @@ export default function AIChatPage() {
           timestamp: new Date(),
         },
       ]);
-      setIsTyping(false);
     },
   });
 
@@ -295,7 +320,7 @@ export default function AIChatPage() {
     ]);
     setInputValue('');
     setIsTyping(true);
-    chatMutation.mutate(msg);
+    chatMutation.mutate({ question: msg, conversationId: activeConversationId });
 
     // Reset textarea height
     if (inputRef.current) inputRef.current.style.height = 'auto';
