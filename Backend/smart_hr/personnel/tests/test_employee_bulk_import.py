@@ -96,7 +96,9 @@ class TestBulkImportSuccess:
         response = client.post(IMPORT_URL, {"file": _csv_upload(content)}, format="multipart")
 
         assert response.data["created"] == 2
-        usernames = set(User.objects.filter(email__in=["moussa1@test.com", "moussa2@test.com"]).values_list("username", flat=True))
+        usernames = set(
+            User.objects.filter(email__in=["moussa1@test.com", "moussa2@test.com"]).values_list("username", flat=True)
+        )
         assert len(usernames) == 2
 
     def test_sends_credentials_email_per_created_employee(self, rh_user, department, mailoutbox):
