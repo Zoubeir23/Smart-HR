@@ -10,7 +10,6 @@ import {
   ArrowRight,
   Send,
 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -97,16 +96,13 @@ export default function CandidateDashboard() {
 
   if (isLoadingJobs || isLoadingApps) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Chargement...</p>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
       <motion.div
         variants={containerVariants}
         initial="hidden"
@@ -347,6 +343,5 @@ export default function CandidateDashboard() {
           )}
         </motion.div>
       </motion.div>
-    </DashboardLayout>
   );
 }
