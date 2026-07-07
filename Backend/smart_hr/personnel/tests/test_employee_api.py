@@ -211,3 +211,82 @@ class TestEmployeeSetManager:
         assert response.status_code == status.HTTP_200_OK
         employee.refresh_from_db()
         assert employee.is_department_manager is False
+
+
+class TestEmployeeAnonymize:
+    """RGPD droit à l'oubli — /employees/{id}/anonymize/.
+
+    Régression : la cascade d'anonymisation tentait d'écrire sur des champs
+    `notes` inexistants sur Attendance et Payroll, provoquant un FieldError
+    systématiquement masqué par un `except Exception: pass` — l'endpoint
+    semblait fonctionner (200) mais LeaveRequest.reason n'était en réalité
+    jamais atteint dans certains ordres d'exécution. Ces tests garantissent
+    que l'anonymisation aboutit réellement, sans dépendre d'un swallow silencieux.
+    """
+
+    def test_admin_can_anonymize_terminated_employee(self, admin_user, department, position):
+        from smart_hr.conge.models import LeaveRequest
+        from smart_hr.paiement.models import Payroll
+        from smart_hr.presence.models import Attendance
+
+        target_user = User.objects.create_user(
+            username="terminated_emp",
+            email="terminated_emp@test.com",
+            password="pass1234!",
+            role=User.Role.EMPLOYEE,
+            is_email_verified=True,
+        )
+        target_employee = Employee.objects.create(
+            user=target_user,
+            department=department,
+            position=position,
+            hire_date=datetime.date(2020, 1, 1),
+            salary=400000,
+            status=Employee.Status.TERMINATED,
+            cin="1234567890",
+            address="12 rue de la Paix, Dakar",
+        )
+        LeaveRequest.objects.create(
+            employee=target_employee,
+            leave_type="annual",
+            status="approved",
+            start_date=datetime.date(2025, 1, 1),
+            end_date=datetime.date(2025, 1, 5),
+            reason="Vacances en famille",
+        )
+        Attendance.objects.create(employee=target_employee, date=datetime.date(2025, 1, 10))
+        Payroll.objects.create(employee=target_employee, month="2025-01", base_salary=400000)
+
+        client = APIClient()
+        client.force_authenticate(user=admin_user)
+        response = client.post(f"{LIST_URL}{target_employee.pk}/anonymize/")
+
+        assert response.status_code == status.HTTP_200_OK
+        target_employee.refresh_from_db()
+        assert target_employee.anonymized is True
+        assert target_employee.cin == ""
+        assert target_employee.address == ""
+        assert LeaveRequest.objects.get(employee=target_employee).reason == "[anonymise]"
+
+    def test_rh_cannot_anonymize(self, rh_user, employee):
+        employee.status = Employee.Status.TERMINATED
+        employee.save()
+        client = APIClient()
+        client.force_authenticate(user=rh_user)
+        response = client.post(f"{LIST_URL}{employee.pk}/anonymize/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_cannot_anonymize_active_employee(self, admin_user, employee):
+        client = APIClient()
+        client.force_authenticate(user=admin_user)
+        response = client.post(f"{LIST_URL}{employee.pk}/anonymize/")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_cannot_anonymize_twice(self, admin_user, employee):
+        employee.status = Employee.Status.TERMINATED
+        employee.anonymized = True
+        employee.save()
+        client = APIClient()
+        client.force_authenticate(user=admin_user)
+        response = client.post(f"{LIST_URL}{employee.pk}/anonymize/")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
