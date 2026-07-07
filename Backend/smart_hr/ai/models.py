@@ -6,11 +6,41 @@ from django.db import models
 from smart_hr.core.models import TimeStampedModel
 
 
+class Conversation(TimeStampedModel):
+    """Un fil de discussion du chat IA, regroupant plusieurs échanges question/réponse.
+
+    Le titre est généré automatiquement à partir du premier message (troncature),
+    à la manière de ChatGPT — pas d'appel LLM dédié pour économiser un aller-retour.
+    """
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="conversations",
+    )
+    title = models.CharField(max_length=255, blank=True, default="Nouvelle conversation")
+
+    class Meta:
+        verbose_name = "Conversation"
+        verbose_name_plural = "Conversations"
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return f"{self.user} — {self.title}"
+
+
 class ChatHistory(TimeStampedModel):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name="chat_history",
+    )
+    conversation = models.ForeignKey(
+        Conversation,
+        on_delete=models.CASCADE,
+        related_name="messages",
+        null=True,
+        blank=True,
     )
     question = models.TextField()
     response = models.TextField()
