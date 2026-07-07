@@ -12,7 +12,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import { recruitmentService } from '@/services/recruitmentService';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Card } from '@/components/ui/card';
 
 interface TimelineStep {
@@ -131,7 +130,7 @@ const ApplicationTrackingPage = () => {
   const progress = (application.matchingScore / 100) * circumference;
 
   return (
-    <DashboardLayout>
+    <>
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -396,7 +395,7 @@ const ApplicationTrackingPage = () => {
         </motion.div>
       </div>
       )}
-    </DashboardLayout>
+    </>
   );
 };
 
