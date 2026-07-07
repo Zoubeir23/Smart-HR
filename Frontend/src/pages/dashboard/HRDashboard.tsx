@@ -23,7 +23,6 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import KPICard from '@/components/charts/KPICard';
 import RetentionChart from '@/components/charts/RetentionChart';
 import ChurnGauge from '@/components/charts/ChurnGauge';
@@ -284,7 +283,6 @@ export default function HRDashboard() {
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
-    <DashboardLayout>
       <motion.div variants={container} initial="hidden" animate="visible" className="space-y-4 sm:space-y-5 md:space-y-6">
 
         {/* ────── HEADER BANNER ────── */}
@@ -644,6 +642,5 @@ export default function HRDashboard() {
           </div>
         </motion.div>
       </motion.div>
-    </DashboardLayout>
   );
 }

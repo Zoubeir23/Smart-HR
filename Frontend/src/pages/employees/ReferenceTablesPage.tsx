@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, Pencil, Trash2, Tags } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -229,7 +228,6 @@ function ReferenceTablePanel({ config }: { config: TableConfig }) {
 
 export default function ReferenceTablesPage() {
   return (
-    <DashboardLayout>
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
@@ -258,6 +256,5 @@ export default function ReferenceTablesPage() {
           ))}
         </Tabs>
       </div>
-    </DashboardLayout>
   );
 }

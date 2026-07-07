@@ -10,10 +10,6 @@ const { navigateMock, toastMock, employeeCreateMock } = vi.hoisted(() => ({
   employeeCreateMock: vi.fn(),
 }));
 
-vi.mock('@/components/layout/DashboardLayout', () => ({
-  default: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
-
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: toastMock }),
 }));

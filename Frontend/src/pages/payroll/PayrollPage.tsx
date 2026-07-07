@@ -7,7 +7,6 @@ import {
   Plus, Pencil, Trash2, Zap, Check, X, Download,
   FileText, BarChart2, List,
 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -390,16 +389,14 @@ export default function PayrollPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout>
         <div className="flex items-center justify-center h-64">
           <p className="text-muted-foreground">Chargement…</p>
         </div>
-      </DashboardLayout>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -956,6 +953,6 @@ export default function PayrollPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </DashboardLayout>
+    </>
   );
 }

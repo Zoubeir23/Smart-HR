@@ -20,7 +20,6 @@ import {
 import { useMutation } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
@@ -326,7 +325,6 @@ export default function AIChatPage() {
   const showSuggestions = messages.length <= 1 && !isTyping;
 
   return (
-    <DashboardLayout>
       <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden rounded-lg border border-border bg-card">
         {/* ────── HEADER ────── */}
         <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
@@ -589,6 +587,5 @@ export default function AIChatPage() {
           </p>
         </div>
       </div>
-    </DashboardLayout>
   );
 }

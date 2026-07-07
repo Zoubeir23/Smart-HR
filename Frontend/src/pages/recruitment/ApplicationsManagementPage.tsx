@@ -13,7 +13,6 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { recruitmentService } from '@/services/recruitmentService';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -816,7 +815,7 @@ export default function ApplicationsManagementPage() {
   const isLoading = isLoadingApplications || isLoadingJobOffers;
 
   return (
-    <DashboardLayout>
+    <>
       <div className="space-y-6">
         {/* Page Header */}
         <motion.div
@@ -1048,6 +1047,6 @@ export default function ApplicationsManagementPage() {
         onConfirm={handleConfirmBulkSendInterview}
         isPending={bulkSendProgress !== null}
       />
-    </DashboardLayout>
+    </>
   );
 }

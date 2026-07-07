@@ -20,7 +20,6 @@ import {
   MapPin,
   AlertTriangle,
 } from 'lucide-react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import EmployeeCard from '@/components/employees/EmployeeCard';
 import DataPagination, { usePagination } from '@/components/common/DataPagination';
 import { Button } from '@/components/ui/button';
@@ -207,7 +206,6 @@ export default function EmployeeListPage() {
   };
 
   return (
-    <DashboardLayout>
       <motion.div variants={container} initial="hidden" animate="visible" className="space-y-4 sm:space-y-5 md:space-y-6">
 
         {/* ────── HEADER ────── */}
@@ -569,6 +567,5 @@ export default function EmployeeListPage() {
           </>
         )}
       </motion.div>
-    </DashboardLayout>
   );
 }

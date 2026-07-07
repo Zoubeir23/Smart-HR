@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import Vapi from '@vapi-ai/web';
 import { useMutation } from '@tanstack/react-query';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -783,7 +782,6 @@ export default function RecruteurIAPage() {
   };
 
   return (
-    <DashboardLayout>
       <div className="mx-auto max-w-4xl px-4 py-8">
         <div className="mb-8 text-center">
           <div
@@ -852,6 +850,5 @@ export default function RecruteurIAPage() {
           </motion.div>
         </AnimatePresence>
       </div>
-    </DashboardLayout>
   );
 }

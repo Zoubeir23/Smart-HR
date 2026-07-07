@@ -7,7 +7,6 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Loader2, Save, UserPlus } from 'lucide-react';
 import axios from 'axios';
 
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -219,7 +218,6 @@ export default function EmployeeCreatePage() {
   };
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
@@ -460,6 +458,5 @@ export default function EmployeeCreatePage() {
           </CardContent>
         </Card>
       </motion.div>
-    </DashboardLayout>
   );
 }

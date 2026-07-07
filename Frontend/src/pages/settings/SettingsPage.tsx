@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -406,7 +405,6 @@ export default function SettingsPage() {
   };
 
   return (
-    <DashboardLayout>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -453,6 +451,5 @@ export default function SettingsPage() {
           </div>
         </div>
       </motion.div>
-    </DashboardLayout>
   );
 }
