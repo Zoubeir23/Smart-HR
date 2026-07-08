@@ -11,6 +11,7 @@ from smart_hr.personnel.views import EmployeeViewSet
 from smart_hr.personnel.views import FamilyMemberViewSet
 from smart_hr.personnel.views import FamilyStatusViewSet
 from smart_hr.personnel.views import NationalityViewSet
+from smart_hr.personnel.views import ObjectiveViewSet
 from smart_hr.personnel.views import OnboardingProgramViewSet
 from smart_hr.personnel.views import PositionViewSet
 from smart_hr.personnel.views import ServiceViewSet
@@ -27,6 +28,7 @@ router.register("ref/family-statuses", FamilyStatusViewSet, basename="family-sta
 router.register("ref/diplomas", DiplomaViewSet, basename="diploma")
 router.register("ref/departure-reasons", DepartureReasonViewSet, basename="departure-reason")
 router.register("onboarding-programs", OnboardingProgramViewSet, basename="onboarding-program")
+router.register("objectives", ObjectiveViewSet, basename="objective")
 
 urlpatterns = [
     path("", include(router.urls)),

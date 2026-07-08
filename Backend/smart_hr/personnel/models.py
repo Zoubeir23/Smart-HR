@@ -450,3 +450,94 @@ class OnboardingStep(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.program} — {self.title}"
+
+
+# ---------------------------------------------------------------------------
+# OKR — Objectives & Key Results
+# ---------------------------------------------------------------------------
+
+
+class Objective(TimeStampedModel):
+    """Objectif OKR porté par un employé sur une période donnée (ex: "Q1 2026").
+
+    La progression et le statut sont dérivés des Key Results rattachés,
+    jamais saisis manuellement (source de vérité unique)."""
+
+    class Status(models.TextChoices):
+        NOT_STARTED = "not_started", "Non démarré"
+        IN_PROGRESS = "in_progress", "En cours"
+        COMPLETED = "completed", "Atteint"
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="objectives",
+    )
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    period = models.CharField(max_length=50, help_text="Ex: Q1 2026")
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="created_objectives",
+    )
+
+    class Meta:
+        verbose_name = "Objectif OKR"
+        verbose_name_plural = "Objectifs OKR"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.employee} — {self.title} ({self.period})"
+
+    @property
+    def progress(self) -> int:
+        """Moyenne de la progression de chaque Key Result, arrondie (0-100)."""
+        key_results = list(self.key_results.all())
+        if not key_results:
+            return 0
+        total = sum(kr.progress for kr in key_results)
+        return round(total / len(key_results))
+
+    @property
+    def status(self) -> str:
+        key_results = list(self.key_results.all())
+        if not key_results:
+            return self.Status.NOT_STARTED
+        if all(kr.progress >= 100 for kr in key_results):
+            return self.Status.COMPLETED
+        if any(kr.current_value > 0 for kr in key_results):
+            return self.Status.IN_PROGRESS
+        return self.Status.NOT_STARTED
+
+
+class KeyResult(TimeStampedModel):
+    """Résultat clé mesurable rattaché à un objectif (ex: "Signer 5 clients")."""
+
+    objective = models.ForeignKey(
+        Objective,
+        on_delete=models.CASCADE,
+        related_name="key_results",
+    )
+    title = models.CharField(max_length=200)
+    unit = models.CharField(max_length=30, blank=True, help_text="Ex: %, clients, jours")
+    target_value = models.DecimalField(max_digits=12, decimal_places=2)
+    current_value = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        verbose_name = "Résultat clé"
+        verbose_name_plural = "Résultats clés"
+        ordering = ["order", "id"]
+
+    def __str__(self) -> str:
+        return f"{self.objective} — {self.title}"
+
+    @property
+    def progress(self) -> int:
+        """Pourcentage d'avancement (0-100), capé même en cas de dépassement."""
+        if self.target_value <= 0:
+            return 0
+        ratio = (self.current_value / self.target_value) * 100
+        return min(round(ratio), 100)
