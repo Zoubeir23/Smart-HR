@@ -128,6 +128,18 @@ class TestCreateOnboardingProgram:
         response = client.post(LIST_URL, payload, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_rejects_steps_with_only_empty_titles(self, rh_user, employee):
+        client = _authenticated_client(rh_user)
+        payload = {
+            "employee": employee.pk,
+            "program_type": "onboarding",
+            "title": "Programme",
+            "steps": [{"title": "", "description": "sans titre"}],
+        }
+        response = client.post(LIST_URL, payload, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert not OnboardingProgram.objects.filter(title="Programme").exists()
+
 
 class TestListOnboardingPrograms:
     def test_rh_sees_all_programs(self, rh_user, employee, other_employee):
