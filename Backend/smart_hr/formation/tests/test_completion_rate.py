@@ -85,7 +85,9 @@ class TestParticipationCompletedAtAutoSet:
         assert participation.completed_at == timezone.now().date()
 
     def test_completed_at_cleared_when_status_moves_away_from_completed(self, employee, formation):
-        participation = Participation.objects.create(employee=employee, formation=formation, status=Participation.Status.COMPLETED)
+        participation = Participation.objects.create(
+            employee=employee, formation=formation, status=Participation.Status.COMPLETED
+        )
         assert participation.completed_at is not None
 
         participation.status = Participation.Status.ABSENT
