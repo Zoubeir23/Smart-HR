@@ -1,4 +1,7 @@
+from collections import Counter
+
 from django.db.models import Count
+from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models import Sum
 from rest_framework import filters
@@ -9,6 +12,8 @@ from rest_framework.response import Response
 
 from smart_hr.personnel.models import Department
 from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import Position
+from smart_hr.personnel.models import Service
 from smart_hr.personnel.serializers import DepartmentDetailSerializer
 from smart_hr.personnel.serializers import DepartmentSerializer
 from smart_hr.users.permissions import IsRH
@@ -46,39 +51,68 @@ class DepartmentViewSet(viewsets.ModelViewSet):
     def organigramme(self, request):
         """Arborescence Département → Service → Poste avec effectifs actifs,
         pour générer automatiquement l'organigramme visuel (sans re-saisie
-        manuelle — dérivé de la structure déjà existante)."""
-        departments = Department.objects.prefetch_related("services__positions").order_by("name")
+        manuelle — dérivé de la structure déjà existante).
+
+        Les effectifs sont calculés en Python à partir d'un unique passage sur
+        les employés actifs (au lieu d'une requête COUNT par département/service/
+        poste), pour éviter le problème de requêtes N+1.
+
+        Le tri des services/postes est appliqué au niveau des querysets passés
+        à Prefetch() (et non via .order_by() après coup) : chaîner .order_by()
+        sur une relation déjà préchargée ignore le cache de prefetch et
+        redéclenche une requête par ligne parente.
+        """
+        departments = Department.objects.prefetch_related(
+            Prefetch(
+                "services",
+                queryset=Service.objects.order_by("name").prefetch_related(
+                    Prefetch("positions", queryset=Position.objects.order_by("title"))
+                ),
+            )
+        ).order_by("name")
+
+        active_employees = Employee.objects.filter(status="active").values("department_id", "service_id", "position_id")
+        department_counts: Counter = Counter()
+        service_counts: Counter = Counter()
+        position_counts: Counter = Counter()
+        for row in active_employees:
+            department_counts[row["department_id"]] += 1
+            if row["service_id"]:
+                service_counts[row["service_id"]] += 1
+            if row["position_id"]:
+                position_counts[row["position_id"]] += 1
+
+        managers_by_department = {
+            employee.department_id: employee
+            for employee in Employee.objects.filter(is_department_manager=True, status="active").select_related("user")
+        }
 
         data = []
         for department in departments:
-            manager = (
-                Employee.objects.filter(department=department, is_department_manager=True, status="active")
-                .select_related("user")
-                .first()
-            )
             services_data = []
-            for service in department.services.all().order_by("name"):
+            for service in department.services.all():
                 positions_data = [
                     {
                         "id": position.pk,
                         "title": position.title,
-                        "employee_count": Employee.objects.filter(position=position, status="active").count(),
+                        "employee_count": position_counts.get(position.pk, 0),
                     }
-                    for position in service.positions.all().order_by("title")
+                    for position in service.positions.all()
                 ]
                 services_data.append(
                     {
                         "id": service.pk,
                         "name": service.name,
-                        "employee_count": Employee.objects.filter(service=service, status="active").count(),
+                        "employee_count": service_counts.get(service.pk, 0),
                         "positions": positions_data,
                     }
                 )
+            manager = managers_by_department.get(department.pk)
             data.append(
                 {
                     "id": department.pk,
                     "name": department.name,
-                    "employee_count": Employee.objects.filter(department=department, status="active").count(),
+                    "employee_count": department_counts.get(department.pk, 0),
                     "manager_name": manager.user.get_full_name() if manager else None,
                     "services": services_data,
                 }

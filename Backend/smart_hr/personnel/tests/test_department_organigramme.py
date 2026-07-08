@@ -3,6 +3,8 @@ from __future__ import annotations
 import datetime
 
 import pytest
+from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -134,3 +136,34 @@ class TestOrganigrammeStructure:
         response = client.get(ORGANIGRAMME_URL)
         names = [d["name"] for d in response.data]
         assert "Commercial" in names
+
+    def test_query_count_does_not_grow_with_number_of_departments(self, rh_user):
+        def _seed(count: int) -> None:
+            for i in range(count):
+                department = Department.objects.create(name=f"Département {i}-{count}")
+                service = Service.objects.create(name=f"Service {i}-{count}", department=department)
+                position = Position.objects.create(title=f"Poste {i}-{count}", service=service)
+                user = UserFactory.create(role=User.Role.EMPLOYEE, first_name=f"Emp{i}", last_name=f"Test{count}")
+                Employee.objects.create(
+                    user=user,
+                    department=department,
+                    service=service,
+                    position=position,
+                    hire_date=datetime.date(2023, 1, 1),
+                    salary=300000,
+                    status=Employee.Status.ACTIVE,
+                )
+
+        client = _authenticated_client(rh_user)
+
+        _seed(2)
+        with CaptureQueriesContext(connection) as small_context:
+            response = client.get(ORGANIGRAMME_URL)
+        assert response.status_code == status.HTTP_200_OK
+
+        _seed(10)
+        with CaptureQueriesContext(connection) as large_context:
+            response = client.get(ORGANIGRAMME_URL)
+        assert response.status_code == status.HTTP_200_OK
+
+        assert len(large_context) == len(small_context)

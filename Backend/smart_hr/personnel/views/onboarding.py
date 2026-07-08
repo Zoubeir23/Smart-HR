@@ -47,7 +47,8 @@ class OnboardingProgramViewSet(viewsets.ModelViewSet):
         Body: { employee, program_type, title, steps: [{title, description}, ...] }
         """
         steps_payload = request.data.get("steps") or []
-        if not steps_payload:
+        valid_steps = [step for step in steps_payload if step.get("title")]
+        if not valid_steps:
             return Response({"steps": ["Au moins une étape est requise."]}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(data=request.data)
@@ -62,8 +63,7 @@ class OnboardingProgramViewSet(viewsets.ModelViewSet):
                     description=step.get("description", ""),
                     order=index,
                 )
-                for index, step in enumerate(steps_payload)
-                if step.get("title")
+                for index, step in enumerate(valid_steps)
             ]
         )
 

@@ -129,6 +129,36 @@ class TestBulkUploadCreatesApplications:
         assert application.candidate_id == existing.id
         assert User.objects.filter(email__iexact="awa.diallo@example.com").count() == 1
 
+    def test_reuses_existing_candidate_with_different_email_casing(self, rh_user, open_job):
+        """L'e-mail extrait du CV est toujours en minuscules, mais un compte existant
+        peut avoir été créé avec une casse différente — la recherche doit rester
+        insensible à la casse pour éviter un doublon (régression PR #183)."""
+        existing = User.objects.create_user(
+            username="awa.existing",
+            email="Awa.Diallo@Example.com",
+            password="pass1234!",
+            role=User.Role.CANDIDATE,
+        )
+        client = _authenticated_client(rh_user)
+
+        with (
+            patch(f"{BULK_MODULE}.extract_text_from_pdf", return_value="texte du cv"),
+            patch(
+                f"{BULK_MODULE}.extract_candidate_identity",
+                return_value={"first_name": "Awa", "last_name": "Diallo", "email": "awa.diallo@example.com"},
+            ),
+            patch(
+                f"{BULK_MODULE}.analyze_cv_against_job_offer",
+                return_value={"skills_extracted": [], "matching_score": 60.0, "ai_summary": ""},
+            ),
+        ):
+            response = client.post(_bulk_url(open_job), {"cvs": [_cv_file()]}, format="multipart")
+
+        assert response.status_code == status.HTTP_200_OK
+        application = Application.objects.get(job_offer=open_job)
+        assert application.candidate_id == existing.id
+        assert User.objects.filter(email__iexact="awa.diallo@example.com").count() == 1
+
     def test_multiple_files_processed_independently(self, rh_user, open_job):
         client = _authenticated_client(rh_user)
         identities = [

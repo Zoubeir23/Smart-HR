@@ -76,6 +76,10 @@ export default function SkillReferentialTab({ canEdit }: SkillReferentialTabProp
       toast({ title: 'Compétence retirée du référentiel' });
       setDeleteId(null);
     },
+    onError: () => {
+      toast({ title: 'Erreur', description: 'Impossible de supprimer cette compétence.', variant: 'destructive' });
+      setDeleteId(null);
+    },
   });
 
   return (
