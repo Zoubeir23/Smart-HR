@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from smart_hr.performance.models import PerformanceEvaluation
 from smart_hr.performance.models import Skill
+from smart_hr.performance.models import SkillDefinition
 
 
 class SkillSerializer(serializers.ModelSerializer):
@@ -28,6 +29,15 @@ class SkillSerializer(serializers.ModelSerializer):
     def get_employee_name(self, obj: Skill) -> str:
         user = obj.employee.user
         return f"{user.first_name} {user.last_name}".strip() or user.email
+
+
+class SkillDefinitionSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source="get_category_display", read_only=True)
+
+    class Meta:
+        model = SkillDefinition
+        fields = ["id", "name", "category", "category_display", "description", "created_at"]
+        read_only_fields = ["id", "created_at"]
 
 
 class PerformanceEvaluationSerializer(serializers.ModelSerializer):
