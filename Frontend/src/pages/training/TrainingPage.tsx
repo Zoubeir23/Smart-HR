@@ -23,6 +23,7 @@ import { GraduationCap, Calendar, Users, Video, Clock, BookOpen, Plus, Loader2 }
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trainingService } from '@/services/trainingService';
+import CompletionRateSection from '@/components/training/CompletionRateSection';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
@@ -274,6 +275,9 @@ export default function TrainingPage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Taux de complétion */}
+        {canManage && <CompletionRateSection />}
 
         {/* Formations */}
         <div className="space-y-4">
