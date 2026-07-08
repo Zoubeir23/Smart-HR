@@ -8,6 +8,7 @@ from smart_hr.personnel.models import KeyResult
 from smart_hr.personnel.models import Objective
 from smart_hr.personnel.serializers import KeyResultSerializer
 from smart_hr.personnel.serializers import ObjectiveSerializer
+from smart_hr.users.permissions import IsRH
 
 
 class ObjectiveViewSet(viewsets.ModelViewSet):
@@ -18,8 +19,12 @@ class ObjectiveViewSet(viewsets.ModelViewSet):
     """
 
     serializer_class = ObjectiveSerializer
-    permission_classes = [IsAuthenticated]
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def get_permissions(self):
+        if self.action == "destroy":
+            return [IsRH()]
+        return [IsAuthenticated()]
 
     def get_queryset(self):
         user = self.request.user
@@ -51,7 +56,8 @@ class ObjectiveViewSet(viewsets.ModelViewSet):
                 )
 
         key_results_payload = request.data.get("key_results") or []
-        if not key_results_payload:
+        valid_key_results = [kr for kr in key_results_payload if kr.get("title")]
+        if not valid_key_results:
             return Response({"key_results": ["Au moins un résultat clé est requis."]}, status=status.HTTP_400_BAD_REQUEST)
 
         serializer = self.get_serializer(data=request.data)
@@ -67,11 +73,11 @@ class ObjectiveViewSet(viewsets.ModelViewSet):
                     target_value=kr.get("target_value") or 0,
                     order=index,
                 )
-                for index, kr in enumerate(key_results_payload)
-                if kr.get("title")
+                for index, kr in enumerate(valid_key_results)
             ]
         )
 
+        objective = self.get_queryset().get(pk=objective.pk)
         output = self.get_serializer(objective)
         return Response(output.data, status=status.HTTP_201_CREATED)
 
