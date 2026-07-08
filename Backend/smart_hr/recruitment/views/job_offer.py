@@ -15,6 +15,7 @@ from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.models import JobOffer
 from smart_hr.recruitment.serializers import ApplicationSerializer
 from smart_hr.recruitment.serializers import JobOfferSerializer
+from smart_hr.recruitment.services.bulk_cv_upload import upload_cvs_to_job_offer
 from smart_hr.users.permissions import IsRH
 
 logger = logging.getLogger(__name__)
@@ -83,7 +84,7 @@ class JobOfferViewSet(viewsets.ModelViewSet):
         """Autorise la consultation publique et protège les actions d'édition."""
         if self.action in ["list", "retrieve"]:
             return [AllowAny()]
-        if self.action in ["pipeline", "generate"]:
+        if self.action in ["pipeline", "generate", "bulk_upload_cvs"]:
             return [IsRH()]
         if self.action in ["create", "update", "partial_update", "destroy"]:
             return [IsRH()]
@@ -156,3 +157,21 @@ class JobOfferViewSet(viewsets.ModelViewSet):
                 "totals": {status: len(apps) for status, apps in pipeline_columns.items()},
             }
         )
+
+    @action(detail=True, methods=["post"], url_path="bulk-upload-cvs", permission_classes=[IsRH])
+    def bulk_upload_cvs(self, request, pk=None):
+        """
+        POST /api/v1/recruitment/job-offers/{id}/bulk-upload-cvs/
+        Body (multipart) : cvs=<fichier1>, cvs=<fichier2>, ...
+
+        Pour chaque CV : extraction du texte, identification du candidat et scoring
+        par rapport à l'offre via IA, puis création du compte candidat (s'il n'existe
+        pas déjà) et de sa candidature. Un fichier en échec n'interrompt pas le lot.
+        """
+        job_offer = self.get_object()
+        files = request.FILES.getlist("cvs")
+        if not files:
+            return Response({"detail": "Au moins un fichier CV est requis (champ 'cvs')."}, status=status.HTTP_400_BAD_REQUEST)
+
+        result = upload_cvs_to_job_offer(job_offer, files, created_by=request.user)
+        return Response(result.as_dict(), status=status.HTTP_200_OK)
