@@ -62,8 +62,9 @@ def _generate_unique_username(first_name: str, last_name: str) -> str:
 
 
 def _find_or_create_candidate(first_name: str, last_name: str, email: str) -> User:
-    """Trouve ou crée le compte candidat. `email` est déjà normalisé en minuscules
-    par extract_candidate_identity(), donc une correspondance exacte suffit ici.
+    """Trouve ou crée le compte candidat, par correspondance insensible à la casse
+    (des comptes existants peuvent avoir un e-mail stocké avec une casse différente
+    de celle — toujours en minuscules — renvoyée par extract_candidate_identity()).
 
     Note : sans contrainte unique en base sur User.email, deux requêtes concurrentes
     peuvent en théorie créer deux comptes pour le même e-mail — risque jugé
@@ -72,8 +73,9 @@ def _find_or_create_candidate(first_name: str, last_name: str, email: str) -> Us
     """
     with transaction.atomic():
         candidate, created = User.objects.get_or_create(
-            email=email,
+            email__iexact=email,
             defaults={
+                "email": email,
                 "username": _generate_unique_username(first_name or "candidat", last_name or ""),
                 "first_name": first_name or "Candidat",
                 "last_name": last_name or "",
