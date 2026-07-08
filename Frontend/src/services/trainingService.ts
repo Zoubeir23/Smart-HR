@@ -28,4 +28,26 @@ export const trainingService = {
     const { data } = await api.post('/formation/meetings/', meetingData);
     return data;
   },
+
+  getCompletionStats: async (): Promise<CompletionStats> => {
+    const { data } = await api.get('/formation/formations/completion-stats/');
+    return data;
+  },
 };
+
+export interface FormationCompletionStat {
+  id: number;
+  title: string;
+  total_participations: number;
+  completed: number;
+  completion_rate: number;
+}
+
+export interface CompletionStats {
+  global: {
+    total_participations: number;
+    completed: number;
+    completion_rate: number;
+  };
+  by_formation: FormationCompletionStat[];
+}
