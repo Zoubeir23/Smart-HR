@@ -62,20 +62,27 @@ def _generate_unique_username(first_name: str, last_name: str) -> str:
 
 
 def _find_or_create_candidate(first_name: str, last_name: str, email: str) -> User:
-    existing = User.objects.filter(email__iexact=email).first()
-    if existing:
-        return existing
+    """Trouve ou crée le compte candidat. `email` est déjà normalisé en minuscules
+    par extract_candidate_identity(), donc une correspondance exacte suffit ici.
 
-    username = _generate_unique_username(first_name or "candidat", last_name or "")
-    candidate = User.objects.create(
-        username=username,
-        email=email,
-        first_name=first_name or "Candidat",
-        last_name=last_name or "",
-        role=User.Role.CANDIDATE,
-    )
-    candidate.set_password(secrets.token_urlsafe(16))
-    candidate.save(update_fields=["password"])
+    Note : sans contrainte unique en base sur User.email, deux requêtes concurrentes
+    peuvent en théorie créer deux comptes pour le même e-mail — risque jugé
+    acceptable pour ce flux (action RH séquentielle, faible probabilité réelle),
+    mais get_or_create() réduit la fenêtre de course par rapport à filter()+create().
+    """
+    with transaction.atomic():
+        candidate, created = User.objects.get_or_create(
+            email=email,
+            defaults={
+                "username": _generate_unique_username(first_name or "candidat", last_name or ""),
+                "first_name": first_name or "Candidat",
+                "last_name": last_name or "",
+                "role": User.Role.CANDIDATE,
+            },
+        )
+        if created:
+            candidate.set_password(secrets.token_urlsafe(16))
+            candidate.save(update_fields=["password"])
     return candidate
 
 
