@@ -98,6 +98,36 @@ class Participation(TimeStampedModel):
         super().save(*args, **kwargs)
 
 
+class TrainingProvider(TimeStampedModel):
+    """Annuaire des organismes/cabinets de formation — internes ou externes,
+    avec leurs spécialités, remplaçant le suivi ad hoc sous Excel."""
+
+    class ProviderType(models.TextChoices):
+        INTERNAL = "internal", "Interne"
+        EXTERNAL = "external", "Externe"
+
+    name = models.CharField(max_length=200, verbose_name="Nom")
+    provider_type = models.CharField(
+        max_length=20,
+        choices=ProviderType.choices,
+        default=ProviderType.EXTERNAL,
+        verbose_name="Type",
+    )
+    contact_name = models.CharField(max_length=150, blank=True, verbose_name="Contact")
+    phone = models.CharField(max_length=30, blank=True, verbose_name="Téléphone")
+    email = models.EmailField(blank=True, verbose_name="E-mail")
+    website = models.URLField(blank=True, verbose_name="Site web")
+    specialties = models.TextField(blank=True, verbose_name="Spécialités")
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "Fournisseur de formation"
+        verbose_name_plural = "Fournisseurs de formation"
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class ZoomToken(TimeStampedModel):
     access_token = models.TextField()
     refresh_token = models.TextField()

@@ -5,6 +5,7 @@ from rest_framework import serializers
 from smart_hr.formation.models import Formation
 from smart_hr.formation.models import Meeting
 from smart_hr.formation.models import Participation
+from smart_hr.formation.models import TrainingProvider
 
 
 class MeetingSerializer(serializers.ModelSerializer):
@@ -64,3 +65,23 @@ class FormationSerializer(serializers.ModelSerializer):
         if "participations" in getattr(obj, "_prefetched_objects_cache", {}):
             return len(obj.participations.all())
         return obj.participations.count()
+
+
+class TrainingProviderSerializer(serializers.ModelSerializer):
+    provider_type_display = serializers.CharField(source="get_provider_type_display", read_only=True)
+
+    class Meta:
+        model = TrainingProvider
+        fields = [
+            "id",
+            "name",
+            "provider_type",
+            "provider_type_display",
+            "contact_name",
+            "phone",
+            "email",
+            "website",
+            "specialties",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
