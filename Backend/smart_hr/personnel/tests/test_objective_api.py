@@ -123,6 +123,18 @@ class TestCreateObjective:
         response = client.post(LIST_URL, payload, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_rejects_key_results_with_only_empty_titles(self, rh_user, employee):
+        client = _authenticated_client(rh_user)
+        payload = {
+            "employee": employee.pk,
+            "title": "Objectif",
+            "period": "Q1 2026",
+            "key_results": [{"title": "", "target_value": 10}],
+        }
+        response = client.post(LIST_URL, payload, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert not Objective.objects.filter(title="Objectif").exists()
+
 
 class TestListObjectives:
     def test_rh_sees_all_objectives(self, rh_user, employee, other_employee):
@@ -184,3 +196,19 @@ class TestUpdateKeyResultProgress:
         url = f"{LIST_URL}{objective.pk}/key-results/{key_result.pk}/"
         response = client.patch(url, {"current_value": 7}, format="json")
         assert response.status_code == status.HTTP_200_OK
+
+
+class TestDestroyObjective:
+    def test_employee_cannot_delete_own_objective(self, employee_user, employee):
+        objective = Objective.objects.create(employee=employee, title="Test", period="Q1 2026")
+        client = _authenticated_client(employee_user)
+        response = client.delete(f"{LIST_URL}{objective.pk}/")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert Objective.objects.filter(pk=objective.pk).exists()
+
+    def test_rh_can_delete_any_objective(self, rh_user, employee):
+        objective = Objective.objects.create(employee=employee, title="Test", period="Q1 2026")
+        client = _authenticated_client(rh_user)
+        response = client.delete(f"{LIST_URL}{objective.pk}/")
+        assert response.status_code == status.HTTP_204_NO_CONTENT
+        assert not Objective.objects.filter(pk=objective.pk).exists()
