@@ -86,6 +86,17 @@ class Participation(TimeStampedModel):
     def __str__(self) -> str:
         return f"{self.employee} → {self.formation.title} ({self.get_status_display()})"
 
+    def save(self, *args, **kwargs):
+        """Renseigne/efface automatiquement completed_at selon le statut,
+        seule source fiable pour calculer le taux de complétion des formations."""
+        if self.status == self.Status.COMPLETED and self.completed_at is None:
+            from django.utils import timezone
+
+            self.completed_at = timezone.now().date()
+        elif self.status != self.Status.COMPLETED:
+            self.completed_at = None
+        super().save(*args, **kwargs)
+
 
 class ZoomToken(TimeStampedModel):
     access_token = models.TextField()
