@@ -13,6 +13,12 @@ export interface SkillPayload {
   notes?: string;
 }
 
+export interface SkillDefinitionPayload {
+  name: string;
+  category: string;
+  description?: string;
+}
+
 export interface EvaluationPayload {
   employee: number;
   year: number;
@@ -52,6 +58,23 @@ export const performanceService = {
 
   deleteSkill: async (id: number) => {
     await api.delete(`/performance/skills/${id}/`);
+  },
+
+  // ── Référentiel de compétences ──────────────────────────────────────
+  getAllSkillDefinitions: async (params?: { category?: string; search?: string }) => {
+    const { data } = await api.get('/performance/skill-definitions/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
+    return data;
+  },
+
+  createSkillDefinition: async (payload: SkillDefinitionPayload) => {
+    const { data } = await api.post('/performance/skill-definitions/', payload);
+    return data;
+  },
+
+  deleteSkillDefinition: async (id: number) => {
+    await api.delete(`/performance/skill-definitions/${id}/`);
   },
 
   // ── Evaluations ───────────────────────────────────────────────────
