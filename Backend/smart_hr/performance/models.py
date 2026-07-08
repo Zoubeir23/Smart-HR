@@ -46,6 +46,29 @@ class Skill(TimeStampedModel):
         return f"{self.employee} — {self.name} (niveau {self.level})"
 
 
+class SkillDefinition(TimeStampedModel):
+    """Référentiel de compétences de l'entreprise — catalogue centralisé maintenu par
+    les RH, servant de base standardisée aux compétences attribuées aux employés
+    (évite la fragmentation de saisie libre : "Python" / "python" / "Python3")."""
+
+    name = models.CharField(max_length=100, unique=True, verbose_name="Compétence")
+    category = models.CharField(
+        max_length=20,
+        choices=Skill.SkillCategory.choices,
+        default=Skill.SkillCategory.TECHNICAL,
+        verbose_name="Catégorie",
+    )
+    description = models.TextField(blank=True, verbose_name="Description")
+
+    class Meta:
+        ordering = ["category", "name"]
+        verbose_name = "Référentiel de compétence"
+        verbose_name_plural = "Référentiel de compétences"
+
+    def __str__(self) -> str:
+        return self.name
+
+
 class PerformanceEvaluation(TimeStampedModel):
     class EvaluationStatus(models.TextChoices):
         DRAFT = "draft", "Brouillon"
