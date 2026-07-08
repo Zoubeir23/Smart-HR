@@ -13,6 +13,10 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { performanceService, type SkillDefinitionPayload } from '@/services/performanceService';
 import { useToast } from '@/hooks/use-toast';
 
@@ -43,6 +47,7 @@ export default function SkillReferentialTab({ canEdit }: SkillReferentialTabProp
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<SkillDefinitionPayload>(EMPTY_FORM);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery({
     queryKey: ['skill-definitions'],
@@ -69,6 +74,7 @@ export default function SkillReferentialTab({ canEdit }: SkillReferentialTabProp
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['skill-definitions'] });
       toast({ title: 'Compétence retirée du référentiel' });
+      setDeleteId(null);
     },
   });
 
@@ -153,7 +159,7 @@ export default function SkillReferentialTab({ canEdit }: SkillReferentialTabProp
               <TableCell className="max-w-md truncate text-muted-foreground">{skillDefinition.description || '—'}</TableCell>
               {canEdit && (
                 <TableCell className="text-right">
-                  <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(skillDefinition.id)}>
+                  <Button variant="ghost" size="icon" onClick={() => setDeleteId(skillDefinition.id)}>
                     <Trash2 className="h-4 w-4 text-destructive" />
                   </Button>
                 </TableCell>
@@ -162,6 +168,26 @@ export default function SkillReferentialTab({ canEdit }: SkillReferentialTabProp
           ))}
         </TableBody>
       </Table>
+
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Retirer cette compétence du référentiel ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. Les compétences déjà attribuées à des employés ne seront pas affectées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
