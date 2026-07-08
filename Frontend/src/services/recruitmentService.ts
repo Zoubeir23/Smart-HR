@@ -73,7 +73,25 @@ export const recruitmentService = {
   deleteApplicationDocument: async (documentId: number) => {
     await api.delete(`/recruitment/application-documents/${documentId}/`);
   },
+
+  bulkUploadCvs: async (jobOfferId: number, files: File[]): Promise<BulkCvUploadResult> => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append('cvs', file));
+    // Chaque CV déclenche 2 appels IA séquentiels côté serveur (identité + scoring) :
+    // le timeout par défaut (15s) est insuffisant dès qu'il y a plus d'un fichier.
+    const { data } = await api.post(`/recruitment/job-offers/${jobOfferId}/bulk-upload-cvs/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      timeout: 120000,
+    });
+    return data;
+  },
 };
+
+export interface BulkCvUploadResult {
+  created: number;
+  total_files: number;
+  errors: { filename: string; reason: string }[];
+}
 
 export interface GeneratedJobOfferDraft {
   title: string;
