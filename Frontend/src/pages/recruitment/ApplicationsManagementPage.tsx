@@ -13,6 +13,7 @@ import {
   UserCheck,
 } from 'lucide-react';
 import { recruitmentService } from '@/services/recruitmentService';
+import BulkCvUploadDialog from '@/components/recrutement/BulkCvUploadDialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
@@ -926,6 +927,15 @@ export default function ApplicationsManagementPage() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {selectedJobOfferId !== 'all' && (
+          <div className="flex justify-end">
+            <BulkCvUploadDialog
+              jobOfferId={Number(selectedJobOfferId)}
+              jobOfferTitle={jobOffers.find((jobOffer) => String(jobOffer.id) === selectedJobOfferId)?.title ?? ''}
+            />
+          </div>
+        )}
 
         {/* Bulk action bar */}
         <AnimatePresence>
