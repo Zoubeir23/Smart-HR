@@ -23,6 +23,7 @@ import {
 import { employeeService } from '@/services/employeeService';
 import { documentService } from '@/services/documentService';
 import OnboardingProgramsCard from '@/components/employees/OnboardingProgramsCard';
+import ObjectivesCard from '@/components/employees/ObjectivesCard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -657,6 +658,13 @@ export default function EmployeeDetailPage() {
             {id && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.42 }}>
                 <OnboardingProgramsCard employeeId={Number(id)} />
+              </motion.div>
+            )}
+
+            {/* Objectifs (OKR) */}
+            {id && (
+              <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.44 }}>
+                <ObjectivesCard employeeId={Number(id)} />
               </motion.div>
             )}
 

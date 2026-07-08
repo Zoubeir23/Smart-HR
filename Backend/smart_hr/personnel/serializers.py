@@ -8,7 +8,9 @@ from smart_hr.personnel.models import Diploma
 from smart_hr.personnel.models import Employee
 from smart_hr.personnel.models import FamilyMember
 from smart_hr.personnel.models import FamilyStatus
+from smart_hr.personnel.models import KeyResult
 from smart_hr.personnel.models import Nationality
+from smart_hr.personnel.models import Objective
 from smart_hr.personnel.models import OnboardingProgram
 from smart_hr.personnel.models import OnboardingStep
 from smart_hr.personnel.models import Position
@@ -352,3 +354,40 @@ class OnboardingProgramSerializer(serializers.ModelSerializer):
             "steps",
         ]
         read_only_fields = ["id", "status", "completed_at", "created_at"]
+
+
+class KeyResultSerializer(serializers.ModelSerializer):
+    progress = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = KeyResult
+        fields = ["id", "title", "unit", "target_value", "current_value", "order", "progress"]
+        read_only_fields = ["id", "progress"]
+
+
+class ObjectiveSerializer(serializers.ModelSerializer):
+    employee_full_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    key_results = KeyResultSerializer(many=True, read_only=True)
+    progress = serializers.IntegerField(read_only=True)
+    status = serializers.CharField(read_only=True)
+    status_display = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Objective
+        fields = [
+            "id",
+            "employee",
+            "employee_full_name",
+            "title",
+            "description",
+            "period",
+            "status",
+            "status_display",
+            "progress",
+            "created_at",
+            "key_results",
+        ]
+        read_only_fields = ["id", "status", "progress", "created_at"]
+
+    def get_status_display(self, obj: Objective) -> str:
+        return dict(Objective.Status.choices).get(obj.status, obj.status)
