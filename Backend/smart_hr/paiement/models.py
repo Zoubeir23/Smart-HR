@@ -678,6 +678,13 @@ class EmployeeBenefit(TimeStampedModel):
         ordering = ["-enrolled_at"]
         verbose_name = "Inscription à un avantage"
         verbose_name_plural = "Inscriptions aux avantages"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "plan"],
+                condition=~models.Q(status="terminated"),
+                name="unique_active_or_pending_benefit_enrollment",
+            ),
+        ]
 
     def __str__(self) -> str:
         return f"{self.employee} — {self.plan} ({self.get_status_display()})"
