@@ -121,6 +121,13 @@ def _format_action_success_suffix(action_result: dict) -> str:
             f"\n\n✅ {onboarding_data['program_type_display']} créé pour **{onboarding_data['employee_name']}** : "
             f"**{onboarding_data['title']}** avec {onboarding_data['steps_count']} étape(s)."
         )
+    if action_result["type"] == "leave_decision_applied":
+        decision_data = action_result["data"]
+        verb = "validée" if decision_data["decision"] == "approve" else "refusée"
+        return (
+            f"\n\n✅ Demande de congé de **{decision_data['employee_name']}** {verb} : "
+            f"**{decision_data['leave_type']}** du {decision_data['start_date']} au {decision_data['end_date']}."
+        )
     return ""
 
 
@@ -138,6 +145,10 @@ _ACTION_ERROR_MESSAGES = {
         "\n\nPour créer le programme automatiquement, précisez le poste ou le contexte "
         "afin que je puisse générer les étapes d'intégration."
     ),
+    "leave_decision_missing": (
+        "\n\nJe n'ai pas compris votre décision. Précisez si vous souhaitez valider ou refuser la demande de congé."
+    ),
+    "no_pending_leave": "\n\nAucune demande de congé en attente n'a été trouvée pour cet employé.",
 }
 
 
@@ -212,6 +223,7 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
         if user_role in ("EMPLOYEE", "RH", "ADMIN"):
             from smart_hr.ai.actions import detect_action_intent
             from smart_hr.ai.actions import execute_action
+            from smart_hr.ai.actions import extract_leave_approval_parameters
             from smart_hr.ai.actions import extract_leave_parameters
             from smart_hr.ai.actions import extract_objective_parameters
             from smart_hr.ai.actions import extract_onboarding_parameters
@@ -219,6 +231,9 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
             action_intent = detect_action_intent(question)
             if action_intent == "leave_request":
                 params = extract_leave_parameters(question)
+                action_result = execute_action(action_intent, request.user, params)
+            elif action_intent == "leave_approval":
+                params = extract_leave_approval_parameters(question)
                 action_result = execute_action(action_intent, request.user, params)
             elif action_intent == "objective_creation":
                 params = extract_objective_parameters(question, can_manage=user_role in ("RH", "ADMIN"))
