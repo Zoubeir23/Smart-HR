@@ -136,9 +136,7 @@ class TestEngagementSummary:
         """Régression : une réponse RATING non numérique ne doit jamais faire
         planter l'agrégat (même défense que le endpoint résultats de survey)."""
         survey = Survey.objects.create(title="Engagement", status=Survey.Status.ACTIVE)
-        question = SurveyQuestion.objects.create(
-            survey=survey, text="Note ?", question_type=SurveyQuestion.QuestionType.RATING
-        )
+        question = SurveyQuestion.objects.create(survey=survey, text="Note ?", question_type=SurveyQuestion.QuestionType.RATING)
         response_obj = SurveyResponse.objects.create(survey=survey, respondent=employee.user)
         SurveyAnswer.objects.create(response=response_obj, question=question, text_answer="non applicable")
 
