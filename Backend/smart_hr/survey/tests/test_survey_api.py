@@ -185,6 +185,27 @@ class TestRespondToSurvey:
         )
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
+    def test_rh_cannot_respond_to_active_survey(self, rh_user):
+        survey = Survey.objects.create(title="Enquête", status=Survey.Status.ACTIVE, created_by=rh_user)
+        question = SurveyQuestion.objects.create(survey=survey, text="Q", question_type=SurveyQuestion.QuestionType.TEXT)
+        client = _authenticated_client(rh_user)
+        response = client.post(
+            f"{LIST_URL}{survey.pk}/respond/", {"answers": [{"question": question.pk, "text_answer": "x"}]}, format="json"
+        )
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    def test_rating_answer_must_be_numeric(self, rh_user, employee_user):
+        survey = Survey.objects.create(title="Enquête", status=Survey.Status.ACTIVE, created_by=rh_user)
+        rating_q = SurveyQuestion.objects.create(survey=survey, text="Note", question_type=SurveyQuestion.QuestionType.RATING)
+        client = _authenticated_client(employee_user)
+        response = client.post(
+            f"{LIST_URL}{survey.pk}/respond/",
+            {"answers": [{"question": rating_q.pk, "text_answer": "pas un nombre"}]},
+            format="json",
+        )
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert not SurveyResponse.objects.filter(survey=survey, respondent=employee_user).exists()
+
 
 class TestSurveyResults:
     def test_employee_cannot_view_results(self, rh_user, employee_user):
@@ -228,6 +249,22 @@ class TestSurveyResults:
         results_by_question = {r["question_id"]: r for r in response.data["questions"]}
         assert results_by_question[rating_q.pk]["average"] == 4.0
         assert results_by_question[choice_q.pk]["option_counts"] == {"Tech": 2}
+
+    def test_results_ignores_non_numeric_rating_answers_without_crashing(self, rh_user, employee_user):
+        from smart_hr.survey.models import SurveyAnswer
+
+        survey = Survey.objects.create(title="Enquête", status=Survey.Status.ACTIVE, created_by=rh_user)
+        rating_q = SurveyQuestion.objects.create(survey=survey, text="Note", question_type=SurveyQuestion.QuestionType.RATING)
+        survey_response = SurveyResponse.objects.create(survey=survey, respondent=employee_user)
+        SurveyAnswer.objects.create(response=survey_response, question=rating_q, text_answer="invalide")
+
+        client_rh = _authenticated_client(rh_user)
+        response = client_rh.get(f"{LIST_URL}{survey.pk}/results/")
+
+        assert response.status_code == status.HTTP_200_OK
+        results_by_question = {r["question_id"]: r for r in response.data["questions"]}
+        assert results_by_question[rating_q.pk]["average"] is None
+        assert results_by_question[rating_q.pk]["response_count"] == 0
 
     def test_anonymous_survey_results_do_not_expose_respondent_identity(self, rh_user, employee_user):
         survey = Survey.objects.create(
