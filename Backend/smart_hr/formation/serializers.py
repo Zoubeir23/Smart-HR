@@ -53,6 +53,7 @@ class FormationSerializer(serializers.ModelSerializer):
             "start_date",
             "end_date",
             "instructor",
+            "cost",
             "meetings",
             "participants_count",
             "created_at",

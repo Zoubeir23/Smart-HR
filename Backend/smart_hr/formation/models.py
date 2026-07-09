@@ -9,6 +9,13 @@ class Formation(TimeStampedModel):
     start_date = models.DateTimeField()
     end_date = models.DateTimeField()
     instructor = models.CharField(max_length=255)
+    cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name="Coût",
+        help_text="Coût total de la formation (FCFA).",
+    )
 
     class Meta:
         ordering = ["-start_date"]
