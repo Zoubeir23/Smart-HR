@@ -41,6 +41,7 @@ export interface FormationCompletionStat {
   total_participations: number;
   completed: number;
   completion_rate: number;
+  cost: number;
 }
 
 export interface CompletionStats {
@@ -48,6 +49,8 @@ export interface CompletionStats {
     total_participations: number;
     completed: number;
     completion_rate: number;
+    total_cost: number;
+    average_cost: number;
   };
   by_formation: FormationCompletionStat[];
 }
