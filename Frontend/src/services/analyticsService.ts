@@ -15,6 +15,30 @@ export interface DepartmentHeadcountEntry {
   count: number;
 }
 
+export interface PerformanceDistributionEntry {
+  label: string;
+  count: number;
+}
+
+export interface RecruitmentFunnelEntry {
+  status: string;
+  label: string;
+  count: number;
+}
+
+export interface DepartmentHierarchyEntry {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  unit_type: string;
+  employee_count: number;
+}
+
+export interface TrainingCostEntry {
+  title: string;
+  cost: number;
+}
+
 export interface HRAnalyticsOverview {
   totals: {
     active_employees: number;
@@ -53,12 +77,37 @@ export interface HRAnalyticsOverview {
     total_participations: number;
     completed_participations: number;
     completion_rate: number;
+    available_courses: number;
+    cost_breakdown: TrainingCostEntry[];
   };
+  performance_summary: {
+    evaluated_count: number;
+    average_score: number;
+    distribution: PerformanceDistributionEntry[];
+  };
+  recruitment_funnel: RecruitmentFunnelEntry[];
+  engagement_summary: {
+    responses_count: number;
+    average_rating: number;
+  };
+  department_hierarchy: DepartmentHierarchyEntry[];
 }
 
 export const analyticsService = {
   getOverview: async (): Promise<HRAnalyticsOverview> => {
     const { data } = await api.get('/stats/overview/');
     return data;
+  },
+
+  exportOverviewExcel: async (): Promise<void> => {
+    const response = await api.get('/stats/overview/export/', { responseType: 'blob' });
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'people_analytics.xlsx';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
   },
 };
