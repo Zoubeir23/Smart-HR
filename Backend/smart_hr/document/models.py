@@ -63,3 +63,62 @@ class Document(TimeStampedModel):
 
     def __str__(self):
         return f"{self.name} ({self.get_document_type_display()}) - {self.employee}"
+
+
+class Signature(TimeStampedModel):
+    """Signature électronique personnelle déposée par un utilisateur (manager,
+    RH...), réutilisée pour signer les documents qui lui sont soumis."""
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="signature",
+    )
+    image_data = models.TextField(
+        verbose_name="Image de la signature",
+        help_text="Data URL (base64) de la signature dessinée ou uploadée.",
+    )
+
+    class Meta:
+        verbose_name = "Signature électronique"
+        verbose_name_plural = "Signatures électroniques"
+
+    def __str__(self) -> str:
+        return f"Signature de {self.user}"
+
+
+class SignatureRequest(TimeStampedModel):
+    """Demande de signature électronique d'un document par un signataire désigné."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "En attente"
+        SIGNED = "signed", "Signé"
+        DECLINED = "declined", "Refusé"
+
+    document = models.ForeignKey(
+        Document,
+        on_delete=models.CASCADE,
+        related_name="signature_requests",
+    )
+    requested_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="sent_signature_requests",
+    )
+    signatory = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="signature_requests_to_sign",
+    )
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    signed_at = models.DateTimeField(null=True, blank=True)
+    comment = models.TextField(blank=True, verbose_name="Commentaire")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Demande de signature"
+        verbose_name_plural = "Demandes de signature"
+
+    def __str__(self) -> str:
+        return f"Signature de {self.document} par {self.signatory} — {self.get_status_display()}"
