@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('personnel', '0009_objective_keyresult'),
+        ('personnel', '0011_objective_department_objective_level_and_more'),
     ]
 
     operations = [
