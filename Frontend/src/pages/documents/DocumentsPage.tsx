@@ -45,8 +45,10 @@ import { employeeService } from '@/services/employeeService';
 import { useAuth } from '@/context/AuthContext';
 import SearchableSelect from '@/components/common/SearchableSelect';
 import DataPagination, { usePagination } from '@/components/common/DataPagination';
+import SignaturesTab from '@/components/documents/SignaturesTab';
 import { toast } from 'sonner';
 
+type PageView = 'documents' | 'signatures';
 type DocumentType = 'contract' | 'certificate' | 'attestation' | 'id_card' | 'other';
 
 interface ApiDocument {
@@ -92,6 +94,7 @@ export default function DocumentsPage() {
   // Seuls RH/Admin gèrent les documents ; l'employé consulte les siens.
   const canManage = user?.role === 'RH' || user?.role === 'ADMIN';
 
+  const [pageView, setPageView] = useState<PageView>('documents');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
@@ -209,7 +212,7 @@ export default function DocumentsPage() {
                 : 'Consultez vos documents personnels'}
             </p>
           </div>
-          {canManage && (
+          {canManage && pageView === 'documents' && (
             <Button
               className="bg-primary text-primary-foreground"
               onClick={() => {
@@ -223,6 +226,26 @@ export default function DocumentsPage() {
           )}
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-1 rounded-lg border bg-muted/40 p-1 w-fit">
+          {([['documents', 'Documents'], ['signatures', 'Signatures']] as [PageView, string][]).map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => setPageView(tab)}
+              className={cn(
+                'rounded-md px-4 py-1.5 text-sm font-medium transition-all',
+                pageView === tab ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {pageView === 'signatures' && <SignaturesTab canManage={canManage} />}
+
+        {pageView === 'documents' && (
+        <>
         {/* Upload Drop Zone — réservé RH/Admin */}
         {canManage && (
         <div
@@ -413,6 +436,8 @@ export default function DocumentsPage() {
               Réinitialiser les filtres
             </Button>
           </div>
+        )}
+        </>
         )}
 
         {/* Upload Dialog — réservé RH/Admin */}
