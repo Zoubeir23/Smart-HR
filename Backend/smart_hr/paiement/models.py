@@ -603,3 +603,88 @@ class Payroll(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"{self.employee} — {self.month} ({self.get_status_display()})"
+
+
+# ===========================================================================
+# COMPENSATIONS & BENEFICES (add-on, hors moteur de paie)
+# ===========================================================================
+
+
+class BenefitPlan(TimeStampedModel):
+    """Catalogue des avantages proposés par l'entreprise (assurance santé,
+    tickets restaurant, transport, logement, retraite complémentaire...) —
+    distinct des allocations fiscales (`AllocationRegle`) qui alimentent le
+    calcul de la paie : ici il s'agit d'un module de gestion des avantages
+    sociaux/non-monétaires, à l'image du module "Compensations & bénéfices"
+    (add-on) proposé par les SIRH concurrents."""
+
+    class Category(models.TextChoices):
+        HEALTH = "health", "Assurance santé"
+        MEAL = "meal", "Titres-restaurant"
+        TRANSPORT = "transport", "Transport"
+        HOUSING = "housing", "Logement"
+        RETIREMENT = "retirement", "Retraite complémentaire"
+        OTHER = "other", "Autre"
+
+    name = models.CharField(max_length=200, verbose_name="Nom")
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER, verbose_name="Catégorie")
+    description = models.TextField(blank=True, verbose_name="Description")
+    employer_contribution = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0"),
+        verbose_name="Part employeur (mensuelle)",
+    )
+    employee_contribution = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=Decimal("0"),
+        verbose_name="Part salarié (mensuelle)",
+    )
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+
+    class Meta:
+        ordering = ["category", "name"]
+        verbose_name = "Plan d'avantage"
+        verbose_name_plural = "Plans d'avantages"
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class EmployeeBenefit(TimeStampedModel):
+    """Inscription d'un employé à un plan d'avantage."""
+
+    class Status(models.TextChoices):
+        ACTIVE = "active", "Actif"
+        PENDING = "pending", "En attente"
+        TERMINATED = "terminated", "Résilié"
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="benefits",
+    )
+    plan = models.ForeignKey(
+        BenefitPlan,
+        on_delete=models.CASCADE,
+        related_name="enrollments",
+    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING, verbose_name="Statut")
+    enrolled_at = models.DateField(auto_now_add=True, verbose_name="Date d'inscription")
+    terminated_at = models.DateField(null=True, blank=True, verbose_name="Date de résiliation")
+
+    class Meta:
+        ordering = ["-enrolled_at"]
+        verbose_name = "Inscription à un avantage"
+        verbose_name_plural = "Inscriptions aux avantages"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["employee", "plan"],
+                condition=~models.Q(status="terminated"),
+                name="unique_active_or_pending_benefit_enrollment",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.employee} — {self.plan} ({self.get_status_display()})"
