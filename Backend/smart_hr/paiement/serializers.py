@@ -5,7 +5,9 @@ from decimal import Decimal
 from django.utils import translation
 from rest_framework import serializers
 
+from smart_hr.paiement.models import BenefitPlan
 from smart_hr.paiement.models import BulletinPaie
+from smart_hr.paiement.models import EmployeeBenefit
 from smart_hr.paiement.models import LigneBulletin
 from smart_hr.paiement.models import Payroll
 
@@ -171,3 +173,66 @@ class PayrollStatsSerializer(serializers.Serializer):
     total_net_salary = serializers.DecimalField(max_digits=14, decimal_places=2)
     by_status = serializers.DictField()
     by_department = serializers.ListField()
+
+
+class BenefitPlanSerializer(serializers.ModelSerializer):
+    category_display = serializers.CharField(source="get_category_display", read_only=True)
+    enrolled_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BenefitPlan
+        fields = [
+            "id",
+            "name",
+            "category",
+            "category_display",
+            "description",
+            "employer_contribution",
+            "employee_contribution",
+            "is_active",
+            "enrolled_count",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def get_enrolled_count(self, obj: BenefitPlan) -> int:
+        """Compte en Python sur le cache prefetch (`obj.enrollments.all()`) plutôt
+        que via `.filter()`, qui ignorerait le prefetch_related du queryset et
+        déclencherait une requête par ligne (N+1)."""
+        return sum(1 for enrollment in obj.enrollments.all() if enrollment.status == EmployeeBenefit.Status.ACTIVE)
+
+
+class EmployeeBenefitSerializer(serializers.ModelSerializer):
+    employee_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    plan_name = serializers.CharField(source="plan.name", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+
+    class Meta:
+        model = EmployeeBenefit
+        fields = [
+            "id",
+            "employee",
+            "employee_name",
+            "plan",
+            "plan_name",
+            "status",
+            "status_display",
+            "enrolled_at",
+            "terminated_at",
+        ]
+        read_only_fields = ["id", "enrolled_at"]
+
+    def validate(self, attrs: dict) -> dict:
+        employee = attrs.get("employee") or getattr(self.instance, "employee", None)
+        plan = attrs.get("plan") or getattr(self.instance, "plan", None)
+        status = attrs.get("status", getattr(self.instance, "status", EmployeeBenefit.Status.PENDING))
+
+        if status != EmployeeBenefit.Status.TERMINATED and employee is not None and plan is not None:
+            duplicate = EmployeeBenefit.objects.filter(employee=employee, plan=plan).exclude(
+                status=EmployeeBenefit.Status.TERMINATED
+            )
+            if self.instance is not None:
+                duplicate = duplicate.exclude(pk=self.instance.pk)
+            if duplicate.exists():
+                raise serializers.ValidationError({"plan": "Cet employé est déjà inscrit (activement) à ce plan d'avantage."})
+        return attrs
