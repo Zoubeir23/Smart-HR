@@ -13,7 +13,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { departmentService } from '@/services/departmentService';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { departmentService, UNIT_TYPE_OPTIONS } from '@/services/departmentService';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,6 +24,10 @@ interface Department {
   id: number;
   name: string;
   description: string;
+  unit_type?: string;
+  unit_type_display?: string;
+  parent?: number | null;
+  parent_name?: string | null;
   employee_count: number;
   total_salary?: number;
 }
@@ -28,9 +35,11 @@ interface Department {
 interface DeptForm {
   name: string;
   description: string;
+  unit_type: string;
+  parent: string;
 }
 
-const EMPTY_FORM: DeptForm = { name: '', description: '' };
+const EMPTY_FORM: DeptForm = { name: '', description: '', unit_type: 'department', parent: '' };
 
 function formatCurrency(n: number): string {
   return new Intl.NumberFormat('fr-FR').format(n) + ' FCFA';
@@ -74,7 +83,7 @@ export default function DepartmentPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { name?: string; description?: string } }) =>
+    mutationFn: ({ id, data }: { id: number; data: Partial<DeptForm> & { parent?: number | null } }) =>
       departmentService.update(id, data),
     onSuccess: () => { toast({ title: 'Département mis à jour' }); invalidate(); closeForm(); },
     onError:   () => toast({ title: 'Erreur', description: 'Impossible de modifier.', variant: 'destructive' }),
@@ -95,7 +104,12 @@ export default function DepartmentPage() {
 
   function openEdit(dept: Department) {
     setEditTarget(dept);
-    setForm({ name: dept.name, description: dept.description });
+    setForm({
+      name: dept.name,
+      description: dept.description,
+      unit_type: dept.unit_type ?? 'department',
+      parent: dept.parent ? String(dept.parent) : '',
+    });
     setShowForm(true);
   }
 
@@ -107,10 +121,16 @@ export default function DepartmentPage() {
 
   function handleSubmit() {
     if (!form.name.trim()) return;
+    const payload = {
+      name: form.name,
+      description: form.description,
+      unit_type: form.unit_type,
+      parent: form.parent ? Number(form.parent) : null,
+    };
     if (editTarget) {
-      updateMutation.mutate({ id: editTarget.id, data: form });
+      updateMutation.mutate({ id: editTarget.id, data: payload });
     } else {
-      createMutation.mutate(form);
+      createMutation.mutate(payload);
     }
   }
 
@@ -226,7 +246,17 @@ export default function DepartmentPage() {
                       <Building2 className="h-5 w-5 text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-foreground truncate">{dept.name}</h3>
+                      <div className="flex items-center gap-1.5">
+                        <h3 className="font-semibold text-foreground truncate">{dept.name}</h3>
+                        {dept.unit_type_display && (
+                          <span className="shrink-0 rounded-full bg-secondary/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-secondary-foreground">
+                            {dept.unit_type_display}
+                          </span>
+                        )}
+                      </div>
+                      {dept.parent_name && (
+                        <p className="text-xs text-muted-foreground/80 truncate">Rattaché à {dept.parent_name}</p>
+                      )}
                       {dept.description && (
                         <p className="text-xs text-muted-foreground truncate mt-0.5">{dept.description}</p>
                       )}
@@ -314,6 +344,42 @@ export default function DepartmentPage() {
                 value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
               />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Type d'unité</Label>
+              <Select value={form.unit_type} onValueChange={(value) => setForm((f) => ({ ...f, unit_type: value }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {UNIT_TYPE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Unité racine (optionnel)</Label>
+              <Select
+                value={form.parent || 'none'}
+                onValueChange={(value) => setForm((f) => ({ ...f, parent: value === 'none' ? '' : value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Aucune — unité de premier niveau" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucune — unité de premier niveau</SelectItem>
+                  {departments
+                    .filter((dept) => dept.id !== editTarget?.id)
+                    .map((dept) => (
+                      <SelectItem key={dept.id} value={String(dept.id)}>
+                        {dept.name}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
