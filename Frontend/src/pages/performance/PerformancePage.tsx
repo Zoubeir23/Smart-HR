@@ -31,8 +31,10 @@ import DataPagination, { usePagination } from '@/components/common/DataPaginatio
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import SkillReferentialTab from '@/components/performance/SkillReferentialTab';
+import Feedback360Tab from '@/components/performance/Feedback360Tab';
+import CoachingTab from '@/components/performance/CoachingTab';
 
-type ActiveTab = 'skills' | 'evaluations' | 'referentiel';
+type ActiveTab = 'skills' | 'evaluations' | 'referentiel' | 'feedback360' | 'coaching';
 type SkillCategory = 'technical' | 'managerial' | 'linguistic' | 'behavioral' | 'other';
 type EvaluationStatus = 'draft' | 'submitted' | 'approved';
 
@@ -315,7 +317,7 @@ export default function PerformancePage() {
               Compétences, évaluations annuelles et suivi de performance
             </p>
           </div>
-          {canEdit && activeTab !== 'referentiel' && (
+          {canEdit && (activeTab === 'skills' || activeTab === 'evaluations') && (
             <Button
               onClick={activeTab === 'skills' ? openCreateSkill : openCreateEval}
               className="gap-2"
@@ -350,7 +352,13 @@ export default function PerformancePage() {
 
         {/* Tabs */}
         <div className="flex gap-1 rounded-lg border bg-muted/40 p-1 w-fit">
-          {([['skills', 'Compétences'], ['evaluations', 'Évaluations'], ['referentiel', 'Référentiel']] as [ActiveTab, string][]).map(([tab, label]) => (
+          {([
+            ['skills', 'Compétences'],
+            ['evaluations', 'Évaluations'],
+            ['referentiel', 'Référentiel'],
+            ['feedback360', 'Feedback 360°'],
+            ['coaching', 'Coaching'],
+          ] as [ActiveTab, string][]).map(([tab, label]) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -434,6 +442,12 @@ export default function PerformancePage() {
 
         {/* ── Référentiel Tab ── */}
         {activeTab === 'referentiel' && <SkillReferentialTab canEdit={canEdit} />}
+
+        {/* ── Feedback 360° Tab ── */}
+        {activeTab === 'feedback360' && <Feedback360Tab />}
+
+        {/* ── Coaching Tab ── */}
+        {activeTab === 'coaching' && <CoachingTab />}
 
         {/* ── Evaluations Tab ── */}
         {activeTab === 'evaluations' && (
