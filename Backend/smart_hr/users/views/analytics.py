@@ -8,6 +8,7 @@ from django.db.models import Avg
 if TYPE_CHECKING:
     from datetime import date
 from django.db.models import Count
+from django.db.models import Q
 from django.db.models import Sum
 from django.utils import timezone
 from rest_framework.response import Response
@@ -67,6 +68,7 @@ class HRAnalyticsView(APIView):
         attendance_summary = self._build_attendance_summary(Presence)
         churn_summary = self._build_churn_summary(employees)
         monthly_headcount = self._build_monthly_headcount(Employee)
+        training_summary = self._build_training_summary()
 
         return Response(
             {
@@ -82,6 +84,7 @@ class HRAnalyticsView(APIView):
                 "attendance_summary": attendance_summary,
                 "churn_summary": churn_summary,
                 "monthly_headcount": monthly_headcount,
+                "training_summary": training_summary,
             }
         )
 
@@ -185,3 +188,27 @@ class HRAnalyticsView(APIView):
             }
             for entry in monthly
         ]
+
+    def _build_training_summary(self) -> dict:
+        """Résumé des formations : coûts et taux de complétion, pour éviter le
+        reporting manuel sous Excel (cf. audit comparatif TargetYM AI)."""
+        from smart_hr.formation.models import Formation
+        from smart_hr.formation.models import Participation
+
+        cost_totals = Formation.objects.aggregate(total_cost=Sum("cost"), average_cost=Avg("cost"))
+        participation_totals = Participation.objects.aggregate(
+            total=Count("id"),
+            completed=Count("id", filter=Q(status=Participation.Status.COMPLETED)),
+        )
+        total_participations = participation_totals["total"] or 0
+        completed = participation_totals["completed"] or 0
+        completion_rate = round((completed / total_participations) * 100, 1) if total_participations else 0.0
+
+        return {
+            "total_formations": Formation.objects.count(),
+            "total_cost": float(cost_totals["total_cost"] or 0),
+            "average_cost": round(float(cost_totals["average_cost"] or 0), 2),
+            "total_participations": total_participations,
+            "completed_participations": completed,
+            "completion_rate": completion_rate,
+        }
