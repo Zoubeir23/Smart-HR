@@ -56,6 +56,18 @@ class TestDetectOnboardingIntent:
     def test_detects_onboarding_intent(self, message):
         assert detect_action_intent(message) == "onboarding_creation"
 
+    @pytest.mark.parametrize(
+        "message",
+        [
+            "Comment fonctionne l'intégration avec Zoom ?",
+            "Peux-tu m'expliquer l'intégration API de la paie ?",
+        ],
+    )
+    def test_technical_integration_question_does_not_trigger_onboarding(self, message):
+        """Le mot 'intégration' seul est trop générique (intégration technique/API
+        vs programme d'intégration RH) — ne doit pas déclencher l'action à tort."""
+        assert detect_action_intent(message) is None
+
 
 class TestExtractOnboardingParameters:
     def test_extracts_generated_steps(self):
