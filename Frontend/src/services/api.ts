@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-function normalizeApiUrl(rawApiUrl: string): string {
+export function normalizeApiUrl(rawApiUrl: string): string {
   const trimmedApiUrl = rawApiUrl.trim().replace(/\/+$/, '');
 
   if (!trimmedApiUrl) {
@@ -14,7 +14,13 @@ function normalizeApiUrl(rawApiUrl: string): string {
   return trimmedApiUrl;
 }
 
-const API_URL = normalizeApiUrl(import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1');
+// Si VITE_API_URL est vide (secret CI non défini, ou volontairement omis en
+// production où nginx reverse-proxifie /api/ vers Django), on retombe sur un
+// chemin RELATIF (/api/v1) plutôt que sur un hôte fixe : nginx.vps.conf et le
+// proxy Vite en dev (vite.config.ts) savent tous deux router /api/ vers le
+// backend. Un fallback absolu (ex: localhost:8000) casserait l'app pour tout
+// visiteur réel, dont le navigateur tenterait de joindre SON PROPRE localhost.
+const API_URL = normalizeApiUrl(import.meta.env.VITE_API_URL || '');
 
 const api = axios.create({
   baseURL: API_URL,
