@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from smart_hr.performance.models import CoachingSession
 from smart_hr.performance.models import Feedback360
 from smart_hr.performance.models import PerformanceEvaluation
 from smart_hr.performance.models import Skill
@@ -128,3 +129,41 @@ class Feedback360Serializer(serializers.ModelSerializer):
             if author_employee is not None and value.pk == author_employee.pk:
                 raise serializers.ValidationError("Vous ne pouvez pas vous laisser un feedback à vous-même.")
         return value
+
+
+class CoachingSessionSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    coach_name = serializers.SerializerMethodField()
+    coachee_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CoachingSession
+        fields = [
+            "id",
+            "coach",
+            "coach_name",
+            "coachee",
+            "coachee_name",
+            "scheduled_at",
+            "topic",
+            "notes",
+            "status",
+            "status_display",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def get_coach_name(self, obj: CoachingSession) -> str:
+        user = obj.coach.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
+
+    def get_coachee_name(self, obj: CoachingSession) -> str:
+        user = obj.coachee.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
+
+    def validate(self, attrs):
+        coach = attrs.get("coach") or getattr(self.instance, "coach", None)
+        coachee = attrs.get("coachee") or getattr(self.instance, "coachee", None)
+        if coach is not None and coachee is not None and coach.pk == coachee.pk:
+            raise serializers.ValidationError({"coachee": "Le coach et le coaché ne peuvent pas être la même personne."})
+        return attrs
