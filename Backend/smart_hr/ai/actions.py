@@ -42,6 +42,26 @@ _LEAVE_INTENT_KEYWORDS = (
 )
 
 
+_LEAVE_APPROVAL_KEYWORDS = (
+    "valider le congé",
+    "valide le congé",
+    "valider la demande de congé",
+    "valide la demande de congé",
+    "approuver le congé",
+    "approuve le congé",
+    "approuver la demande de congé",
+    "approuve la demande de congé",
+    "refuser le congé",
+    "refuse le congé",
+    "refuser la demande de congé",
+    "refuse la demande de congé",
+    "rejeter le congé",
+    "rejette le congé",
+    "rejeter la demande de congé",
+    "rejette la demande de congé",
+)
+
+
 _OBJECTIVE_INTENT_KEYWORDS = (
     "objectif",
     "okr",
@@ -75,9 +95,16 @@ def detect_action_intent(question: str) -> str | None:
     Détecte l'intention d'action dans la question de l'utilisateur.
     Retourne le nom de l'action si détectée, None sinon.
 
-    Actions supportées : 'leave_request', 'objective_creation', 'onboarding_creation'
+    Actions supportées : 'leave_request', 'leave_approval', 'objective_creation',
+    'onboarding_creation'
+
+    `leave_approval` (RH valide/refuse la demande d'un tiers) est vérifié avant
+    `leave_request` (un employé pose son propre congé) car les deux formulations
+    contiennent toutes deux le mot "congé" — la plus spécifique doit gagner.
     """
     lower = question.lower()
+    if any(kw in lower for kw in _LEAVE_APPROVAL_KEYWORDS):
+        return "leave_approval"
     if any(kw in lower for kw in _LEAVE_INTENT_KEYWORDS):
         return "leave_request"
     if any(kw in lower for kw in _OBJECTIVE_INTENT_KEYWORDS):
@@ -170,6 +197,44 @@ def _regex_extract_leave_parameters(question: str) -> dict:
         result["leave_type"] = "maternity"
 
     return result
+
+
+# ─── Agent Dashboard — validation/refus de congé via Gemini ─────────────────
+
+
+def extract_leave_approval_parameters(question: str) -> dict:
+    """
+    Extrait de quel employé et de quelle décision (approve/reject) il s'agit
+    pour une validation/refus de congé demandée via le chat.
+
+    Retourne : {"employee_name": str | None, "decision": "approve|reject|None"}
+    """
+    prompt = (
+        "Analyse ce message d'un responsable RH qui souhaite valider ou refuser "
+        "une demande de congé d'un employé.\n"
+        "Retourne UNIQUEMENT un JSON valide, sans markdown ni backticks.\n\n"
+        f'Message : "{question}"\n\n'
+        "JSON attendu :\n"
+        "{\n"
+        '  "employee_name": "prénom et nom complets de l\'employé mentionné, ou null",\n'
+        '  "decision": "approve" si le RH valide/approuve, "reject" si le RH refuse/rejette, sinon null\n'
+        "}\n"
+    )
+
+    try:
+        from smart_hr.ai.llm_providers import get_llm_provider
+        from smart_hr.ai.llm_providers.base import strip_llm_code_fences
+
+        provider = get_llm_provider()
+        raw = strip_llm_code_fences(provider.extract_json(prompt))
+        parsed = json.loads(raw)
+    except Exception as exc:
+        logger.warning("Extraction LLM de la décision de congé échouée : %s", exc)
+        parsed = {"employee_name": None, "decision": None}
+
+    if parsed.get("decision") not in ("approve", "reject"):
+        parsed["decision"] = None
+    return parsed
 
 
 # ─── Agent OKR/Objectifs — extraction de paramètres via Gemini ──────────────
@@ -291,6 +356,8 @@ def execute_action(action_intent: str, user, params: dict) -> dict:
     """
     if action_intent == "leave_request":
         return _execute_leave_request(user, params)
+    if action_intent == "leave_approval":
+        return _execute_leave_approval(user, params)
     if action_intent == "objective_creation":
         return _execute_objective_creation(user, params)
     if action_intent == "onboarding_creation":
@@ -447,7 +514,7 @@ def _execute_objective_creation(user, params: dict) -> dict:
     }
 
 
-# ─── Agent Onboarding — exécution ────────────────────────────────────────────
+# ─── Résolution d'employé par nom (partagée entre agents) ───────────────────
 
 
 def _find_employee_by_full_name(full_name: str):
@@ -463,6 +530,57 @@ def _find_employee_by_full_name(full_name: str):
     candidates = Employee.objects.select_related("user")
     matches = [e for e in candidates if f"{e.user.first_name} {e.user.last_name}".strip().lower() == target]
     return matches[0] if len(matches) == 1 else None
+
+
+# ─── Agent Dashboard — exécution (validation/refus de congé) ────────────────
+
+
+def _execute_leave_approval(user, params: dict) -> dict:
+    """Valide ou refuse la demande de congé la plus récente d'un employé, via les
+    fonctions de service partagées (`smart_hr.conge.services.approve_leave`/
+    `reject_leave`) — le même chemin métier que l'API REST
+    (`LeaveRequestViewSet.approve/reject`), sans dupliquer la logique de
+    permission, de solde ou de notification, et sans dépendre d'utilitaires
+    de test (`APIRequestFactory`) dans du code de production."""
+    from rest_framework.exceptions import APIException
+
+    from smart_hr.conge.models import LeaveRequest
+    from smart_hr.conge.services import approve_leave
+    from smart_hr.conge.services import reject_leave
+
+    decision = params.get("decision")
+    if decision not in ("approve", "reject"):
+        return {"success": False, "error": "leave_decision_missing"}
+
+    employee = _find_employee_by_full_name(params.get("employee_name") or "")
+    if employee is None:
+        return {"success": False, "error": "employee_not_found"}
+
+    leave = LeaveRequest.objects.filter(employee=employee, status=LeaveRequest.Status.PENDING).order_by("-created_at").first()
+    if leave is None:
+        return {"success": False, "error": "no_pending_leave"}
+
+    try:
+        if decision == "approve":
+            approve_leave(leave, user)
+        else:
+            reject_leave(leave, user)
+    except APIException as exc:
+        detail = exc.detail[0] if isinstance(exc.detail, list) else exc.detail
+        return {"success": False, "error": str(detail)}
+
+    return {
+        "success": True,
+        "type": "leave_decision_applied",
+        "label": "Décision de congé appliquée",
+        "data": {
+            "employee_name": employee.user.get_full_name(),
+            "decision": decision,
+            "leave_type": leave.get_leave_type_display(),
+            "start_date": leave.start_date.strftime("%d/%m/%Y"),
+            "end_date": leave.end_date.strftime("%d/%m/%Y"),
+        },
+    }
 
 
 def _execute_onboarding_creation(user, params: dict) -> dict:
