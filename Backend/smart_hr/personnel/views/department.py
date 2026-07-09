@@ -33,7 +33,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
         prefetch_related("employees", "positions") permet à get_employee_count
         et get_positions dans le serializer de ne pas déclencher de requêtes supplémentaires.
         """
-        return Department.objects.prefetch_related("employees", "services").all()
+        return Department.objects.select_related("parent").prefetch_related("employees", "services").all()
 
     def get_serializer_class(self):
         """Utilise le serializer enrichi pour retrieve, sinon le de base."""
@@ -49,27 +49,32 @@ class DepartmentViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=["get"])
     def organigramme(self, request):
-        """Arborescence Département → Service → Poste avec effectifs actifs,
-        pour générer automatiquement l'organigramme visuel (sans re-saisie
-        manuelle — dérivé de la structure déjà existante).
+        """Arborescence Unité (profondeur arbitraire via `parent`) → Service → Poste
+        avec effectifs actifs, pour générer automatiquement l'organigramme visuel
+        (sans re-saisie manuelle — dérivé de la structure déjà existante).
 
         Les effectifs sont calculés en Python à partir d'un unique passage sur
         les employés actifs (au lieu d'une requête COUNT par département/service/
-        poste), pour éviter le problème de requêtes N+1.
+        poste), pour éviter le problème de requêtes N+1. L'arbre parent/enfants
+        est lui aussi assemblé en Python à partir d'un seul SELECT sur tous les
+        Department, quelle que soit la profondeur de la hiérarchie — aucune
+        requête récursive n'est déclenchée par niveau.
 
         Le tri des services/postes est appliqué au niveau des querysets passés
         à Prefetch() (et non via .order_by() après coup) : chaîner .order_by()
         sur une relation déjà préchargée ignore le cache de prefetch et
         redéclenche une requête par ligne parente.
         """
-        departments = Department.objects.prefetch_related(
-            Prefetch(
-                "services",
-                queryset=Service.objects.order_by("name").prefetch_related(
-                    Prefetch("positions", queryset=Position.objects.order_by("title"))
-                ),
-            )
-        ).order_by("name")
+        departments = list(
+            Department.objects.prefetch_related(
+                Prefetch(
+                    "services",
+                    queryset=Service.objects.order_by("name").prefetch_related(
+                        Prefetch("positions", queryset=Position.objects.order_by("title"))
+                    ),
+                )
+            ).order_by("name")
+        )
 
         active_employees = Employee.objects.filter(status="active").values("department_id", "service_id", "position_id")
         department_counts: Counter = Counter()
@@ -87,7 +92,7 @@ class DepartmentViewSet(viewsets.ModelViewSet):
             for employee in Employee.objects.filter(is_department_manager=True, status="active").select_related("user")
         }
 
-        data = []
+        nodes_by_id = {}
         for department in departments:
             services_data = []
             for service in department.services.all():
@@ -108,17 +113,26 @@ class DepartmentViewSet(viewsets.ModelViewSet):
                     }
                 )
             manager = managers_by_department.get(department.pk)
-            data.append(
-                {
-                    "id": department.pk,
-                    "name": department.name,
-                    "employee_count": department_counts.get(department.pk, 0),
-                    "manager_name": manager.user.get_full_name() if manager else None,
-                    "services": services_data,
-                }
-            )
+            nodes_by_id[department.pk] = {
+                "id": department.pk,
+                "name": department.name,
+                "unit_type": department.unit_type,
+                "unit_type_display": department.get_unit_type_display(),
+                "employee_count": department_counts.get(department.pk, 0),
+                "manager_name": manager.user.get_full_name() if manager else None,
+                "services": services_data,
+                "children": [],
+            }
 
-        return Response(data)
+        roots = []
+        for department in departments:
+            node = nodes_by_id[department.pk]
+            if department.parent_id and department.parent_id in nodes_by_id:
+                nodes_by_id[department.parent_id]["children"].append(node)
+            else:
+                roots.append(node)
+
+        return Response(roots)
 
     @action(detail=False, methods=["get"])
     def stats(self, request):
