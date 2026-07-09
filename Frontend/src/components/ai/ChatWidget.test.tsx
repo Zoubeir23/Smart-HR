@@ -1,16 +1,17 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ChatWidget from './ChatWidget';
 
-const { navigateMock, chatMock } = vi.hoisted(() => ({
+const { navigateMock, chatMock, useAuthMock } = vi.hoisted(() => ({
   navigateMock: vi.fn(),
   chatMock: vi.fn(),
+  useAuthMock: vi.fn(() => ({ user: { first_name: 'Awa', role: 'EMPLOYEE' } })),
 }));
 
 vi.mock('@/context/AuthContext', () => ({
-  useAuth: () => ({ user: { first_name: 'Awa', role: 'EMPLOYEE' } }),
+  useAuth: useAuthMock,
 }));
 
 vi.mock('@/services/aiService', () => ({
@@ -37,6 +38,10 @@ function renderWidget(initialPath = '/dashboard') {
 }
 
 describe('ChatWidget', () => {
+  beforeEach(() => {
+    useAuthMock.mockReturnValue({ user: { first_name: 'Awa', role: 'EMPLOYEE' } });
+  });
+
   it('affiche le bouton flottant fermé par défaut', () => {
     renderWidget();
     expect(screen.getByRole('button', { name: /ouvrir l'assistant ia/i })).toBeInTheDocument();
@@ -74,5 +79,28 @@ describe('ChatWidget', () => {
     fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
     fireEvent.click(screen.getByRole('button', { name: /ouvrir en plein écran/i }));
     expect(navigateMock).toHaveBeenCalledWith('/ai-chat');
+  });
+
+  it('personnalise le message de bienvenue une fois l\'utilisateur chargé (auth asynchrone)', () => {
+    useAuthMock.mockReturnValue({ user: null });
+    const { rerender } = render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <ChatWidget />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    useAuthMock.mockReturnValue({ user: { first_name: 'Awa', role: 'EMPLOYEE' } });
+    rerender(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <ChatWidget />
+        </MemoryRouter>
+      </QueryClientProvider>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
+    expect(screen.getByText(/bonjour awa/i)).toBeInTheDocument();
   });
 });
