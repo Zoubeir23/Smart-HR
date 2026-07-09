@@ -97,6 +97,19 @@ class TestCreateCascadeObjective:
         response = client.post(LIST_URL, payload, format="json")
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
+    def test_user_without_employee_profile_cannot_create_individual_objective_without_target(self, employee_user):
+        """Utilisateur EMPLOYEE sans profil Employee associé, et sans employee dans le payload :
+        doit être rejeté en 403, pas laissé passer par une comparaison None == None."""
+        client = _authenticated_client(employee_user)
+        payload = {
+            "level": "individual",
+            "title": "Objectif sans cible",
+            "period": "Q1 2026",
+            "key_results": [{"title": "KR"}],
+        }
+        response = client.post(LIST_URL, payload, format="json")
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
     def test_individual_objective_can_be_linked_to_department_parent(self, rh_user, employee, department):
         department_objective = Objective.objects.create(
             level=Objective.Level.DEPARTMENT, department=department, title="Objectif dept", period="Q1 2026"
