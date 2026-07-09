@@ -74,9 +74,7 @@ class SignatureRequestViewSet(viewsets.ModelViewSet):
         signature_request = self.get_object()
 
         if signature_request.signatory_id != request.user.id:
-            return Response(
-                {"detail": "Seul le signataire désigné peut signer cette demande."}, status=status.HTTP_403_FORBIDDEN
-            )
+            return Response({"detail": "Seul le signataire désigné peut signer cette demande."}, status=status.HTTP_403_FORBIDDEN)
         if signature_request.status != SignatureRequest.Status.PENDING:
             return Response({"detail": "Cette demande a déjà été traitée."}, status=status.HTTP_400_BAD_REQUEST)
         if not Signature.objects.filter(user=request.user).exists():
