@@ -14,6 +14,7 @@ from smart_hr.core.sitemap import sitemap_view
 from smart_hr.users.views import AdminStatsView
 from smart_hr.users.views import AdminUserManagementView
 from smart_hr.users.views import EmailVerifiedLoginView
+from smart_hr.users.views import HRAnalyticsExportView
 from smart_hr.users.views import HRAnalyticsView
 from smart_hr.users.views.account import AccountDeleteView
 from smart_hr.users.views.account import PersonalDataExportView
@@ -58,6 +59,7 @@ urlpatterns = [
     path("api/v1/auth/registration/", include("dj_rest_auth.registration.urls")),
     path("api/v1/auth/admin/stats/", AdminStatsView.as_view(), name="admin-stats"),
     path("api/v1/stats/overview/", HRAnalyticsView.as_view(), name="hr-analytics-overview"),
+    path("api/v1/stats/overview/export/", HRAnalyticsExportView.as_view(), name="hr-analytics-overview-export"),
     path("api/v1/auth/admin/users/", AdminUserManagementView.as_view(), name="admin-users-list"),
     path("api/v1/auth/admin/users/<int:user_id>/", AdminUserManagementView.as_view(), name="admin-users-detail"),
     path(
