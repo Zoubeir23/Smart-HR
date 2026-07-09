@@ -65,8 +65,39 @@ class DepartureReason(TimeStampedModel):
 
 
 class Department(TimeStampedModel):
+    """Nœud d'organigramme à profondeur arbitraire : un Department peut être
+    rattaché à un Department parent (`parent`, la "racine") pour former une
+    hiérarchie de niveaux illimitée (Service, Département, Direction, Direction
+    centrale, DGA, DG, Vice-président, PCA...). Les Department racines
+    (`parent=None`) sont les sommets de l'organigramme."""
+
+    class UnitType(models.TextChoices):
+        SERVICE = "service", "Service"
+        DEPARTMENT = "department", "Département"
+        DIRECTION = "direction", "Direction"
+        CENTRAL_DIRECTION = "central_direction", "Direction centrale"
+        DGA = "dga", "DGA"
+        DG = "dg", "DG"
+        VICE_PRESIDENT = "vice_president", "Vice-président"
+        PCA = "pca", "PCA"
+
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
+    unit_type = models.CharField(
+        max_length=20,
+        choices=UnitType.choices,
+        default=UnitType.DEPARTMENT,
+        verbose_name="Type d'unité",
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+        verbose_name="Unité racine",
+        help_text="Unité de niveau supérieur à laquelle celle-ci est rattachée.",
+    )
 
     class Meta:
         verbose_name = "Département"
