@@ -1,4 +1,5 @@
 from smart_hr.users.views.admin_user_management import AdminUserManagementView
+from smart_hr.users.views.analytics import HRAnalyticsExportView
 from smart_hr.users.views.analytics import HRAnalyticsView
 from smart_hr.users.views.login import EmailVerifiedLoginView
 from smart_hr.users.views.stats import AdminStatsView
@@ -13,6 +14,7 @@ __all__ = [
     "AdminStatsView",
     "AdminUserManagementView",
     "EmailVerifiedLoginView",
+    "HRAnalyticsExportView",
     "HRAnalyticsView",
     "UserDetailView",
     "UserRedirectView",
