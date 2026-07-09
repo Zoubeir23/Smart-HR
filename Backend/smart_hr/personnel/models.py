@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db import models
 from django.db import transaction
@@ -65,8 +66,39 @@ class DepartureReason(TimeStampedModel):
 
 
 class Department(TimeStampedModel):
+    """Nœud d'organigramme à profondeur arbitraire : un Department peut être
+    rattaché à un Department parent (`parent`, la "racine") pour former une
+    hiérarchie de niveaux illimitée (Service, Département, Direction, Direction
+    centrale, DGA, DG, Vice-président, PCA...). Les Department racines
+    (`parent=None`) sont les sommets de l'organigramme."""
+
+    class UnitType(models.TextChoices):
+        SERVICE = "service", "Service"
+        DEPARTMENT = "department", "Département"
+        DIRECTION = "direction", "Direction"
+        CENTRAL_DIRECTION = "central_direction", "Direction centrale"
+        DGA = "dga", "DGA"
+        DG = "dg", "DG"
+        VICE_PRESIDENT = "vice_president", "Vice-président"
+        PCA = "pca", "PCA"
+
     name = models.CharField(max_length=150)
     description = models.TextField(blank=True)
+    unit_type = models.CharField(
+        max_length=20,
+        choices=UnitType.choices,
+        default=UnitType.DEPARTMENT,
+        verbose_name="Type d'unité",
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+        verbose_name="Unité racine",
+        help_text="Unité de niveau supérieur à laquelle celle-ci est rattachée.",
+    )
 
     class Meta:
         verbose_name = "Département"
@@ -74,6 +106,32 @@ class Department(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
+    def clean(self) -> None:
+        """Empêche tout rattachement circulaire (self-parent ou cycle indirect),
+        y compris via l'admin Django ou le shell, pas seulement via l'API DRF.
+
+        Le nombre d'itérations est borné par le nombre total de Department pour
+        éviter toute boucle infinie si un cycle existait déjà en base (ex: créé
+        par une migration de données ou un accès direct hors validation)."""
+        if self.parent_id is None:
+            return
+        if self.pk is not None and self.parent_id == self.pk:
+            raise ValidationError({"parent": "Une unité ne peut pas être sa propre racine."})
+
+        max_depth = Department.objects.count() + 1
+        ancestor = self.parent
+        for _ in range(max_depth):
+            if ancestor is None:
+                return
+            if self.pk is not None and ancestor.pk == self.pk:
+                raise ValidationError({"parent": "Rattachement circulaire détecté dans la hiérarchie."})
+            ancestor = ancestor.parent
+        raise ValidationError({"parent": "Rattachement circulaire détecté dans la hiérarchie."})
+
+    def save(self, *args, **kwargs) -> None:
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class Service(TimeStampedModel):

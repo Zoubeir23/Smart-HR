@@ -60,14 +60,48 @@ class DepartureReasonSerializer(serializers.ModelSerializer):
 
 class DepartmentSerializer(serializers.ModelSerializer):
     employee_count = serializers.SerializerMethodField()
+    unit_type_display = serializers.CharField(source="get_unit_type_display", read_only=True)
+    parent_name = serializers.CharField(source="parent.name", read_only=True, default=None)
 
     class Meta:
         model = Department
-        fields = ["id", "name", "description", "employee_count", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "name",
+            "description",
+            "unit_type",
+            "unit_type_display",
+            "parent",
+            "parent_name",
+            "employee_count",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = ["created_at", "updated_at"]
 
     def get_employee_count(self, obj: Department) -> int:
         return obj.employees.filter(status=Employee.Status.ACTIVE).count()
+
+    def validate_parent(self, value: Department | None) -> Department | None:
+        if value is None:
+            return value
+        if self.instance is not None and value.pk == self.instance.pk:
+            raise serializers.ValidationError("Une unité ne peut pas être sa propre racine.")
+        if self.instance is not None:
+            # Boucle bornée par le nombre total d'unités : une chaîne de parenté
+            # valide (arbre) ne peut pas dépasser cette longueur, ce qui protège
+            # contre un cycle déjà présent en base (créé hors de ce serializer,
+            # ex: admin Django) sans jamais tourner indéfiniment.
+            max_depth = Department.objects.count() + 1
+            ancestor = value
+            for _ in range(max_depth):
+                if ancestor is None:
+                    return value
+                if ancestor.pk == self.instance.pk:
+                    raise serializers.ValidationError("Rattachement circulaire détecté dans la hiérarchie.")
+                ancestor = ancestor.parent
+            raise serializers.ValidationError("Rattachement circulaire détecté dans la hiérarchie.")
+        return value
 
 
 class DepartmentDetailSerializer(DepartmentSerializer):
