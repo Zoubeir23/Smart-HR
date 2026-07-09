@@ -74,9 +74,7 @@ def _assert_can_approve_or_reject(acting_user, leave: LeaveRequest) -> None:
     sans dépendre d'un objet `request` complet ni d'utilitaires de test."""
     permission = IsRHOrDepartmentManager()
     fake_request = SimpleNamespace(user=acting_user)
-    if not permission.has_permission(fake_request, None) or not permission.has_object_permission(
-        fake_request, None, leave
-    ):
+    if not permission.has_permission(fake_request, None) or not permission.has_object_permission(fake_request, None, leave):
         raise PermissionDenied("Vous n'avez pas la permission d'effectuer cette action.")
 
 
@@ -92,8 +90,7 @@ def approve_leave(leave: LeaveRequest, acting_user) -> LeaveRequest:
         if insufficient_year is not None:
             year, days_remaining, days_requested = insufficient_year
             raise ValidationError(
-                f"Solde insuffisant pour {year} : {days_remaining}j disponibles, "
-                f"{days_requested}j demandés sur cette année."
+                f"Solde insuffisant pour {year} : {days_remaining}j disponibles, {days_requested}j demandés sur cette année."
             )
 
     leave.status = LeaveRequest.Status.APPROVED
@@ -104,9 +101,7 @@ def approve_leave(leave: LeaveRequest, acting_user) -> LeaveRequest:
         recipient=leave.employee.user,
         notification_type=Notification.NotificationType.LEAVE_APPROVED,
         title="Congé approuvé",
-        message=(
-            f"Votre demande de {leave.get_leave_type_display()} du {leave.start_date} au {leave.end_date} a été approuvée."
-        ),
+        message=(f"Votre demande de {leave.get_leave_type_display()} du {leave.start_date} au {leave.end_date} a été approuvée."),
         target_url=f"/conges/{leave.pk}/",
     )
     return leave
@@ -126,9 +121,7 @@ def reject_leave(leave: LeaveRequest, acting_user) -> LeaveRequest:
         recipient=leave.employee.user,
         notification_type=Notification.NotificationType.LEAVE_REJECTED,
         title="Congé refusé",
-        message=(
-            f"Votre demande de {leave.get_leave_type_display()} du {leave.start_date} au {leave.end_date} a été refusée."
-        ),
+        message=(f"Votre demande de {leave.get_leave_type_display()} du {leave.start_date} au {leave.end_date} a été refusée."),
         target_url=f"/conges/{leave.pk}/",
     )
     return leave
