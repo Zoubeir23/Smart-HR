@@ -43,6 +43,18 @@ export default function ChatWidget() {
     if (isOpen) messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
   }, [messages, isOpen]);
 
+  // `user` est encore `null` au premier rendu (chargement asynchrone de
+  // l'auth) — une fois disponible, on personnalise le message de bienvenue
+  // s'il n'a pas déjà été remplacé par une vraie conversation.
+  useEffect(() => {
+    if (!user?.first_name) return;
+    setMessages((prev) =>
+      prev.length === 1 && prev[0].id === 'welcome'
+        ? [{ id: 'welcome', text: buildWelcomeText(user.first_name), sender: 'ai' }]
+        : prev
+    );
+  }, [user?.first_name]);
+
   const chatMutation = useMutation({
     mutationFn: ({ question }: { question: string }) => aiService.chat(question, conversationId ?? undefined),
     onSuccess: (data) => {
