@@ -7,6 +7,8 @@ import {
   AlertTriangle,
   Calendar,
   RefreshCw,
+  GraduationCap,
+  CheckCircle2,
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import PageHeader from '@/components/common/PageHeader';
@@ -369,6 +371,30 @@ export default function AnalyticsPage() {
               )}
             </CardContent>
           </Card>
+        </div>
+
+        {/* Row 4: Formation (coûts & complétion) */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {isLoading ? (
+            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
+          ) : (
+            <>
+              <StatCard
+                title="Coût total des formations"
+                value={formatCurrency(data?.training_summary.total_cost ?? 0)}
+                subtitle={`${data?.training_summary.total_formations ?? 0} formation(s)`}
+                icon={GraduationCap}
+                trend="neutral"
+              />
+              <StatCard
+                title="Taux de complétion"
+                value={`${data?.training_summary.completion_rate ?? 0}%`}
+                subtitle={`${data?.training_summary.completed_participations ?? 0}/${data?.training_summary.total_participations ?? 0} inscriptions`}
+                icon={CheckCircle2}
+                trend="neutral"
+              />
+            </>
+          )}
         </div>
       </motion.div>
   );
