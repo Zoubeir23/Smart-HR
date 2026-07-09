@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from smart_hr.performance.models import CoachingSession
 from smart_hr.performance.models import Feedback360
 from smart_hr.performance.models import PerformanceEvaluation
 from smart_hr.performance.models import Skill
@@ -40,6 +41,27 @@ class PerformanceEvaluationAdmin(admin.ModelAdmin):
 @admin.register(Feedback360)
 class Feedback360Admin(admin.ModelAdmin):
     list_display = ["author", "recipient", "context", "created_at"]
-    search_fields = ["author__first_name", "author__last_name", "recipient__first_name", "recipient__last_name", "comment"]
+    search_fields = [
+        "author__user__first_name",
+        "author__user__last_name",
+        "recipient__user__first_name",
+        "recipient__user__last_name",
+        "comment",
+    ]
     readonly_fields = ["created_at", "updated_at"]
     ordering = ["-created_at"]
+
+
+@admin.register(CoachingSession)
+class CoachingSessionAdmin(admin.ModelAdmin):
+    list_display = ["coach", "coachee", "scheduled_at", "status"]
+    list_filter = ["status"]
+    search_fields = [
+        "coach__user__first_name",
+        "coach__user__last_name",
+        "coachee__user__first_name",
+        "coachee__user__last_name",
+        "topic",
+    ]
+    readonly_fields = ["created_at", "updated_at"]
+    ordering = ["-scheduled_at"]
