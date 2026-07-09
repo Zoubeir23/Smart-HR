@@ -1,5 +1,7 @@
+from django.db.models import Avg
 from django.db.models import Count
 from django.db.models import Q
+from django.db.models import Sum
 from rest_framework import viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -56,9 +58,12 @@ class FormationViewSet(viewsets.ModelViewSet):
                 "total_participations": f.total_participations,
                 "completed": f.completed_participations,
                 "completion_rate": _completion_rate(f.completed_participations, f.total_participations),
+                "cost": float(f.cost),
             }
             for f in formations
         ]
+
+        cost_totals = Formation.objects.aggregate(total_cost=Sum("cost"), average_cost=Avg("cost"))
 
         return Response(
             {
@@ -66,6 +71,8 @@ class FormationViewSet(viewsets.ModelViewSet):
                     "total_participations": totals["total"],
                     "completed": totals["completed"],
                     "completion_rate": _completion_rate(totals["completed"], totals["total"]),
+                    "total_cost": float(cost_totals["total_cost"] or 0),
+                    "average_cost": round(float(cost_totals["average_cost"] or 0), 2),
                 },
                 "by_formation": by_formation,
             }
