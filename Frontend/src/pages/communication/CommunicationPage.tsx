@@ -27,9 +27,11 @@ import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { communicationService, type InternalMessagePayload } from '@/services/communicationService';
 import DataPagination, { usePagination } from '@/components/common/DataPagination';
+import DistressAlertsTab from '@/components/communication/DistressAlertsTab';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
+type PageTab = 'messages' | 'distress';
 type MessageType = 'memo' | 'note_service' | 'order' | 'circular';
 type TargetAudience = 'all' | 'rh' | 'admin' | 'employee';
 
@@ -97,6 +99,7 @@ export default function CommunicationPage() {
 
   const canEdit = user?.role === 'RH' || user?.role === 'ADMIN';
 
+  const [activeTab, setActiveTab] = useState<PageTab>('messages');
   const [filterType, setFilterType] = useState<string>('all');
   const [searchText, setSearchText] = useState('');
   const [showForm, setShowForm] = useState(false);
@@ -226,7 +229,7 @@ export default function CommunicationPage() {
               Mémorandums, notes et ordres de service à l'intention du personnel
             </p>
           </div>
-          {canEdit && (
+          {canEdit && activeTab === 'messages' && (
             <Button onClick={openCreate} className="gap-2">
               <Plus className="h-4 w-4" />
               Nouveau message
@@ -234,6 +237,26 @@ export default function CommunicationPage() {
           )}
         </div>
 
+        {/* Tabs */}
+        <div className="flex gap-1 rounded-lg border bg-muted/40 p-1 w-fit">
+          {([['messages', 'Messages internes'], ['distress', 'Alertes de détresse']] as [PageTab, string][]).map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                'rounded-md px-4 py-1.5 text-sm font-medium transition-all',
+                activeTab === tab ? 'bg-background shadow text-foreground' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {activeTab === 'distress' && <DistressAlertsTab canManage={canEdit} />}
+
+        {activeTab === 'messages' && (
+        <>
         {/* KPI Cards */}
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {kpiCards.map(({ label, type, icon: Icon }) => (
@@ -406,6 +429,8 @@ export default function CommunicationPage() {
           totalPages={totalPages}
           onPageChange={setCurrentPage}
         />
+        </>
+        )}
 
         {/* Create / Edit Dialog */}
         <Dialog open={showForm} onOpenChange={(open) => !open && closeForm()}>

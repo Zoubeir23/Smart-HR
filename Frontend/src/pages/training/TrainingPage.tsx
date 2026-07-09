@@ -45,6 +45,7 @@ interface ApiFormation {
   start_date: string;
   end_date: string;
   instructor: string;
+  cost: number;
   meetings: ApiMeeting[];
   created_at: string;
 }
@@ -70,6 +71,7 @@ interface NewFormationForm {
   start_date: string;
   end_date: string;
   instructor: string;
+  cost: string;
 }
 
 interface NewMeetingForm {
@@ -100,6 +102,7 @@ export default function TrainingPage() {
     start_date: '',
     end_date: '',
     instructor: '',
+    cost: '',
   });
   const [isCreateMeetingDialogOpen, setIsCreateMeetingDialogOpen] = useState(false);
   const [newMeetingForm, setNewMeetingForm] = useState<NewMeetingForm>(EMPTY_MEETING_FORM);
@@ -123,7 +126,7 @@ export default function TrainingPage() {
       queryClient.invalidateQueries({ queryKey: ['formations'] });
       toast.success('Formation créée avec succès.');
       setIsCreateDialogOpen(false);
-      setNewFormationForm({ title: '', description: '', start_date: '', end_date: '', instructor: '' });
+      setNewFormationForm({ title: '', description: '', start_date: '', end_date: '', instructor: '', cost: '' });
     },
     onError: () => {
       toast.error('Erreur lors de la création de la formation.');
@@ -139,7 +142,7 @@ export default function TrainingPage() {
       toast.error('La date de fin doit être après la date de début.');
       return;
     }
-    createMutation.mutate({ ...newFormationForm });
+    createMutation.mutate({ ...newFormationForm, cost: newFormationForm.cost ? Number(newFormationForm.cost) : 0 });
   };
 
   const createMeetingMutation = useMutation({
@@ -341,6 +344,12 @@ export default function TrainingPage() {
                               <span>{formation.meetings.length} réunion{formation.meetings.length > 1 ? 's' : ''}</span>
                             </div>
                           )}
+                          {canManage && formation.cost > 0 && (
+                            <div className="flex items-center gap-2 text-foreground">
+                              <span className="text-muted-foreground">Coût :</span>
+                              <strong>{new Intl.NumberFormat('fr-FR').format(formation.cost)} FCFA</strong>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>
@@ -470,6 +479,16 @@ export default function TrainingPage() {
                     onChange={(e) => setNewFormationForm((prev) => ({ ...prev, end_date: e.target.value }))}
                   />
                 </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Coût (FCFA)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={newFormationForm.cost}
+                  onChange={(e) => setNewFormationForm((prev) => ({ ...prev, cost: e.target.value }))}
+                  placeholder="Ex: 500000"
+                />
               </div>
               <div className="grid gap-2">
                 <Label>Description</Label>

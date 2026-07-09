@@ -37,6 +37,57 @@ export interface ParticipationPayload {
   notes?: string;
 }
 
+export const FEEDBACK_360_TAGS = [
+  { value: 'availability', label: 'Disponibilité' },
+  { value: 'patience', label: 'Patience' },
+  { value: 'anticipation', label: 'Anticipation' },
+  { value: 'respect', label: 'Respect' },
+  { value: 'emotional_intelligence', label: 'Intelligence émotionnelle' },
+  { value: 'open_mindedness', label: "Ouverture d'esprit" },
+] as const;
+
+export interface Feedback360 {
+  id: number;
+  author: number;
+  author_name: string;
+  recipient: number;
+  recipient_name: string;
+  context: string;
+  comment: string;
+  tags: string[];
+  created_at: string;
+}
+
+export interface Feedback360Payload {
+  recipient: number;
+  context?: string;
+  comment: string;
+  tags: string[];
+}
+
+export interface CoachingSession {
+  id: number;
+  coach: number;
+  coach_name: string;
+  coachee: number;
+  coachee_name: string;
+  scheduled_at: string;
+  topic: string;
+  notes: string;
+  status: 'scheduled' | 'completed' | 'cancelled';
+  status_display: string;
+  created_at: string;
+}
+
+export interface CoachingSessionPayload {
+  coach: number;
+  coachee: number;
+  scheduled_at: string;
+  topic: string;
+  notes?: string;
+  status?: string;
+}
+
 export const performanceService = {
   // ── Skills ───────────────────────────────────────────────────────
   getAllSkills: async (params?: { employee_id?: number; category?: string; search?: string }) => {
@@ -122,5 +173,40 @@ export const performanceService = {
 
   deleteParticipation: async (id: number) => {
     await api.delete(`/formation/participations/${id}/`);
+  },
+
+  // ── Feedback 360° ─────────────────────────────────────────────────
+  getAllFeedback360: async (params?: { recipient?: number }) => {
+    const { data } = await api.get('/performance/feedback-360/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE, ...params },
+    });
+    return data;
+  },
+
+  createFeedback360: async (payload: Feedback360Payload) => {
+    const { data } = await api.post('/performance/feedback-360/', payload);
+    return data;
+  },
+
+  // ── Coaching one-to-one ───────────────────────────────────────────
+  getAllCoachingSessions: async () => {
+    const { data } = await api.get('/performance/coaching-sessions/', {
+      params: { page_size: LIST_ALL_PAGE_SIZE },
+    });
+    return data;
+  },
+
+  createCoachingSession: async (payload: CoachingSessionPayload) => {
+    const { data } = await api.post('/performance/coaching-sessions/', payload);
+    return data;
+  },
+
+  updateCoachingSession: async (id: number, payload: Partial<CoachingSessionPayload>) => {
+    const { data } = await api.patch(`/performance/coaching-sessions/${id}/`, payload);
+    return data;
+  },
+
+  deleteCoachingSession: async (id: number) => {
+    await api.delete(`/performance/coaching-sessions/${id}/`);
   },
 };
