@@ -1,6 +1,33 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
-import { refreshAccessToken } from './api';
+import { normalizeApiUrl, refreshAccessToken } from './api';
+
+describe('normalizeApiUrl', () => {
+  it("retombe sur un chemin relatif '/api/v1' quand l'URL est vide", () => {
+    /* Régression production : un fallback absolu (ex: http://localhost:8000/api/v1)
+     * casse l'app pour tout visiteur réel si VITE_API_URL n'est pas défini au
+     * build — son navigateur tente de joindre SON PROPRE localhost. Le chemin
+     * relatif laisse nginx (prod) ou le proxy Vite (dev) router /api/. */
+    expect(normalizeApiUrl('')).toBe('/api/v1');
+    expect(normalizeApiUrl('   ')).toBe('/api/v1');
+  });
+
+  it('ne produit jamais de fallback vers localhost', () => {
+    expect(normalizeApiUrl('')).not.toContain('localhost');
+  });
+
+  it('conserve une URL absolue explicitement fournie', () => {
+    expect(normalizeApiUrl('https://api.smart-hr.tech/api/v1')).toBe('https://api.smart-hr.tech/api/v1');
+  });
+
+  it("ajoute '/v1' si l'URL se termine par '/api'", () => {
+    expect(normalizeApiUrl('https://api.smart-hr.tech/api')).toBe('https://api.smart-hr.tech/api/v1');
+  });
+
+  it('retire les slashes de fin', () => {
+    expect(normalizeApiUrl('https://api.smart-hr.tech/api/v1///')).toBe('https://api.smart-hr.tech/api/v1');
+  });
+});
 
 describe('refreshAccessToken', () => {
   beforeEach(() => {
