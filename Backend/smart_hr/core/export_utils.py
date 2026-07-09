@@ -57,3 +57,33 @@ def export_response(rows: list[dict], filename_base: str, export_format: str, sh
     if export_format == "xlsx":
         return build_xlsx_response(rows, f"{filename_base}.xlsx", sheet_name=sheet_name)
     return build_csv_response(rows, f"{filename_base}.csv")
+
+
+def build_multi_sheet_xlsx_response(sheets: dict[str, list[dict]], filename: str):
+    """Construit une HttpResponse XLSX à onglets multiples — un onglet par
+    section (ex: tableau de bord People Analytics), plutôt qu'un unique
+    tableau plat. Les noms d'onglets Excel sont limités à 31 caractères."""
+    import openpyxl
+    from django.http import HttpResponse
+
+    workbook = openpyxl.Workbook()
+    workbook.remove(workbook.active)
+
+    for sheet_name, rows in sheets.items():
+        worksheet = workbook.create_sheet(title=sheet_name[:31])
+        if rows:
+            headers = list(rows[0].keys())
+            worksheet.append(headers)
+            for row in rows:
+                worksheet.append([row.get(h, "") for h in headers])
+
+    buffer = io.BytesIO()
+    workbook.save(buffer)
+    buffer.seek(0)
+
+    response = HttpResponse(
+        buffer.read(),
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    return response
