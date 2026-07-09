@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from django.db import models
 from django.db import transaction
@@ -105,6 +106,32 @@ class Department(TimeStampedModel):
 
     def __str__(self) -> str:
         return self.name
+
+    def clean(self) -> None:
+        """Empêche tout rattachement circulaire (self-parent ou cycle indirect),
+        y compris via l'admin Django ou le shell, pas seulement via l'API DRF.
+
+        Le nombre d'itérations est borné par le nombre total de Department pour
+        éviter toute boucle infinie si un cycle existait déjà en base (ex: créé
+        par une migration de données ou un accès direct hors validation)."""
+        if self.parent_id is None:
+            return
+        if self.pk is not None and self.parent_id == self.pk:
+            raise ValidationError({"parent": "Une unité ne peut pas être sa propre racine."})
+
+        max_depth = Department.objects.count() + 1
+        ancestor = self.parent
+        for _ in range(max_depth):
+            if ancestor is None:
+                return
+            if self.pk is not None and ancestor.pk == self.pk:
+                raise ValidationError({"parent": "Rattachement circulaire détecté dans la hiérarchie."})
+            ancestor = ancestor.parent
+        raise ValidationError({"parent": "Rattachement circulaire détecté dans la hiérarchie."})
+
+    def save(self, *args, **kwargs) -> None:
+        self.clean()
+        super().save(*args, **kwargs)
 
 
 class Service(TimeStampedModel):
