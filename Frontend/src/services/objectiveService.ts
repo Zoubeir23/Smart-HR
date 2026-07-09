@@ -12,10 +12,17 @@ export interface KeyResult {
   progress: number;
 }
 
+export type ObjectiveLevel = 'company' | 'department' | 'individual';
+
 export interface Objective {
   id: number;
-  employee: number;
-  employee_full_name: string;
+  level: ObjectiveLevel;
+  level_display: string;
+  employee: number | null;
+  employee_full_name: string | null;
+  department: number | null;
+  department_name: string | null;
+  parent: number | null;
   title: string;
   description: string;
   period: string;
@@ -27,7 +34,10 @@ export interface Objective {
 }
 
 export interface CreateObjectivePayload {
-  employee: number;
+  level?: ObjectiveLevel;
+  employee?: number;
+  department?: number;
+  parent?: number | null;
   title: string;
   description?: string;
   period: string;
@@ -37,6 +47,11 @@ export interface CreateObjectivePayload {
 export const objectiveService = {
   getForEmployee: async (employeeId: number): Promise<Objective[]> => {
     const { data } = await api.get('/personnel/objectives/', { params: { employee: employeeId } });
+    return data?.results ?? data ?? [];
+  },
+
+  getByLevel: async (level: ObjectiveLevel): Promise<Objective[]> => {
+    const { data } = await api.get('/personnel/objectives/', { params: { level, page_size: 200 } });
     return data?.results ?? data ?? [];
   },
 
