@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from smart_hr.performance.models import Feedback360
 from smart_hr.performance.models import PerformanceEvaluation
 from smart_hr.performance.models import Skill
 
@@ -34,3 +35,11 @@ class PerformanceEvaluationAdmin(admin.ModelAdmin):
             {"fields": ["created_at", "updated_at"], "classes": ["collapse"]},
         ),
     ]
+
+
+@admin.register(Feedback360)
+class Feedback360Admin(admin.ModelAdmin):
+    list_display = ["author", "recipient", "context", "created_at"]
+    search_fields = ["author__first_name", "author__last_name", "recipient__first_name", "recipient__last_name", "comment"]
+    readonly_fields = ["created_at", "updated_at"]
+    ordering = ["-created_at"]
