@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { jsPDF } from 'jspdf';
 import {
   Users,
   TrendingUp,
@@ -9,18 +10,29 @@ import {
   RefreshCw,
   GraduationCap,
   CheckCircle2,
+  Target,
+  Briefcase,
+  Smile,
+  Network,
+  FileSpreadsheet,
+  FileText,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import PageHeader from '@/components/common/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useToast } from '@/hooks/use-toast';
 import AgePyramidChart from '@/components/charts/AgePyramidChart';
 import SalaryDistributionChart from '@/components/charts/SalaryDistributionChart';
 import DepartmentHeadcountChart from '@/components/charts/DepartmentHeadcountChart';
 import MonthlyHeadcountChart from '@/components/charts/MonthlyHeadcountChart';
-import { analyticsService } from '@/services/analyticsService';
+import RecruitmentFunnelChart from '@/components/charts/RecruitmentFunnelChart';
+import PerformanceDistributionChart from '@/components/charts/PerformanceDistributionChart';
+import TrainingCostChart from '@/components/charts/TrainingCostChart';
+import OrganigrammeSummaryTree from '@/components/analytics/OrganigrammeSummaryTree';
+import { analyticsService, HRAnalyticsOverview } from '@/services/analyticsService';
 
 function formatCurrency(amount: number): string {
   if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M FCFA`;
@@ -178,12 +190,129 @@ function LeaveAttendanceGrid({
   );
 }
 
+/**
+ * Génère un rapport PDF récapitulatif de tous les indicateurs People
+ * Analytics — pour permettre au RH/manager d'insérer directement les chiffres
+ * dans une présentation sans recréer de graphiques (cf. audit TargetYM AI).
+ * Suit le même style de mise en page manuelle que le bulletin de paie
+ * (Frontend/src/pages/payroll/PayrollPage.tsx).
+ */
+function generateAnalyticsPdf(data: HRAnalyticsOverview): void {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 15;
+  let y = margin;
+
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
+    }
+  };
+
+  const addSectionTitle = (title: string) => {
+    ensureSpace(14);
+    doc.setFontSize(13);
+    doc.setTextColor(214, 40, 40);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, margin, y);
+    y += 3;
+    doc.setDrawColor(214, 40, 40);
+    doc.setLineWidth(0.3);
+    doc.line(margin, y, pageWidth - margin, y);
+    y += 7;
+  };
+
+  const addRow = (label: string, value: string) => {
+    ensureSpace(7);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(85, 85, 85);
+    doc.text(label, margin, y);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(28, 20, 16);
+    doc.text(value, pageWidth - margin, y, { align: 'right' });
+    y += 6;
+  };
+
+  // Header
+  doc.setFontSize(22);
+  doc.setTextColor(214, 40, 40);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Smart-HR', margin, y);
+  doc.setFontSize(10);
+  doc.setTextColor(136, 136, 136);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Rapport People Analytics', margin, y + 7);
+  doc.setFontSize(9);
+  doc.text(
+    new Date().toLocaleDateString('fr-FR', { year: 'numeric', month: 'long', day: 'numeric' }),
+    pageWidth - margin,
+    y,
+    { align: 'right' }
+  );
+  y += 16;
+
+  addSectionTitle('Effectifs & masse salariale');
+  addRow('Effectif actif', `${data.totals.active_employees}`);
+  addRow('Masse salariale', formatCurrency(data.totals.salary_mass));
+  addRow('Salaire moyen', formatCurrency(data.totals.average_salary));
+  y += 4;
+
+  addSectionTitle('Risque de départ (churn)');
+  addRow('Risque élevé', `${data.churn_summary.high}`);
+  addRow('Risque moyen', `${data.churn_summary.medium}`);
+  addRow('Risque faible', `${data.churn_summary.low}`);
+  y += 4;
+
+  addSectionTitle('Performance');
+  addRow('Employés évalués', `${data.performance_summary.evaluated_count}`);
+  addRow('Score moyen', `${data.performance_summary.average_score}/100`);
+  y += 4;
+
+  addSectionTitle('Recrutement');
+  data.recruitment_funnel.forEach((entry) => addRow(entry.label, `${entry.count}`));
+  y += 4;
+
+  addSectionTitle('Engagement');
+  addRow('Réponses collectées', `${data.engagement_summary.responses_count}`);
+  addRow('Note moyenne', `${data.engagement_summary.average_rating}/5`);
+  y += 4;
+
+  addSectionTitle('Formation');
+  addRow('Formations disponibles', `${data.training_summary.available_courses}`);
+  addRow('Total formations', `${data.training_summary.total_formations}`);
+  addRow('Coût total', formatCurrency(data.training_summary.total_cost));
+  addRow('Taux de complétion', `${data.training_summary.completion_rate}%`);
+  addRow('Total assigné', `${data.training_summary.total_participations}`);
+  y += 4;
+
+  addSectionTitle('Effectifs par département');
+  data.department_headcount.forEach((entry) => addRow(entry.department, `${entry.count}`));
+
+  doc.save('people_analytics.pdf');
+}
+
 export default function AnalyticsPage() {
+  const { toast } = useToast();
   const { data, isLoading, refetch, dataUpdatedAt } = useQuery({
     queryKey: ['hr-analytics-overview'],
     queryFn: analyticsService.getOverview,
     staleTime: 5 * 60 * 1000,
   });
+
+  const exportExcelMutation = useMutation({
+    mutationFn: analyticsService.exportOverviewExcel,
+    onError: () => {
+      toast({ title: 'Erreur', description: "Impossible d'exporter en Excel.", variant: 'destructive' });
+    },
+  });
+
+  const handleExportPdf = () => {
+    if (!data) return;
+    generateAnalyticsPdf(data);
+  };
 
   const lastUpdated = dataUpdatedAt
     ? new Date(dataUpdatedAt).toLocaleTimeString('fr-FR', {
@@ -209,6 +338,19 @@ export default function AnalyticsPage() {
                   Actualisé à {lastUpdated}
                 </span>
               )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportExcelMutation.mutate()}
+                disabled={exportExcelMutation.isPending}
+              >
+                <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+                Excel
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={!data}>
+                <FileText className="mr-1.5 h-3.5 w-3.5" />
+                PDF
+              </Button>
               <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isLoading}>
                 <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
                 Actualiser
@@ -373,28 +515,146 @@ export default function AnalyticsPage() {
           </Card>
         </div>
 
-        {/* Row 4: Formation (coûts & complétion) */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {isLoading ? (
-            Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
-          ) : (
-            <>
-              <StatCard
-                title="Coût total des formations"
-                value={formatCurrency(data?.training_summary.total_cost ?? 0)}
-                subtitle={`${data?.training_summary.total_formations ?? 0} formation(s)`}
-                icon={GraduationCap}
-                trend="neutral"
-              />
-              <StatCard
-                title="Taux de complétion"
-                value={`${data?.training_summary.completion_rate ?? 0}%`}
-                subtitle={`${data?.training_summary.completed_participations ?? 0}/${data?.training_summary.total_participations ?? 0} inscriptions`}
-                icon={CheckCircle2}
-                trend="neutral"
-              />
-            </>
-          )}
+        {/* Row 4: Performance + Recrutement */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Target className="h-4 w-4" />
+                Performance globale
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                {data?.performance_summary.evaluated_count ?? 0} employé(s) évalué(s) — score moyen{' '}
+                {data?.performance_summary.average_score ?? 0}/100
+              </p>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-52 w-full" />
+              ) : (
+                <PerformanceDistributionChart data={data?.performance_summary.distribution ?? []} />
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Briefcase className="h-4 w-4" />
+                Recrutement — de A à Z
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Candidatures par étape du processus</p>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-52 w-full" />
+              ) : (
+                <RecruitmentFunnelChart data={data?.recruitment_funnel ?? []} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Row 5: Engagement + Organigramme */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Smile className="h-4 w-4" />
+                Engagement du personnel
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Moyenne des enquêtes internes</p>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-36 w-full" />
+              ) : (
+                <div className="flex flex-col items-center justify-center gap-2 py-6">
+                  <span className="text-4xl font-bold text-primary">
+                    {data?.engagement_summary.average_rating ?? 0}
+                    <span className="text-lg text-muted-foreground">/5</span>
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {data?.engagement_summary.responses_count ?? 0} réponse(s) collectée(s)
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="lg:col-span-2">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Network className="h-4 w-4" />
+                Structure de l'organigramme
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Effectif par unité, du sommet aux services</p>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-36 w-full" />
+              ) : (
+                <OrganigrammeSummaryTree data={data?.department_hierarchy ?? []} />
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Row 6: Formation (coûts, complétion & répartition) */}
+        <div className="space-y-6">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
+            ) : (
+              <>
+                <StatCard
+                  title="Cours disponibles"
+                  value={data?.training_summary.available_courses ?? 0}
+                  subtitle={`${data?.training_summary.total_formations ?? 0} formation(s) au total`}
+                  icon={GraduationCap}
+                  trend="neutral"
+                />
+                <StatCard
+                  title="Coût total des formations"
+                  value={formatCurrency(data?.training_summary.total_cost ?? 0)}
+                  subtitle="Toutes formations confondues"
+                  icon={CreditCard}
+                  trend="neutral"
+                />
+                <StatCard
+                  title="Taux de complétion"
+                  value={`${data?.training_summary.completion_rate ?? 0}%`}
+                  subtitle={`${data?.training_summary.completed_participations ?? 0}/${data?.training_summary.total_participations ?? 0} inscriptions`}
+                  icon={CheckCircle2}
+                  trend="neutral"
+                />
+                <StatCard
+                  title="Total assigné"
+                  value={data?.training_summary.total_participations ?? 0}
+                  subtitle="Inscriptions aux formations"
+                  icon={Users}
+                  trend="neutral"
+                />
+              </>
+            )}
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <GraduationCap className="h-4 w-4" />
+                Répartition des formations en coût
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">Coût par formation (10 plus élevées)</p>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <Skeleton className="h-52 w-full" />
+              ) : (
+                <TrainingCostChart data={data?.training_summary.cost_breakdown ?? []} />
+              )}
+            </CardContent>
+          </Card>
         </div>
       </motion.div>
   );
