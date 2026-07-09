@@ -35,7 +35,11 @@ class CareerPathViewSet(viewsets.ModelViewSet):
 
         CareerPathStep.objects.bulk_create(
             [
-                CareerPathStep(career_path=career_path, position_id=step.get("position"), order=index)
+                CareerPathStep(
+                    career_path=career_path,
+                    position_id=step.get("position"),
+                    order=step["order"] if step.get("order") is not None else index,
+                )
                 for index, step in enumerate(steps_payload)
                 if step.get("position")
             ]
