@@ -115,6 +115,12 @@ def _format_action_success_suffix(action_result: dict) -> str:
             f"({objective_data['level_display']}, {objective_data['period']}) "
             f"avec {objective_data['key_results_count']} résultat(s) clé(s)."
         )
+    if action_result["type"] == "onboarding_created":
+        onboarding_data = action_result["data"]
+        return (
+            f"\n\n✅ {onboarding_data['program_type_display']} créé pour **{onboarding_data['employee_name']}** : "
+            f"**{onboarding_data['title']}** avec {onboarding_data['steps_count']} étape(s)."
+        )
     return ""
 
 
@@ -125,6 +131,13 @@ _ACTION_ERROR_MESSAGES = {
         '(ex: Q1 2026) et au moins un résultat clé mesurable (ex: "signer 10 clients").'
     ),
     "department_not_found": "\n\nJe n'ai pas trouvé ce département. Vérifiez son nom exact et réessayez.",
+    "employee_not_found": (
+        "\n\nJe n'ai pas trouvé cet employé (ou son nom est ambigu). Précisez son prénom et son nom complets exacts."
+    ),
+    "onboarding_info_missing": (
+        "\n\nPour créer le programme automatiquement, précisez le poste ou le contexte "
+        "afin que je puisse générer les étapes d'intégration."
+    ),
 }
 
 
@@ -201,6 +214,7 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
             from smart_hr.ai.actions import execute_action
             from smart_hr.ai.actions import extract_leave_parameters
             from smart_hr.ai.actions import extract_objective_parameters
+            from smart_hr.ai.actions import extract_onboarding_parameters
 
             action_intent = detect_action_intent(question)
             if action_intent == "leave_request":
@@ -208,6 +222,9 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
                 action_result = execute_action(action_intent, request.user, params)
             elif action_intent == "objective_creation":
                 params = extract_objective_parameters(question, can_manage=user_role in ("RH", "ADMIN"))
+                action_result = execute_action(action_intent, request.user, params)
+            elif action_intent == "onboarding_creation":
+                params = extract_onboarding_parameters(question)
                 action_result = execute_action(action_intent, request.user, params)
 
         ai_response = _get_ai_response(question, request.user, conversation)
