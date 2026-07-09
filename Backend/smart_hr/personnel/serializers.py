@@ -1,6 +1,8 @@
 from django.db.models import Sum
 from rest_framework import serializers
 
+from smart_hr.personnel.models import CareerPath
+from smart_hr.personnel.models import CareerPathStep
 from smart_hr.personnel.models import Contract
 from smart_hr.personnel.models import Department
 from smart_hr.personnel.models import DepartureReason
@@ -15,6 +17,8 @@ from smart_hr.personnel.models import OnboardingProgram
 from smart_hr.personnel.models import OnboardingStep
 from smart_hr.personnel.models import Position
 from smart_hr.personnel.models import Service
+from smart_hr.personnel.models import SuccessionCandidate
+from smart_hr.personnel.models import SuccessionPlan
 
 # ---------------------------------------------------------------------------
 # Tables de référence
@@ -388,6 +392,47 @@ class ObjectiveSerializer(serializers.ModelSerializer):
             "key_results",
         ]
         read_only_fields = ["id", "status", "progress", "created_at"]
+
+    def get_status_display(self, obj: Objective) -> str:
+        return dict(Objective.Status.choices).get(obj.status, obj.status)
+
+
+class CareerPathStepSerializer(serializers.ModelSerializer):
+    position_title = serializers.CharField(source="position.title", read_only=True)
+
+    class Meta:
+        model = CareerPathStep
+        fields = ["id", "position", "position_title", "order"]
+        read_only_fields = ["id"]
+
+
+class CareerPathSerializer(serializers.ModelSerializer):
+    steps = CareerPathStepSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CareerPath
+        fields = ["id", "title", "description", "created_at", "steps"]
+        read_only_fields = ["id", "created_at"]
+
+
+class SuccessionCandidateSerializer(serializers.ModelSerializer):
+    employee_full_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    readiness_display = serializers.CharField(source="get_readiness_display", read_only=True)
+
+    class Meta:
+        model = SuccessionCandidate
+        fields = ["id", "employee", "employee_full_name", "readiness", "readiness_display", "notes"]
+        read_only_fields = ["id"]
+
+
+class SuccessionPlanSerializer(serializers.ModelSerializer):
+    position_title = serializers.CharField(source="position.title", read_only=True)
+    candidates = SuccessionCandidateSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = SuccessionPlan
+        fields = ["id", "position", "position_title", "notes", "created_at", "candidates"]
+        read_only_fields = ["id", "created_at"]
 
     def get_status_display(self, obj: Objective) -> str:
         return dict(Objective.Status.choices).get(obj.status, obj.status)

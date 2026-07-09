@@ -4,6 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from smart_hr.core.models import TimeStampedModel
+from smart_hr.personnel.models import Employee
 
 
 class InternalMessage(TimeStampedModel):
@@ -57,3 +58,41 @@ class InternalMessage(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"[{self.get_message_type_display()}] {self.title}"
+
+
+class DistressAlert(TimeStampedModel):
+    """Alerte de détresse déclenchée par un employé se sentant en difficulté ;
+    suivie par les managers/RH jusqu'à résolution."""
+
+    class Status(models.TextChoices):
+        NEW = "new", "Nouveau"
+        ACKNOWLEDGED = "acknowledged", "Pris en compte"
+        IN_PROGRESS = "in_progress", "En traitement"
+        RESOLVED = "resolved", "Résolu"
+
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="distress_alerts",
+        verbose_name="Employé",
+    )
+    message = models.TextField(blank=True, verbose_name="Message")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.NEW, verbose_name="Statut")
+    handled_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="handled_distress_alerts",
+        verbose_name="Pris en charge par",
+    )
+    resolution_notes = models.TextField(blank=True, verbose_name="Notes de résolution")
+    resolved_at = models.DateTimeField(null=True, blank=True, verbose_name="Date de résolution")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Alerte de détresse"
+        verbose_name_plural = "Alertes de détresse"
+
+    def __str__(self) -> str:
+        return f"Alerte {self.employee} — {self.get_status_display()}"

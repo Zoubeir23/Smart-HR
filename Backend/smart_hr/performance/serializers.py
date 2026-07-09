@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
+from smart_hr.performance.models import CoachingSession
+from smart_hr.performance.models import Feedback360
 from smart_hr.performance.models import PerformanceEvaluation
 from smart_hr.performance.models import Skill
 from smart_hr.performance.models import SkillDefinition
@@ -84,3 +86,84 @@ class PerformanceEvaluationSerializer(serializers.ModelSerializer):
         if value is not None and not (0 <= value <= 100):
             raise serializers.ValidationError("Le score doit être compris entre 0 et 100.")
         return value
+
+
+class Feedback360Serializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField()
+    recipient_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Feedback360
+        fields = [
+            "id",
+            "author",
+            "author_name",
+            "recipient",
+            "recipient_name",
+            "context",
+            "comment",
+            "tags",
+            "created_at",
+        ]
+        read_only_fields = ["id", "author", "created_at"]
+
+    def get_author_name(self, obj: Feedback360) -> str:
+        user = obj.author.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
+
+    def get_recipient_name(self, obj: Feedback360) -> str:
+        user = obj.recipient.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
+
+    def validate_tags(self, value: list) -> list:
+        valid_tags = {choice[0] for choice in Feedback360.Tag.choices}
+        invalid = [tag for tag in value if tag not in valid_tags]
+        if invalid:
+            raise serializers.ValidationError(f"Tags invalides : {', '.join(invalid)}.")
+        return value
+
+    def validate_recipient(self, value):
+        request = self.context.get("request")
+        if request is not None:
+            author_employee = getattr(request.user, "employee_profile", None)
+            if author_employee is not None and value.pk == author_employee.pk:
+                raise serializers.ValidationError("Vous ne pouvez pas vous laisser un feedback à vous-même.")
+        return value
+
+
+class CoachingSessionSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    coach_name = serializers.SerializerMethodField()
+    coachee_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CoachingSession
+        fields = [
+            "id",
+            "coach",
+            "coach_name",
+            "coachee",
+            "coachee_name",
+            "scheduled_at",
+            "topic",
+            "notes",
+            "status",
+            "status_display",
+            "created_at",
+        ]
+        read_only_fields = ["id", "created_at"]
+
+    def get_coach_name(self, obj: CoachingSession) -> str:
+        user = obj.coach.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
+
+    def get_coachee_name(self, obj: CoachingSession) -> str:
+        user = obj.coachee.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
+
+    def validate(self, attrs):
+        coach = attrs.get("coach") or getattr(self.instance, "coach", None)
+        coachee = attrs.get("coachee") or getattr(self.instance, "coachee", None)
+        if coach is not None and coachee is not None and coach.pk == coachee.pk:
+            raise serializers.ValidationError({"coachee": "Le coach et le coaché ne peuvent pas être la même personne."})
+        return attrs

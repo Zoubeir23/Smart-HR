@@ -541,3 +541,95 @@ class KeyResult(TimeStampedModel):
             return 0
         ratio = (self.current_value / self.target_value) * 100
         return min(round(ratio), 100)
+
+
+class CareerPath(TimeStampedModel):
+    """Parcours de carrière type (ex: "Parcours Directeur Général") : suite ordonnée
+    de postes représentant une trajectoire d'évolution possible dans l'entreprise."""
+
+    title = models.CharField(max_length=200, verbose_name="Titre")
+    description = models.TextField(blank=True, verbose_name="Description")
+
+    class Meta:
+        ordering = ["title"]
+        verbose_name = "Parcours de carrière"
+        verbose_name_plural = "Parcours de carrière"
+
+    def __str__(self) -> str:
+        return self.title
+
+
+class CareerPathStep(TimeStampedModel):
+    """Étape (poste) d'un parcours de carrière, ordonnée."""
+
+    career_path = models.ForeignKey(
+        CareerPath,
+        on_delete=models.CASCADE,
+        related_name="steps",
+    )
+    position = models.ForeignKey(
+        Position,
+        on_delete=models.CASCADE,
+        related_name="career_path_steps",
+    )
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        unique_together = [("career_path", "order")]
+        ordering = ["career_path", "order"]
+        verbose_name = "Étape de parcours"
+        verbose_name_plural = "Étapes de parcours"
+
+    def __str__(self) -> str:
+        return f"{self.career_path} — étape {self.order} ({self.position})"
+
+
+class SuccessionPlan(TimeStampedModel):
+    """Plan de succession pour un poste clé — matrice de talents identifiant les
+    successeurs potentiels et leur niveau de préparation."""
+
+    position = models.OneToOneField(
+        Position,
+        on_delete=models.CASCADE,
+        related_name="succession_plan",
+    )
+    notes = models.TextField(blank=True, verbose_name="Notes")
+
+    class Meta:
+        ordering = ["position__title"]
+        verbose_name = "Plan de succession"
+        verbose_name_plural = "Plans de succession"
+
+    def __str__(self) -> str:
+        return f"Succession — {self.position}"
+
+
+class SuccessionCandidate(TimeStampedModel):
+    """Successeur potentiel identifié pour un poste, avec son niveau de préparation."""
+
+    class Readiness(models.TextChoices):
+        READY_NOW = "ready_now", "Prêt immédiatement"
+        READY_1_2_YEARS = "ready_1_2_years", "Prêt dans 1-2 ans"
+        READY_3_5_YEARS = "ready_3_5_years", "Prêt dans 3-5 ans"
+
+    plan = models.ForeignKey(
+        SuccessionPlan,
+        on_delete=models.CASCADE,
+        related_name="candidates",
+    )
+    employee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="succession_candidacies",
+    )
+    readiness = models.CharField(max_length=20, choices=Readiness.choices, default=Readiness.READY_3_5_YEARS)
+    notes = models.TextField(blank=True, verbose_name="Notes")
+
+    class Meta:
+        unique_together = [("plan", "employee")]
+        ordering = ["plan", "readiness"]
+        verbose_name = "Successeur potentiel"
+        verbose_name_plural = "Successeurs potentiels"
+
+    def __str__(self) -> str:
+        return f"{self.employee} → {self.plan.position} ({self.get_readiness_display()})"
