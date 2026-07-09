@@ -33,18 +33,28 @@ class SignatureViewSet(
 
     @action(detail=False, methods=["get", "put"], url_path="me")
     def me(self, request):
-        """GET /signatures/me/ — récupère sa signature. PUT — la crée ou la remplace."""
-        signature = Signature.objects.filter(user=request.user).first()
+        """GET /signatures/me/ — récupère sa signature. PUT — la crée ou la remplace.
 
+        `update_or_create` s'appuie sur la contrainte unique du champ `user`
+        (OneToOneField) pour rester atomique même en cas de doubles requêtes
+        PUT concurrentes — Django rattrape l'IntegrityError de la course et
+        retente un GET, évitant toute erreur 500."""
         if request.method == "GET":
+            signature = Signature.objects.filter(user=request.user).first()
             if signature is None:
                 return Response(status=status.HTTP_404_NOT_FOUND)
             return Response(self.get_serializer(signature).data)
 
-        serializer = self.get_serializer(instance=signature, data=request.data)
+        existing = Signature.objects.filter(user=request.user).first()
+        serializer = self.get_serializer(instance=existing, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(user=request.user)
-        return Response(serializer.data, status=status.HTTP_200_OK if signature else status.HTTP_201_CREATED)
+
+        signature, created = Signature.objects.update_or_create(
+            user=request.user,
+            defaults={"image_data": serializer.validated_data["image_data"]},
+        )
+        output = self.get_serializer(signature)
+        return Response(output.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
 
 class SignatureRequestViewSet(viewsets.ModelViewSet):
