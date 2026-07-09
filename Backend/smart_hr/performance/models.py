@@ -114,3 +114,41 @@ class PerformanceEvaluation(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"Évaluation {self.year} — {self.employee}"
+
+
+class Feedback360(TimeStampedModel):
+    """Feedback qualitatif entre collègues (évaluation 360°), qualifié par des tags
+    prédéfinis (disponibilité, patience, anticipation...) plutôt qu'une note chiffrée,
+    complémentaire à l'évaluation annuelle de performance."""
+
+    class Tag(models.TextChoices):
+        AVAILABILITY = "availability", "Disponibilité"
+        PATIENCE = "patience", "Patience"
+        ANTICIPATION = "anticipation", "Anticipation"
+        RESPECT = "respect", "Respect"
+        EMOTIONAL_INTELLIGENCE = "emotional_intelligence", "Intelligence émotionnelle"
+        OPEN_MINDEDNESS = "open_mindedness", "Ouverture d'esprit"
+
+    author = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="feedback_360_given",
+        verbose_name="Auteur",
+    )
+    recipient = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="feedback_360_received",
+        verbose_name="Destinataire",
+    )
+    context = models.CharField(max_length=255, blank=True, verbose_name="Contexte")
+    comment = models.TextField(verbose_name="Commentaire")
+    tags = models.JSONField(default=list, verbose_name="Tags")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Feedback 360°"
+        verbose_name_plural = "Feedbacks 360°"
+
+    def __str__(self) -> str:
+        return f"Feedback {self.author} → {self.recipient}"
