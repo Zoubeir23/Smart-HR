@@ -45,6 +45,24 @@ Object.defineProperty(globalThis, "sessionStorage", {
   value: window.sessionStorage,
 });
 
+// jsdom n'implémente pas ResizeObserver — nécessaire pour tout composant
+// utilisant Recharts (ResponsiveContainer l'utilise pour mesurer son conteneur).
+class ResizeObserverMock {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+Object.defineProperty(window, "ResizeObserver", {
+  configurable: true,
+  writable: true,
+  value: ResizeObserverMock,
+});
+Object.defineProperty(globalThis, "ResizeObserver", {
+  configurable: true,
+  writable: true,
+  value: ResizeObserverMock,
+});
+
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
