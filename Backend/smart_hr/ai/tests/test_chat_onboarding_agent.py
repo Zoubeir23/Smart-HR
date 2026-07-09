@@ -78,8 +78,7 @@ class TestOnboardingAgentIntegration:
 
     def test_employee_cannot_trigger_onboarding_creation(self, new_hire_user):
         json_response = (
-            '{"employee_name": "Awa Diallo", "program_type": "onboarding", "title": "X", '
-            '"steps": [{"title": "Étape"}]}'
+            '{"employee_name": "Awa Diallo", "program_type": "onboarding", "title": "X", "steps": [{"title": "Étape"}]}'
         )
         client = _authenticated_client(new_hire_user)
         with (
