@@ -131,6 +131,12 @@ class TestCreateFeedback360:
         response = client.post(LIST_URL, payload, format="json")
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_user_without_employee_profile_cannot_create(self, rh_user, recipient_employee):
+        client = _authenticated_client(rh_user)
+        payload = {"recipient": recipient_employee.pk, "comment": "Bien.", "tags": []}
+        response = client.post(LIST_URL, payload, format="json")
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
 
 class TestListFeedback360:
     def test_employee_sees_only_feedback_given_or_received(self, author_employee, recipient_employee, other_employee, rh_user):
