@@ -130,12 +130,23 @@ _ACTION_ERROR_MESSAGES = {
 
 def _format_action_result_suffix(action_result: dict) -> str:
     """Complète la réponse du LLM par la confirmation/l'erreur de l'action
-    métier exécutée (congé, objectif OKR...), le cas échéant."""
+    métier exécutée (congé, objectif OKR...), le cas échéant.
+
+    `_ACTION_ERROR_MESSAGES` couvre les codes d'erreur courts (ex: "dates_missing")
+    qui doivent être reformulés en une phrase conviviale. Les fonctions d'exécution
+    (`_execute_leave_request`, `_execute_objective_creation`...) retournent parfois
+    directement une phrase complète déjà destinée à l'utilisateur (ex: "Aucun profil
+    employé trouvé...") — celle-ci est alors affichée telle quelle plutôt que
+    silencieusement ignorée si elle ne correspond à aucun code connu."""
     if not action_result:
         return ""
     if action_result.get("success"):
         return _format_action_success_suffix(action_result)
-    return _ACTION_ERROR_MESSAGES.get(action_result.get("error"), "")
+
+    error = action_result.get("error") or ""
+    if error in _ACTION_ERROR_MESSAGES:
+        return _ACTION_ERROR_MESSAGES[error]
+    return f"\n\n⚠️ {error}" if error else ""
 
 
 # ─── ViewSet ─────────────────────────────────────────────────────────────────
