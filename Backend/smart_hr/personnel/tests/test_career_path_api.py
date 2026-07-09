@@ -55,6 +55,19 @@ class TestCreateCareerPath:
         assert [s.position_id for s in steps] == [position_junior.pk, position_senior.pk]
         assert [s.order for s in steps] == [0, 1]
 
+    def test_rh_can_provide_explicit_order(self, rh_user, position_junior, position_senior):
+        client = _authenticated_client(rh_user)
+        payload = {
+            "title": "Parcours avec ordre explicite",
+            "steps": [{"position": position_junior.pk, "order": 5}, {"position": position_senior.pk, "order": 1}],
+        }
+        response = client.post(LIST_URL, payload, format="json")
+        assert response.status_code == status.HTTP_201_CREATED
+        career_path = CareerPath.objects.get(pk=response.data["id"])
+        steps = list(career_path.steps.order_by("order"))
+        assert [s.position_id for s in steps] == [position_senior.pk, position_junior.pk]
+        assert [s.order for s in steps] == [1, 5]
+
     def test_employee_cannot_create_career_path(self, employee_user, position_junior):
         client = _authenticated_client(employee_user)
         payload = {"title": "Parcours interdit", "steps": [{"position": position_junior.pk}]}
