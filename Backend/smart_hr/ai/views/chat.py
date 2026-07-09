@@ -97,6 +97,58 @@ def _get_ai_response(question: str, user, conversation: Conversation) -> str:
         return "Désolé, le service IA est temporairement indisponible. Veuillez réessayer."
 
 
+# ─── Agent(s) d'action — mise en forme du résultat ────────────────────────────
+
+
+def _format_action_success_suffix(action_result: dict) -> str:
+    if action_result["type"] == "leave_created":
+        leave_data = action_result["data"]
+        return (
+            f"\n\n✅ Demande de congé créée : **{leave_data['leave_type']}** "
+            f"du {leave_data['start_date']} au {leave_data['end_date']} "
+            f"({leave_data['duration_days']} jour(s)) — {leave_data['status']}."
+        )
+    if action_result["type"] == "objective_created":
+        objective_data = action_result["data"]
+        return (
+            f"\n\n✅ Objectif OKR créé : **{objective_data['title']}** "
+            f"({objective_data['level_display']}, {objective_data['period']}) "
+            f"avec {objective_data['key_results_count']} résultat(s) clé(s)."
+        )
+    return ""
+
+
+_ACTION_ERROR_MESSAGES = {
+    "dates_missing": "\n\nPour créer votre demande automatiquement, précisez les dates (ex: du 01/06/2026 au 05/06/2026).",
+    "objective_info_missing": (
+        "\n\nPour créer votre objectif automatiquement, précisez son titre, sa période "
+        '(ex: Q1 2026) et au moins un résultat clé mesurable (ex: "signer 10 clients").'
+    ),
+    "department_not_found": "\n\nJe n'ai pas trouvé ce département. Vérifiez son nom exact et réessayez.",
+}
+
+
+def _format_action_result_suffix(action_result: dict) -> str:
+    """Complète la réponse du LLM par la confirmation/l'erreur de l'action
+    métier exécutée (congé, objectif OKR...), le cas échéant.
+
+    `_ACTION_ERROR_MESSAGES` couvre les codes d'erreur courts (ex: "dates_missing")
+    qui doivent être reformulés en une phrase conviviale. Les fonctions d'exécution
+    (`_execute_leave_request`, `_execute_objective_creation`...) retournent parfois
+    directement une phrase complète déjà destinée à l'utilisateur (ex: "Aucun profil
+    employé trouvé...") — celle-ci est alors affichée telle quelle plutôt que
+    silencieusement ignorée si elle ne correspond à aucun code connu."""
+    if not action_result:
+        return ""
+    if action_result.get("success"):
+        return _format_action_success_suffix(action_result)
+
+    error = action_result.get("error") or ""
+    if error in _ACTION_ERROR_MESSAGES:
+        return _ACTION_ERROR_MESSAGES[error]
+    return f"\n\n⚠️ {error}" if error else ""
+
+
 # ─── ViewSet ─────────────────────────────────────────────────────────────────
 
 
@@ -148,23 +200,18 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
             from smart_hr.ai.actions import detect_action_intent
             from smart_hr.ai.actions import execute_action
             from smart_hr.ai.actions import extract_leave_parameters
+            from smart_hr.ai.actions import extract_objective_parameters
 
             action_intent = detect_action_intent(question)
-            if action_intent:
+            if action_intent == "leave_request":
                 params = extract_leave_parameters(question)
+                action_result = execute_action(action_intent, request.user, params)
+            elif action_intent == "objective_creation":
+                params = extract_objective_parameters(question, can_manage=user_role in ("RH", "ADMIN"))
                 action_result = execute_action(action_intent, request.user, params)
 
         ai_response = _get_ai_response(question, request.user, conversation)
-
-        if action_result.get("success"):
-            leave_data = action_result["data"]
-            ai_response += (
-                f"\n\n✅ Demande de congé créée : **{leave_data['leave_type']}** "
-                f"du {leave_data['start_date']} au {leave_data['end_date']} "
-                f"({leave_data['duration_days']} jour(s)) — {leave_data['status']}."
-            )
-        elif action_result.get("error") == "dates_missing":
-            ai_response += "\n\nPour créer votre demande automatiquement, précisez les dates (ex: du 01/06/2026 au 05/06/2026)."
+        ai_response += _format_action_result_suffix(action_result)
 
         chat = ChatHistory.objects.create(
             user=request.user,
