@@ -57,7 +57,9 @@ class TestDetectLeaveApprovalIntent:
             "Valider le congé de Awa Diallo",
             "Approuve la demande de congé de Awa Diallo",
             "Refuser le congé de Awa Diallo",
+            "Refuse la demande de congé de Awa Diallo",
             "Rejeter la demande de congé de Awa Diallo",
+            "Rejette la demande de congé de Awa Diallo",
         ],
     )
     def test_detects_leave_approval_intent(self, message):
