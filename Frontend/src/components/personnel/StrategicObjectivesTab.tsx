@@ -31,7 +31,11 @@ const LEVEL_LABELS: Record<ObjectiveLevel, string> = {
   individual: 'Individuel',
 };
 
-export default function StrategicObjectivesTab() {
+interface StrategicObjectivesTabProps {
+  canManage: boolean;
+}
+
+export default function StrategicObjectivesTab({ canManage }: StrategicObjectivesTabProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -122,13 +126,15 @@ export default function StrategicObjectivesTab() {
             </button>
           ))}
         </div>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setFormLevel(levelFilter); setShowForm((prev) => !prev); }}>
-          {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-          {showForm ? 'Annuler' : 'Nouvel objectif'}
-        </Button>
+        {canManage && (
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => { setFormLevel(levelFilter); setShowForm((prev) => !prev); }}>
+            {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+            {showForm ? 'Annuler' : 'Nouvel objectif'}
+          </Button>
+        )}
       </div>
 
-      {showForm && (
+      {canManage && showForm && (
         <Card className="border border-border">
           <CardContent className="space-y-3 p-4">
             <div className="grid gap-3 sm:grid-cols-2">
@@ -207,14 +213,16 @@ export default function StrategicObjectivesTab() {
                   <Badge variant="outline" className={STATUS_BADGE_STYLES[objective.status]}>
                     {objective.status_display}
                   </Badge>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => deleteMutation.mutate(objective.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  {canManage && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteMutation.mutate(objective.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">

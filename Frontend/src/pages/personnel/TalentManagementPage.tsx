@@ -42,8 +42,8 @@ export default function TalentManagementPage() {
       </div>
 
       {activeTab === 'career-paths' && <CareerPathsTab canManage={canManage} />}
-      {activeTab === 'succession' && <SuccessionPlansTab />}
-      {activeTab === 'strategic-okr' && <StrategicObjectivesTab />}
+      {activeTab === 'succession' && <SuccessionPlansTab canManage={canManage} />}
+      {activeTab === 'strategic-okr' && <StrategicObjectivesTab canManage={canManage} />}
     </motion.div>
   );
 }
