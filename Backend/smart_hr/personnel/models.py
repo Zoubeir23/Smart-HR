@@ -458,7 +458,10 @@ class OnboardingStep(TimeStampedModel):
 
 
 class Objective(TimeStampedModel):
-    """Objectif OKR porté par un employé sur une période donnée (ex: "Q1 2026").
+    """Objectif OKR sur une période donnée (ex: "Q1 2026"), en cascade sur 3
+    niveaux : Entreprise → Département → Individu. Un objectif de niveau
+    inférieur peut être rattaché à un objectif parent de niveau supérieur via
+    `parent`, matérialisant la cascade stratégique.
 
     La progression et le statut sont dérivés des Key Results rattachés,
     jamais saisis manuellement (source de vérité unique)."""
@@ -468,10 +471,35 @@ class Objective(TimeStampedModel):
         IN_PROGRESS = "in_progress", "En cours"
         COMPLETED = "completed", "Atteint"
 
+    class Level(models.TextChoices):
+        COMPANY = "company", "Entreprise"
+        DEPARTMENT = "department", "Département"
+        INDIVIDUAL = "individual", "Individuel"
+
+    level = models.CharField(max_length=20, choices=Level.choices, default=Level.INDIVIDUAL, verbose_name="Niveau")
     employee = models.ForeignKey(
         Employee,
         on_delete=models.CASCADE,
         related_name="objectives",
+        null=True,
+        blank=True,
+        help_text="Requis uniquement pour les objectifs de niveau Individuel.",
+    )
+    department = models.ForeignKey(
+        Department,
+        on_delete=models.CASCADE,
+        related_name="objectives",
+        null=True,
+        blank=True,
+        help_text="Requis uniquement pour les objectifs de niveau Département.",
+    )
+    parent = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="children",
+        help_text="Objectif de niveau supérieur dont celui-ci découle (cascade).",
     )
     title = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -489,7 +517,8 @@ class Objective(TimeStampedModel):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return f"{self.employee} — {self.title} ({self.period})"
+        owner = self.employee or self.department or "Entreprise"
+        return f"[{self.get_level_display()}] {owner} — {self.title} ({self.period})"
 
     @property
     def progress(self) -> int:
