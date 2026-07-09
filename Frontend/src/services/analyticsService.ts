@@ -46,6 +46,14 @@ export interface HRAnalyticsOverview {
     month: string;
     new_hires: number;
   }[];
+  training_summary: {
+    total_formations: number;
+    total_cost: number;
+    average_cost: number;
+    total_participations: number;
+    completed_participations: number;
+    completion_rate: number;
+  };
 }
 
 export const analyticsService = {
