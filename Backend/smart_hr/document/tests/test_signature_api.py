@@ -19,7 +19,9 @@ pytestmark = pytest.mark.django_db
 SIGNATURE_ME_URL = "/api/v1/document/signatures/me/"
 SIGNATURE_REQUESTS_URL = "/api/v1/document/signature-requests/"
 
-SAMPLE_SIGNATURE_DATA_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+SAMPLE_SIGNATURE_DATA_URL = (
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+)
 
 
 @pytest.fixture
@@ -124,9 +126,7 @@ class TestSignatureRequestWorkflow:
 
     def test_signatory_can_sign_after_depositing_signature(self, manager_user, employee_user, document):
         Signature.objects.create(user=employee_user, image_data=SAMPLE_SIGNATURE_DATA_URL)
-        signature_request = SignatureRequest.objects.create(
-            document=document, requested_by=manager_user, signatory=employee_user
-        )
+        signature_request = SignatureRequest.objects.create(document=document, requested_by=manager_user, signatory=employee_user)
         client = _authenticated_client(employee_user)
         response = client.post(f"{SIGNATURE_REQUESTS_URL}{signature_request.pk}/sign/")
         assert response.status_code == status.HTTP_200_OK
@@ -135,9 +135,7 @@ class TestSignatureRequestWorkflow:
         assert signature_request.signed_at is not None
 
     def test_cannot_sign_without_own_signature_deposited(self, manager_user, employee_user, document):
-        signature_request = SignatureRequest.objects.create(
-            document=document, requested_by=manager_user, signatory=employee_user
-        )
+        signature_request = SignatureRequest.objects.create(document=document, requested_by=manager_user, signatory=employee_user)
         client = _authenticated_client(employee_user)
         response = client.post(f"{SIGNATURE_REQUESTS_URL}{signature_request.pk}/sign/")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -146,9 +144,7 @@ class TestSignatureRequestWorkflow:
         """other_user n'est ni signataire ni demandeur : la demande n'apparaît pas
         dans son queryset (404), ce qui évite même de révéler son existence."""
         Signature.objects.create(user=other_user, image_data=SAMPLE_SIGNATURE_DATA_URL)
-        signature_request = SignatureRequest.objects.create(
-            document=document, requested_by=manager_user, signatory=employee_user
-        )
+        signature_request = SignatureRequest.objects.create(document=document, requested_by=manager_user, signatory=employee_user)
         client = _authenticated_client(other_user)
         response = client.post(f"{SIGNATURE_REQUESTS_URL}{signature_request.pk}/sign/")
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -166,9 +162,7 @@ class TestSignatureRequestWorkflow:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     def test_signatory_can_decline(self, manager_user, employee_user, document):
-        signature_request = SignatureRequest.objects.create(
-            document=document, requested_by=manager_user, signatory=employee_user
-        )
+        signature_request = SignatureRequest.objects.create(document=document, requested_by=manager_user, signatory=employee_user)
         client = _authenticated_client(employee_user)
         response = client.post(f"{SIGNATURE_REQUESTS_URL}{signature_request.pk}/decline/", {"comment": "Pas d'accord"})
         assert response.status_code == status.HTTP_200_OK
