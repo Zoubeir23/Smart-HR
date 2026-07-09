@@ -1,5 +1,6 @@
 from django.contrib import admin
 
+from smart_hr.communication.models import DistressAlert
 from smart_hr.communication.models import InternalMessage
 
 
@@ -43,3 +44,12 @@ class InternalMessageAdmin(admin.ModelAdmin):
             },
         ),
     ]
+
+
+@admin.register(DistressAlert)
+class DistressAlertAdmin(admin.ModelAdmin):
+    list_display = ["employee", "status", "handled_by", "resolved_at", "created_at"]
+    list_filter = ["status"]
+    search_fields = ["employee__user__first_name", "employee__user__last_name", "message"]
+    readonly_fields = ["created_at", "updated_at"]
+    ordering = ["-created_at"]
