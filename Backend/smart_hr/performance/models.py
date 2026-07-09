@@ -114,3 +114,76 @@ class PerformanceEvaluation(TimeStampedModel):
 
     def __str__(self) -> str:
         return f"Évaluation {self.year} — {self.employee}"
+
+
+class Feedback360(TimeStampedModel):
+    """Feedback qualitatif entre collègues (évaluation 360°), qualifié par des tags
+    prédéfinis (disponibilité, patience, anticipation...) plutôt qu'une note chiffrée,
+    complémentaire à l'évaluation annuelle de performance."""
+
+    class Tag(models.TextChoices):
+        AVAILABILITY = "availability", "Disponibilité"
+        PATIENCE = "patience", "Patience"
+        ANTICIPATION = "anticipation", "Anticipation"
+        RESPECT = "respect", "Respect"
+        EMOTIONAL_INTELLIGENCE = "emotional_intelligence", "Intelligence émotionnelle"
+        OPEN_MINDEDNESS = "open_mindedness", "Ouverture d'esprit"
+
+    author = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="feedback_360_given",
+        verbose_name="Auteur",
+    )
+    recipient = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="feedback_360_received",
+        verbose_name="Destinataire",
+    )
+    context = models.CharField(max_length=255, blank=True, verbose_name="Contexte")
+    comment = models.TextField(verbose_name="Commentaire")
+    tags = models.JSONField(default=list, verbose_name="Tags")
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Feedback 360°"
+        verbose_name_plural = "Feedbacks 360°"
+
+    def __str__(self) -> str:
+        return f"Feedback {self.author} → {self.recipient}"
+
+
+class CoachingSession(TimeStampedModel):
+    """Session de coaching individuel (one-to-one) planifiée entre un coach
+    (souvent le manager ou un RH) et un employé accompagné."""
+
+    class Status(models.TextChoices):
+        SCHEDULED = "scheduled", "Planifiée"
+        COMPLETED = "completed", "Terminée"
+        CANCELLED = "cancelled", "Annulée"
+
+    coach = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="coaching_sessions_given",
+        verbose_name="Coach",
+    )
+    coachee = models.ForeignKey(
+        Employee,
+        on_delete=models.CASCADE,
+        related_name="coaching_sessions_received",
+        verbose_name="Coaché",
+    )
+    scheduled_at = models.DateTimeField(verbose_name="Date/heure prévue")
+    topic = models.CharField(max_length=255, verbose_name="Sujet")
+    notes = models.TextField(blank=True, verbose_name="Notes de session")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.SCHEDULED, verbose_name="Statut")
+
+    class Meta:
+        ordering = ["-scheduled_at"]
+        verbose_name = "Session de coaching"
+        verbose_name_plural = "Sessions de coaching"
+
+    def __str__(self) -> str:
+        return f"Coaching {self.coach} → {self.coachee} ({self.scheduled_at:%Y-%m-%d})"

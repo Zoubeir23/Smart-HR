@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.utils import timezone
 from rest_framework import serializers
 
+from smart_hr.communication.models import DistressAlert
 from smart_hr.communication.models import InternalMessage
 
 
@@ -44,3 +45,35 @@ class InternalMessageSerializer(serializers.ModelSerializer):
             attrs["published_at"] = timezone.now().date()
 
         return attrs
+
+
+class DistressAlertSerializer(serializers.ModelSerializer):
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    employee_name = serializers.SerializerMethodField()
+    handled_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = DistressAlert
+        fields = [
+            "id",
+            "employee",
+            "employee_name",
+            "message",
+            "status",
+            "status_display",
+            "handled_by",
+            "handled_by_name",
+            "resolution_notes",
+            "resolved_at",
+            "created_at",
+        ]
+        read_only_fields = ["id", "employee", "handled_by", "created_at"]
+
+    def get_employee_name(self, obj: DistressAlert) -> str:
+        user = obj.employee.user
+        return f"{user.first_name} {user.last_name}".strip() or user.email
+
+    def get_handled_by_name(self, obj: DistressAlert) -> str:
+        if obj.handled_by:
+            return f"{obj.handled_by.first_name} {obj.handled_by.last_name}".strip() or obj.handled_by.email
+        return "—"
