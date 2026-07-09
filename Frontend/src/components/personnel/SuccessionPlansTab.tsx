@@ -26,7 +26,11 @@ const READINESS_BADGE_STYLES: Record<SuccessionReadiness, string> = {
   ready_3_5_years: 'bg-muted text-muted-foreground',
 };
 
-export default function SuccessionPlansTab() {
+interface SuccessionPlansTabProps {
+  canManage: boolean;
+}
+
+export default function SuccessionPlansTab({ canManage }: SuccessionPlansTabProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -92,13 +96,15 @@ export default function SuccessionPlansTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">Matrice de succession — postes clés et successeurs potentiels</p>
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowForm((prev) => !prev)}>
-          {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
-          {showForm ? 'Annuler' : 'Nouveau plan'}
-        </Button>
+        {canManage && (
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowForm((prev) => !prev)}>
+            {showForm ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />}
+            {showForm ? 'Annuler' : 'Nouveau plan'}
+          </Button>
+        )}
       </div>
 
-      {showForm && (
+      {canManage && showForm && (
         <Card className="border border-border">
           <CardContent className="space-y-3 p-4">
             <div className="space-y-1">
@@ -138,28 +144,30 @@ export default function SuccessionPlansTab() {
                   <p className="text-sm font-semibold text-foreground">{plan.position_title}</p>
                   {plan.notes && <p className="text-xs text-muted-foreground">{plan.notes}</p>}
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="gap-1 text-xs"
-                    onClick={() => setCandidateFormPlanId(plan.id === candidateFormPlanId ? null : plan.id)}
-                  >
-                    <Plus className="h-3 w-3" />
-                    Successeur
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                    onClick={() => deleteMutation.mutate(plan.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
+                {canManage && (
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1 text-xs"
+                      onClick={() => setCandidateFormPlanId(plan.id === candidateFormPlanId ? null : plan.id)}
+                    >
+                      <Plus className="h-3 w-3" />
+                      Successeur
+                    </Button>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={() => deleteMutation.mutate(plan.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                )}
               </div>
 
-              {candidateFormPlanId === plan.id && (
+              {canManage && candidateFormPlanId === plan.id && (
                 <div className="flex flex-col gap-2 rounded-lg border border-dashed border-border p-3 sm:flex-row sm:items-end">
                   <div className="flex-1 space-y-1">
                     <Label className="text-xs">Employé</Label>
