@@ -157,3 +157,28 @@ class TestCompletionStatsEndpoint:
         client = _authenticated_client(rh_user)
         response = client.get(STATS_URL)
         assert response.data["by_formation"][0]["title"] == "Django avancé"
+
+    def test_global_cost_totals_computed_correctly(self, rh_user, formation):
+        formation.cost = 500000
+        formation.save()
+        second_formation = Formation.objects.create(
+            title="Sécurité web",
+            start_date=timezone.now(),
+            end_date=timezone.now() + datetime.timedelta(days=1),
+            instructor="Bob",
+            cost=300000,
+        )
+
+        client = _authenticated_client(rh_user)
+        response = client.get(STATS_URL)
+
+        assert response.data["global"]["total_cost"] == 800000.0
+        assert response.data["global"]["average_cost"] == 400000.0
+        by_formation = {row["id"]: row for row in response.data["by_formation"]}
+        assert by_formation[formation.pk]["cost"] == 500000.0
+        assert by_formation[second_formation.pk]["cost"] == 300000.0
+
+    def test_formation_cost_defaults_to_zero(self, rh_user, formation):
+        client = _authenticated_client(rh_user)
+        response = client.get(STATS_URL)
+        assert response.data["global"]["total_cost"] == 0.0
