@@ -76,10 +76,14 @@ export interface VoiceMessageEntry {
   created_at: string;
 }
 
-function normalizeApiBaseUrl(): string {
-  const rawApiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1') as string;
+// Même logique de repli que services/api.ts : un chemin relatif (/api/v1) si
+// VITE_API_URL est vide, jamais un hôte fixe type localhost — voir le
+// commentaire détaillé dans api.ts pour le pourquoi (nginx.vps.conf en
+// production, proxy Vite en dev).
+export function normalizeApiBaseUrl(): string {
+  const rawApiUrl = (import.meta.env.VITE_API_URL || '') as string;
   const trimmedApiUrl = rawApiUrl.trim().replace(/\/+$/, '');
-  if (!trimmedApiUrl) return 'http://localhost:8000/api/v1';
+  if (!trimmedApiUrl) return '/api/v1';
   if (trimmedApiUrl.endsWith('/api')) return `${trimmedApiUrl}/v1`;
   return trimmedApiUrl;
 }
