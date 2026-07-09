@@ -370,7 +370,9 @@ class KeyResultSerializer(serializers.ModelSerializer):
 
 
 class ObjectiveSerializer(serializers.ModelSerializer):
-    employee_full_name = serializers.CharField(source="employee.user.get_full_name", read_only=True)
+    employee_full_name = serializers.SerializerMethodField()
+    department_name = serializers.CharField(source="department.name", read_only=True, default=None)
+    level_display = serializers.CharField(source="get_level_display", read_only=True)
     key_results = KeyResultSerializer(many=True, read_only=True)
     progress = serializers.IntegerField(read_only=True)
     status = serializers.CharField(read_only=True)
@@ -380,8 +382,13 @@ class ObjectiveSerializer(serializers.ModelSerializer):
         model = Objective
         fields = [
             "id",
+            "level",
+            "level_display",
             "employee",
             "employee_full_name",
+            "department",
+            "department_name",
+            "parent",
             "title",
             "description",
             "period",
@@ -393,8 +400,26 @@ class ObjectiveSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "status", "progress", "created_at"]
 
+    def get_employee_full_name(self, obj: Objective) -> str | None:
+        return obj.employee.user.get_full_name() if obj.employee else None
+
     def get_status_display(self, obj: Objective) -> str:
         return dict(Objective.Status.choices).get(obj.status, obj.status)
+
+    def validate(self, attrs: dict) -> dict:
+        level = attrs.get("level", getattr(self.instance, "level", Objective.Level.INDIVIDUAL))
+        employee = attrs.get("employee", getattr(self.instance, "employee", None))
+        department = attrs.get("department", getattr(self.instance, "department", None))
+
+        if level == Objective.Level.INDIVIDUAL and not employee:
+            raise serializers.ValidationError({"employee": "Requis pour un objectif de niveau Individuel."})
+        if level == Objective.Level.DEPARTMENT and not department:
+            raise serializers.ValidationError({"department": "Requis pour un objectif de niveau Département."})
+        if level == Objective.Level.COMPANY and (employee or department):
+            raise serializers.ValidationError(
+                {"level": "Un objectif de niveau Entreprise ne doit être rattaché ni à un employé ni à un département."}
+            )
+        return attrs
 
 
 class CareerPathStepSerializer(serializers.ModelSerializer):
@@ -433,6 +458,3 @@ class SuccessionPlanSerializer(serializers.ModelSerializer):
         model = SuccessionPlan
         fields = ["id", "position", "position_title", "notes", "created_at", "candidates"]
         read_only_fields = ["id", "created_at"]
-
-    def get_status_display(self, obj: Objective) -> str:
-        return dict(Objective.Status.choices).get(obj.status, obj.status)
