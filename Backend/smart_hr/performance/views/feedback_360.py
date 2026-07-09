@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from django.db.models import Q
 from rest_framework import filters
+from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 
 from smart_hr.performance.models import Feedback360
 from smart_hr.performance.serializers import Feedback360Serializer
@@ -37,6 +39,13 @@ class Feedback360ViewSet(viewsets.ModelViewSet):
             return base.none()
         return base.filter(Q(author=employee) | Q(recipient=employee))
 
+    def create(self, request, *args, **kwargs):
+        if getattr(request.user, "employee_profile", None) is None:
+            return Response(
+                {"detail": "Seul un utilisateur ayant un profil employé peut laisser un feedback."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        return super().create(request, *args, **kwargs)
+
     def perform_create(self, serializer):
-        employee = getattr(self.request.user, "employee_profile", None)
-        serializer.save(author=employee)
+        serializer.save(author=self.request.user.employee_profile)
