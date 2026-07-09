@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
@@ -10,6 +11,7 @@ interface DashboardLayoutProps {
 }
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
+  const { pathname } = useLocation();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isDesktop, setIsDesktop] = useState(
@@ -63,7 +65,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         />
         {/* Mobile-first responsive padding: mobile 3, tablet 4, desktop 6 */}
         <div className="flex-1 w-full max-w-full overflow-x-hidden p-3 sm:p-4 md:p-5 lg:p-6">
+          {/* `key={pathname}` force le remontage de ce wrapper à chaque
+           * navigation : DashboardLayout est persistant (ne remonte jamais
+           * entre deux pages), donc sans cette clé, l'animation d'entrée
+           * initial→animate ne se rejoue qu'une seule fois au tout premier
+           * chargement — une navigation SPA ultérieure peut laisser ce
+           * wrapper bloqué à son état initial (opacity: 0), rendant tout le
+           * contenu invisible bien qu'il soit présent dans le DOM. */}
           <motion.div
+            key={pathname}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
