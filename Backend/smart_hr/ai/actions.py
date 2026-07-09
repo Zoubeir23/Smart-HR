@@ -54,9 +54,11 @@ _LEAVE_APPROVAL_KEYWORDS = (
     "refuser le congé",
     "refuse le congé",
     "refuser la demande de congé",
+    "refuse la demande de congé",
     "rejeter le congé",
     "rejette le congé",
     "rejeter la demande de congé",
+    "rejette la demande de congé",
 )
 
 
@@ -534,16 +536,17 @@ def _find_employee_by_full_name(full_name: str):
 
 
 def _execute_leave_approval(user, params: dict) -> dict:
-    """Valide ou refuse la demande de congé la plus récente d'un employé, via le
-    ViewSet REST existant (`LeaveRequestViewSet.approve/reject`) invoqué
-    directement — aucune logique de permission, de solde ou de notification
-    n'est dupliquée ici, exactement comme pour l'agent OKR/Onboarding."""
-    from django.db import transaction
-    from rest_framework.test import APIRequestFactory
-    from rest_framework.test import force_authenticate
+    """Valide ou refuse la demande de congé la plus récente d'un employé, via les
+    fonctions de service partagées (`smart_hr.conge.services.approve_leave`/
+    `reject_leave`) — le même chemin métier que l'API REST
+    (`LeaveRequestViewSet.approve/reject`), sans dupliquer la logique de
+    permission, de solde ou de notification, et sans dépendre d'utilitaires
+    de test (`APIRequestFactory`) dans du code de production."""
+    from rest_framework.exceptions import APIException
 
     from smart_hr.conge.models import LeaveRequest
-    from smart_hr.conge.views.leave_request import LeaveRequestViewSet
+    from smart_hr.conge.services import approve_leave
+    from smart_hr.conge.services import reject_leave
 
     decision = params.get("decision")
     if decision not in ("approve", "reject"):
@@ -557,21 +560,14 @@ def _execute_leave_approval(user, params: dict) -> dict:
     if leave is None:
         return {"success": False, "error": "no_pending_leave"}
 
-    factory = APIRequestFactory()
-    request = factory.post(f"/api/v1/conge/leave-requests/{leave.pk}/{decision}/")
-    force_authenticate(request, user=user)
-    view = LeaveRequestViewSet.as_view({"post": decision})
-    # Le ViewSet est invoqué en dehors du cycle requête/réponse normal (pas de
-    # ATOMIC_REQUESTS englobant) : DRF marque `connection.needs_rollback = True`
-    # sur toute réponse d'erreur (403/400...) en supposant qu'un `atomic()` de
-    # niveau requête va consommer ce flag. On fournit nous-même ce `atomic()`
-    # pour éviter de corrompre la transaction de l'appelant (chat.create()).
-    with transaction.atomic():
-        response = view(request, pk=leave.pk)
-
-    if response.status_code >= 400:
-        detail = response.data.get("detail") if isinstance(response.data, dict) else None
-        return {"success": False, "error": detail or "Impossible de traiter cette demande de congé."}
+    try:
+        if decision == "approve":
+            approve_leave(leave, user)
+        else:
+            reject_leave(leave, user)
+    except APIException as exc:
+        detail = exc.detail[0] if isinstance(exc.detail, list) else exc.detail
+        return {"success": False, "error": str(detail)}
 
     return {
         "success": True,
