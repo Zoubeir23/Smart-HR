@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import datetime
-
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
@@ -127,7 +125,9 @@ class TestListSurveys:
 class TestRespondToSurvey:
     def _create_active_survey(self, rh_user) -> Survey:
         survey = Survey.objects.create(title="Enquête", status=Survey.Status.ACTIVE, created_by=rh_user)
-        SurveyQuestion.objects.create(survey=survey, text="Note globale", question_type=SurveyQuestion.QuestionType.RATING, order=0)
+        SurveyQuestion.objects.create(
+            survey=survey, text="Note globale", question_type=SurveyQuestion.QuestionType.RATING, order=0
+        )
         SurveyQuestion.objects.create(survey=survey, text="Commentaire", question_type=SurveyQuestion.QuestionType.TEXT, order=1)
         return survey
 
@@ -195,7 +195,9 @@ class TestSurveyResults:
 
     def test_rh_sees_aggregated_rating_and_choice_results(self, rh_user, employee_user, other_employee_user):
         survey = Survey.objects.create(title="Enquête", status=Survey.Status.ACTIVE, created_by=rh_user)
-        rating_q = SurveyQuestion.objects.create(survey=survey, text="Note", question_type=SurveyQuestion.QuestionType.RATING, order=0)
+        rating_q = SurveyQuestion.objects.create(
+            survey=survey, text="Note", question_type=SurveyQuestion.QuestionType.RATING, order=0
+        )
         choice_q = SurveyQuestion.objects.create(
             survey=survey,
             text="Département préféré",
@@ -228,10 +230,16 @@ class TestSurveyResults:
         assert results_by_question[choice_q.pk]["option_counts"] == {"Tech": 2}
 
     def test_anonymous_survey_results_do_not_expose_respondent_identity(self, rh_user, employee_user):
-        survey = Survey.objects.create(title="Enquête anonyme", status=Survey.Status.ACTIVE, is_anonymous=True, created_by=rh_user)
-        question = SurveyQuestion.objects.create(survey=survey, text="Commentaire", question_type=SurveyQuestion.QuestionType.TEXT)
+        survey = Survey.objects.create(
+            title="Enquête anonyme", status=Survey.Status.ACTIVE, is_anonymous=True, created_by=rh_user
+        )
+        question = SurveyQuestion.objects.create(
+            survey=survey, text="Commentaire", question_type=SurveyQuestion.QuestionType.TEXT
+        )
         client = _authenticated_client(employee_user)
-        client.post(f"{LIST_URL}{survey.pk}/respond/", {"answers": [{"question": question.pk, "text_answer": "Super"}]}, format="json")
+        client.post(
+            f"{LIST_URL}{survey.pk}/respond/", {"answers": [{"question": question.pk, "text_answer": "Super"}]}, format="json"
+        )
 
         client_rh = _authenticated_client(rh_user)
         response = client_rh.get(f"{LIST_URL}{survey.pk}/results/")
@@ -250,7 +258,9 @@ class TestMyResponseStatus:
         results = response.data.get("results", response.data)
         assert results[0]["has_responded"] is False
 
-        client.post(f"{LIST_URL}{survey.pk}/respond/", {"answers": [{"question": question.pk, "text_answer": "x"}]}, format="json")
+        client.post(
+            f"{LIST_URL}{survey.pk}/respond/", {"answers": [{"question": question.pk, "text_answer": "x"}]}, format="json"
+        )
 
         response = client.get(LIST_URL)
         results = response.data.get("results", response.data)
