@@ -74,7 +74,7 @@ class ObjectiveViewSet(viewsets.ModelViewSet):
 
         if level == Objective.Level.INDIVIDUAL and user.role not in ["ADMIN", "RH"]:
             owned_employee_id = getattr(getattr(user, "employee_profile", None), "pk", None)
-            if str(employee_id) != str(owned_employee_id):
+            if owned_employee_id is None or str(employee_id) != str(owned_employee_id):
                 return Response(
                     {"detail": "Vous ne pouvez créer un objectif que pour vous-même."},
                     status=status.HTTP_403_FORBIDDEN,
