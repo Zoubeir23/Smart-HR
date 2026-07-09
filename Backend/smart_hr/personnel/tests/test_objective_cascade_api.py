@@ -119,7 +119,9 @@ class TestCreateCascadeObjective:
 class TestListCascadeObjective:
     def test_employee_sees_company_and_own_department_objectives(self, employee_user, employee, department, other_department):
         Objective.objects.create(level=Objective.Level.COMPANY, title="Stratégie entreprise", period="2026")
-        Objective.objects.create(level=Objective.Level.DEPARTMENT, department=department, title="Objectif mon dept", period="2026")
+        Objective.objects.create(
+            level=Objective.Level.DEPARTMENT, department=department, title="Objectif mon dept", period="2026"
+        )
         Objective.objects.create(
             level=Objective.Level.DEPARTMENT, department=other_department, title="Objectif autre dept", period="2026"
         )
