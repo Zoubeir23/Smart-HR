@@ -82,3 +82,22 @@ class TestObjectiveAgentIntegration:
         assert response.status_code == status.HTTP_201_CREATED
         assert "précisez son titre" in response.data["response"]
         assert not Objective.objects.filter(employee=employee).exists()
+
+    def test_chat_message_surfaces_error_when_employee_profile_missing(self, employee_user):
+        """L'utilisateur n'a pas de profil Employee : l'erreur retournée par
+        _execute_objective_creation n'est pas un code connu de
+        _ACTION_ERROR_MESSAGES — elle doit tout de même être affichée, pas
+        silencieusement avalée."""
+        json_response = (
+            '{"level": "individual", "department_name": null, "title": "Objectif", '
+            '"period": "Q1 2026", "key_results": [{"title": "KR", "target_value": 5}]}'
+        )
+        client = _authenticated_client(employee_user)
+        with (
+            patch("smart_hr.ai.views.chat.get_llm_provider", return_value=_FakeChatProvider()),
+            patch("smart_hr.ai.llm_providers.get_llm_provider", return_value=_FakeExtractionProvider(json_response)),
+        ):
+            response = client.post(CHAT_URL, {"question": "Crée un objectif"}, format="json")
+
+        assert response.status_code == status.HTTP_201_CREATED
+        assert "profil employé" in response.data["response"]
