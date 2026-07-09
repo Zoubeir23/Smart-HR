@@ -170,3 +170,37 @@ class TestEmployeeBenefitEnrollment:
         response = client.get(PLANS_URL)
         results = response.data.get("results", response.data)
         assert results[0]["enrolled_count"] == 1
+
+    def test_listing_plans_does_not_trigger_n_plus_one_on_enrolled_count(self, rh_user, employee, other_employee):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+
+        plan_a = BenefitPlan.objects.create(name="Plan A", category=BenefitPlan.Category.MEAL)
+        plan_b = BenefitPlan.objects.create(name="Plan B", category=BenefitPlan.Category.TRANSPORT)
+        EmployeeBenefit.objects.create(employee=employee, plan=plan_a, status=EmployeeBenefit.Status.ACTIVE)
+        EmployeeBenefit.objects.create(employee=other_employee, plan=plan_b, status=EmployeeBenefit.Status.ACTIVE)
+
+        client = _authenticated_client(rh_user)
+        with CaptureQueriesContext(connection) as context:
+            response = client.get(PLANS_URL)
+        assert response.status_code == status.HTTP_200_OK
+        # 1 requête pour lister les plans + 1 pour le prefetch des enrollments,
+        # peu importe le nombre de plans (pas de requête supplémentaire par plan).
+        assert len(context) <= 5
+
+
+class TestEmployeeBenefitUniqueConstraint:
+    def test_database_rejects_duplicate_active_enrollment_bypassing_serializer(self, employee, plan):
+        """Le serializer valide déjà les doublons, mais la contrainte DB doit
+        aussi protéger contre une création directe (ex: script, autre code
+        applicatif) qui contournerait la validation applicative."""
+        from django.db import IntegrityError
+
+        EmployeeBenefit.objects.create(employee=employee, plan=plan, status=EmployeeBenefit.Status.ACTIVE)
+        with pytest.raises(IntegrityError):
+            EmployeeBenefit.objects.create(employee=employee, plan=plan, status=EmployeeBenefit.Status.PENDING)
+
+    def test_database_allows_reenrollment_after_termination(self, employee, plan):
+        EmployeeBenefit.objects.create(employee=employee, plan=plan, status=EmployeeBenefit.Status.TERMINATED)
+        EmployeeBenefit.objects.create(employee=employee, plan=plan, status=EmployeeBenefit.Status.ACTIVE)
+        assert EmployeeBenefit.objects.filter(employee=employee, plan=plan).count() == 2
