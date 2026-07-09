@@ -5,9 +5,11 @@ from smart_hr.paiement.models import AbattementRegle
 from smart_hr.paiement.models import AllocationEmploye
 from smart_hr.paiement.models import AllocationRegle
 from smart_hr.paiement.models import BaremeImpot
+from smart_hr.paiement.models import BenefitPlan
 from smart_hr.paiement.models import BulletinPaie
 from smart_hr.paiement.models import CategorieConvention
 from smart_hr.paiement.models import ChargesFamiliales
+from smart_hr.paiement.models import EmployeeBenefit
 from smart_hr.paiement.models import HistoriqueSalaire
 from smart_hr.paiement.models import LigneBulletin
 from smart_hr.paiement.models import Payroll
@@ -244,3 +246,18 @@ class PayrollAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).select_related("employee__user", "employee__department")
+
+
+@admin.register(BenefitPlan)
+class BenefitPlanAdmin(admin.ModelAdmin):
+    list_display = ["name", "category", "employer_contribution", "employee_contribution", "is_active"]
+    list_filter = ["category", "is_active"]
+    search_fields = ["name", "description"]
+
+
+@admin.register(EmployeeBenefit)
+class EmployeeBenefitAdmin(admin.ModelAdmin):
+    list_display = ["employee", "plan", "status", "enrolled_at", "terminated_at"]
+    list_filter = ["status", "plan"]
+    search_fields = ["employee__user__first_name", "employee__user__last_name", "plan__name"]
+    raw_id_fields = ["employee"]
