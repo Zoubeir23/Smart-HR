@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Coins } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { trainingService } from '@/services/trainingService';
+
+function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('fr-FR').format(amount) + ' FCFA';
+}
 
 export default function CompletionRateSection() {
   const { data, isLoading } = useQuery({
@@ -16,7 +20,7 @@ export default function CompletionRateSection() {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-lg">
           <CheckCircle2 className="h-5 w-5 text-success" />
-          Taux de complétion des formations
+          Taux de complétion & coûts des formations
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -32,6 +36,14 @@ export default function CompletionRateSection() {
           {data.global.completed} / {data.global.total_participations} inscriptions complétées, toutes formations confondues.
         </p>
 
+        <div className="flex items-center gap-2 rounded-lg bg-muted/40 px-3 py-2 text-sm">
+          <Coins className="h-4 w-4 text-amber-500" />
+          <span className="text-foreground">
+            Coût total : <strong>{formatCurrency(data.global.total_cost)}</strong>
+          </span>
+          <span className="text-muted-foreground">· Coût moyen par formation : {formatCurrency(data.global.average_cost)}</span>
+        </div>
+
         {data.by_formation.length > 0 && (
           <div className="space-y-2 pt-2">
             {data.by_formation.map((formation) => (
@@ -43,6 +55,7 @@ export default function CompletionRateSection() {
                 <span className="w-24 shrink-0 text-right text-xs text-muted-foreground">
                   {formation.completed}/{formation.total_participations} ({formation.completion_rate}%)
                 </span>
+                <span className="w-24 shrink-0 text-right text-xs text-muted-foreground">{formatCurrency(formation.cost)}</span>
               </div>
             ))}
           </div>
