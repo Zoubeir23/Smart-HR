@@ -23,12 +23,15 @@ export const departmentService = {
     return data;
   },
 
-  create: async (departmentData: { name: string; description?: string }) => {
+  create: async (departmentData: { name: string; description?: string; unit_type?: string; parent?: number | null }) => {
     const { data } = await api.post('/personnel/departments/', departmentData);
     return data;
   },
 
-  update: async (id: number, departmentData: { name?: string; description?: string }) => {
+  update: async (
+    id: number,
+    departmentData: { name?: string; description?: string; unit_type?: string; parent?: number | null },
+  ) => {
     const { data } = await api.patch(`/personnel/departments/${id}/`, departmentData);
     return data;
   },
@@ -54,7 +57,21 @@ export interface OrganigrammeService {
 export interface OrganigrammeDepartment {
   id: number;
   name: string;
+  unit_type: string;
+  unit_type_display: string;
   employee_count: number;
   manager_name: string | null;
   services: OrganigrammeService[];
+  children: OrganigrammeDepartment[];
 }
+
+export const UNIT_TYPE_OPTIONS = [
+  { value: 'service', label: 'Service' },
+  { value: 'department', label: 'Département' },
+  { value: 'direction', label: 'Direction' },
+  { value: 'central_direction', label: 'Direction centrale' },
+  { value: 'dga', label: 'DGA' },
+  { value: 'dg', label: 'DG' },
+  { value: 'vice_president', label: 'Vice-président' },
+  { value: 'pca', label: 'PCA' },
+] as const;

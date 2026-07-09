@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   DollarSign, TrendingUp, Users, Clock,
   Plus, Pencil, Trash2, Zap, Check, X, Download,
-  FileText, BarChart2, List,
+  FileText, BarChart2, List, Gift,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +31,7 @@ import SearchableSelect from '@/components/common/SearchableSelect';
 import DataPagination, { usePagination } from '@/components/common/DataPagination';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import BenefitsTab from '@/components/payroll/BenefitsTab';
 
 type PayrollStatus = 'paid' | 'pending' | 'processed';
 
@@ -253,7 +254,7 @@ function exportToCSV(records: PayrollRecord[], monthParam: string): void {
   URL.revokeObjectURL(url);
 }
 
-type ActiveTab = 'list' | 'stats';
+type ActiveTab = 'list' | 'stats' | 'benefits';
 
 export default function PayrollPage() {
   const { user } = useAuth();
@@ -485,6 +486,7 @@ export default function PayrollPage() {
           {([
             { key: 'list',  label: 'Fiches de paie', icon: List },
             { key: 'stats', label: 'Analyse masse salariale', icon: BarChart2 },
+            { key: 'benefits', label: 'Compensations & bénéfices', icon: Gift },
           ] as const).map(({ key, label, icon: Icon }) => (
             <button
               key={key}
@@ -762,6 +764,9 @@ export default function PayrollPage() {
             )}
           </div>
         )}
+
+        {/* ══ Tab: Compensations & bénéfices ══ */}
+        {activeTab === 'benefits' && <BenefitsTab />}
       </motion.div>
 
       {/* ══ Modale Création / Édition ══ */}
