@@ -196,7 +196,10 @@ class BenefitPlanSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "created_at"]
 
     def get_enrolled_count(self, obj: BenefitPlan) -> int:
-        return obj.enrollments.filter(status=EmployeeBenefit.Status.ACTIVE).count()
+        """Compte en Python sur le cache prefetch (`obj.enrollments.all()`) plutôt
+        que via `.filter()`, qui ignorerait le prefetch_related du queryset et
+        déclencherait une requête par ligne (N+1)."""
+        return sum(1 for enrollment in obj.enrollments.all() if enrollment.status == EmployeeBenefit.Status.ACTIVE)
 
 
 class EmployeeBenefitSerializer(serializers.ModelSerializer):
