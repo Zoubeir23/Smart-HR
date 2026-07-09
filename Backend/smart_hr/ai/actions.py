@@ -53,19 +53,37 @@ _OBJECTIVE_INTENT_KEYWORDS = (
     "objectif de département",
 )
 
+_ONBOARDING_INTENT_KEYWORDS = (
+    "onboarding",
+    "programme d'intégration",
+    "parcours d'intégration",
+    "intégration du nouvel employé",
+    "intégration de la nouvelle",
+    "intégrer un nouvel employé",
+    "intégrer une nouvelle recrue",
+    "programme d'accueil",
+    "parcours d'accueil",
+    "offboarding",
+    "programme de départ",
+    "nouvel employé",
+    "nouvelle recrue",
+)
+
 
 def detect_action_intent(question: str) -> str | None:
     """
     Détecte l'intention d'action dans la question de l'utilisateur.
     Retourne le nom de l'action si détectée, None sinon.
 
-    Actions supportées : 'leave_request', 'objective_creation'
+    Actions supportées : 'leave_request', 'objective_creation', 'onboarding_creation'
     """
     lower = question.lower()
     if any(kw in lower for kw in _LEAVE_INTENT_KEYWORDS):
         return "leave_request"
     if any(kw in lower for kw in _OBJECTIVE_INTENT_KEYWORDS):
         return "objective_creation"
+    if any(kw in lower for kw in _ONBOARDING_INTENT_KEYWORDS):
+        return "onboarding_creation"
     return None
 
 
@@ -210,6 +228,59 @@ def extract_objective_parameters(question: str, can_manage: bool) -> dict:
     return parsed
 
 
+# ─── Agent Onboarding — génération du programme via Gemini ──────────────────
+
+
+def extract_onboarding_parameters(question: str) -> dict:
+    """
+    Génère un programme d'intégration (ou de départ) structuré depuis le message
+    via le LLM actif : contrairement à l'extraction d'objectif (champs fixes),
+    ici le LLM **génère le contenu** des étapes à partir du contexte du poste
+    (comme la génération d'offre d'emploi existante), pas seulement des champs.
+
+    Retourne :
+        {
+            "employee_name": str | None,
+            "program_type": "onboarding|offboarding",
+            "title": str | None,
+            "steps": [{"title": str, "description": str}],
+        }
+    """
+    prompt = (
+        "Analyse ce message d'un responsable RH qui souhaite créer un programme "
+        "d'intégration (onboarding) ou de départ (offboarding) structuré pour un employé.\n"
+        "Retourne UNIQUEMENT un JSON valide, sans markdown ni backticks.\n\n"
+        f'Message : "{question}"\n\n'
+        "JSON attendu :\n"
+        "{\n"
+        '  "employee_name": "prénom et nom complets de l\'employé mentionné, ou null",\n'
+        '  "program_type": "onboarding" ou "offboarding" (onboarding par défaut si ambigu),\n'
+        '  "title": "titre du programme, ou null si non déterminable",\n'
+        '  "steps": [{"title": "étape courte", "description": "détail de l\'étape en 1 phrase"}]\n'
+        "}\n\n"
+        "- Si un poste/métier est mentionné, génère 5 à 8 étapes concrètes et pertinentes "
+        "pour ce poste (matériel, accès systèmes, présentation équipe, formation, documents "
+        "administratifs, point de suivi à 30/60/90 jours...)\n"
+        "- Ne déduis jamais employee_name ou title s'ils ne sont pas identifiables dans le message"
+    )
+
+    try:
+        from smart_hr.ai.llm_providers import get_llm_provider
+        from smart_hr.ai.llm_providers.base import strip_llm_code_fences
+
+        provider = get_llm_provider()
+        raw = strip_llm_code_fences(provider.extract_json(prompt))
+        parsed = json.loads(raw)
+    except Exception as exc:
+        logger.warning("Génération LLM du programme d'onboarding échouée : %s", exc)
+        parsed = {"employee_name": None, "program_type": "onboarding", "title": None, "steps": []}
+
+    if parsed.get("program_type") not in ("onboarding", "offboarding"):
+        parsed["program_type"] = "onboarding"
+    parsed.setdefault("steps", [])
+    return parsed
+
+
 # ─── Exécution d'actions ─────────────────────────────────────────────────────
 
 
@@ -222,6 +293,8 @@ def execute_action(action_intent: str, user, params: dict) -> dict:
         return _execute_leave_request(user, params)
     if action_intent == "objective_creation":
         return _execute_objective_creation(user, params)
+    if action_intent == "onboarding_creation":
+        return _execute_onboarding_creation(user, params)
     return {"success": False, "error": f"Action '{action_intent}' non supportée."}
 
 
@@ -370,5 +443,85 @@ def _execute_objective_creation(user, params: dict) -> dict:
             "period": objective.period,
             "level_display": objective.get_level_display(),
             "key_results_count": len(key_results_payload),
+        },
+    }
+
+
+# ─── Agent Onboarding — exécution ────────────────────────────────────────────
+
+
+def _find_employee_by_full_name(full_name: str):
+    """Résout un employé par correspondance exacte (insensible à la casse) sur
+    prénom+nom. Retourne None si aucune correspondance ou plusieurs candidats
+    ambigus — mieux vaut demander une précision que de cibler le mauvais employé."""
+    from smart_hr.personnel.models import Employee
+
+    target = (full_name or "").strip().lower()
+    if not target:
+        return None
+
+    candidates = Employee.objects.select_related("user")
+    matches = [e for e in candidates if f"{e.user.first_name} {e.user.last_name}".strip().lower() == target]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _execute_onboarding_creation(user, params: dict) -> dict:
+    """Crée un programme d'intégration/départ (et ses étapes) via le serializer
+    DRF existant — même chemin que POST /api/v1/personnel/onboarding-programs/.
+    Réservé RH/Admin (même règle que l'API REST)."""
+    from smart_hr.personnel.models import OnboardingStep
+    from smart_hr.personnel.serializers import OnboardingProgramSerializer
+
+    user_role = getattr(user, "role", "").upper()
+    if user_role not in ("RH", "ADMIN"):
+        return {
+            "success": False,
+            "error": "Seuls les responsables RH peuvent créer un programme d'intégration.",
+        }
+
+    employee = _find_employee_by_full_name(params.get("employee_name") or "")
+    if employee is None:
+        return {"success": False, "error": "employee_not_found"}
+
+    steps_payload = [step for step in params.get("steps") or [] if step.get("title")]
+    if not steps_payload:
+        return {"success": False, "error": "onboarding_info_missing"}
+
+    program_type = params.get("program_type", "onboarding")
+    title = params.get("title") or (
+        f"Programme d'intégration — {employee.user.get_full_name()}"
+        if program_type == "onboarding"
+        else f"Programme de départ — {employee.user.get_full_name()}"
+    )
+
+    payload = {"employee": employee.pk, "program_type": program_type, "title": title}
+    serializer = OnboardingProgramSerializer(data=payload)
+    if not serializer.is_valid():
+        logger.warning("Programme d'onboarding via chatbot invalide pour %s : %s", user.email, serializer.errors)
+        return {"success": False, "error": "Impossible de créer ce programme avec les informations fournies."}
+
+    program = serializer.save(created_by=user)
+    OnboardingStep.objects.bulk_create(
+        [
+            OnboardingStep(
+                program=program,
+                title=step.get("title", ""),
+                description=step.get("description") or "",
+                order=index,
+            )
+            for index, step in enumerate(steps_payload)
+        ]
+    )
+
+    return {
+        "success": True,
+        "type": "onboarding_created",
+        "label": "Programme d'intégration créé",
+        "data": {
+            "program_id": program.pk,
+            "title": program.title,
+            "employee_name": employee.user.get_full_name(),
+            "program_type_display": program.get_program_type_display(),
+            "steps_count": len(steps_payload),
         },
     }
