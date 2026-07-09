@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Sidebar from './Sidebar';
 import Navbar from './Navbar';
+import ChatWidget from '@/components/ai/ChatWidget';
 import { cn } from '@/lib/utils';
 
 interface DashboardLayoutProps {
@@ -71,6 +72,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </motion.div>
         </div>
       </motion.main>
+
+      <ChatWidget />
     </div>
   );
 }
