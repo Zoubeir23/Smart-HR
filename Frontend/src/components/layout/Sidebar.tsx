@@ -29,6 +29,7 @@ import {
   Archive,
   Building2,
   Database,
+  Route,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -83,6 +84,7 @@ const navigationGroups: NavGroup[] = [
           { title: 'Congés', href: '/leaves', icon: Calendar, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
           { title: 'Présences', href: '/attendance', icon: Clock, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
           { title: 'Performance', href: '/performance', icon: TrendingUp, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
+          { title: 'Talents & Carrière', href: '/talent-management', icon: Route, roles: ['ADMIN', 'RH'] },
           { title: 'Enquêtes', href: '/surveys', icon: ClipboardCheck, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
           { title: 'Tâches', href: '/tasks', icon: ClipboardList, roles: ['ADMIN', 'RH', 'EMPLOYEE'] },
         ],
