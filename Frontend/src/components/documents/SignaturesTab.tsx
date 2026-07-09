@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { PenLine, Eraser, Plus, X, Check, Ban } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import SearchableSelect from '@/components/common/SearchableSelect';
+import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import {
   signatureService, type Signature, type SignatureRequest, type SignatureRequestStatus,
@@ -114,6 +115,7 @@ function SignaturePad({ onSave }: { onSave: (dataUrl: string) => void }) {
 }
 
 export default function SignaturesTab({ canManage }: SignaturesTabProps) {
+  const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [showRequestForm, setShowRequestForm] = useState(false);
@@ -270,7 +272,7 @@ export default function SignaturesTab({ canManage }: SignaturesTabProps) {
                 <Badge variant="outline" className={STATUS_BADGE_STYLES[request.status]}>
                   {request.status_display}
                 </Badge>
-                {request.status === 'pending' && (
+                {request.status === 'pending' && request.signatory === user?.id && (
                   <>
                     <Button
                       size="sm"
