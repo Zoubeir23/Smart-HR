@@ -55,8 +55,12 @@ _OBJECTIVE_INTENT_KEYWORDS = (
 
 _ONBOARDING_INTENT_KEYWORDS = (
     "onboarding",
-    "intégration",
-    "integration",
+    "programme d'intégration",
+    "parcours d'intégration",
+    "intégration du nouvel employé",
+    "intégration de la nouvelle",
+    "intégrer un nouvel employé",
+    "intégrer une nouvelle recrue",
     "programme d'accueil",
     "parcours d'accueil",
     "offboarding",
