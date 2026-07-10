@@ -67,7 +67,8 @@ def _build_employee_feature_maps(employee_ids: list) -> dict:
     """
     from datetime import timedelta
 
-    from django.db.models import Avg, Count
+    from django.db.models import Avg
+    from django.db.models import Count
     from django.utils import timezone
 
     from smart_hr.conge.models import LeaveRequest
@@ -85,7 +86,9 @@ def _build_employee_feature_maps(employee_ids: list) -> dict:
             employee_id__in=employee_ids,
             status=LeaveRequest.Status.APPROVED,
             start_date__gte=one_year_ago,
-        ).values("employee_id").annotate(count=Count("id"))
+        )
+        .values("employee_id")
+        .annotate(count=Count("id"))
     }
 
     # Absences sur les 12 derniers mois
@@ -95,7 +98,9 @@ def _build_employee_feature_maps(employee_ids: list) -> dict:
             employee_id__in=employee_ids,
             status=Attendance.Status.ABSENT,
             date__gte=one_year_ago,
-        ).values("employee_id").annotate(count=Count("id"))
+        )
+        .values("employee_id")
+        .annotate(count=Count("id"))
     }
 
     # Actions disciplinaires
@@ -103,7 +108,9 @@ def _build_employee_feature_maps(employee_ids: list) -> dict:
         row["employee_id"]: row["count"]
         for row in DisciplinaryAction.objects.filter(
             employee_id__in=employee_ids,
-        ).values("employee_id").annotate(count=Count("id"))
+        )
+        .values("employee_id")
+        .annotate(count=Count("id"))
     }
 
     # Score de performance moyen
@@ -112,7 +119,9 @@ def _build_employee_feature_maps(employee_ids: list) -> dict:
         for row in PerformanceEvaluation.objects.filter(
             employee_id__in=employee_ids,
             global_score__isnull=False,
-        ).values("employee_id").annotate(avg_score=Avg("global_score"))
+        )
+        .values("employee_id")
+        .annotate(avg_score=Avg("global_score"))
     }
 
     # Fiches de paie non payées
@@ -121,7 +130,9 @@ def _build_employee_feature_maps(employee_ids: list) -> dict:
         for row in Payroll.objects.filter(
             employee_id__in=employee_ids,
             status=Payroll.Status.PENDING,
-        ).values("employee_id").annotate(count=Count("id"))
+        )
+        .values("employee_id")
+        .annotate(count=Count("id"))
     }
 
     return {
