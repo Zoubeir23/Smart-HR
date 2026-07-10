@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Building2, Users, Plus, Pencil, Trash2, Check, X, List, Network } from 'lucide-react';
-import OrganigrammeDiagram from '@/components/employees/OrganigrammeDiagram';
+import { Building2, Users, Plus, Pencil, Trash2, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -53,7 +52,6 @@ export default function DepartmentPage() {
   // RH et Admin peuvent créer / modifier / supprimer
   const canEdit = user?.role === 'RH' || user?.role === 'ADMIN';
 
-  const [viewMode, setViewMode] = useState<'list' | 'organigramme'>('list');
   const [showForm, setShowForm] = useState(false);
   const [editTarget, setEditTarget] = useState<Department | null>(null);
   const [form, setForm] = useState<DeptForm>(EMPTY_FORM);
@@ -67,31 +65,25 @@ export default function DepartmentPage() {
 
   const departments: Department[] = data?.results ?? data ?? [];
 
-  const { data: organigrammeData, isLoading: isOrganigrammeLoading } = useQuery({
-    queryKey: ['departments', 'organigramme'],
-    queryFn: departmentService.getOrganigramme,
-    enabled: viewMode === 'organigramme',
-  });
-
   // ── Mutations ─────────────────────────────────────────────────────
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ['departments'] });
 
   const createMutation = useMutation({
     mutationFn: departmentService.create,
-    onSuccess: () => { toast({ title: 'Département créé' }); invalidate(); closeForm(); },
-    onError:   () => toast({ title: 'Erreur', description: 'Impossible de créer le département.', variant: 'destructive' }),
+    onSuccess: () => { toast({ title: 'Unité organisationnelle créée' }); invalidate(); closeForm(); },
+    onError:   () => toast({ title: 'Erreur', description: 'Impossible de créer l\'unité organisationnelle.', variant: 'destructive' }),
   });
 
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Partial<DeptForm> & { parent?: number | null } }) =>
       departmentService.update(id, data),
-    onSuccess: () => { toast({ title: 'Département mis à jour' }); invalidate(); closeForm(); },
+    onSuccess: () => { toast({ title: 'Unité organisationnelle mise à jour' }); invalidate(); closeForm(); },
     onError:   () => toast({ title: 'Erreur', description: 'Impossible de modifier.', variant: 'destructive' }),
   });
 
   const deleteMutation = useMutation({
     mutationFn: departmentService.delete,
-    onSuccess: () => { toast({ title: 'Département supprimé' }); invalidate(); setDeleteId(null); },
+    onSuccess: () => { toast({ title: 'Unité organisationnelle supprimée' }); invalidate(); setDeleteId(null); },
     onError:   () => toast({ title: 'Erreur', description: 'Impossible de supprimer.', variant: 'destructive' }),
   });
 
@@ -155,55 +147,21 @@ export default function DepartmentPage() {
         {/* ── Header ── */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Départements</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Unités organisationnelles</h1>
             <p className="text-sm text-muted-foreground mt-1">
               {canEdit
-                ? 'Gérez les départements de l\'entreprise — RH / Admin uniquement.'
-                : 'Liste des départements de l\'entreprise.'}
+                ? 'Gérez les unités organisationnelles de l\'entreprise (directions, départements, services…) — RH / Admin uniquement.'
+                : 'Liste des unités organisationnelles de l\'entreprise.'}
             </p>
           </div>
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/40 p-1">
-              <Button
-                variant={viewMode === 'list' ? 'default' : 'ghost'}
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setViewMode('list')}
-              >
-                <List className="h-3.5 w-3.5" />
-                Liste
-              </Button>
-              <Button
-                variant={viewMode === 'organigramme' ? 'default' : 'ghost'}
-                size="sm"
-                className="gap-1.5"
-                onClick={() => setViewMode('organigramme')}
-              >
-                <Network className="h-3.5 w-3.5" />
-                Organigramme
-              </Button>
-            </div>
-            {canEdit && viewMode === 'list' && (
-              <Button onClick={openCreate} className="gap-2">
-                <Plus className="h-4 w-4" />
-                Nouveau département
-              </Button>
-            )}
-          </div>
+          {canEdit && (
+            <Button onClick={openCreate} className="gap-2 self-start sm:self-auto">
+              <Plus className="h-4 w-4" />
+              Nouvelle unité
+            </Button>
+          )}
         </div>
 
-        {viewMode === 'organigramme' && (
-          isOrganigrammeLoading ? (
-            <div className="flex items-center justify-center py-16">
-              <p className="text-muted-foreground">Génération de l'organigramme…</p>
-            </div>
-          ) : (
-            <OrganigrammeDiagram departments={organigrammeData ?? []} />
-          )
-        )}
-
-        {viewMode === 'list' && (
-        <>
         {/* ── KPI rapide ── */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           <div className="border border-border bg-card rounded-xl shadow-sm p-4 flex items-center gap-3">
@@ -212,7 +170,7 @@ export default function DepartmentPage() {
             </div>
             <div>
               <p className="text-2xl font-bold text-foreground">{departments.length}</p>
-              <p className="text-xs text-muted-foreground">Départements</p>
+              <p className="text-xs text-muted-foreground">Unités organisationnelles</p>
             </div>
           </div>
           <div className="border border-border bg-card rounded-xl shadow-sm p-4 flex items-center gap-3">
@@ -304,16 +262,14 @@ export default function DepartmentPage() {
         {departments.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
             <Building2 className="h-12 w-12 text-muted-foreground/40" />
-            <h3 className="mt-4 text-base font-semibold text-foreground">Aucun département</h3>
-            <p className="mt-1 text-sm text-muted-foreground">Commencez par créer votre premier département.</p>
+            <h3 className="mt-4 text-base font-semibold text-foreground">Aucune unité organisationnelle</h3>
+            <p className="mt-1 text-sm text-muted-foreground">Commencez par créer votre première unité organisationnelle.</p>
             {canEdit && (
               <Button className="mt-4 gap-2" onClick={openCreate}>
-                <Plus className="h-4 w-4" /> Créer un département
+                <Plus className="h-4 w-4" /> Créer une unité
               </Button>
             )}
           </div>
-        )}
-        </>
         )}
       </motion.div>
 
@@ -322,7 +278,7 @@ export default function DepartmentPage() {
         <DialogContent className="max-w-sm w-full">
           <DialogHeader>
             <DialogTitle>
-              {editTarget ? 'Modifier le département' : 'Nouveau département'}
+              {editTarget ? 'Modifier l\'unité organisationnelle' : 'Nouvelle unité organisationnelle'}
             </DialogTitle>
           </DialogHeader>
 
@@ -399,9 +355,9 @@ export default function DepartmentPage() {
       <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer ce département ?</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer cette unité organisationnelle ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Les employés rattachés ne seront pas supprimés, mais ils n'auront plus de département assigné.
+              Les employés rattachés ne seront pas supprimés, mais ils n'auront plus d'unité assignée.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
