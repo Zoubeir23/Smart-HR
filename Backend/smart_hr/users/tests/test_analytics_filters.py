@@ -50,9 +50,7 @@ def department_sales(db) -> Department:
 @pytest.fixture
 def employee_tech(db, department_tech) -> Employee:
     user = UserFactory.create(role=User.Role.EMPLOYEE)
-    return Employee.objects.create(
-        user=user, department=department_tech, hire_date=datetime.date(2023, 1, 1), salary=500000
-    )
+    return Employee.objects.create(user=user, department=department_tech, hire_date=datetime.date(2023, 1, 1), salary=500000)
 
 
 @pytest.fixture
@@ -66,9 +64,7 @@ def employee_tech_backend(db, department_tech_backend) -> Employee:
 @pytest.fixture
 def employee_sales(db, department_sales) -> Employee:
     user = UserFactory.create(role=User.Role.EMPLOYEE)
-    return Employee.objects.create(
-        user=user, department=department_sales, hire_date=datetime.date(2023, 1, 1), salary=500000
-    )
+    return Employee.objects.create(user=user, department=department_sales, hire_date=datetime.date(2023, 1, 1), salary=500000)
 
 
 def _authenticated_client(as_user) -> APIClient:
@@ -83,7 +79,9 @@ class TestDepartmentFilter:
 
         assert response.data["totals"]["active_employees"] == 1
 
-    def test_includes_descendant_departments(self, rh_user, department_tech, employee_tech, employee_tech_backend, employee_sales):
+    def test_includes_descendant_departments(
+        self, rh_user, department_tech, employee_tech, employee_tech_backend, employee_sales
+    ):
         response = _authenticated_client(rh_user).get(ANALYTICS_URL, {"department_id": department_tech.id})
 
         assert response.data["totals"]["active_employees"] == 2
@@ -162,9 +160,7 @@ class TestPeriodFilter:
 
     def test_engagement_summary_narrows_by_period(self, rh_user, employee_tech):
         survey = Survey.objects.create(title="Engagement", status=Survey.Status.ACTIVE)
-        question = SurveyQuestion.objects.create(
-            survey=survey, text="Note ?", question_type=SurveyQuestion.QuestionType.RATING
-        )
+        question = SurveyQuestion.objects.create(survey=survey, text="Note ?", question_type=SurveyQuestion.QuestionType.RATING)
         response_obj = SurveyResponse.objects.create(survey=survey, respondent=employee_tech.user)
         SurveyAnswer.objects.create(response=response_obj, question=question, text_answer="5")
         response_obj.submitted_at = timezone.now() - datetime.timedelta(days=200)
