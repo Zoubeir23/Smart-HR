@@ -102,8 +102,19 @@ function getAxiosErrorMessage(error: unknown): string {
 }
 
 export const aiService = {
-  chat: async (question: string, conversationId?: number) => {
+  chat: async (question: string, conversationId?: number, attachedFile?: File | null) => {
     try {
+      // Avec pièce jointe (fiche de poste PDF/TXT/MD…) : envoi multipart pour
+      // que le backend lise le fichier et le fournisse au LLM comme contexte.
+      if (attachedFile) {
+        const formData = new FormData();
+        formData.append('question', question);
+        formData.append('file', attachedFile);
+        if (conversationId) formData.append('conversation', String(conversationId));
+        const { data } = await api.post('/ai/chat/', formData);
+        return data;
+      }
+
       const { data } = await api.post('/ai/chat/', {
         question,
         ...(conversationId ? { conversation: conversationId } : {}),
