@@ -70,7 +70,7 @@ class TestGenerateJobOfferFromTextFile:
         client = _authenticated_client(rh_user)
         md_file = SimpleUploadedFile(
             "job_description.md",
-            "# Business Developer Senior\n\nAgiltym recrute un profil senior.".encode(),
+            b"# Business Developer Senior\n\nAgiltym recrute un profil senior.",
             content_type="text/markdown",
         )
         fake_provider = _FakeProvider()
@@ -82,9 +82,7 @@ class TestGenerateJobOfferFromTextFile:
 
     def test_combines_text_and_file_when_both_provided(self, rh_user):
         client = _authenticated_client(rh_user)
-        txt_file = SimpleUploadedFile(
-            "job_description.txt", "Contenu du fichier joint.".encode(), content_type="text/plain"
-        )
+        txt_file = SimpleUploadedFile("job_description.txt", b"Contenu du fichier joint.", content_type="text/plain")
         fake_provider = _FakeProvider()
         with patch("smart_hr.recruitment.views.job_offer.get_llm_provider", return_value=fake_provider):
             response = client.post(
@@ -112,9 +110,7 @@ class TestGenerateJobOfferFromTextFile:
 
     def test_rejects_oversized_file(self, rh_user):
         client = _authenticated_client(rh_user)
-        too_large = SimpleUploadedFile(
-            "job_description.txt", (b"x" * (10 * 1024 * 1024 + 1)), content_type="text/plain"
-        )
+        too_large = SimpleUploadedFile("job_description.txt", (b"x" * (10 * 1024 * 1024 + 1)), content_type="text/plain")
         response = client.post(GENERATE_URL, {"file": too_large}, format="multipart")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
