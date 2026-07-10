@@ -93,14 +93,31 @@ export interface HRAnalyticsOverview {
   department_hierarchy: DepartmentHierarchyEntry[];
 }
 
+export type AnalyticsPeriod = '1m' | '3m' | '6m' | '1y';
+
+export interface AnalyticsFilters {
+  departmentId?: number | null;
+  period?: AnalyticsPeriod;
+}
+
+function toQueryParams(filters?: AnalyticsFilters): Record<string, string> {
+  const params: Record<string, string> = {};
+  if (filters?.departmentId) params.department_id = String(filters.departmentId);
+  if (filters?.period) params.period = filters.period;
+  return params;
+}
+
 export const analyticsService = {
-  getOverview: async (): Promise<HRAnalyticsOverview> => {
-    const { data } = await api.get('/stats/overview/');
+  getOverview: async (filters?: AnalyticsFilters): Promise<HRAnalyticsOverview> => {
+    const { data } = await api.get('/stats/overview/', { params: toQueryParams(filters) });
     return data;
   },
 
-  exportOverviewExcel: async (): Promise<void> => {
-    const response = await api.get('/stats/overview/export/', { responseType: 'blob' });
+  exportOverviewExcel: async (filters?: AnalyticsFilters): Promise<void> => {
+    const response = await api.get('/stats/overview/export/', {
+      params: toQueryParams(filters),
+      responseType: 'blob',
+    });
     const url = window.URL.createObjectURL(new Blob([response.data]));
     const link = document.createElement('a');
     link.href = url;
