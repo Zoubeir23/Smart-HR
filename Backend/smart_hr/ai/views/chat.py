@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 
 from rest_framework import status
 from rest_framework import viewsets
@@ -14,10 +15,69 @@ from smart_hr.ai.models import ChatHistory
 from smart_hr.ai.models import Conversation
 from smart_hr.ai.serializers import ChatHistorySerializer
 from smart_hr.core.throttles import AILLMUserThrottle
+from smart_hr.recruitment.services.document_text_extraction import SUPPORTED_DOCUMENT_EXTENSIONS
+from smart_hr.recruitment.services.document_text_extraction import extract_text_from_uploaded_document
 
 logger = logging.getLogger(__name__)
 
 _TITLE_MAX_LENGTH = 60
+
+# ─── Pièce jointe (fiche de poste, document RH…) ─────────────────────────────
+
+_MAX_ATTACHMENT_SIZE_BYTES = 10 * 1024 * 1024  # 10 Mo, aligné sur job-offers/generate
+# Borne le contenu injecté dans le prompt pour protéger la fenêtre de contexte
+# du LLM (un PDF de plusieurs pages dépasse vite la limite de tokens).
+_MAX_ATTACHMENT_TEXT_CHARS = 8000
+_DEFAULT_QUESTION_WITH_ATTACHMENT = "Analyse le document joint et fais-en une synthèse."
+
+
+def _load_attachment(request) -> tuple[str, str, Response | None]:
+    """Valide et lit le fichier joint optionnel de la requête chat.
+
+    Retourne (nom_du_fichier, texte_extrait, réponse_d_erreur_ou_None).
+    Un fichier illisible (extension supportée mais extraction vide) est signalé
+    à l'appelant par une erreur explicite plutôt qu'ignoré en silence."""
+    uploaded_file = request.FILES.get("file")
+    if uploaded_file is None:
+        return "", "", None
+
+    extension = os.path.splitext(uploaded_file.name)[1].lower()
+    if extension not in SUPPORTED_DOCUMENT_EXTENSIONS:
+        return (
+            "",
+            "",
+            Response(
+                {
+                    "detail": (
+                        f"Extension «{extension}» non supportée. "
+                        f"Formats acceptés : {', '.join(sorted(SUPPORTED_DOCUMENT_EXTENSIONS))}."
+                    )
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            ),
+        )
+    if uploaded_file.size > _MAX_ATTACHMENT_SIZE_BYTES:
+        return (
+            "",
+            "",
+            Response(
+                {"detail": "Fichier trop volumineux. Maximum autorisé : 10 Mo."},
+                status=status.HTTP_400_BAD_REQUEST,
+            ),
+        )
+
+    file_text = extract_text_from_uploaded_document(uploaded_file)
+    if not file_text:
+        return (
+            "",
+            "",
+            Response(
+                {"detail": "Impossible de lire le contenu du fichier. Vérifiez qu'il n'est pas vide ou protégé."},
+                status=status.HTTP_400_BAD_REQUEST,
+            ),
+        )
+
+    return uploaded_file.name, file_text[:_MAX_ATTACHMENT_TEXT_CHARS], None
 
 
 def _truncate_title(question: str) -> str:
@@ -190,11 +250,19 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """
         POST /api/v1/ai/chat/
-        Body: { "question": "...", "conversation": <id, optionnel> }
+        Body (JSON ou multipart) : { "question": "...", "conversation": <id, optionnel> }
+        et/ou { "file": <PDF|TXT|MD> } — le contenu du fichier joint (fiche de
+        poste, document RH…) est lu et fourni au LLM comme contexte de la question.
         Génère une réponse IA personnalisée selon le rôle et les données réelles DB.
         Si aucun `conversation` n'est fourni, un nouveau fil est créé automatiquement.
         """
+        attachment_name, attachment_text, attachment_error = _load_attachment(request)
+        if attachment_error is not None:
+            return attachment_error
+
         question = request.data.get("question", "").strip()
+        if not question and attachment_text:
+            question = _DEFAULT_QUESTION_WITH_ATTACHMENT
         if not question:
             return Response(
                 {"detail": "Le champ 'question' est requis."},
@@ -242,13 +310,22 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
                 params = extract_onboarding_parameters(question)
                 action_result = execute_action(action_intent, request.user, params)
 
-        ai_response = _get_ai_response(question, request.user, conversation)
+        # Le contenu du document n'est injecté que dans le prompt de CE tour ;
+        # l'historique stocke la question de l'utilisateur avec un simple
+        # marqueur 📎 pour ne pas polluer l'affichage des bulles.
+        question_for_llm = question
+        stored_question = question
+        if attachment_text:
+            question_for_llm = f"{question}\n\n--- Contenu du document joint « {attachment_name} » ---\n{attachment_text}"
+            stored_question = f"{question}\n\n📎 {attachment_name}"
+
+        ai_response = _get_ai_response(question_for_llm, request.user, conversation)
         ai_response += _format_action_result_suffix(action_result)
 
         chat = ChatHistory.objects.create(
             user=request.user,
             conversation=conversation,
-            question=question,
+            question=stored_question,
             response=ai_response,
             action_type=action_result.get("type", ""),
             action_data=action_result.get("data", {}),
