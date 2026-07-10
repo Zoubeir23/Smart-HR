@@ -45,6 +45,15 @@ const sampleData: OrganigrammeDepartment[] = [
   }),
 ];
 
+function isDimmed(element: HTMLElement): boolean {
+  let current: HTMLElement | null = element;
+  while (current) {
+    if (current.className.includes('opacity-30')) return true;
+    current = current.parentElement;
+  }
+  return false;
+}
+
 describe('OrganigrammeDiagram', () => {
   it("affiche un état vide quand il n'y a aucune unité", () => {
     render(<OrganigrammeDiagram departments={[]} />);
@@ -101,5 +110,19 @@ describe('OrganigrammeDiagram', () => {
     // doit être identifiable.
     expect(screen.getByText('Service QA')).toBeInTheDocument();
     expect(screen.getByText('Direction Générale')).toBeInTheDocument();
+  });
+
+  it("ne l'estompe pas les ancêtres d'une unité trouvée (conserve le contexte hiérarchique)", () => {
+    /* Régression Sentry (finding réel, PR #201) : la recherche estompait
+     * aussi les parents d'une unité correspondante, rendant illisible sa
+     * position dans l'organigramme. Seules les unités hors du chemin vers
+     * un résultat doivent être estompées. */
+    render(<OrganigrammeDiagram departments={sampleData} />);
+
+    fireEvent.change(screen.getByPlaceholderText(/rechercher une unité/i), { target: { value: 'QA' } });
+
+    expect(isDimmed(screen.getByText('Service QA'))).toBe(false);
+    expect(isDimmed(screen.getByText('Direction Technique'))).toBe(false);
+    expect(isDimmed(screen.getByText('Direction Générale'))).toBe(false);
   });
 });
