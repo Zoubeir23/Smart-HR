@@ -38,7 +38,7 @@ class SkillViewSet(viewsets.ModelViewSet):
                     base = base.filter(category=category)
             return base
 
-        return base.filter(employee=user)
+        return base.filter(employee=user.employee_profile)
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
