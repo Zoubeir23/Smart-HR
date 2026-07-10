@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 from django.db.models import Count
 from rest_framework import filters
@@ -16,11 +17,15 @@ from smart_hr.recruitment.models import JobOffer
 from smart_hr.recruitment.serializers import ApplicationSerializer
 from smart_hr.recruitment.serializers import JobOfferSerializer
 from smart_hr.recruitment.services.bulk_cv_upload import upload_cvs_to_job_offer
+from smart_hr.recruitment.services.cv_analysis_service import _sanitize_user_content
+from smart_hr.recruitment.services.document_text_extraction import SUPPORTED_DOCUMENT_EXTENSIONS
+from smart_hr.recruitment.services.document_text_extraction import extract_text_from_uploaded_document
 from smart_hr.users.permissions import IsRH
 
 logger = logging.getLogger(__name__)
 
 _JOB_TYPE_VALUES = [choice[0] for choice in JobOffer.JobType.choices]
+_MAX_GENERATE_FILE_SIZE_BYTES = 10 * 1024 * 1024  # 10 Mo
 
 _GENERATE_PROMPT = """Tu es un rédacteur RH expert. À partir de la fiche de poste brute
 fournie par le recruteur, génère une offre d'emploi structurée et professionnelle en français.
@@ -98,19 +103,45 @@ class JobOfferViewSet(viewsets.ModelViewSet):
     def generate(self, request):
         """
         POST /api/v1/recruitment/job-offers/generate/
-        Body: { "job_description": "texte brut de la fiche de poste" }
+        Body (JSON ou multipart) : { "job_description": "texte brut" } et/ou
+        { "file": <PDF|TXT|MD> }. Le texte de description et le contenu du
+        fichier joint (fiche de poste) sont combinés avant génération.
         Génère un brouillon d'offre d'emploi structuré via IA — non persisté,
         le recruteur complète/édite avant de publier via POST /job-offers/.
         """
         job_description = (request.data.get("job_description") or "").strip()
-        if not job_description:
+        uploaded_file = request.FILES.get("file")
+
+        file_text = ""
+        if uploaded_file is not None:
+            extension = os.path.splitext(uploaded_file.name)[1].lower()
+            if extension not in SUPPORTED_DOCUMENT_EXTENSIONS:
+                return Response(
+                    {
+                        "detail": (
+                            f"Extension «{extension}» non supportée. "
+                            f"Formats acceptés : {', '.join(sorted(SUPPORTED_DOCUMENT_EXTENSIONS))}."
+                        )
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            if uploaded_file.size > _MAX_GENERATE_FILE_SIZE_BYTES:
+                return Response(
+                    {"detail": "Fichier trop volumineux. Maximum autorisé : 10 Mo."},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            file_text = extract_text_from_uploaded_document(uploaded_file)
+
+        combined_description = "\n\n".join(part for part in [job_description, file_text] if part)
+        if not combined_description:
             return Response(
-                {"detail": "Le champ 'job_description' est requis."},
+                {"detail": "Fournissez une description ('job_description') et/ou un fichier ('file')."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        safe_description = _sanitize_user_content(combined_description, max_length=6000)
         prompt = _GENERATE_PROMPT.format(
-            job_description=job_description,
+            job_description=safe_description,
             job_type_values=", ".join(_JOB_TYPE_VALUES),
         )
 
