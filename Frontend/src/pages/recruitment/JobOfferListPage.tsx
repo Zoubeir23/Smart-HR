@@ -11,8 +11,11 @@ import {
   Plus,
   Loader2,
   Sparkles,
+  Paperclip,
+  X,
+  FileText,
 } from 'lucide-react';
-import { recruitmentService } from '@/services/recruitmentService';
+import { recruitmentService, type GeneratedJobOfferDraft } from '@/services/recruitmentService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -94,25 +97,41 @@ export default function JobOfferListPage() {
 
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
   const [rawJobDescription, setRawJobDescription] = useState('');
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
+  const [generatedDraft, setGeneratedDraft] = useState<GeneratedJobOfferDraft | null>(null);
 
   const generateMutation = useMutation({
-    mutationFn: (jobDescription: string) => recruitmentService.generateJobOffer(jobDescription),
+    mutationFn: () =>
+      recruitmentService.generateJobOffer({
+        jobDescription: rawJobDescription.trim() || undefined,
+        file: attachedFile ?? undefined,
+      }),
     onSuccess: (draft) => {
-      setNewOfferForm({
-        title: draft.title || '',
-        department: draft.department || '',
-        location: draft.location || '',
-        job_type: draft.job_type || 'full_time',
-        description: draft.description || '',
-        requirements: draft.requirements || '',
-        salary_range: draft.salary_range || '',
-      });
-      toast.success('Brouillon généré — relisez et ajustez avant de publier.');
+      setGeneratedDraft(draft);
+      toast.success('Brouillon généré — relisez avant de l\'insérer.');
     },
     onError: () => {
       toast.error("Impossible de générer l'offre. Réessayez ou complétez le formulaire manuellement.");
     },
   });
+
+  const handleValidateGeneratedDraft = () => {
+    if (!generatedDraft) return;
+    setNewOfferForm({
+      title: generatedDraft.title || '',
+      department: generatedDraft.department || '',
+      location: generatedDraft.location || '',
+      job_type: generatedDraft.job_type || 'full_time',
+      description: generatedDraft.description || '',
+      requirements: generatedDraft.requirements || '',
+      salary_range: generatedDraft.salary_range || '',
+    });
+    setGeneratedDraft(null);
+  };
+
+  const handleDiscardGeneratedDraft = () => {
+    setGeneratedDraft(null);
+  };
 
   const isRHOrAdmin = user?.role === 'RH' || user?.role === 'ADMIN';
   const isCandidate = user?.role === 'CANDIDATE';
@@ -125,6 +144,8 @@ export default function JobOfferListPage() {
       setIsCreateDialogOpen(false);
       setNewOfferForm({ title: '', department: '', location: '', job_type: 'full_time', description: '', requirements: '', salary_range: '' });
       setRawJobDescription('');
+      setAttachedFile(null);
+      setGeneratedDraft(null);
     },
     onError: () => {
       toast.error("Erreur lors de la création de l'offre.");
@@ -384,29 +405,101 @@ export default function JobOfferListPage() {
               <div className="grid gap-2 rounded-lg border border-dashed border-border p-3">
                 <Label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Sparkles className="h-3.5 w-3.5" />
-                  Générer un brouillon avec l'IA (optionnel)
+                  Agent IA — Générer un brouillon (optionnel)
                 </Label>
                 <Textarea
                   value={rawJobDescription}
                   onChange={(e) => setRawJobDescription(e.target.value)}
-                  placeholder="Collez une fiche de poste brute — l'IA remplit les champs ci-dessous."
+                  placeholder="Décrivez le poste à créer, ou joignez un PDF/TXT/MD pour donner du contexte..."
                   rows={2}
                 />
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="w-fit gap-2"
-                  disabled={!rawJobDescription.trim() || generateMutation.isPending}
-                  onClick={() => generateMutation.mutate(rawJobDescription)}
-                >
-                  {generateMutation.isPending ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                  Générer
-                </Button>
+                {attachedFile && (
+                  <div className="flex w-fit items-center gap-2 rounded-md border border-border bg-muted/50 px-2 py-1 text-xs">
+                    <FileText className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="max-w-[220px] truncate">{attachedFile.name}</span>
+                    <button
+                      type="button"
+                      aria-label="Retirer le fichier joint"
+                      className="text-muted-foreground hover:text-foreground"
+                      onClick={() => setAttachedFile(null)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+                <div className="flex items-center gap-2">
+                  <input
+                    id="job-offer-generate-file-input"
+                    type="file"
+                    accept=".pdf,.txt,.md"
+                    className="hidden"
+                    onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-fit gap-2"
+                    onClick={() => document.getElementById('job-offer-generate-file-input')?.click()}
+                  >
+                    <Paperclip className="h-3.5 w-3.5" />
+                    Joindre un fichier
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="w-fit gap-2"
+                    disabled={(!rawJobDescription.trim() && !attachedFile) || generateMutation.isPending}
+                    onClick={() => generateMutation.mutate()}
+                  >
+                    {generateMutation.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    Générer
+                  </Button>
+                </div>
+                {generatedDraft && (
+                  <div className="mt-2 grid gap-2 rounded-lg border border-primary/30 bg-primary/5 p-3">
+                    <p className="text-sm font-semibold">{generatedDraft.title || 'Sans titre'}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {generatedDraft.location && <Badge variant="outline">{generatedDraft.location}</Badge>}
+                      {generatedDraft.job_type && (
+                        <Badge variant="outline">
+                          {JOB_TYPE_OPTIONS.find((opt) => opt.value === generatedDraft.job_type)?.label ?? generatedDraft.job_type}
+                        </Badge>
+                      )}
+                      {generatedDraft.department && <Badge variant="outline">{generatedDraft.department}</Badge>}
+                    </div>
+                    {generatedDraft.description && (
+                      <p className="line-clamp-3 text-xs text-muted-foreground">{generatedDraft.description}</p>
+                    )}
+                    {generatedDraft.requirements && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {generatedDraft.requirements
+                          .split('\n')
+                          .map((requirement) => requirement.trim())
+                          .filter(Boolean)
+                          .map((requirement) => (
+                            <Badge key={requirement} variant="secondary" className="text-[11px] font-normal">
+                              {requirement}
+                            </Badge>
+                          ))}
+                      </div>
+                    )}
+                    <div className="flex justify-end gap-2 pt-1">
+                      <Button type="button" variant="ghost" size="sm" onClick={handleDiscardGeneratedDraft}>
+                        <X className="mr-1 h-3.5 w-3.5" />
+                        Ignorer le brouillon
+                      </Button>
+                      <Button type="button" size="sm" onClick={handleValidateGeneratedDraft}>
+                        Valider et insérer
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="grid gap-2">
                 <Label>Titre du poste *</Label>
