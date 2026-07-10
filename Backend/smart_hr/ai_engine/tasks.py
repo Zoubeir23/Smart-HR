@@ -32,9 +32,7 @@ def predict_all_employees_task() -> dict:
         logger.error("Modèle churn introuvable — tâche annulée")
         return {"status": "error", "detail": "Modèle non entraîné"}
 
-    employees = list(
-        Employee.objects.filter(status=Employee.Status.ACTIVE).select_related("user", "department", "position")
-    )
+    employees = list(Employee.objects.filter(status=Employee.Status.ACTIVE).select_related("user", "department", "position"))
     employee_ids = [e.pk for e in employees]
     feature_maps = _build_employee_feature_maps(employee_ids)
     count = 0
