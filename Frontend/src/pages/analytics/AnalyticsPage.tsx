@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { jsPDF } from 'jspdf';
 import {
@@ -16,6 +17,9 @@ import {
   Network,
   FileSpreadsheet,
   FileText,
+  LayoutGrid,
+  Sparkles,
+  CircleCheck,
 } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import PageHeader from '@/components/common/PageHeader';
@@ -23,7 +27,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { departmentService } from '@/services/departmentService';
 import AgePyramidChart from '@/components/charts/AgePyramidChart';
 import SalaryDistributionChart from '@/components/charts/SalaryDistributionChart';
 import DepartmentHeadcountChart from '@/components/charts/DepartmentHeadcountChart';
@@ -32,7 +39,35 @@ import RecruitmentFunnelChart from '@/components/charts/RecruitmentFunnelChart';
 import PerformanceDistributionChart from '@/components/charts/PerformanceDistributionChart';
 import TrainingCostChart from '@/components/charts/TrainingCostChart';
 import OrganigrammeSummaryTree from '@/components/analytics/OrganigrammeSummaryTree';
-import { analyticsService, HRAnalyticsOverview } from '@/services/analyticsService';
+import { analyticsService, AnalyticsPeriod, HRAnalyticsOverview } from '@/services/analyticsService';
+
+type ActiveTab =
+  | 'overview'
+  | 'workforce'
+  | 'performance'
+  | 'talents'
+  | 'training'
+  | 'engagement'
+  | 'recruitment'
+  | 'payroll';
+
+const TABS: [ActiveTab, string][] = [
+  ['overview', "Vue d'ensemble"],
+  ['workforce', 'Effectif & Structure'],
+  ['performance', 'Performance'],
+  ['talents', 'Talents'],
+  ['training', 'Formation'],
+  ['engagement', 'Engagement'],
+  ['recruitment', 'Recrutement'],
+  ['payroll', 'Masse Salariale'],
+];
+
+const PERIODS: [AnalyticsPeriod, string][] = [
+  ['1m', '1M'],
+  ['3m', '3M'],
+  ['6m', '6M'],
+  ['1y', '1A'],
+];
 
 function formatCurrency(amount: number): string {
   if (amount >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M FCFA`;
@@ -142,7 +177,7 @@ function LeaveAttendanceGrid({
     <div className="grid grid-cols-2 gap-4">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Congés — {new Date().getFullYear()}
+          Congés (période sélectionnée)
         </p>
         <div className="space-y-1.5 text-sm">
           <div className="flex justify-between">
@@ -165,7 +200,7 @@ function LeaveAttendanceGrid({
       </div>
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Présences — {new Date().toLocaleDateString('fr-FR', { month: 'long' })}
+          Présences (période sélectionnée)
         </p>
         <div className="space-y-1.5 text-sm">
           <div className="flex justify-between">
@@ -187,6 +222,93 @@ function LeaveAttendanceGrid({
         </div>
       </div>
     </div>
+  );
+}
+
+interface AnalyticsAlert {
+  severity: 'warning' | 'info';
+  message: string;
+}
+
+/**
+ * Alertes & recommandations calculées côté client depuis les indicateurs déjà
+ * chargés — règles simples (seuils), pas d'appel serveur dédié.
+ */
+function buildAlerts(data: HRAnalyticsOverview): AnalyticsAlert[] {
+  const alerts: AnalyticsAlert[] = [];
+
+  if (data.churn_summary.high > 0) {
+    alerts.push({
+      severity: 'warning',
+      message: `${data.churn_summary.high} employé(s) présentent un risque de départ élevé.`,
+    });
+  }
+  if (data.leave_summary.pending > 0) {
+    alerts.push({
+      severity: 'info',
+      message: `${data.leave_summary.pending} demande(s) de congé en attente de validation.`,
+    });
+  }
+  if (data.training_summary.total_participations > 0 && data.training_summary.completion_rate < 50) {
+    alerts.push({
+      severity: 'warning',
+      message: `Taux de complétion des formations faible (${data.training_summary.completion_rate}%).`,
+    });
+  }
+  if (data.engagement_summary.responses_count > 0 && data.engagement_summary.average_rating < 3) {
+    alerts.push({
+      severity: 'warning',
+      message: `Score d'engagement du personnel bas (${data.engagement_summary.average_rating}/5).`,
+    });
+  }
+  const pendingApplications = data.recruitment_funnel.find((entry) => entry.status === 'pending')?.count ?? 0;
+  if (pendingApplications > 5) {
+    alerts.push({
+      severity: 'info',
+      message: `${pendingApplications} candidatures en attente de traitement.`,
+    });
+  }
+
+  return alerts;
+}
+
+function AlertsPanel({ data }: { data?: HRAnalyticsOverview }) {
+  const alerts = data ? buildAlerts(data) : [];
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Sparkles className="h-4 w-4 text-secondary" />
+          Alertes & Recommandations
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {alerts.length === 0 ? (
+          <div className="flex items-center gap-2 py-4 text-sm text-muted-foreground">
+            <CircleCheck className="h-4 w-4 text-green-600" />
+            Aucune alerte — tous les indicateurs sont dans la norme.
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {alerts.map((alert, index) => (
+              <li
+                key={index}
+                className={cn(
+                  'flex items-start gap-2 rounded-lg px-3 py-2 text-sm',
+                  alert.severity === 'warning'
+                    ? 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                    : 'bg-blue-500/10 text-blue-700 dark:text-blue-400'
+                )}
+              >
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {alert.message}
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -296,14 +418,25 @@ function generateAnalyticsPdf(data: HRAnalyticsOverview): void {
 
 export default function AnalyticsPage() {
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<ActiveTab>('overview');
+  const [departmentId, setDepartmentId] = useState<number | null>(null);
+  const [period, setPeriod] = useState<AnalyticsPeriod>('1y');
+
+  const { data: departmentsData } = useQuery({
+    queryKey: ['departments'],
+    queryFn: departmentService.getAll,
+  });
+  const departments: { id: number; name: string }[] = departmentsData?.results ?? departmentsData ?? [];
+
+  const filters = { departmentId, period };
   const { data, isLoading, refetch, dataUpdatedAt } = useQuery({
-    queryKey: ['hr-analytics-overview'],
-    queryFn: analyticsService.getOverview,
+    queryKey: ['hr-analytics-overview', departmentId, period],
+    queryFn: () => analyticsService.getOverview(filters),
     staleTime: 5 * 60 * 1000,
   });
 
   const exportExcelMutation = useMutation({
-    mutationFn: analyticsService.exportOverviewExcel,
+    mutationFn: () => analyticsService.exportOverviewExcel(filters),
     onError: () => {
       toast({ title: 'Erreur', description: "Impossible d'exporter en Excel.", variant: 'destructive' });
     },
@@ -329,14 +462,44 @@ export default function AnalyticsPage() {
         className="space-y-6"
       >
         <PageHeader
-          title="Analytiques RH"
-          description="Vue agrégée des indicateurs clés — effectifs, salaires, congés, churn"
+          title="People Analytics"
+          description="Tableaux de bord et indicateurs RH — fini le reporting manuel"
           actions={
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <Select
+                value={departmentId ? String(departmentId) : 'all'}
+                onValueChange={(value) => setDepartmentId(value === 'all' ? null : Number(value))}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les départements</SelectItem>
+                  {departments.map((department) => (
+                    <SelectItem key={department.id} value={String(department.id)}>
+                      {department.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              <div className="flex gap-1 rounded-lg border bg-muted/40 p-1">
+                {PERIODS.map(([value, label]) => (
+                  <button
+                    key={value}
+                    onClick={() => setPeriod(value)}
+                    className={cn(
+                      'rounded-md px-3 py-1 text-xs font-medium transition-all',
+                      period === value ? 'bg-background text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
               {lastUpdated && (
-                <span className="text-xs text-muted-foreground">
-                  Actualisé à {lastUpdated}
-                </span>
+                <span className="text-xs text-muted-foreground">Actualisé à {lastUpdated}</span>
               )}
               <Button
                 variant="outline"
@@ -359,164 +522,149 @@ export default function AnalyticsPage() {
           }
         />
 
-        {/* KPI cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {isLoading ? (
-            Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
-          ) : (
-            <>
-              <StatCard
-                title="Effectif actif"
-                value={data?.totals.active_employees ?? 0}
-                subtitle="Employés en activité"
-                icon={Users}
-                trend="neutral"
-              />
-              <StatCard
-                title="Masse salariale"
-                value={formatCurrency(data?.totals.salary_mass ?? 0)}
-                subtitle="Total mensuel"
-                icon={CreditCard}
-                trend="neutral"
-              />
-              <StatCard
-                title="Salaire moyen"
-                value={formatCurrency(data?.totals.average_salary ?? 0)}
-                subtitle="Par employé"
-                icon={TrendingUp}
-                trend="neutral"
-              />
-              <StatCard
-                title="Risque churn élevé"
-                value={data?.churn_summary.high ?? 0}
-                subtitle="Employés à surveiller"
-                icon={AlertTriangle}
-                trend={data?.churn_summary.high && data.churn_summary.high > 0 ? 'down' : 'neutral'}
-              />
-            </>
-          )}
+        {/* Onglets */}
+        <div className="flex flex-wrap gap-1 rounded-lg border bg-muted/40 p-1">
+          {TABS.map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={cn(
+                'rounded-md px-4 py-1.5 text-sm font-medium transition-all',
+                activeTab === tab ? 'bg-background text-foreground shadow' : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              {label}
+            </button>
+          ))}
         </div>
 
-        {/* Charts row 1: Pyramide des âges + Distribution salaires */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-4 w-4" />
-                Pyramide des âges
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Répartition par groupe d'âge</p>
-            </CardHeader>
-            <CardContent>
+        {activeTab === 'overview' && (
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {isLoading ? (
-                <Skeleton className="h-52 w-full" />
+                Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
               ) : (
-                <AgePyramidChart data={data?.age_pyramid ?? []} />
+                <>
+                  <StatCard
+                    title="Effectif actif"
+                    value={data?.totals.active_employees ?? 0}
+                    subtitle="Employés en activité"
+                    icon={Users}
+                    trend="neutral"
+                  />
+                  <StatCard
+                    title="Risque churn élevé"
+                    value={data?.churn_summary.high ?? 0}
+                    subtitle="Employés à surveiller"
+                    icon={AlertTriangle}
+                    trend={data?.churn_summary.high && data.churn_summary.high > 0 ? 'down' : 'neutral'}
+                  />
+                  <StatCard
+                    title="Performance moyenne"
+                    value={`${data?.performance_summary.average_score ?? 0}/100`}
+                    subtitle={`${data?.performance_summary.evaluated_count ?? 0} évaluation(s)`}
+                    icon={Target}
+                    trend="neutral"
+                  />
+                  <StatCard
+                    title="Masse salariale"
+                    value={formatCurrency(data?.totals.salary_mass ?? 0)}
+                    subtitle="Total mensuel"
+                    icon={CreditCard}
+                    trend="neutral"
+                  />
+                </>
               )}
-            </CardContent>
-          </Card>
+            </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <CreditCard className="h-4 w-4" />
-                Distribution des salaires
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Effectif par tranche de salaire</p>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-52 w-full" />
-              ) : (
-                <SalaryDistributionChart data={data?.salary_distribution ?? []} />
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            <AlertsPanel data={data} />
 
-        {/* Charts row 2: Effectifs par dept + Rétention */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Users className="h-4 w-4" />
-                Effectifs par département
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Répartition des employés actifs</p>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-52 w-full" />
-              ) : (
-                <DepartmentHeadcountChart data={data?.department_headcount ?? []} />
-              )}
-            </CardContent>
-          </Card>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <TrendingUp className="h-4 w-4" />
+                    Évolution des effectifs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? <Skeleton className="h-52 w-full" /> : <MonthlyHeadcountChart data={data?.monthly_headcount ?? []} />}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <LayoutGrid className="h-4 w-4" />
+                    Effectifs par département
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <Skeleton className="h-52 w-full" />
+                  ) : (
+                    <DepartmentHeadcountChart data={data?.department_headcount ?? []} />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="h-4 w-4" />
-                Nouvelles embauches
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Evolution sur 12 mois</p>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-52 w-full" />
-              ) : (
-                <MonthlyHeadcountChart data={data?.monthly_headcount ?? []} />
-              )}
-            </CardContent>
-          </Card>
-        </div>
+        {activeTab === 'workforce' && (
+          <div className="space-y-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Users className="h-4 w-4" />
+                    Pyramide des âges
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">Répartition par groupe d'âge</p>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? <Skeleton className="h-52 w-full" /> : <AgePyramidChart data={data?.age_pyramid ?? []} />}
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Network className="h-4 w-4" />
+                    Structure de l'organigramme
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">Effectif par unité, du sommet aux services</p>
+                </CardHeader>
+                <CardContent>
+                  {isLoading ? (
+                    <Skeleton className="h-52 w-full" />
+                  ) : (
+                    <OrganigrammeSummaryTree data={data?.department_hierarchy ?? []} />
+                  )}
+                </CardContent>
+              </Card>
+            </div>
 
-        {/* Row 3: Congés + Présences + Churn */}
-        <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Calendar className="h-4 w-4" />
-                Congés & Présences
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-36 w-full" />
-              ) : (
-                <LeaveAttendanceGrid
-                  leave={data?.leave_summary ?? { total: 0, approved: 0, pending: 0, rejected: 0 }}
-                  attendance={data?.attendance_summary ?? { total: 0, present: 0, absent: 0, late: 0 }}
-                />
-              )}
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Calendar className="h-4 w-4" />
+                  Congés & Présences (absentéisme)
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-36 w-full" />
+                ) : (
+                  <LeaveAttendanceGrid
+                    leave={data?.leave_summary ?? { total: 0, approved: 0, pending: 0, rejected: 0 }}
+                    attendance={data?.attendance_summary ?? { total: 0, present: 0, absent: 0, late: 0 }}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <AlertTriangle className="h-4 w-4" />
-                Risque de départ
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Analyse churn IA</p>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-36 w-full" />
-              ) : (
-                <ChurnRiskBadges
-                  high={data?.churn_summary.high ?? 0}
-                  medium={data?.churn_summary.medium ?? 0}
-                  low={data?.churn_summary.low ?? 0}
-                  unscored={data?.churn_summary.unscored ?? 0}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Row 4: Performance + Recrutement */}
-        <div className="grid gap-6 lg:grid-cols-2">
+        {activeTab === 'performance' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -530,33 +678,115 @@ export default function AnalyticsPage() {
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-52 w-full" />
+                <Skeleton className="h-64 w-full" />
               ) : (
                 <PerformanceDistributionChart data={data?.performance_summary.distribution ?? []} />
               )}
             </CardContent>
           </Card>
+        )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Briefcase className="h-4 w-4" />
-                Recrutement — de A à Z
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Candidatures par étape du processus</p>
-            </CardHeader>
-            <CardContent>
+        {activeTab === 'talents' && (
+          <div className="grid gap-6 lg:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <AlertTriangle className="h-4 w-4" />
+                  Risque de départ
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Analyse churn IA</p>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-36 w-full" />
+                ) : (
+                  <ChurnRiskBadges
+                    high={data?.churn_summary.high ?? 0}
+                    medium={data?.churn_summary.medium ?? 0}
+                    low={data?.churn_summary.low ?? 0}
+                    unscored={data?.churn_summary.unscored ?? 0}
+                  />
+                )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Target className="h-4 w-4" />
+                  Performance des talents
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Répartition des scores d'évaluation</p>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-36 w-full" />
+                ) : (
+                  <PerformanceDistributionChart data={data?.performance_summary.distribution ?? []} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'training' && (
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {isLoading ? (
-                <Skeleton className="h-52 w-full" />
+                Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
               ) : (
-                <RecruitmentFunnelChart data={data?.recruitment_funnel ?? []} />
+                <>
+                  <StatCard
+                    title="Cours disponibles"
+                    value={data?.training_summary.available_courses ?? 0}
+                    subtitle={`${data?.training_summary.total_formations ?? 0} formation(s) au total`}
+                    icon={GraduationCap}
+                    trend="neutral"
+                  />
+                  <StatCard
+                    title="Coût total des formations"
+                    value={formatCurrency(data?.training_summary.total_cost ?? 0)}
+                    subtitle="Toutes formations confondues"
+                    icon={CreditCard}
+                    trend="neutral"
+                  />
+                  <StatCard
+                    title="Taux de complétion"
+                    value={`${data?.training_summary.completion_rate ?? 0}%`}
+                    subtitle={`${data?.training_summary.completed_participations ?? 0}/${data?.training_summary.total_participations ?? 0} inscriptions`}
+                    icon={CheckCircle2}
+                    trend="neutral"
+                  />
+                  <StatCard
+                    title="Total assigné"
+                    value={data?.training_summary.total_participations ?? 0}
+                    subtitle="Inscriptions aux formations"
+                    icon={Users}
+                    trend="neutral"
+                  />
+                </>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-        {/* Row 5: Engagement + Organigramme */}
-        <div className="grid gap-6 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <GraduationCap className="h-4 w-4" />
+                  Répartition des formations en coût
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Coût par formation (10 plus élevées)</p>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-52 w-full" />
+                ) : (
+                  <TrainingCostChart data={data?.training_summary.cost_breakdown ?? []} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'engagement' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
@@ -581,81 +811,77 @@ export default function AnalyticsPage() {
               )}
             </CardContent>
           </Card>
+        )}
 
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Network className="h-4 w-4" />
-                Structure de l'organigramme
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">Effectif par unité, du sommet aux services</p>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <Skeleton className="h-36 w-full" />
-              ) : (
-                <OrganigrammeSummaryTree data={data?.department_hierarchy ?? []} />
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Row 6: Formation (coûts, complétion & répartition) */}
-        <div className="space-y-6">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {isLoading ? (
-              Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
-            ) : (
-              <>
-                <StatCard
-                  title="Cours disponibles"
-                  value={data?.training_summary.available_courses ?? 0}
-                  subtitle={`${data?.training_summary.total_formations ?? 0} formation(s) au total`}
-                  icon={GraduationCap}
-                  trend="neutral"
-                />
-                <StatCard
-                  title="Coût total des formations"
-                  value={formatCurrency(data?.training_summary.total_cost ?? 0)}
-                  subtitle="Toutes formations confondues"
-                  icon={CreditCard}
-                  trend="neutral"
-                />
-                <StatCard
-                  title="Taux de complétion"
-                  value={`${data?.training_summary.completion_rate ?? 0}%`}
-                  subtitle={`${data?.training_summary.completed_participations ?? 0}/${data?.training_summary.total_participations ?? 0} inscriptions`}
-                  icon={CheckCircle2}
-                  trend="neutral"
-                />
-                <StatCard
-                  title="Total assigné"
-                  value={data?.training_summary.total_participations ?? 0}
-                  subtitle="Inscriptions aux formations"
-                  icon={Users}
-                  trend="neutral"
-                />
-              </>
-            )}
-          </div>
-
+        {activeTab === 'recruitment' && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
-                <GraduationCap className="h-4 w-4" />
-                Répartition des formations en coût
+                <Briefcase className="h-4 w-4" />
+                Recrutement — de A à Z
               </CardTitle>
-              <p className="text-sm text-muted-foreground">Coût par formation (10 plus élevées)</p>
+              <p className="text-sm text-muted-foreground">Candidatures par étape du processus</p>
             </CardHeader>
             <CardContent>
               {isLoading ? (
-                <Skeleton className="h-52 w-full" />
+                <Skeleton className="h-64 w-full" />
               ) : (
-                <TrainingCostChart data={data?.training_summary.cost_breakdown ?? []} />
+                <RecruitmentFunnelChart data={data?.recruitment_funnel ?? []} />
               )}
             </CardContent>
           </Card>
-        </div>
+        )}
+
+        {activeTab === 'payroll' && (
+          <div className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {isLoading ? (
+                Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 w-full rounded-xl" />)
+              ) : (
+                <>
+                  <StatCard
+                    title="Masse salariale"
+                    value={formatCurrency(data?.totals.salary_mass ?? 0)}
+                    subtitle="Total mensuel"
+                    icon={CreditCard}
+                    trend="neutral"
+                  />
+                  <StatCard
+                    title="Salaire moyen"
+                    value={formatCurrency(data?.totals.average_salary ?? 0)}
+                    subtitle="Par employé"
+                    icon={TrendingUp}
+                    trend="neutral"
+                  />
+                  <StatCard
+                    title="Effectif actif"
+                    value={data?.totals.active_employees ?? 0}
+                    subtitle="Base de calcul"
+                    icon={Users}
+                    trend="neutral"
+                  />
+                </>
+              )}
+            </div>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CreditCard className="h-4 w-4" />
+                  Distribution des salaires
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">Effectif par tranche de salaire</p>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <Skeleton className="h-52 w-full" />
+                ) : (
+                  <SalaryDistributionChart data={data?.salary_distribution ?? []} />
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </motion.div>
   );
 }
