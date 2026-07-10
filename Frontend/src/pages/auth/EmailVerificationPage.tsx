@@ -241,7 +241,11 @@ const EmailVerificationPage = () => {
                     autoComplete="email"
                     placeholder="vous@exemple.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      // Persiste la saisie manuelle pour survivre à un rafraîchissement.
+                      sessionStorage.setItem(PENDING_VERIFICATION_EMAIL_STORAGE_KEY, e.target.value);
+                    }}
                     className="w-full px-4 py-3 rounded-lg border-2 border-border bg-background focus:border-primary focus:outline-none transition-colors text-sm"
                   />
                 </div>
