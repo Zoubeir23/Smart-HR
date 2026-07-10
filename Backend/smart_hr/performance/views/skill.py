@@ -38,7 +38,10 @@ class SkillViewSet(viewsets.ModelViewSet):
                     base = base.filter(category=category)
             return base
 
-        return base.filter(employee=user)
+        # Filtrage via la relation inverse : renvoie un queryset vide si
+        # l'utilisateur n'a pas de profil employé (ex : candidat), au lieu
+        # de lever Employee.DoesNotExist comme le ferait user.employee_profile.
+        return base.filter(employee__user=user)
 
     def get_permissions(self):
         if self.action in ["create", "update", "partial_update", "destroy"]:
