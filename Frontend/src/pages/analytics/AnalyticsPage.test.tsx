@@ -1,22 +1,33 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import AnalyticsPage from './AnalyticsPage';
 
-const { toastMock, getOverviewMock, exportOverviewExcelMock } = vi.hoisted(() => ({
+const { toastMock, getOverviewMock, exportOverviewExcelMock, getDepartmentsMock } = vi.hoisted(() => ({
   toastMock: vi.fn(),
   getOverviewMock: vi.fn(),
   exportOverviewExcelMock: vi.fn(),
+  getDepartmentsMock: vi.fn(),
 }));
 
 vi.mock('@/hooks/use-toast', () => ({
   useToast: () => ({ toast: toastMock }),
 }));
 
-vi.mock('@/services/analyticsService', () => ({
-  analyticsService: {
-    getOverview: getOverviewMock,
-    exportOverviewExcel: exportOverviewExcelMock,
+vi.mock('@/services/analyticsService', async () => {
+  const actual = await vi.importActual<typeof import('@/services/analyticsService')>('@/services/analyticsService');
+  return {
+    ...actual,
+    analyticsService: {
+      getOverview: getOverviewMock,
+      exportOverviewExcel: exportOverviewExcelMock,
+    },
+  };
+});
+
+vi.mock('@/services/departmentService', () => ({
+  departmentService: {
+    getAll: getDepartmentsMock,
   },
 }));
 
@@ -25,7 +36,7 @@ const baseOverview = {
   age_pyramid: [],
   salary_distribution: [],
   department_headcount: [{ department: 'Tech', count: 10 }],
-  leave_summary: { total: 0, approved: 0, pending: 0, rejected: 0 },
+  leave_summary: { total: 0, approved: 0, pending: 2, rejected: 0 },
   attendance_summary: { total: 0, present: 0, absent: 0, late: 0 },
   churn_summary: { high: 2, medium: 3, low: 37, unscored: 0 },
   monthly_headcount: [],
@@ -64,23 +75,75 @@ function renderPage() {
   );
 }
 
-describe('AnalyticsPage', () => {
-  it('affiche les nouvelles sections People Analytics une fois les données chargées', async () => {
-    getOverviewMock.mockResolvedValue(baseOverview);
-    renderPage();
+function goToTab(name: string | RegExp) {
+  fireEvent.click(screen.getByRole('button', { name }));
+}
 
-    expect(await screen.findByText('Performance globale')).toBeInTheDocument();
-    expect(screen.getByText("Recrutement — de A à Z")).toBeInTheDocument();
-    expect(screen.getByText('Engagement du personnel')).toBeInTheDocument();
-    expect(screen.getByText("Structure de l'organigramme")).toBeInTheDocument();
-    expect(screen.getByText('Cours disponibles')).toBeInTheDocument();
-    expect(screen.getByText('Total assigné')).toBeInTheDocument();
+describe('AnalyticsPage', () => {
+  beforeEach(() => {
+    getDepartmentsMock.mockResolvedValue([{ id: 1, name: 'Tech' }]);
   });
 
-  it('affiche la moyenne d\'engagement et le nombre de réponses', async () => {
+  it("affiche les onglets de navigation People Analytics", async () => {
     getOverviewMock.mockResolvedValue(baseOverview);
     renderPage();
 
+    await screen.findByText('Effectif actif');
+    expect(screen.getByRole('button', { name: "Vue d'ensemble" })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Effectif & Structure' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Performance' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Talents' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Formation' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Engagement' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Recrutement' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Masse Salariale' })).toBeInTheDocument();
+  });
+
+  it("affiche une alerte pour les congés en attente sur l'onglet Vue d'ensemble", async () => {
+    getOverviewMock.mockResolvedValue(baseOverview);
+    renderPage();
+
+    expect(await screen.findByText(/demande\(s\) de congé en attente/i)).toBeInTheDocument();
+  });
+
+  it("n'affiche aucune alerte quand tous les indicateurs sont dans la norme", async () => {
+    getOverviewMock.mockResolvedValue({
+      ...baseOverview,
+      churn_summary: { high: 0, medium: 0, low: 42, unscored: 0 },
+      leave_summary: { total: 0, approved: 0, pending: 0, rejected: 0 },
+      training_summary: { ...baseOverview.training_summary, completion_rate: 90 },
+      engagement_summary: { responses_count: 12, average_rating: 4.5 },
+      recruitment_funnel: [{ status: 'pending', label: 'En attente', count: 1 }],
+    });
+    renderPage();
+
+    expect(await screen.findByText(/aucune alerte/i)).toBeInTheDocument();
+  });
+
+  it('affiche la section Performance en changeant d\'onglet', async () => {
+    getOverviewMock.mockResolvedValue(baseOverview);
+    renderPage();
+
+    await screen.findByText('Effectif actif');
+    goToTab('Performance');
+    expect(await screen.findByText('Performance globale')).toBeInTheDocument();
+  });
+
+  it("affiche la section Recrutement en changeant d'onglet", async () => {
+    getOverviewMock.mockResolvedValue(baseOverview);
+    renderPage();
+
+    await screen.findByText('Effectif actif');
+    goToTab('Recrutement');
+    expect(await screen.findByText('Recrutement — de A à Z')).toBeInTheDocument();
+  });
+
+  it("affiche la section Engagement avec la moyenne et le nombre de réponses", async () => {
+    getOverviewMock.mockResolvedValue(baseOverview);
+    renderPage();
+
+    await screen.findByText('Effectif actif');
+    goToTab('Engagement');
     await screen.findByText('Engagement du personnel');
     expect(screen.getByText('4.1')).toBeInTheDocument();
     expect(screen.getByText('12 réponse(s) collectée(s)')).toBeInTheDocument();
@@ -91,7 +154,7 @@ describe('AnalyticsPage', () => {
     exportOverviewExcelMock.mockResolvedValue(undefined);
     renderPage();
 
-    await screen.findByText('Performance globale');
+    await screen.findByText('Effectif actif');
     fireEvent.click(screen.getByRole('button', { name: /excel/i }));
 
     await waitFor(() => expect(exportOverviewExcelMock).toHaveBeenCalledTimes(1));
@@ -102,7 +165,7 @@ describe('AnalyticsPage', () => {
     exportOverviewExcelMock.mockRejectedValue(new Error('boom'));
     renderPage();
 
-    await screen.findByText('Performance globale');
+    await screen.findByText('Effectif actif');
     fireEvent.click(screen.getByRole('button', { name: /excel/i }));
 
     await waitFor(() =>
@@ -119,11 +182,24 @@ describe('AnalyticsPage', () => {
     expect(screen.getByRole('button', { name: /pdf/i })).toBeDisabled();
   });
 
-  it('le bouton PDF devient actif une fois les données chargées', async () => {
+  it('affiche le filtre département avec "Tous les départements" par défaut', async () => {
     getOverviewMock.mockResolvedValue(baseOverview);
     renderPage();
 
-    await screen.findByText('Performance globale');
-    expect(screen.getByRole('button', { name: /pdf/i })).not.toBeDisabled();
+    await screen.findByText('Effectif actif');
+    expect(screen.getByRole('combobox')).toHaveTextContent('Tous les départements');
+    expect(getOverviewMock).toHaveBeenCalledWith(expect.objectContaining({ departmentId: null }));
+  });
+
+  it('change de période déclenche un nouvel appel avec le filtre', async () => {
+    getOverviewMock.mockResolvedValue(baseOverview);
+    renderPage();
+
+    await screen.findByText('Effectif actif');
+    getOverviewMock.mockClear();
+
+    fireEvent.click(screen.getByRole('button', { name: '3M' }));
+
+    await waitFor(() => expect(getOverviewMock).toHaveBeenCalledWith(expect.objectContaining({ period: '3m' })));
   });
 });
