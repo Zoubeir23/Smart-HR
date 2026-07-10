@@ -19,6 +19,7 @@ def predict_all_employees_task() -> dict:
 
     from smart_hr.ai_engine.models import ChurnPrediction
     from smart_hr.ai_engine.views.churn import FEATURE_COLUMNS
+    from smart_hr.ai_engine.views.churn import _build_employee_feature_maps
     from smart_hr.ai_engine.views.churn import _build_recommendations
     from smart_hr.ai_engine.views.churn import _employee_to_features
     from smart_hr.ai_engine.views.churn import _explain_prediction
@@ -31,11 +32,15 @@ def predict_all_employees_task() -> dict:
         logger.error("Modèle churn introuvable — tâche annulée")
         return {"status": "error", "detail": "Modèle non entraîné"}
 
-    employees = Employee.objects.filter(status=Employee.Status.ACTIVE).select_related("user", "department", "position")
+    employees = list(
+        Employee.objects.filter(status=Employee.Status.ACTIVE).select_related("user", "department", "position")
+    )
+    employee_ids = [e.pk for e in employees]
+    feature_maps = _build_employee_feature_maps(employee_ids)
     count = 0
     for employee in employees:
         try:
-            features = _employee_to_features(employee)
+            features = _employee_to_features(employee, feature_maps=feature_maps)
             proba = model.predict_proba(np.array([[features[col] for col in FEATURE_COLUMNS]]))[0][1]
             risk_score = round(proba * 100, 2)
             risk_level = (
