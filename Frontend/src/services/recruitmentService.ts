@@ -25,8 +25,17 @@ export const recruitmentService = {
     return data;
   },
 
-  generateJobOffer: async (jobDescription: string): Promise<GeneratedJobOfferDraft> => {
-    const { data } = await api.post('/recruitment/job-offers/generate/', { job_description: jobDescription });
+  generateJobOffer: async (params: { jobDescription?: string; file?: File }): Promise<GeneratedJobOfferDraft> => {
+    if (params.file) {
+      const formData = new FormData();
+      if (params.jobDescription) formData.append('job_description', params.jobDescription);
+      formData.append('file', params.file);
+      const { data } = await api.post('/recruitment/job-offers/generate/', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return data;
+    }
+    const { data } = await api.post('/recruitment/job-offers/generate/', { job_description: params.jobDescription });
     return data;
   },
 
