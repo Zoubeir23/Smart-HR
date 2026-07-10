@@ -74,6 +74,32 @@ describe('ChatWidget', () => {
     expect(chatMock).toHaveBeenCalledWith('Valide le congé de Awa Diallo', undefined);
   });
 
+  it('adapte le message de bienvenue au rôle : employé → poser son propre congé', () => {
+    useAuthMock.mockReturnValue({ user: { first_name: 'Amadou', role: 'EMPLOYEE' } });
+    renderWidget();
+    fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
+
+    expect(screen.getByText(/pose un congé du 12 au 15 août/i)).toBeInTheDocument();
+    expect(screen.queryByText(/valide le congé de awa diallo/i)).not.toBeInTheDocument();
+  });
+
+  it('adapte le message de bienvenue au rôle : RH → valider un congé', () => {
+    useAuthMock.mockReturnValue({ user: { first_name: 'Fatou', role: 'RH' } });
+    renderWidget();
+    fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
+
+    expect(screen.getByText(/valide le congé de awa diallo/i)).toBeInTheDocument();
+  });
+
+  it('adapte le message de bienvenue au rôle : candidat → aucune action proposée', () => {
+    useAuthMock.mockReturnValue({ user: { first_name: 'Moussa', role: 'CANDIDATE' } });
+    renderWidget();
+    fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
+
+    expect(screen.getByText(/où en est ma candidature/i)).toBeInTheDocument();
+    expect(screen.queryByText(/demandez-moi d'agir/i)).not.toBeInTheDocument();
+  });
+
   it('navigue vers /ai-chat au clic sur "plein écran"', () => {
     renderWidget();
     fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
