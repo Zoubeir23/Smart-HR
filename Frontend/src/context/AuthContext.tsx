@@ -73,6 +73,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isLoading: true,
   });
 
+  // Le bouton "Précédent" du navigateur peut restaurer une page protégée
+  // depuis le bfcache (back-forward cache) après une déconnexion, sans
+  // remonter React ni re-vérifier l'authentification — l'utilisateur voit
+  // alors furtivement l'ancienne page comme s'il était encore connecté.
+  // `pageshow` avec `event.persisted` détecte cette restauration et force
+  // un rechargement complet, qui relance la vérification du token ci-dessous.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (event.persisted) {
+        window.location.reload();
+      }
+    };
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, []);
+
   // Verify stored token on startup
   useEffect(() => {
     const accessToken = localStorage.getItem('access_token');
