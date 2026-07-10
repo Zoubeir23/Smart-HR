@@ -34,10 +34,43 @@ _SALARY_BRACKETS = [
     ("> 1M", 1_000_000, None),
 ]
 
+_PERIOD_DAYS = {
+    "1m": 30,
+    "3m": 90,
+    "6m": 180,
+    "1y": 365,
+}
+
 
 def _compute_age(dob: date) -> int:
     today = timezone.now().date()
     return today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+
+
+def _collect_department_and_descendant_ids(department_id: int) -> set[int]:
+    """Retourne l'id fourni plus tous ses descendants dans l'organigramme
+    (profondeur arbitraire), pour qu'un filtre sur une unité englobe aussi
+    ses sous-unités. Le nombre d'itérations est borné par le nombre total de
+    départements pour éviter toute boucle infinie sur un cycle préexistant."""
+    from smart_hr.personnel.models import Department
+
+    all_departments = list(Department.objects.values("id", "parent_id"))
+    children_by_parent: dict[int, list[int]] = {}
+    for entry in all_departments:
+        if entry["parent_id"] is not None:
+            children_by_parent.setdefault(entry["parent_id"], []).append(entry["id"])
+
+    collected = {department_id}
+    frontier = [department_id]
+    for _ in range(len(all_departments) + 1):
+        next_frontier = [
+            child_id for parent_id in frontier for child_id in children_by_parent.get(parent_id, []) if child_id not in collected
+        ]
+        if not next_frontier:
+            break
+        collected.update(next_frontier)
+        frontier = next_frontier
+    return collected
 
 
 class HRAnalyticsView(APIView):
@@ -51,17 +84,59 @@ class HRAnalyticsView(APIView):
     permission_classes = [IsRH]
 
     def get(self, request) -> Response:
-        return Response(self._build_overview_data())
+        department_ids, department = self._parse_department_filter(request)
+        since_date = self._parse_since_date(request)
+        return Response(self._build_overview_data(department_ids, department, since_date))
 
-    def _build_overview_data(self) -> dict:
+    def _parse_department_filter(self, request):
+        """Lit `?department_id=` : retourne (ids_du_sous-arbre ou None, le
+        Department sélectionné ou None). Un id invalide/inexistant est
+        silencieusement ignoré (pas de filtre) plutôt que de faire planter
+        la requête — un filtre reste une bonification, jamais bloquant."""
+        from smart_hr.personnel.models import Department
+
+        raw_department_id = request.query_params.get("department_id")
+        if not raw_department_id:
+            return None, None
+        try:
+            department_id = int(raw_department_id)
+            department = Department.objects.get(pk=department_id)
+        except (ValueError, Department.DoesNotExist):
+            return None, None
+        return _collect_department_and_descendant_ids(department_id), department
+
+    def _parse_since_date(self, request):
+        """Lit `?period=` (1m/3m/6m/1y) : retourne la date de départ de la
+        fenêtre temporelle. Valeur inconnue ou absente → 1 an (comportement
+        historique de l'endpoint avant l'introduction de ce filtre)."""
+        period = request.query_params.get("period")
+        days = _PERIOD_DAYS.get(period, _PERIOD_DAYS["1y"])
+        return timezone.now() - timezone.timedelta(days=days)
+
+    def _build_overview_data(self, department_ids=None, department=None, since_date=None) -> dict:
         """Construit l'intégralité des données People Analytics — partagée
         entre l'endpoint JSON (`get`) et l'export Excel multi-onglets
-        (`HRAnalyticsExportView`), pour ne jamais dupliquer les agrégations."""
+        (`HRAnalyticsExportView`), pour ne jamais dupliquer les agrégations.
+
+        `department_ids` (None = pas de filtre) restreint aux employés de
+        l'unité choisie et de ses sous-unités. `since_date` (None = 1 an)
+        restreint les indicateurs datés à une fenêtre glissante. Certains
+        agrégats ne peuvent pas être filtrés proprement par département
+        (recrutement : `JobOffer.department` est un champ texte libre, pas
+        une relation vers `Department`) ou par période (performance : les
+        évaluations sont annuelles, une fenêtre glissante infra-annuelle n'a
+        pas de sens métier) — ce choix est documenté sur chaque méthode.
+        """
         from smart_hr.conge.models import LeaveRequest as Conge
         from smart_hr.personnel.models import Employee
         from smart_hr.presence.models import Attendance as Presence
 
+        if since_date is None:
+            since_date = self._parse_since_date_default()
+
         employees = Employee.objects.select_related("department", "user").filter(status="active")
+        if department_ids is not None:
+            employees = employees.filter(department_id__in=department_ids)
 
         total_active = employees.count()
         total_salary_mass = employees.aggregate(total=Sum("salary"))["total"] or 0
@@ -75,17 +150,20 @@ class HRAnalyticsView(APIView):
             },
             "age_pyramid": self._build_age_pyramid(employees),
             "salary_distribution": self._build_salary_distribution(employees),
-            "department_headcount": self._build_department_headcount(),
-            "leave_summary": self._build_leave_summary(Conge),
-            "attendance_summary": self._build_attendance_summary(Presence),
+            "department_headcount": self._build_department_headcount(department_ids),
+            "leave_summary": self._build_leave_summary(Conge, department_ids, since_date),
+            "attendance_summary": self._build_attendance_summary(Presence, department_ids, since_date),
             "churn_summary": self._build_churn_summary(employees),
-            "monthly_headcount": self._build_monthly_headcount(Employee),
-            "training_summary": self._build_training_summary(),
-            "performance_summary": self._build_performance_summary(),
-            "recruitment_funnel": self._build_recruitment_funnel(),
-            "engagement_summary": self._build_engagement_summary(),
-            "department_hierarchy": self._build_department_hierarchy(),
+            "monthly_headcount": self._build_monthly_headcount(Employee, department_ids, since_date),
+            "training_summary": self._build_training_summary(department_ids, since_date),
+            "performance_summary": self._build_performance_summary(department_ids),
+            "recruitment_funnel": self._build_recruitment_funnel(department, since_date),
+            "engagement_summary": self._build_engagement_summary(department_ids, since_date),
+            "department_hierarchy": self._build_department_hierarchy(department_ids),
         }
+
+    def _parse_since_date_default(self):
+        return timezone.now() - timezone.timedelta(days=_PERIOD_DAYS["1y"])
 
     def _build_age_pyramid(self, employees) -> list[dict]:
         """Distribution des employes par groupe d'age."""
@@ -111,30 +189,31 @@ class HRAnalyticsView(APIView):
             result.append({"bracket": label, "count": count})
         return result
 
-    def _build_department_headcount(self) -> list[dict]:
-        """Effectif actif par departement."""
+    def _build_department_headcount(self, department_ids=None) -> list[dict]:
+        """Effectif actif par departement (restreint au sous-arbre si un
+        filtre de département est actif)."""
         from smart_hr.personnel.models import Employee
 
-        dept_data = (
-            Employee.objects.filter(status="active", department__isnull=False)
-            .values("department__name")
-            .annotate(count=Count("id"))
-            .order_by("-count")[:10]
-        )
+        employees = Employee.objects.filter(status="active", department__isnull=False)
+        if department_ids is not None:
+            employees = employees.filter(department_id__in=department_ids)
+
+        dept_data = employees.values("department__name").annotate(count=Count("id")).order_by("-count")[:10]
         result = [{"department": entry["department__name"], "count": entry["count"]} for entry in dept_data]
-        unassigned = Employee.objects.filter(status="active", department__isnull=True).count()
+
+        unassigned_qs = Employee.objects.filter(status="active", department__isnull=True)
+        unassigned = unassigned_qs.count() if department_ids is None else 0
         if unassigned > 0:
             result.append({"department": "Non assigne", "count": unassigned})
         return result
 
-    def _build_leave_summary(self, conge_model) -> dict:
-        """Resume des conges de l'annee en cours."""
-        current_year = timezone.now().year
-        leaves_this_year = conge_model.objects.filter(
-            start_date__year=current_year,
-        )
-        total = leaves_this_year.count()
-        by_status = dict(leaves_this_year.values("status").annotate(count=Count("id")).values_list("status", "count"))
+    def _build_leave_summary(self, conge_model, department_ids=None, since_date=None) -> dict:
+        """Resume des conges sur la fenetre de periode selectionnee."""
+        leaves = conge_model.objects.filter(start_date__gte=since_date)
+        if department_ids is not None:
+            leaves = leaves.filter(employee__department_id__in=department_ids)
+        total = leaves.count()
+        by_status = dict(leaves.values("status").annotate(count=Count("id")).values_list("status", "count"))
         return {
             "total": total,
             "approved": by_status.get("approved", 0),
@@ -142,12 +221,13 @@ class HRAnalyticsView(APIView):
             "rejected": by_status.get("rejected", 0),
         }
 
-    def _build_attendance_summary(self, presence_model) -> dict:
-        """Resume des presences du mois en cours."""
-        now = timezone.now()
-        presences_this_month = presence_model.objects.filter(date__year=now.year, date__month=now.month)
-        total = presences_this_month.count()
-        by_status = dict(presences_this_month.values("status").annotate(count=Count("id")).values_list("status", "count"))
+    def _build_attendance_summary(self, presence_model, department_ids=None, since_date=None) -> dict:
+        """Resume des presences sur la fenetre de periode selectionnee."""
+        presences = presence_model.objects.filter(date__gte=since_date)
+        if department_ids is not None:
+            presences = presences.filter(employee__department_id__in=department_ids)
+        total = presences.count()
+        by_status = dict(presences.values("status").annotate(count=Count("id")).values_list("status", "count"))
         return {
             "total": total,
             "present": by_status.get("present", 0),
@@ -168,17 +248,15 @@ class HRAnalyticsView(APIView):
             "unscored": unscored,
         }
 
-    def _build_monthly_headcount(self, employee_model) -> list[dict]:
-        """Evolution mensuelle des embauches sur les 12 derniers mois."""
+    def _build_monthly_headcount(self, employee_model, department_ids=None, since_date=None) -> list[dict]:
+        """Evolution mensuelle des embauches sur la fenetre de periode selectionnee."""
         from django.db.models.functions import TruncMonth
 
-        cutoff = timezone.now() - timezone.timedelta(days=365)
+        monthly_qs = employee_model.objects.filter(hire_date__isnull=False, created_at__gte=since_date)
+        if department_ids is not None:
+            monthly_qs = monthly_qs.filter(department_id__in=department_ids)
         monthly = (
-            employee_model.objects.filter(hire_date__isnull=False, created_at__gte=cutoff)
-            .annotate(month=TruncMonth("created_at"))
-            .values("month")
-            .annotate(new_hires=Count("id"))
-            .order_by("month")
+            monthly_qs.annotate(month=TruncMonth("created_at")).values("month").annotate(new_hires=Count("id")).order_by("month")
         )
         return [
             {
@@ -188,14 +266,22 @@ class HRAnalyticsView(APIView):
             for entry in monthly
         ]
 
-    def _build_training_summary(self) -> dict:
+    def _build_training_summary(self, department_ids=None, since_date=None) -> dict:
         """Résumé des formations : coûts et taux de complétion, pour éviter le
-        reporting manuel sous Excel (cf. audit comparatif TargetYM AI)."""
+        reporting manuel sous Excel (cf. audit comparatif TargetYM AI). Les
+        formations elles-mêmes sont restreintes à la fenêtre de période
+        (`start_date`) ; les inscriptions sont en plus restreintes au
+        département via l'employé inscrit."""
         from smart_hr.formation.models import Formation
         from smart_hr.formation.models import Participation
 
-        cost_totals = Formation.objects.aggregate(total_cost=Sum("cost"), average_cost=Avg("cost"))
-        participation_totals = Participation.objects.aggregate(
+        formations = Formation.objects.filter(start_date__gte=since_date)
+        cost_totals = formations.aggregate(total_cost=Sum("cost"), average_cost=Avg("cost"))
+
+        participations = Participation.objects.filter(formation__start_date__gte=since_date)
+        if department_ids is not None:
+            participations = participations.filter(employee__department_id__in=department_ids)
+        participation_totals = participations.aggregate(
             total=Count("id"),
             completed=Count("id", filter=Q(status=Participation.Status.COMPLETED)),
         )
@@ -203,13 +289,13 @@ class HRAnalyticsView(APIView):
         completed = participation_totals["completed"] or 0
         completion_rate = round((completed / total_participations) * 100, 1) if total_participations else 0.0
 
-        available_courses = Formation.objects.filter(end_date__gte=timezone.now()).count()
+        available_courses = formations.filter(end_date__gte=timezone.now()).count()
         cost_breakdown = [
-            {"title": formation.title, "cost": float(formation.cost)} for formation in Formation.objects.order_by("-cost")[:10]
+            {"title": formation.title, "cost": float(formation.cost)} for formation in formations.order_by("-cost")[:10]
         ]
 
         return {
-            "total_formations": Formation.objects.count(),
+            "total_formations": formations.count(),
             "total_cost": float(cost_totals["total_cost"] or 0),
             "average_cost": round(float(cost_totals["average_cost"] or 0), 2),
             "total_participations": total_participations,
@@ -219,12 +305,16 @@ class HRAnalyticsView(APIView):
             "cost_breakdown": cost_breakdown,
         }
 
-    def _build_performance_summary(self) -> dict:
+    def _build_performance_summary(self, department_ids=None) -> dict:
         """Résumé des évaluations de performance : score moyen et répartition
-        par tranche, pour la vue d'ensemble People Analytics."""
+        par tranche, pour la vue d'ensemble People Analytics. Pas de filtre
+        de période : les évaluations sont annuelles (`year`), une fenêtre
+        glissante infra-annuelle n'a pas de sens métier ici."""
         from smart_hr.performance.models import PerformanceEvaluation
 
         evaluations = PerformanceEvaluation.objects.filter(global_score__isnull=False)
+        if department_ids is not None:
+            evaluations = evaluations.filter(employee__department_id__in=department_ids)
         evaluated_count = evaluations.count()
         average_score = evaluations.aggregate(avg=Avg("global_score"))["avg"] or 0
 
@@ -245,27 +335,41 @@ class HRAnalyticsView(APIView):
             "distribution": distribution,
         }
 
-    def _build_recruitment_funnel(self) -> list[dict]:
+    def _build_recruitment_funnel(self, department=None, since_date=None) -> list[dict]:
         """Entonnoir de recrutement de A à Z : nombre de candidatures par
-        étape du process, dans l'ordre du workflow."""
+        étape du process, dans l'ordre du workflow, restreint à la fenêtre de
+        période. `JobOffer.department` est un champ texte libre (pas une
+        relation vers `Department`) — le filtre par département compare donc
+        les noms (insensible à la casse), au mieux avec le modèle actuel."""
         from smart_hr.recruitment.models import Application
 
-        counts = dict(Application.objects.values("status").annotate(count=Count("id")).values_list("status", "count"))
+        applications = Application.objects.filter(created_at__gte=since_date)
+        if department is not None:
+            applications = applications.filter(job_offer__department__iexact=department.name)
+
+        counts = dict(applications.values("status").annotate(count=Count("id")).values_list("status", "count"))
         return [
             {"status": status_value, "label": status_label, "count": counts.get(status_value, 0)}
             for status_value, status_label in Application.Status.choices
         ]
 
-    def _build_engagement_summary(self) -> dict:
+    def _build_engagement_summary(self, department_ids=None, since_date=None) -> dict:
         """Score d'engagement moyen à partir des questions de type "Note (1-5)"
-        de toutes les enquêtes internes. Les réponses non numériques (ne
-        devraient pas exister pour une question RATING, mais on reste
-        défensif comme pour l'endpoint de résultats de survey) sont ignorées
-        plutôt que de faire planter l'agrégat."""
+        de toutes les enquêtes internes, restreint à la fenêtre de période
+        (date de soumission) et, si un département est sélectionné, aux
+        répondants ayant un profil employé dans ce département. Les réponses
+        non numériques (ne devraient pas exister pour une question RATING,
+        mais on reste défensif comme pour l'endpoint de résultats de survey)
+        sont ignorées plutôt que de faire planter l'agrégat."""
         from smart_hr.survey.models import SurveyAnswer
         from smart_hr.survey.models import SurveyQuestion
 
-        rating_answers = SurveyAnswer.objects.filter(question__question_type=SurveyQuestion.QuestionType.RATING)
+        rating_answers = SurveyAnswer.objects.filter(
+            question__question_type=SurveyQuestion.QuestionType.RATING,
+            response__submitted_at__gte=since_date,
+        )
+        if department_ids is not None:
+            rating_answers = rating_answers.filter(response__respondent__employee_profile__department_id__in=department_ids)
 
         scores = []
         for answer in rating_answers:
@@ -279,10 +383,11 @@ class HRAnalyticsView(APIView):
             "average_rating": round(sum(scores) / len(scores), 1) if scores else 0.0,
         }
 
-    def _build_department_hierarchy(self) -> list[dict]:
+    def _build_department_hierarchy(self, department_ids=None) -> list[dict]:
         """Structure de l'organigramme (à profondeur arbitraire) avec
         l'effectif actif par département — le frontend reconstruit l'arbre à
-        partir de `parent_id`, comme pour la page Organigramme existante."""
+        partir de `parent_id`, comme pour la page Organigramme existante.
+        Restreinte au sous-arbre sélectionné si un filtre est actif."""
         from smart_hr.personnel.models import Department
         from smart_hr.personnel.models import Employee
 
@@ -293,6 +398,10 @@ class HRAnalyticsView(APIView):
             .values_list("department_id", "count")
         )
 
+        departments = Department.objects.all()
+        if department_ids is not None:
+            departments = departments.filter(id__in=department_ids)
+
         return [
             {
                 "id": department.id,
@@ -301,7 +410,7 @@ class HRAnalyticsView(APIView):
                 "unit_type": department.unit_type,
                 "employee_count": headcount_by_department.get(department.id, 0),
             }
-            for department in Department.objects.all()
+            for department in departments
         ]
 
 
@@ -317,7 +426,9 @@ class HRAnalyticsExportView(HRAnalyticsView):
     def get(self, request):
         from smart_hr.core.export_utils import build_multi_sheet_xlsx_response
 
-        data = self._build_overview_data()
+        department_ids, department = self._parse_department_filter(request)
+        since_date = self._parse_since_date(request)
+        data = self._build_overview_data(department_ids, department, since_date)
 
         sheets = {
             "Effectifs": [data["totals"]],
