@@ -69,19 +69,29 @@ function buildLayout(
   const hasSearch = normalizedSearch.length > 0;
   let cursor = 0;
 
-  function place(department: OrganigrammeDepartment, depth: number, parentId?: string): number {
+  function place(
+    department: OrganigrammeDepartment,
+    depth: number,
+    parentId?: string
+  ): { x: number; hasMatchInSubtree: boolean } {
     const isCollapsed = collapsed.has(department.id);
     const children = isCollapsed ? [] : department.children;
     const isMatch = hasSearch && department.name.toLowerCase().includes(normalizedSearch);
 
     let x: number;
+    let descendantHasMatch = false;
     if (children.length === 0) {
       x = cursor * (NODE_WIDTH + HORIZONTAL_GAP);
       cursor += 1;
     } else {
-      const childXs = children.map((child) => place(child, depth + 1, String(department.id)));
-      x = (childXs[0] + childXs[childXs.length - 1]) / 2;
+      const childResults = children.map((child) => place(child, depth + 1, String(department.id)));
+      x = (childResults[0].x + childResults[childResults.length - 1].x) / 2;
+      descendantHasMatch = childResults.some((result) => result.hasMatchInSubtree);
     }
+
+    // Un ancêtre d'une unité trouvée reste pleinement visible (non estompé)
+    // pour conserver le contexte hiérarchique du résultat de recherche.
+    const hasMatchInSubtree = isMatch || descendantHasMatch;
 
     nodes.push({
       id: String(department.id),
@@ -92,7 +102,7 @@ function buildLayout(
         hasChildren: department.children.length > 0,
         isCollapsed,
         isMatch,
-        isDimmed: hasSearch && !isMatch,
+        isDimmed: hasSearch && !hasMatchInSubtree,
         onToggleCollapse,
       },
     });
@@ -107,7 +117,7 @@ function buildLayout(
       });
     }
 
-    return x;
+    return { x, hasMatchInSubtree };
   }
 
   roots.forEach((root) => place(root, 0));
