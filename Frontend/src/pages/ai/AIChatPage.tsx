@@ -15,6 +15,8 @@ import {
   Mic,
   MicOff,
   PhoneForwarded,
+  Paperclip,
+  X,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
@@ -147,6 +149,7 @@ export default function AIChatPage() {
   const [messages, setMessages] = useState<Message[]>([buildWelcomeMessageObject(user)]);
   const [isLoadingConversation, setIsLoadingConversation] = useState(false);
   const [inputValue, setInputValue] = useState('');
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showScrollBtn, setShowScrollBtn] = useState(false);
@@ -156,6 +159,7 @@ export default function AIChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   // Toujours à jour (contrairement à une closure figée au moment du .mutate()) —
   // permet de vérifier si l'utilisateur a changé de conversation avant que la
@@ -249,8 +253,8 @@ export default function AIChatPage() {
   };
 
   const chatMutation = useMutation({
-    mutationFn: ({ question, conversationId }: { question: string; conversationId: number | null }) =>
-      aiService.chat(question, conversationId ?? undefined),
+    mutationFn: ({ question, conversationId, file }: { question: string; conversationId: number | null; file?: File | null }) =>
+      aiService.chat(question, conversationId ?? undefined, file),
     onSuccess: (data, variables) => {
       const responseText = data?.response || data?.answer || data?.message || JSON.stringify(data);
       queryClient.invalidateQueries({ queryKey: ['ai-conversations'] });
@@ -312,15 +316,21 @@ export default function AIChatPage() {
   // ─── Send Message ─────────────────────
   const handleSend = (text?: string) => {
     const msg = (text ?? inputValue).trim();
-    if (!msg || isTyping) return;
+    // Un fichier joint seul suffit : le backend applique une question par défaut.
+    if ((!msg && !attachedFile) || isTyping) return;
 
+    const displayedText = attachedFile
+      ? `${msg ? `${msg}\n\n` : ''}📎 ${attachedFile.name}`
+      : msg;
     setMessages((prev) => [
       ...prev,
-      { id: Date.now().toString(), text: msg, sender: 'user', timestamp: new Date() },
+      { id: Date.now().toString(), text: displayedText, sender: 'user', timestamp: new Date() },
     ]);
     setInputValue('');
     setIsTyping(true);
-    chatMutation.mutate({ question: msg, conversationId: activeConversationId });
+    chatMutation.mutate({ question: msg, conversationId: activeConversationId, file: attachedFile });
+    setAttachedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
 
     // Reset textarea height
     if (inputRef.current) inputRef.current.style.height = 'auto';
@@ -608,6 +618,23 @@ export default function AIChatPage() {
 
         {/* ────── INPUT ────── */}
         <div className="border-t border-border bg-card px-5 py-4">
+          {attachedFile && (
+            <div className="mx-auto mb-2 flex max-w-3xl items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm">
+              <Paperclip className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="flex-1 truncate text-foreground">{attachedFile.name}</span>
+              <button
+                type="button"
+                aria-label="Retirer le fichier"
+                onClick={() => {
+                  setAttachedFile(null);
+                  if (fileInputRef.current) fileInputRef.current.value = '';
+                }}
+                className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -615,6 +642,24 @@ export default function AIChatPage() {
             }}
             className="mx-auto flex max-w-3xl items-end gap-3"
           >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.txt,.md"
+              className="hidden"
+              aria-label="Joindre un fichier (PDF, TXT, MD)"
+              onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isTyping}
+              onClick={() => fileInputRef.current?.click()}
+              className="h-[46px] w-[46px] shrink-0 rounded-xl p-0 text-muted-foreground hover:bg-muted/60"
+              title="Joindre un fichier (PDF, TXT, MD) — fiche de poste, document RH…"
+            >
+              <Paperclip className="h-4 w-4" />
+            </Button>
             <div className="relative flex-1">
               <textarea
                 ref={inputRef}
@@ -649,7 +694,7 @@ export default function AIChatPage() {
             </Button>
             <Button
               type="submit"
-              disabled={!inputValue.trim() || isTyping}
+              disabled={(!inputValue.trim() && !attachedFile) || isTyping}
               className="h-[46px] shrink-0 gap-2 rounded-xl px-5 bg-gradient-primary"
             >
               <Send className="h-4 w-4" />
