@@ -325,6 +325,37 @@
     background-image: radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 20px 20px;
   }
+
+  /* ── React Flow (organigramme) : contrôles et minimap aux couleurs du thème ── */
+  .react-flow__controls {
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px hsl(var(--foreground) / 0.08);
+  }
+
+  .react-flow__controls-button {
+    background: hsl(var(--card));
+    border-bottom: 1px solid hsl(var(--border));
+    color: hsl(var(--foreground));
+    width: 30px;
+    height: 30px;
+  }
+
+  .react-flow__controls-button:hover {
+    background: hsl(var(--muted));
+  }
+
+  .react-flow__controls-button svg {
+    fill: currentColor;
+  }
+
+  .react-flow__minimap {
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 8px hsl(var(--foreground) / 0.08);
+  }
 }
 
 @layer utilities {

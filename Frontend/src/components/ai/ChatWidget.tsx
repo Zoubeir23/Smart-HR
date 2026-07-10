@@ -15,9 +15,21 @@ interface WidgetMessage {
   sender: 'user' | 'ai';
 }
 
-function buildWelcomeText(firstName?: string): string {
+function buildWelcomeText(firstName?: string, role?: string): string {
   const greeting = firstName ? `Bonjour ${firstName} !` : 'Bonjour !';
-  return `${greeting} Posez-moi une question ou demandez-moi d'agir (ex: "Valide le congé de Awa Diallo").`;
+
+  // L'exemple d'action proposé doit correspondre aux permissions réelles du
+  // rôle : seuls RH/Admin valident les congés d'un tiers ; un employé pose
+  // ses propres congés ; un candidat n'a pas d'action, uniquement des questions.
+  const invitationsByRole: Record<string, string> = {
+    ADMIN: 'Posez-moi une question ou demandez-moi d\'agir (ex: "Valide le congé de Awa Diallo").',
+    RH: 'Posez-moi une question ou demandez-moi d\'agir (ex: "Valide le congé de Awa Diallo").',
+    EMPLOYEE: 'Posez-moi une question ou demandez-moi d\'agir (ex: "Pose un congé du 12 au 15 août").',
+    CANDIDATE: 'Posez-moi une question (ex: "Où en est ma candidature ?").',
+  };
+
+  const invitation = invitationsByRole[(role ?? '').toUpperCase()] ?? 'Posez-moi une question.';
+  return `${greeting} ${invitation}`;
 }
 
 /**
@@ -34,7 +46,7 @@ export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [messages, setMessages] = useState<WidgetMessage[]>([
-    { id: 'welcome', text: buildWelcomeText(user?.first_name), sender: 'ai' },
+    { id: 'welcome', text: buildWelcomeText(user?.first_name, user?.role), sender: 'ai' },
   ]);
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -50,10 +62,10 @@ export default function ChatWidget() {
     if (!user?.first_name) return;
     setMessages((prev) =>
       prev.length === 1 && prev[0].id === 'welcome'
-        ? [{ id: 'welcome', text: buildWelcomeText(user.first_name), sender: 'ai' }]
+        ? [{ id: 'welcome', text: buildWelcomeText(user.first_name, user.role), sender: 'ai' }]
         : prev
     );
-  }, [user?.first_name]);
+  }, [user?.first_name, user?.role]);
 
   const chatMutation = useMutation({
     mutationFn: ({ question }: { question: string }) => aiService.chat(question, conversationId ?? undefined),
