@@ -37,6 +37,7 @@ const EmployeeListPage = React.lazy(() => import("@/pages/employees/EmployeeList
 const EmployeeCreatePage = React.lazy(() => import("@/pages/employees/EmployeeCreatePage"));
 const EmployeeDetailPage = React.lazy(() => import("@/pages/employees/EmployeeDetailPage"));
 const DepartmentPage = React.lazy(() => import("@/pages/employees/DepartmentPage"));
+const OrganigrammePage = React.lazy(() => import("@/pages/employees/OrganigrammePage"));
 const TalentManagementPage = React.lazy(() => import("@/pages/personnel/TalentManagementPage"));
 const ServicePage = React.lazy(() => import("@/pages/employees/ServicePage"));
 const PositionPage = React.lazy(() => import("@/pages/employees/PositionPage"));
@@ -197,6 +198,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
                     <DepartmentPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/organigramme"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH']}>
+                    <OrganigrammePage />
                   </ProtectedRoute>
                 }
               />
