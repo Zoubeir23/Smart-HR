@@ -23,6 +23,7 @@ import {
   Moon,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
+import { useAuth } from '@/context/AuthContext';
 
 /* AnimatedCounter */
 function AnimatedCounter({ target, suffix = '', prefix = '', duration = 2000 }: { target: number; suffix?: string; prefix?: string; duration?: number }) {
@@ -135,6 +136,7 @@ function DashboardMockup() {
 /* ═══════ LANDING PAGE ═══════ */
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
+  const { isAuthenticated } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -175,12 +177,20 @@ export default function LandingPage() {
             <button onClick={toggleTheme} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition-all hover:bg-secondary hover:text-foreground" aria-label="Changer le thème">
               {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </button>
-            <Link to="/login" className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground">
-              Connexion
-            </Link>
-            <Link to="/register" className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition-all hover:bg-brand-red-dark active:scale-95 shadow-sm">
-              Inscription
-            </Link>
+            {isAuthenticated ? (
+              <Link to="/dashboard" className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition-all hover:bg-brand-red-dark active:scale-95 shadow-sm">
+                Tableau de bord
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground">
+                  Connexion
+                </Link>
+                <Link to="/register" className="rounded-lg bg-primary px-5 py-2 text-sm font-bold text-primary-foreground transition-all hover:bg-brand-red-dark active:scale-95 shadow-sm">
+                  Inscription
+                </Link>
+              </>
+            )}
           </div>
 
           <div className="flex items-center gap-2 lg:hidden">
@@ -203,8 +213,14 @@ export default function LandingPage() {
               ))}
             </div>
             <div className="mt-4 flex flex-col gap-2">
-              <Link to="/login" className="rounded-lg border border-border px-4 py-2.5 text-center text-sm font-semibold text-foreground">Connexion</Link>
-              <Link to="/register" className="rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-bold text-primary-foreground">Inscription</Link>
+              {isAuthenticated ? (
+                <Link to="/dashboard" className="rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-bold text-primary-foreground">Tableau de bord</Link>
+              ) : (
+                <>
+                  <Link to="/login" className="rounded-lg border border-border px-4 py-2.5 text-center text-sm font-semibold text-foreground">Connexion</Link>
+                  <Link to="/register" className="rounded-lg bg-primary px-4 py-2.5 text-center text-sm font-bold text-primary-foreground">Inscription</Link>
+                </>
+              )}
             </div>
           </motion.div>
         )}
@@ -236,8 +252,11 @@ export default function LandingPage() {
               </motion.p>
 
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }} className="flex flex-wrap justify-center gap-3">
-                <Link to="/register" className="group flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-brand-red-dark active:scale-95">
-                  Inscription <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                <Link
+                  to={isAuthenticated ? '/dashboard' : '/register'}
+                  className="group flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-brand-red-dark active:scale-95"
+                >
+                  {isAuthenticated ? 'Tableau de bord' : 'Inscription'} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                 </Link>
                 <button onClick={() => scrollTo('produit')} className="flex items-center gap-2 rounded-xl border border-border bg-card px-7 py-3.5 text-base font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-secondary active:scale-95">
                   Voir les fonctionnalités
@@ -476,8 +495,11 @@ export default function LandingPage() {
                 ))}
               </ul>
               <div className="mt-8">
-                <Link to="/login" className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-all hover:bg-brand-red-dark">
-                  Connexion <ArrowRight className="h-3.5 w-3.5" />
+                <Link
+                  to={isAuthenticated ? '/dashboard' : '/login'}
+                  className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-all hover:bg-brand-red-dark"
+                >
+                  {isAuthenticated ? 'Tableau de bord' : 'Connexion'} <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
