@@ -315,12 +315,17 @@ export default function AIChatPage() {
 
   // ─── Send Message ─────────────────────
   const handleSend = (text?: string) => {
+    // Les suggestions (texte explicite) sont des questions génériques sans
+    // rapport avec le document : elles partent sans le fichier joint, qui
+    // reste en place pour l'envoi saisi par l'utilisateur.
+    const isSuggestionSend = text !== undefined;
+    const fileToSend = isSuggestionSend ? null : attachedFile;
     const msg = (text ?? inputValue).trim();
     // Un fichier joint seul suffit : le backend applique une question par défaut.
-    if ((!msg && !attachedFile) || isTyping) return;
+    if ((!msg && !fileToSend) || isTyping) return;
 
-    const displayedText = attachedFile
-      ? `${msg ? `${msg}\n\n` : ''}📎 ${attachedFile.name}`
+    const displayedText = fileToSend
+      ? `${msg ? `${msg}\n\n` : ''}📎 ${fileToSend.name}`
       : msg;
     setMessages((prev) => [
       ...prev,
@@ -328,9 +333,11 @@ export default function AIChatPage() {
     ]);
     setInputValue('');
     setIsTyping(true);
-    chatMutation.mutate({ question: msg, conversationId: activeConversationId, file: attachedFile });
-    setAttachedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    chatMutation.mutate({ question: msg, conversationId: activeConversationId, file: fileToSend });
+    if (fileToSend) {
+      setAttachedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
 
     // Reset textarea height
     if (inputRef.current) inputRef.current.style.height = 'auto';
