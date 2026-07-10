@@ -60,8 +60,15 @@ def _load_model():
         return None
 
 
-def _employee_to_features(employee: Employee) -> dict:
-    """Extrait les features réelles depuis les données de l'employé en DB."""
+def _build_employee_feature_maps(employee_ids: list) -> dict:
+    """Pré-agrège en bulk toutes les données nécessaires pour _employee_to_features.
+
+    Retourne un dict de dicts keyed by employee_id, évitant les N+1 queries.
+    """
+    from datetime import timedelta
+
+    from django.db.models import Avg
+    from django.db.models import Count
     from django.utils import timezone
 
     from smart_hr.conge.models import LeaveRequest
@@ -70,45 +77,132 @@ def _employee_to_features(employee: Employee) -> dict:
     from smart_hr.performance.models import PerformanceEvaluation
     from smart_hr.presence.models import Attendance
 
+    one_year_ago = timezone.now().date() - timedelta(days=365)
+
+    # Congés approuvés sur les 12 derniers mois
+    leave_counts = {
+        row["employee_id"]: row["count"]
+        for row in LeaveRequest.objects.filter(
+            employee_id__in=employee_ids,
+            status=LeaveRequest.Status.APPROVED,
+            start_date__gte=one_year_ago,
+        )
+        .values("employee_id")
+        .annotate(count=Count("id"))
+    }
+
+    # Absences sur les 12 derniers mois
+    absence_counts = {
+        row["employee_id"]: row["count"]
+        for row in Attendance.objects.filter(
+            employee_id__in=employee_ids,
+            status=Attendance.Status.ABSENT,
+            date__gte=one_year_ago,
+        )
+        .values("employee_id")
+        .annotate(count=Count("id"))
+    }
+
+    # Actions disciplinaires
+    disciplinary_counts = {
+        row["employee_id"]: row["count"]
+        for row in DisciplinaryAction.objects.filter(
+            employee_id__in=employee_ids,
+        )
+        .values("employee_id")
+        .annotate(count=Count("id"))
+    }
+
+    # Score de performance moyen
+    avg_performance_scores = {
+        row["employee_id"]: round(row["avg_score"], 2)
+        for row in PerformanceEvaluation.objects.filter(
+            employee_id__in=employee_ids,
+            global_score__isnull=False,
+        )
+        .values("employee_id")
+        .annotate(avg_score=Avg("global_score"))
+    }
+
+    # Fiches de paie non payées
+    unpaid_payroll_counts = {
+        row["employee_id"]: row["count"]
+        for row in Payroll.objects.filter(
+            employee_id__in=employee_ids,
+            status=Payroll.Status.PENDING,
+        )
+        .values("employee_id")
+        .annotate(count=Count("id"))
+    }
+
+    return {
+        "leave_counts": leave_counts,
+        "absence_counts": absence_counts,
+        "disciplinary_counts": disciplinary_counts,
+        "avg_performance_scores": avg_performance_scores,
+        "unpaid_payroll_counts": unpaid_payroll_counts,
+    }
+
+
+def _employee_to_features(employee: Employee, feature_maps: dict | None = None) -> dict:
+    """Extrait les features réelles depuis les données de l'employé en DB.
+
+    Si feature_maps est fourni (pré-agrégé via _build_employee_feature_maps),
+    aucune requête DB supplémentaire n'est émise. Sinon, les requêtes sont
+    effectuées individuellement (compatibilité ascendante).
+    """
+    from django.utils import timezone
+
     # Ancienneté
     tenure_years = 0.0
     if employee.hire_date:
         tenure_years = round((timezone.now().date() - employee.hire_date).days / 365, 2)
 
-    # Nombre de congés approuvés sur les 12 derniers mois
-    from datetime import timedelta
+    eid = employee.pk
 
-    one_year_ago = timezone.now().date() - timedelta(days=365)
-    leave_count = LeaveRequest.objects.filter(
-        employee=employee,
-        status=LeaveRequest.Status.APPROVED,
-        start_date__gte=one_year_ago,
-    ).count()
+    if feature_maps is not None:
+        leave_count = feature_maps["leave_counts"].get(eid, 0)
+        absence_count = feature_maps["absence_counts"].get(eid, 0)
+        disciplinary_count = feature_maps["disciplinary_counts"].get(eid, 0)
+        avg_performance_score = feature_maps["avg_performance_scores"].get(eid, 50.0)
+        unpaid_payroll_count = feature_maps["unpaid_payroll_counts"].get(eid, 0)
+    else:
+        from datetime import timedelta
 
-    # Nombre d'absences sur les 12 derniers mois
-    absence_count = Attendance.objects.filter(
-        employee=employee,
-        status=Attendance.Status.ABSENT,
-        date__gte=one_year_ago,
-    ).count()
+        from smart_hr.conge.models import LeaveRequest
+        from smart_hr.discipline.models import DisciplinaryAction
+        from smart_hr.paiement.models import Payroll
+        from smart_hr.performance.models import PerformanceEvaluation
+        from smart_hr.presence.models import Attendance
 
-    # Nombre d'actions disciplinaires
-    disciplinary_count = DisciplinaryAction.objects.filter(employee=employee).count()
+        one_year_ago = timezone.now().date() - timedelta(days=365)
 
-    # Score de performance moyen (0 si aucune évaluation)
-    perf_scores = list(
-        PerformanceEvaluation.objects.filter(
+        leave_count = LeaveRequest.objects.filter(
             employee=employee,
-            global_score__isnull=False,
-        ).values_list("global_score", flat=True)
-    )
-    avg_performance_score = round(sum(perf_scores) / len(perf_scores), 2) if perf_scores else 50.0
+            status=LeaveRequest.Status.APPROVED,
+            start_date__gte=one_year_ago,
+        ).count()
 
-    # Nombre de fiches de paie non payées
-    unpaid_payroll_count = Payroll.objects.filter(
-        employee=employee,
-        status=Payroll.Status.PENDING,
-    ).count()
+        absence_count = Attendance.objects.filter(
+            employee=employee,
+            status=Attendance.Status.ABSENT,
+            date__gte=one_year_ago,
+        ).count()
+
+        disciplinary_count = DisciplinaryAction.objects.filter(employee=employee).count()
+
+        perf_scores = list(
+            PerformanceEvaluation.objects.filter(
+                employee=employee,
+                global_score__isnull=False,
+            ).values_list("global_score", flat=True)
+        )
+        avg_performance_score = round(sum(perf_scores) / len(perf_scores), 2) if perf_scores else 50.0
+
+        unpaid_payroll_count = Payroll.objects.filter(
+            employee=employee,
+            status=Payroll.Status.PENDING,
+        ).count()
 
     return {
         "salary": float(employee.salary) if employee.salary else 0.0,
