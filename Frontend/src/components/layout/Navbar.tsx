@@ -38,6 +38,15 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const handleLogout = async () => {
+    await logout();
+    // Vide le cache React Query : sans ça, les données du compte précédent
+    // (notifications, listes...) peuvent apparaître brièvement pour le
+    // prochain utilisateur qui se connecte sur le même onglet.
+    queryClient.clear();
+    navigate('/login', { replace: true });
+  };
+
   const { data: notificationData } = useQuery({
     queryKey: ['notifications'],
     queryFn: notificationService.list,
@@ -217,7 +226,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
             <DropdownMenuSeparator className="border-[hsl(34,30%,86%)] dark:border-[hsl(20,10%,22%)]" />
             <DropdownMenuItem
               className="flex cursor-pointer items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-[13px] text-[#c41e1e] hover:bg-[hsl(0,69%,50%,0.06)] dark:hover:bg-[hsl(0,69%,50%,0.12)] hover:text-[#D62828]"
-              onClick={() => logout()}
+              onClick={() => handleLogout()}
             >
               <LogOut className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
               Déconnexion
