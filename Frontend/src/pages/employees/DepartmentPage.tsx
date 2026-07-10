@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Building2, Users, Plus, Pencil, Trash2, Check, X, List, Network } from 'lucide-react';
-import OrganigrammeTree from '@/components/employees/OrganigrammeTree';
+import OrganigrammeDiagram from '@/components/employees/OrganigrammeDiagram';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -198,7 +198,7 @@ export default function DepartmentPage() {
               <p className="text-muted-foreground">Génération de l'organigramme…</p>
             </div>
           ) : (
-            <OrganigrammeTree departments={organigrammeData ?? []} />
+            <OrganigrammeDiagram departments={organigrammeData ?? []} />
           )
         )}
 
