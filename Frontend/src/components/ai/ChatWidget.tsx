@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, X, Send, Maximize2, Bot, User } from 'lucide-react';
+import { Sparkles, X, Send, Maximize2, Bot, User, Paperclip } from 'lucide-react';
 import { useMutation } from '@tanstack/react-query';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -49,7 +49,9 @@ export default function ChatWidget() {
     { id: 'welcome', text: buildWelcomeText(user?.first_name, user?.role), sender: 'ai' },
   ]);
   const [inputValue, setInputValue] = useState('');
+  const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) messagesEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
@@ -68,7 +70,8 @@ export default function ChatWidget() {
   }, [user?.first_name, user?.role]);
 
   const chatMutation = useMutation({
-    mutationFn: ({ question }: { question: string }) => aiService.chat(question, conversationId ?? undefined),
+    mutationFn: ({ question, file }: { question: string; file?: File | null }) =>
+      aiService.chat(question, conversationId ?? undefined, file),
     onSuccess: (data) => {
       const responseText = data?.response || data?.answer || data?.message || 'Désolé, je n\'ai pas de réponse.';
       if (conversationId === null && data?.conversation) setConversationId(data.conversation);
@@ -88,10 +91,16 @@ export default function ChatWidget() {
 
   const handleSend = () => {
     const question = inputValue.trim();
-    if (!question || chatMutation.isPending) return;
-    setMessages((prev) => [...prev, { id: `${Date.now()}-user`, text: question, sender: 'user' }]);
+    // Un fichier seul suffit : le backend applique alors une question par défaut.
+    if ((!question && !attachedFile) || chatMutation.isPending) return;
+    const displayedText = attachedFile
+      ? `${question ? `${question}\n\n` : ''}📎 ${attachedFile.name}`
+      : question;
+    setMessages((prev) => [...prev, { id: `${Date.now()}-user`, text: displayedText, sender: 'user' }]);
     setInputValue('');
-    chatMutation.mutate({ question });
+    chatMutation.mutate({ question, file: attachedFile });
+    setAttachedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -205,8 +214,44 @@ export default function ChatWidget() {
                 e.preventDefault();
                 handleSend();
               }}
-              className="flex items-end gap-2 border-t border-border p-3"
+              className="border-t border-border p-3"
             >
+              {attachedFile && (
+                <div className="mb-2 flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2 py-1.5 text-xs">
+                  <Paperclip className="h-3 w-3 shrink-0 text-muted-foreground" />
+                  <span className="flex-1 truncate text-foreground">{attachedFile.name}</span>
+                  <button
+                    type="button"
+                    aria-label="Retirer le fichier"
+                    onClick={() => {
+                      setAttachedFile(null);
+                      if (fileInputRef.current) fileInputRef.current.value = '';
+                    }}
+                    className="rounded p-0.5 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
+              <div className="flex items-end gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.txt,.md"
+                className="hidden"
+                aria-label="Joindre un fichier (PDF, TXT, MD)"
+                onChange={(e) => setAttachedFile(e.target.files?.[0] ?? null)}
+              />
+              <button
+                type="button"
+                title="Joindre un fichier (PDF, TXT, MD)"
+                aria-label="Joindre un fichier"
+                disabled={chatMutation.isPending}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+              >
+                <Paperclip className="h-3.5 w-3.5" />
+              </button>
               <textarea
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -218,12 +263,13 @@ export default function ChatWidget() {
               />
               <button
                 type="submit"
-                disabled={!inputValue.trim() || chatMutation.isPending}
+                disabled={(!inputValue.trim() && !attachedFile) || chatMutation.isPending}
                 aria-label="Envoyer"
                 className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-primary text-white disabled:opacity-50"
               >
                 <Send className="h-3.5 w-3.5" />
               </button>
+              </div>
             </form>
           </motion.div>
         )}

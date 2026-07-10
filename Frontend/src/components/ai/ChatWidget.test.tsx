@@ -71,7 +71,7 @@ describe('ChatWidget', () => {
 
     expect(screen.getByText('Valide le congé de Awa Diallo')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText(/congé validé/i)).toBeInTheDocument());
-    expect(chatMock).toHaveBeenCalledWith('Valide le congé de Awa Diallo', undefined);
+    expect(chatMock).toHaveBeenCalledWith('Valide le congé de Awa Diallo', undefined, null);
   });
 
   it('adapte le message de bienvenue au rôle : employé → poser son propre congé', () => {
@@ -98,6 +98,42 @@ describe('ChatWidget', () => {
 
     expect(screen.getByText(/où en est ma candidature/i)).toBeInTheDocument();
     expect(screen.queryByText(/demandez-moi d'agir/i)).not.toBeInTheDocument();
+  });
+
+  it('envoie le fichier joint au service avec la question', async () => {
+    chatMock.mockResolvedValue({ response: 'Offre générée.', conversation: 3 });
+    renderWidget();
+    fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
+
+    const attachedFile = new File(['Poste : Dev Django'], 'fiche_poste.txt', { type: 'text/plain' });
+    fireEvent.change(screen.getByLabelText(/joindre un fichier \(pdf, txt, md\)/i), {
+      target: { files: [attachedFile] },
+    });
+    expect(screen.getByText('fiche_poste.txt')).toBeInTheDocument();
+
+    fireEvent.change(screen.getByPlaceholderText(/posez votre question/i), {
+      target: { value: 'Crée une offre à partir de ce fichier' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^envoyer$/i }));
+
+    await waitFor(() =>
+      expect(chatMock).toHaveBeenCalledWith('Crée une offre à partir de ce fichier', undefined, attachedFile)
+    );
+    expect(screen.getByText(/📎 fiche_poste.txt/)).toBeInTheDocument();
+  });
+
+  it('permet d\'envoyer un fichier seul, sans question', async () => {
+    chatMock.mockResolvedValue({ response: 'Synthèse du document.', conversation: 4 });
+    renderWidget();
+    fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
+
+    const attachedFile = new File(['contenu'], 'document.pdf', { type: 'application/pdf' });
+    fireEvent.change(screen.getByLabelText(/joindre un fichier \(pdf, txt, md\)/i), {
+      target: { files: [attachedFile] },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /^envoyer$/i }));
+
+    await waitFor(() => expect(chatMock).toHaveBeenCalledWith('', undefined, attachedFile));
   });
 
   it('navigue vers /ai-chat au clic sur "plein écran"', () => {
