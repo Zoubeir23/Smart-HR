@@ -77,17 +77,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // depuis le bfcache (back-forward cache) après une déconnexion, sans
   // remonter React ni re-vérifier l'authentification — l'utilisateur voit
   // alors furtivement l'ancienne page comme s'il était encore connecté.
-  // `pageshow` avec `event.persisted` détecte cette restauration et force
-  // un rechargement complet, qui relance la vérification du token ci-dessous.
+  // On ne recharge QUE si l'état d'authentification figé au moment de la
+  // mise en cache ne correspond plus à la présence réelle d'un token en
+  // localStorage (ex: déconnexion effectuée entre-temps) — un rechargement
+  // systématique sur chaque navigation arrière casserait l'intérêt du
+  // bfcache (retour instantané) pour toute navigation normale.
   useEffect(() => {
     const handlePageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
+      if (!event.persisted) return;
+      const hasStoredToken = Boolean(localStorage.getItem('access_token'));
+      if (hasStoredToken !== state.isAuthenticated) {
         window.location.reload();
       }
     };
     window.addEventListener('pageshow', handlePageShow);
     return () => window.removeEventListener('pageshow', handlePageShow);
-  }, []);
+  }, [state.isAuthenticated]);
 
   // Verify stored token on startup
   useEffect(() => {
