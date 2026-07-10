@@ -78,6 +78,15 @@ describe("EmailVerificationPage", () => {
     expect(screen.getByLabelText(/votre adresse email/i)).toBeInTheDocument();
   });
 
+  it("persiste l'email saisi manuellement dans sessionStorage", () => {
+    renderWithEmailState(undefined);
+    fireEvent.change(screen.getByLabelText(/votre adresse email/i), {
+      target: { value: "manuel@test.com" },
+    });
+
+    expect(sessionStorage.getItem("smart_hr_pending_verification_email")).toBe("manuel@test.com");
+  });
+
   it("bloque la vérification sans email et affiche un message", async () => {
     renderWithEmailState(undefined);
     fillOtpCode("123456");
