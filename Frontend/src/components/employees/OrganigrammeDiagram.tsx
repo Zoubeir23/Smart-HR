@@ -229,8 +229,10 @@ export default function OrganigrammeDiagram({ departments }: OrganigrammeDiagram
         {visibleLeaves} unité(s) visible(s) · touchez une carte pour voir le détail · icône pour déplier/replier
       </p>
 
-      {/* Diagramme */}
-      <div className="h-[600px] w-full overflow-hidden rounded-xl border border-border bg-muted/20">
+      {/* Diagramme — hauteur bornée par le viewport pour que les contrôles
+          de zoom (bas gauche) et la minimap (bas droite) restent visibles
+          sans avoir à faire défiler la page. */}
+      <div className="h-[clamp(420px,calc(100vh_-_400px),600px)] w-full overflow-hidden rounded-xl border border-border bg-muted/20">
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -242,7 +244,14 @@ export default function OrganigrammeDiagram({ departments }: OrganigrammeDiagram
         >
           <Background gap={16} color="hsl(var(--border))" />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable className="!bg-card" />
+          <MiniMap
+            pannable
+            zoomable
+            className="!bg-card"
+            nodeColor="hsl(var(--primary) / 0.35)"
+            nodeStrokeColor="hsl(var(--primary))"
+            maskColor="hsl(var(--muted) / 0.6)"
+          />
         </ReactFlow>
       </div>
     </div>
