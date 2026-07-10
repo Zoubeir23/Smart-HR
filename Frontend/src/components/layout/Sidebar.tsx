@@ -29,6 +29,7 @@ import {
   Archive,
   Building2,
   Database,
+  Network,
   Route,
 } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
@@ -111,7 +112,8 @@ const navigationGroups: NavGroup[] = [
         icon: Building2,
         roles: ['ADMIN', 'RH'],
         children: [
-          { title: 'Départements', href: '/departments', icon: Building2, roles: ['ADMIN', 'RH'] },
+          { title: 'Unités organisationnelles', href: '/departments', icon: Building2, roles: ['ADMIN', 'RH'] },
+          { title: 'Organigramme', href: '/organigramme', icon: Network, roles: ['ADMIN', 'RH'] },
           { title: 'Services', href: '/services', icon: Briefcase, roles: ['ADMIN', 'RH'] },
           { title: 'Postes', href: '/positions', icon: Briefcase, roles: ['ADMIN', 'RH'] },
           { title: 'Référentiels', href: '/reference-tables', icon: Database, roles: ['ADMIN', 'RH'] },
