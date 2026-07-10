@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import api from '@/services/api';
 
 const OTP_LENGTH = 6;
+const PENDING_VERIFICATION_EMAIL_STORAGE_KEY = 'smart_hr_pending_verification_email';
 
 interface LocationState {
   email?: string;
@@ -15,7 +16,21 @@ interface LocationState {
 const EmailVerificationPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const email = (location.state as LocationState)?.email ?? '';
+
+  // L'email vient de la navigation (inscription), avec repli sur sessionStorage
+  // pour survivre à un rafraîchissement de la page (le state React Router est perdu).
+  const emailFromNavigation = (location.state as LocationState)?.email ?? '';
+  const [email, setEmail] = useState<string>(() => {
+    if (emailFromNavigation) {
+      sessionStorage.setItem(PENDING_VERIFICATION_EMAIL_STORAGE_KEY, emailFromNavigation);
+      return emailFromNavigation;
+    }
+    return sessionStorage.getItem(PENDING_VERIFICATION_EMAIL_STORAGE_KEY) ?? '';
+  });
+
+  // Si aucun email n'a pu être retrouvé (accès direct à la page), on affiche
+  // un champ pour que l'utilisateur le saisisse lui-même.
+  const [emailWasProvided] = useState<boolean>(() => email !== '');
 
   const [digits, setDigits] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -64,12 +79,17 @@ const EmailVerificationPage = () => {
       setErrorMessage('Veuillez saisir les 6 chiffres du code.');
       return;
     }
+    if (!email.trim()) {
+      setErrorMessage('Veuillez saisir votre adresse email ci-dessus.');
+      return;
+    }
 
     setIsSubmitting(true);
     setErrorMessage('');
 
     try {
-      await api.post('/auth/verify-otp/', { code });
+      await api.post('/auth/verify-otp/', { email: email.trim(), code });
+      sessionStorage.removeItem(PENDING_VERIFICATION_EMAIL_STORAGE_KEY);
       setIsVerified(true);
       setSuccessMessage('Email vérifié avec succès ! Redirection...');
       setTimeout(() => navigate('/login', {
@@ -95,12 +115,17 @@ const EmailVerificationPage = () => {
   };
 
   const handleResendOTP = async () => {
+    if (!email.trim()) {
+      setErrorMessage('Veuillez saisir votre adresse email ci-dessus.');
+      return;
+    }
+
     setIsResending(true);
     setErrorMessage('');
     setSuccessMessage('');
 
     try {
-      await api.post('/auth/resend-otp/');
+      await api.post('/auth/resend-otp/', { email: email.trim() });
       setSuccessMessage('Un nouveau code a été envoyé à votre adresse email.');
       setDigits(Array(OTP_LENGTH).fill(''));
       inputRefs.current[0]?.focus();
@@ -202,6 +227,27 @@ const EmailVerificationPage = () => {
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-green-50 dark:bg-green-950/40 border border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-400 text-sm">
                   <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <span>{successMessage}</span>
+                </div>
+              )}
+
+              {!emailWasProvided && (
+                <div>
+                  <label htmlFor="verification-email" className="block text-sm font-medium text-foreground mb-2">
+                    Votre adresse email
+                  </label>
+                  <input
+                    id="verification-email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="vous@exemple.com"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      // Persiste la saisie manuelle pour survivre à un rafraîchissement.
+                      sessionStorage.setItem(PENDING_VERIFICATION_EMAIL_STORAGE_KEY, e.target.value);
+                    }}
+                    className="w-full px-4 py-3 rounded-lg border-2 border-border bg-background focus:border-primary focus:outline-none transition-colors text-sm"
+                  />
                 </div>
               )}
 
