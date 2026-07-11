@@ -190,7 +190,7 @@ Une fois toutes les questions posées, remercie le candidat chaleureusement et c
         </div>
 
         {/* Participants */}
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <div className="flex h-64 flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card">
             <div className="relative">
               {aiSpeaking && (
