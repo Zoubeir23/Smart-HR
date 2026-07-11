@@ -381,14 +381,14 @@ export default function HRDashboard() {
                 change={{ value: 3.2, type: 'increase' }}
                 icon={Users}
                 description={`${stats?.active_employees ?? 0} actifs`}
-                color="indigo"
+                tone="neutral"
               />
               <KPICard
                 title="Congés en attente"
                 value={stats?.pending_leaves ?? 0}
                 icon={Calendar}
                 description="À valider"
-                color="amber"
+                tone="warning"
               />
               <KPICard
                 title="Postes ouverts"
@@ -396,7 +396,7 @@ export default function HRDashboard() {
                 change={{ value: 2, type: 'increase' }}
                 icon={Briefcase}
                 description={`${stats?.new_applications ?? 0} candidatures`}
-                color="emerald"
+                tone="neutral"
               />
               <KPICard
                 title="Risque élevé"
@@ -404,7 +404,7 @@ export default function HRDashboard() {
                 change={{ value: 8, type: 'decrease' }}
                 icon={AlertTriangle}
                 description="Employés à surveiller"
-                color="rose"
+                tone="destructive"
               />
             </>
           )}
