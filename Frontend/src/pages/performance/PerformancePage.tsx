@@ -536,7 +536,7 @@ export default function PerformancePage() {
                   />
                 </div>
               )}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="skill-name">Compétence *</Label>
                   <Input
@@ -595,7 +595,7 @@ export default function PerformancePage() {
               <DialogTitle>{editEval ? "Modifier l'évaluation" : 'Nouvelle évaluation'}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-2">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label>Employé *</Label>
                   <SearchableSelect
@@ -634,7 +634,7 @@ export default function PerformancePage() {
                 <Label htmlFor="eval-achievements">Réalisations</Label>
                 <Textarea id="eval-achievements" rows={3} placeholder="Ce qui a été accompli…" value={evalForm.achievements} onChange={(e) => setEvalForm((f) => ({ ...f, achievements: e.target.value }))} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <Label htmlFor="eval-score">Score global (0–100)</Label>
                   <Input id="eval-score" type="number" min={0} max={100} placeholder="Ex: 78" value={evalForm.global_score} onChange={(e) => setEvalForm((f) => ({ ...f, global_score: e.target.value }))} />

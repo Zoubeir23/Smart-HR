@@ -110,7 +110,7 @@ export default function CoachingTab() {
       {showForm && (
         <Card className="border border-border">
           <CardContent className="space-y-3 p-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Coach</Label>
                 <SearchableSelect options={employeeOptions} value={coach} onChange={setCoach} placeholder="Choisir le coach" />
@@ -120,7 +120,7 @@ export default function CoachingTab() {
                 <SearchableSelect options={employeeOptions} value={coachee} onChange={setCoachee} placeholder="Choisir le coaché" />
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Date et heure</Label>
                 <Input type="datetime-local" value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />

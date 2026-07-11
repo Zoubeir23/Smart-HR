@@ -693,7 +693,7 @@ export default function EmployeeDetailPage() {
                 <CardContent className="space-y-3">
                   {showAddFamilyMemberForm && (
                     <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div className="space-y-1">
                           <Label className="text-xs">Lien</Label>
                           <Select
@@ -725,7 +725,7 @@ export default function EmployeeDetailPage() {
                           </Select>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         <div className="space-y-1">
                           <Label className="text-xs">Prénom <span className="text-destructive">*</span></Label>
                           <Input

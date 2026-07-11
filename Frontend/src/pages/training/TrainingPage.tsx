@@ -462,7 +462,7 @@ export default function TrainingPage() {
                   placeholder="Ex: Marie Dupont"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Date de début *</Label>
                   <Input
@@ -545,7 +545,7 @@ export default function TrainingPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Date de début *</Label>
                   <Input

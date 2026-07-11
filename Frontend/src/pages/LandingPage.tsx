@@ -401,7 +401,7 @@ export default function LandingPage() {
                 Accéder à la plateforme <ArrowRight className="h-4 w-4" />
               </Link>
             </motion.div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {[
                 { icon: Shield, title: 'RGPD & CDP', desc: 'Conformité complète avec les réglementations européennes et africaines sur la protection des données.' },
                 { icon: Zap, title: 'Temps réel', desc: 'Analyse continue des données RH avec des alertes instantanées sur les situations critiques.' },
