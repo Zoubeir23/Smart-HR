@@ -240,7 +240,7 @@ export default function ReferenceTablesPage() {
         </div>
 
         <Tabs defaultValue="nationalities">
-          <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+          <TabsList className="grid h-auto grid-cols-2 w-full max-w-2xl sm:h-10 sm:grid-cols-4">
             <TabsTrigger value="nationalities">Nationalités</TabsTrigger>
             <TabsTrigger value="familyStatuses">Situations</TabsTrigger>
             <TabsTrigger value="diplomas">Diplômes</TabsTrigger>
