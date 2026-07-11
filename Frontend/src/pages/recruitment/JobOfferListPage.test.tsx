@@ -4,10 +4,12 @@ import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import JobOfferListPage from './JobOfferListPage';
 
-const { generateJobOfferMock, getJobsMock, createJobMock } = vi.hoisted(() => ({
+const { generateJobOfferMock, getJobsMock, createJobMock, updateJobMock, deleteJobMock } = vi.hoisted(() => ({
   generateJobOfferMock: vi.fn(),
   getJobsMock: vi.fn(),
   createJobMock: vi.fn(),
+  updateJobMock: vi.fn(),
+  deleteJobMock: vi.fn(),
 }));
 
 vi.mock('@/services/recruitmentService', async () => {
@@ -19,6 +21,8 @@ vi.mock('@/services/recruitmentService', async () => {
       getJobs: getJobsMock,
       generateJobOffer: generateJobOfferMock,
       createJob: createJobMock,
+      updateJob: updateJobMock,
+      deleteJob: deleteJobMock,
     },
   };
 });
@@ -131,5 +135,60 @@ describe('JobOfferListPage — agent IA de génération d\'offre', () => {
       expect(screen.queryByText('Titre à écarter')).not.toBeInTheDocument();
     });
     expect(screen.queryByDisplayValue('Titre à écarter')).not.toBeInTheDocument();
+  });
+});
+
+describe('JobOfferListPage — modification et suppression (RH/Admin)', () => {
+  const existingOffer = {
+    id: 42,
+    title: 'Développeur Backend Django Senior',
+    department: 'Technologie',
+    location: 'Dakar, Sénégal',
+    contract_type: 'CDI',
+    created_at: '2026-06-25T00:00:00Z',
+    applications_count: 1,
+    description: 'Nous recherchons un développeur Django expérimenté.',
+    job_type: 'full_time',
+    requirements: '5 ans Django',
+    salary_range: '1 000 000 FCFA',
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getJobsMock.mockResolvedValue({ results: [existingOffer] });
+  });
+
+  it('modifie une offre via la modale d\'édition', async () => {
+    updateJobMock.mockResolvedValue({});
+    renderPage();
+
+    await screen.findByText('Développeur Backend Django Senior');
+    fireEvent.click(screen.getByRole('button', { name: /modifier l'offre/i }));
+
+    const titleInput = await screen.findByDisplayValue('Développeur Backend Django Senior');
+    fireEvent.change(titleInput, { target: { value: 'Développeur Backend Django Lead' } });
+    fireEvent.click(screen.getByRole('button', { name: /enregistrer/i }));
+
+    await waitFor(() => {
+      expect(updateJobMock).toHaveBeenCalledWith(
+        42,
+        expect.objectContaining({ title: 'Développeur Backend Django Lead', department: 'Technologie' })
+      );
+    });
+  });
+
+  it('supprime une offre après confirmation', async () => {
+    deleteJobMock.mockResolvedValue(undefined);
+    renderPage();
+
+    await screen.findByText('Développeur Backend Django Senior');
+    fireEvent.click(screen.getByRole('button', { name: /supprimer l'offre/i }));
+
+    await screen.findByText(/supprimer cette offre d'emploi \?/i);
+    fireEvent.click(screen.getByRole('button', { name: /^supprimer$/i }));
+
+    await waitFor(() => {
+      expect(deleteJobMock).toHaveBeenCalledWith(42);
+    });
   });
 });
