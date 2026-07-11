@@ -174,7 +174,7 @@ function LeaveAttendanceGrid({
       : 0;
 
   return (
-    <div className="grid grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
       <div className="space-y-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Congés (période sélectionnée)
