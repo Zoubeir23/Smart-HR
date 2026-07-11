@@ -31,6 +31,16 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Employee, LeaveRequest, DashboardStats } from '@/types';
 import { employeeService } from '@/services/employeeService';
@@ -188,6 +198,7 @@ export default function HRDashboard() {
   const queryClient = useQueryClient();
   const [selectedPeriod, setSelectedPeriod] = useState<'week' | 'month' | 'year'>('month');
   const [minScoreFilter, setMinScoreFilter] = useState<number>(0);
+  const [leaveConfirmation, setLeaveConfirmation] = useState<{ leave: LeaveRequest; action: 'approve' | 'reject' } | null>(null);
 
   // ─── Data Fetching ─────────────────────
   const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
@@ -218,7 +229,7 @@ export default function HRDashboard() {
     setMinScoreFilter(Number(e.target.value));
   }, []);
 
-  const { data: retentionRaw } = useQuery({
+  const { data: retentionRaw, isLoading: retentionLoading, isError: retentionError } = useQuery({
     queryKey: ['retention-stats'],
     queryFn: () => employeeService.getRetentionStats(),
   });
@@ -256,6 +267,17 @@ export default function HRDashboard() {
     },
   });
 
+  const confirmLeaveDecision = useCallback(() => {
+    if (!leaveConfirmation) return;
+    const { leave, action } = leaveConfirmation;
+    if (action === 'approve') {
+      approveLeaveMutation.mutate(leave.id);
+    } else {
+      rejectLeaveMutation.mutate(leave.id);
+    }
+    setLeaveConfirmation(null);
+  }, [leaveConfirmation, approveLeaveMutation, rejectLeaveMutation]);
+
   // ─── Derived Data ──────────────────────
   const employees: Employee[] = useMemo(() => employeesData?.results ?? employeesData ?? [], [employeesData]);
   const pendingLeaves: LeaveRequest[] = useMemo(() => leavesData?.results ?? leavesData ?? [], [leavesData]);
@@ -282,7 +304,12 @@ export default function HRDashboard() {
 
   const today = new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
+  const confirmationEmployeeName = leaveConfirmation
+    ? `${leaveConfirmation.leave.employee?.user?.first_name ?? ''} ${leaveConfirmation.leave.employee?.user?.last_name ?? ''}`.trim()
+    : '';
+
   return (
+    <>
       <motion.div variants={container} initial="hidden" animate="visible" className="space-y-4 sm:space-y-5 md:space-y-6">
 
         {/* ────── HEADER BANNER ────── */}
@@ -397,7 +424,7 @@ export default function HRDashboard() {
         <motion.div variants={item} className="grid gap-6 lg:grid-cols-3">
           {/* Retention Chart — spans 2 cols */}
           <div className="lg:col-span-2">
-            <RetentionChart data={retentionData} />
+            <RetentionChart data={retentionData} isLoading={retentionLoading} isError={retentionError} />
           </div>
 
           {/* Churn Gauge Card */}
@@ -517,24 +544,26 @@ export default function HRDashboard() {
                             </p>
                           </div>
                         </div>
-                        <div className="flex shrink-0 gap-0.5 sm:gap-1.5 opacity-80 transition-opacity group-hover:opacity-100">
+                        <div className="flex shrink-0 gap-0.5 sm:gap-1">
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-6 w-6 sm:h-7 sm:w-7 text-destructive hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
-                            onClick={() => rejectLeaveMutation.mutate(leave.id)}
-                            disabled={rejectLeaveMutation.isPending}
+                            aria-label={`Refuser le congé de ${leave.employee?.user?.first_name} ${leave.employee?.user?.last_name}`}
+                            className="h-11 w-11 text-destructive hover:bg-destructive/10 hover:text-destructive flex-shrink-0"
+                            onClick={() => setLeaveConfirmation({ leave, action: 'reject' })}
+                            disabled={rejectLeaveMutation.isPending || approveLeaveMutation.isPending}
                           >
-                            <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                            <X className="h-4 w-4" />
                           </Button>
                           <Button
                             size="icon"
                             variant="ghost"
-                            className="h-6 w-6 sm:h-7 sm:w-7 text-success hover:bg-success/10 hover:text-success flex-shrink-0"
-                            onClick={() => approveLeaveMutation.mutate(leave.id)}
-                            disabled={approveLeaveMutation.isPending}
+                            aria-label={`Approuver le congé de ${leave.employee?.user?.first_name} ${leave.employee?.user?.last_name}`}
+                            className="h-11 w-11 text-success hover:bg-success/10 hover:text-success flex-shrink-0"
+                            onClick={() => setLeaveConfirmation({ leave, action: 'approve' })}
+                            disabled={approveLeaveMutation.isPending || rejectLeaveMutation.isPending}
                           >
-                            <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                            <Check className="h-4 w-4" />
                           </Button>
                         </div>
                       </motion.div>
@@ -642,5 +671,37 @@ export default function HRDashboard() {
           </div>
         </motion.div>
       </motion.div>
+
+      <AlertDialog open={leaveConfirmation !== null} onOpenChange={(open) => !open && setLeaveConfirmation(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {leaveConfirmation?.action === 'approve' ? 'Approuver ce congé ?' : 'Refuser ce congé ?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {leaveConfirmation && (
+                <>
+                  {leaveConfirmation.action === 'approve'
+                    ? `${confirmationEmployeeName} sera notifié(e) immédiatement de l'approbation de sa demande de `
+                    : `${confirmationEmployeeName} sera notifié(e) immédiatement du refus de sa demande de `}
+                  {(leaveTypeLabels[leaveConfirmation.leave.type] ?? leaveConfirmation.leave.type).toLowerCase()}
+                  {' '}({formatLeaveDate(leaveConfirmation.leave.start_date, leaveConfirmation.leave.end_date)}).
+                  Cette action ne peut pas être annulée.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmLeaveDecision}
+              className={leaveConfirmation?.action === 'reject' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : undefined}
+            >
+              {leaveConfirmation?.action === 'approve' ? 'Approuver' : 'Refuser'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
