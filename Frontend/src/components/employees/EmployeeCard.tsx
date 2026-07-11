@@ -19,33 +19,17 @@ interface EmployeeCardProps {
 }
 
 const statusConfig = {
-  active:   { label: 'Actif',     dot: 'bg-emerald-500', badge: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400' },
-  inactive: { label: 'Inactif',   dot: 'bg-red-500',     badge: 'bg-red-500/10 text-red-700 border-red-500/20 dark:text-red-400' },
-  on_leave: { label: 'En congé',  dot: 'bg-amber-500',   badge: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400' },
+  active:   { label: 'Actif',     dot: 'bg-success',     badge: 'bg-success/10 text-success border-success/20' },
+  inactive: { label: 'Inactif',   dot: 'bg-destructive', badge: 'bg-destructive/10 text-destructive border-destructive/20' },
+  on_leave: { label: 'En congé',  dot: 'bg-warning',      badge: 'bg-warning/10 text-warning border-warning/20' },
 };
 
-/* Palette de gradients pour les headers de carte */
-const headerGradients = [
-  'from-blue-600 to-indigo-700',
-  'from-indigo-600 to-violet-700',
-  'from-violet-600 to-purple-700',
-  'from-teal-600 to-cyan-700',
-  'from-cyan-600 to-sky-700',
-  'from-emerald-600 to-teal-700',
-  'from-sky-600 to-blue-700',
-  'from-slate-600 to-slate-700',
-];
-
-function getGradientIndex(name: string): number {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
-  return Math.abs(hash) % headerGradients.length;
-}
+/* En-tête de carte : navy de marque constant (cf. sidebar), pas de dégradé par employé */
+const cardHeaderGradient = 'from-brand-navy to-brand-navy-800';
 
 export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardProps) {
   const navigate = useNavigate();
-  const fullName = `${employee.user.first_name}${employee.user.last_name}`;
-  const gradientClass = headerGradients[getGradientIndex(fullName)];
+  const gradientClass = cardHeaderGradient;
   const status = statusConfig[employee.status] ?? statusConfig.inactive;
   const hasHighChurnRisk = (employee.churn_risk ?? 0) > 60;
   const dept = (employee as { department_name?: string }).department_name ?? '—';
@@ -72,7 +56,7 @@ export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardPro
 
         {/* High risk badge */}
         {hasHighChurnRisk && (
-          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-red-600/90 px-2 py-0.5 text-[10px] font-bold text-white shadow-lg backdrop-blur-sm">
+          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-lg backdrop-blur-sm">
             <AlertTriangle className="h-3 w-3" />
             Risque élevé
           </div>
@@ -171,9 +155,9 @@ export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardPro
               <span className="text-muted-foreground font-medium">Risque de départ</span>
               <span className={cn(
                 'font-bold tabular-nums',
-                employee.churn_risk < 30  && 'text-emerald-600 dark:text-emerald-400',
-                employee.churn_risk >= 30 && employee.churn_risk < 60 && 'text-amber-600 dark:text-amber-400',
-                employee.churn_risk >= 60 && 'text-red-600 dark:text-red-400',
+                employee.churn_risk < 30  && 'text-success',
+                employee.churn_risk >= 30 && employee.churn_risk < 60 && 'text-warning',
+                employee.churn_risk >= 60 && 'text-destructive',
               )}>
                 {employee.churn_risk}%
               </span>
@@ -185,9 +169,9 @@ export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardPro
                 transition={{ duration: 0.9, ease: 'easeOut', delay: 0.1 }}
                 className={cn(
                   'h-full rounded-full',
-                  employee.churn_risk < 30  && 'bg-gradient-to-r from-emerald-500 to-emerald-400',
-                  employee.churn_risk >= 30 && employee.churn_risk < 60 && 'bg-gradient-to-r from-amber-500 to-amber-400',
-                  employee.churn_risk >= 60 && 'bg-gradient-to-r from-red-600 to-red-500',
+                  employee.churn_risk < 30  && 'bg-success',
+                  employee.churn_risk >= 30 && employee.churn_risk < 60 && 'bg-warning',
+                  employee.churn_risk >= 60 && 'bg-[image:var(--gradient-primary)]',
                 )}
               />
             </div>
