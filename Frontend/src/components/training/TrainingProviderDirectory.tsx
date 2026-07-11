@@ -91,8 +91,8 @@ export default function TrainingProviderDirectory({ canManage }: TrainingProvide
               <DialogHeader>
                 <DialogTitle>Nouveau fournisseur</DialogTitle>
               </DialogHeader>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2 space-y-1">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="space-y-1 sm:col-span-2">
                   <Label>Nom</Label>
                   <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ex: CEGOS, Coursera..." />
                 </div>
@@ -118,11 +118,11 @@ export default function TrainingProviderDirectory({ canManage }: TrainingProvide
                   <Label>E-mail</Label>
                   <Input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="contact@fournisseur.com" />
                 </div>
-                <div className="col-span-2 space-y-1">
+                <div className="space-y-1 sm:col-span-2">
                   <Label>Site web</Label>
                   <Input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} placeholder="https://..." />
                 </div>
-                <div className="col-span-2 space-y-1">
+                <div className="space-y-1 sm:col-span-2">
                   <Label>Spécialités</Label>
                   <Textarea
                     value={form.specialties}

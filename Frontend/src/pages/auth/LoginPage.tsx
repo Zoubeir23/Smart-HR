@@ -438,7 +438,7 @@ export default function LoginPage() {
             <p className="mb-3 text-center text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
               Accès démo
             </p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               {demoAccounts.map((account) => (
                 <button
                   key={account.email}

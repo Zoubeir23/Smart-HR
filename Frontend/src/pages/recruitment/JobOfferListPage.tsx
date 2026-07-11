@@ -611,7 +611,7 @@ export default function JobOfferListPage() {
                   placeholder="Ex: Développeur Backend Senior"
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Département *</Label>
                   <Input
@@ -629,7 +629,7 @@ export default function JobOfferListPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Type de contrat</Label>
                   <Select
@@ -696,7 +696,7 @@ export default function JobOfferListPage() {
                   onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Département *</Label>
                   <Input
@@ -712,7 +712,7 @@ export default function JobOfferListPage() {
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
                   <Label>Type de contrat</Label>
                   <Select

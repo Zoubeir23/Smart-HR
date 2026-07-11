@@ -126,7 +126,7 @@ export default function ObjectivesCard({ employeeId }: ObjectivesCardProps) {
       <CardContent className="space-y-4">
         {showForm && (
           <div className="space-y-3 rounded-lg border border-border bg-muted/30 p-4">
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label>Titre de l'objectif</Label>
                 <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Améliorer la couverture de tests" />

@@ -164,7 +164,7 @@ function InterviewFormStep({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-sm font-medium">Durée de l'entretien</label>
           <Select value={formData.duration} onValueChange={(v) => handleChange('duration', v)}>
@@ -524,7 +524,7 @@ Une fois toutes les questions posées, remercie le candidat chaleureusement et c
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
         {/* Recruteur IA */}
         <div className="flex h-[340px] flex-col items-center justify-center gap-3 rounded-xl border border-border bg-card">
           <div className="relative">
