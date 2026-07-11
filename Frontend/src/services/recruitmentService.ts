@@ -25,6 +25,10 @@ export const recruitmentService = {
     return data;
   },
 
+  deleteJob: async (id: number) => {
+    await api.delete(`/recruitment/job-offers/${id}/`);
+  },
+
   generateJobOffer: async (params: { jobDescription?: string; file?: File }): Promise<GeneratedJobOfferDraft> => {
     if (params.file) {
       const formData = new FormData();
