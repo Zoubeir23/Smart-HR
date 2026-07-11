@@ -14,6 +14,8 @@ import {
   Paperclip,
   X,
   FileText,
+  Pencil,
+  Trash2,
 } from 'lucide-react';
 import { recruitmentService, type GeneratedJobOfferDraft } from '@/services/recruitmentService';
 import { Button } from '@/components/ui/button';
@@ -29,6 +31,16 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
@@ -51,6 +63,9 @@ interface JobOffer {
   postedDate: string;
   applications: number;
   description: string;
+  jobType: string;
+  requirements: string;
+  salaryRange: string;
 }
 
 const contractTabs = ['Toutes', 'CDI', 'CDD', 'Stage'] as const;
@@ -96,6 +111,17 @@ export default function JobOfferListPage() {
   });
 
   const [selectedOffer, setSelectedOffer] = useState<JobOffer | null>(null);
+  const [editTarget, setEditTarget] = useState<JobOffer | null>(null);
+  const [editForm, setEditForm] = useState<NewOfferForm>({
+    title: '',
+    department: '',
+    location: '',
+    job_type: 'full_time',
+    description: '',
+    requirements: '',
+    salary_range: '',
+  });
+  const [deleteId, setDeleteId] = useState<number | null>(null);
   const [rawJobDescription, setRawJobDescription] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
   const [generatedDraft, setGeneratedDraft] = useState<GeneratedJobOfferDraft | null>(null);
@@ -160,6 +186,53 @@ export default function JobOfferListPage() {
     createMutation.mutate({ ...newOfferForm });
   };
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      recruitmentService.updateJob(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('Offre mise à jour.');
+      setEditTarget(null);
+    },
+    onError: () => {
+      toast.error("Erreur lors de la modification de l'offre.");
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => recruitmentService.deleteJob(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['jobs'] });
+      toast.success('Offre supprimée.');
+      setDeleteId(null);
+    },
+    onError: () => {
+      toast.error("Erreur lors de la suppression de l'offre.");
+    },
+  });
+
+  const openEdit = (offer: JobOffer) => {
+    setEditTarget(offer);
+    setEditForm({
+      title: offer.title,
+      department: offer.department,
+      location: offer.location,
+      job_type: offer.jobType || 'full_time',
+      description: offer.description,
+      requirements: offer.requirements,
+      salary_range: offer.salaryRange,
+    });
+  };
+
+  const handleEditSubmit = () => {
+    if (!editTarget) return;
+    if (!editForm.title || !editForm.department || !editForm.description) {
+      toast.error('Le titre, le département et la description sont obligatoires.');
+      return;
+    }
+    updateMutation.mutate({ id: editTarget.id, data: { ...editForm } });
+  };
+
   const { data: jobsData, isLoading } = useQuery({
     queryKey: ['jobs'],
     queryFn: () => recruitmentService.getJobs(),
@@ -175,6 +248,9 @@ export default function JobOfferListPage() {
     postedDate: (j.posted_date as string) || (j.postedDate as string) || (j.created_at as string) || '',
     applications: (j.applications_count as number) ?? (j.applications as number) ?? 0,
     description: (j.description as string) || '',
+    jobType: (j.job_type as string) || 'full_time',
+    requirements: (j.requirements as string) || '',
+    salaryRange: (j.salary_range as string) || '',
   }));
 
   const filteredOffers = jobOffers.filter((offer) => {
@@ -314,7 +390,7 @@ export default function JobOfferListPage() {
                   {offer.description}
                 </p>
 
-                <div className="mt-auto pt-2">
+                <div className="mt-auto flex items-center gap-2 pt-2">
                   {isCandidate ? (
                     <Button
                       className="w-full bg-primary text-primary-foreground"
@@ -323,9 +399,35 @@ export default function JobOfferListPage() {
                       Postuler
                     </Button>
                   ) : (
-                    <Button variant="outline" className="w-full" onClick={() => setSelectedOffer(offer)}>
-                      Voir details
-                    </Button>
+                    <>
+                      <Button variant="outline" className="flex-1" onClick={() => setSelectedOffer(offer)}>
+                        Voir details
+                      </Button>
+                      {isRHOrAdmin && (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Modifier l'offre"
+                            title="Modifier l'offre"
+                            className="shrink-0 text-muted-foreground hover:text-foreground"
+                            onClick={() => openEdit(offer)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Supprimer l'offre"
+                            title="Supprimer l'offre"
+                            className="shrink-0 text-muted-foreground hover:text-destructive"
+                            onClick={() => setDeleteId(offer.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </>
+                      )}
+                    </>
                   )}
                 </div>
               </CardContent>
@@ -579,6 +681,107 @@ export default function JobOfferListPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        {/* Edit Offer Dialog */}
+        <Dialog open={editTarget !== null} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Modifier l'offre d'emploi</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2 max-h-[60vh] overflow-y-auto pr-1">
+              <div className="grid gap-2">
+                <Label>Titre du poste *</Label>
+                <Input
+                  value={editForm.title}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Département *</Label>
+                  <Input
+                    value={editForm.department}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, department: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Localisation</Label>
+                  <Input
+                    value={editForm.location}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, location: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Type de contrat</Label>
+                  <Select
+                    value={editForm.job_type}
+                    onValueChange={(value) => setEditForm((prev) => ({ ...prev, job_type: value }))}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {JOB_TYPE_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Fourchette salariale</Label>
+                  <Input
+                    value={editForm.salary_range}
+                    onChange={(e) => setEditForm((prev) => ({ ...prev, salary_range: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Description *</Label>
+                <Textarea
+                  value={editForm.description}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, description: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Prérequis (un par ligne)</Label>
+                <Textarea
+                  value={editForm.requirements}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, requirements: e.target.value }))}
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditTarget(null)}>Annuler</Button>
+              <Button onClick={handleEditSubmit} disabled={updateMutation.isPending}>
+                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Offer Confirmation */}
+        <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette offre d'emploi ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est définitive. Les candidatures associées à cette offre seront également supprimées.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </motion.div>
   );
 }
