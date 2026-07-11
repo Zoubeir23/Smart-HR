@@ -334,7 +334,7 @@ export default function SecurityPage() {
         />
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid h-auto w-full grid-cols-1 sm:h-10 sm:grid-cols-3">
             <TabsTrigger value="audit" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Journal d'audit
