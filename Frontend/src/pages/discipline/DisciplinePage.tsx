@@ -441,7 +441,7 @@ export default function DisciplinePage() {
             </div>
 
             {/* Dates */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label>Date de l'incident <span className="text-destructive">*</span></Label>
                 <Input
@@ -462,7 +462,7 @@ export default function DisciplinePage() {
 
             {/* Dates de suspension (conditionnelles) */}
             {isSuspension && (
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-lg border border-orange-200 bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900">
                 <div className="space-y-1.5">
                   <Label>Début mise à pied <span className="text-destructive">*</span></Label>
                   <Input
