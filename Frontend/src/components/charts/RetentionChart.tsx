@@ -8,27 +8,16 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { motion } from 'framer-motion';
+import { AlertCircle, TrendingUp } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface RetentionChartProps {
   data?: { month: string; retention: number; turnover: number }[];
+  isLoading?: boolean;
+  isError?: boolean;
 }
 
-const defaultData = [
-  { month: 'Jan', retention: 95, turnover: 5 },
-  { month: 'Fév', retention: 94, turnover: 6 },
-  { month: 'Mar', retention: 96, turnover: 4 },
-  { month: 'Avr', retention: 93, turnover: 7 },
-  { month: 'Mai', retention: 95, turnover: 5 },
-  { month: 'Juin', retention: 97, turnover: 3 },
-  { month: 'Juil', retention: 96, turnover: 4 },
-  { month: 'Août', retention: 94, turnover: 6 },
-  { month: 'Sep', retention: 95, turnover: 5 },
-  { month: 'Oct', retention: 96, turnover: 4 },
-  { month: 'Nov', retention: 97, turnover: 3 },
-  { month: 'Déc', retention: 98, turnover: 2 },
-];
-
-export default function RetentionChart({ data = defaultData }: RetentionChartProps) {
+function ChartShell({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -52,6 +41,46 @@ export default function RetentionChart({ data = defaultData }: RetentionChartPro
           </div>
         </div>
       </div>
+      {children}
+    </motion.div>
+  );
+}
+
+export default function RetentionChart({ data, isLoading = false, isError = false }: RetentionChartProps) {
+  if (isLoading) {
+    return (
+      <ChartShell>
+        <Skeleton className="h-72 w-full rounded-lg" />
+      </ChartShell>
+    );
+  }
+
+  if (isError) {
+    return (
+      <ChartShell>
+        <div className="flex h-72 flex-col items-center justify-center gap-2 text-center" role="alert">
+          <AlertCircle className="h-8 w-8 text-destructive/60" />
+          <p className="text-sm font-medium">Impossible de charger le taux de rétention</p>
+          <p className="text-xs text-muted-foreground">Réessayez dans quelques instants.</p>
+        </div>
+      </ChartShell>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <ChartShell>
+        <div className="flex h-72 flex-col items-center justify-center gap-2 text-center">
+          <TrendingUp className="h-8 w-8 text-muted-foreground/40" />
+          <p className="text-sm font-medium">Pas encore de données de rétention</p>
+          <p className="text-xs text-muted-foreground">L'historique apparaîtra ici dès les premiers mois de suivi.</p>
+        </div>
+      </ChartShell>
+    );
+  }
+
+  return (
+    <ChartShell>
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
@@ -106,6 +135,6 @@ export default function RetentionChart({ data = defaultData }: RetentionChartPro
           </AreaChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </ChartShell>
   );
 }
