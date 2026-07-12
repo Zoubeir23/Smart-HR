@@ -78,9 +78,9 @@ export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardPro
           </div>
         )}
 
-        {/* Menu (visible on hover) */}
+        {/* Menu (visible au survol ou au focus clavier) */}
         <div
-          className="absolute left-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute left-3 top-3 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100"
           onClick={(e) => e.stopPropagation()}
         >
           <DropdownMenu>
@@ -88,6 +88,7 @@ export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardPro
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={`Actions pour ${employee.user.first_name} ${employee.user.last_name}`}
                 className="h-7 w-7 bg-black/20 text-white hover:bg-black/40 hover:text-white backdrop-blur-sm"
               >
                 <MoreVertical className="h-3.5 w-3.5" />
@@ -195,8 +196,8 @@ export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardPro
         )}
       </div>
 
-      {/* ── Hover action bar at bottom ── */}
-      <div className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-center gap-1 bg-gradient-to-t from-card to-card/0 px-4 pb-3 pt-4 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+      {/* ── Barre d'actions révélée au survol ou au focus clavier ── */}
+      <div className="absolute inset-x-0 bottom-0 flex translate-y-full items-center justify-center gap-1 bg-gradient-to-t from-card to-card/0 px-4 pb-3 pt-4 opacity-0 transition-all duration-200 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
         <Button
           variant="outline"
           size="sm"
