@@ -104,6 +104,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
         {/* Toggle dark mode */}
         <button
           onClick={toggleTheme}
+          aria-label={theme === 'dark' ? 'Passer en mode clair' : 'Passer en mode sombre'}
           className="flex h-8 w-8 sm:h-9 sm:w-9 md:h-[38px] md:w-[38px] items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-[hsl(36,40%,91%)] dark:hover:bg-white/[0.07] hover:text-foreground flex-shrink-0"
         >
           {theme === 'dark'
@@ -115,7 +116,10 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="relative flex h-8 w-8 sm:h-9 sm:w-9 md:h-[38px] md:w-[38px] items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-[hsl(36,40%,91%)] dark:hover:bg-white/[0.07] hover:text-foreground flex-shrink-0">
+            <button
+              aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} non lue${unreadCount > 1 ? 's' : ''}` : 'Notifications'}
+              className="relative flex h-8 w-8 sm:h-9 sm:w-9 md:h-[38px] md:w-[38px] items-center justify-center rounded-[10px] text-muted-foreground transition-colors hover:bg-[hsl(36,40%,91%)] dark:hover:bg-white/[0.07] hover:text-foreground flex-shrink-0"
+            >
               <Bell className="h-[15px] w-[15px] sm:h-4 sm:w-4 md:h-[17px] md:w-[17px]" />
               {unreadCount > 0 && (
                 <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#D62828] text-[9px] font-bold text-white ring-2 ring-card sm:right-[6px] sm:top-[6px]">
@@ -194,7 +198,10 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
         {/* User menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 rounded-[10px] px-1.5 sm:px-2 py-1 sm:py-1.5 transition-colors hover:bg-[hsl(36,40%,91%)] dark:hover:bg-white/[0.07] flex-shrink-0">
+            <button
+              aria-label={`Menu du compte${user?.first_name ? ` — ${user.first_name} ${user.last_name}` : ''}`}
+              className="flex items-center gap-1.5 sm:gap-2 md:gap-2.5 rounded-[10px] px-1.5 sm:px-2 py-1 sm:py-1.5 transition-colors hover:bg-[hsl(36,40%,91%)] dark:hover:bg-white/[0.07] flex-shrink-0"
+            >
               <div className="flex h-7 w-7 sm:h-8 sm:w-8 md:h-[34px] md:w-[34px] flex-shrink-0 items-center justify-center rounded-[10px] text-[11px] sm:text-[12px] md:text-[13px] font-bold text-white bg-gradient-to-br from-brand-red-light to-brand-red-dark">
                 {user?.first_name?.[0]}{user?.last_name?.[0]}
               </div>
