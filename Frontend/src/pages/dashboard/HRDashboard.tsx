@@ -315,28 +315,18 @@ export default function HRDashboard() {
         {/* ────── HEADER BANNER ────── */}
         <motion.div
           variants={item}
-          className="relative overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-br from-[#e63c3c] via-[#D62828] to-[#c41e1e] px-6 py-5 sm:px-8 sm:py-6"
+          className="relative overflow-hidden rounded-2xl border border-white/10 bg-[image:var(--gradient-primary)] px-6 py-5 sm:px-8 sm:py-6"
         >
-          {/* Geometric background pattern */}
-          <div className="absolute inset-0 opacity-[0.06] bg-[image:linear-gradient(rgba(255,255,255,0.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.6)_1px,transparent_1px)] bg-[size:40px_40px]" />
-          {/* Glow orbs */}
-          <div className="absolute -right-12 -top-12 h-40 w-40 rounded-full blur-3xl bg-white/15" />
-          <div className="absolute bottom-0 left-1/3 h-28 w-28 rounded-full blur-3xl bg-black/10" />
-
           <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.15] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/90 backdrop-blur-sm">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-white/[0.15] px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-white/90">
                   <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
                   {today}
                 </span>
               </div>
               <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white">
-                {getGreeting()},{' '}
-                <span className="bg-gradient-to-r from-white to-[#FFE0B2] bg-clip-text text-transparent">
-                  {user?.first_name}
-                </span>{' '}
-                👋
+                {getGreeting()}, {user?.first_name} 👋
               </h1>
               <p className="text-xs sm:text-sm text-white/80">
                 Voici un résumé de l'activité RH de votre organisation
@@ -347,7 +337,7 @@ export default function HRDashboard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-2 text-xs h-9 !border-white/50 !bg-white/10 !text-white hover:!bg-white/20 backdrop-blur-sm"
+                  className="gap-2 text-xs h-9 !border-white/50 !bg-white/10 !text-white hover:!bg-white/20"
                 >
                   <FileText className="h-3.5 w-3.5" />
                   Exporter
