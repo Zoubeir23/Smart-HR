@@ -14,8 +14,6 @@ import {
   Plus,
   Check,
   X,
-  TrendingUp,
-  TrendingDown,
   Activity,
   UserCheck,
   Sparkles,
@@ -309,6 +307,14 @@ export default function HRDashboard() {
     [employees]
   );
 
+  // ChurnGauge attend un pourcentage 0-100 ; churn_risk_high est un comptage
+  // d'employés côté backend — sans cette conversion, la jauge affichait le
+  // nombre brut comme s'il était déjà un pourcentage d'arc.
+  const churnRiskPercentage =
+    stats && stats.total_employees > 0
+      ? Math.round((stats.churn_risk_high / stats.total_employees) * 100)
+      : 0;
+
   // ─── Animation Variants ────────────────
   const container = {
     hidden: { opacity: 0 },
@@ -381,7 +387,6 @@ export default function HRDashboard() {
               <KPICard
                 title="Total Employés"
                 value={stats?.total_employees ?? 0}
-                change={{ value: 3.2, type: 'increase' }}
                 icon={Users}
                 description={`${stats?.active_employees ?? 0} actifs`}
                 tone="neutral"
@@ -396,7 +401,6 @@ export default function HRDashboard() {
               <KPICard
                 title="Postes ouverts"
                 value={stats?.open_positions ?? 0}
-                change={{ value: 2, type: 'increase' }}
                 icon={Briefcase}
                 description={`${stats?.new_applications ?? 0} candidatures`}
                 tone="neutral"
@@ -404,7 +408,6 @@ export default function HRDashboard() {
               <KPICard
                 title="Risque élevé"
                 value={stats?.churn_risk_high ?? 0}
-                change={{ value: 8, type: 'decrease' }}
                 icon={AlertTriangle}
                 description="Employés à surveiller"
                 tone="destructive"
@@ -450,7 +453,7 @@ export default function HRDashboard() {
                 <Skeleton className="h-40 w-40 rounded-full" />
               ) : (
                 <>
-                  <ChurnGauge value={stats?.churn_risk_high ?? 0} size="lg" />
+                  <ChurnGauge value={churnRiskPercentage} size="lg" />
                   {stats && <RiskDistributionBar stats={stats} />}
                 </>
               )}
