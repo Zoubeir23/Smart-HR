@@ -2,7 +2,12 @@ import { motion } from 'framer-motion';
 import { LucideIcon, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-type CardColor = 'indigo' | 'amber' | 'emerald' | 'rose' | 'violet' | 'cyan';
+/**
+ * Ton sémantique, pas décoration : neutre pour l'information pure, warning pour
+ * ce qui attend une décision, destructive pour le signal de risque (le rouge
+ * braise réservé à l'action, cf. DESIGN.md — La Règle de la Braise).
+ */
+type KPITone = 'neutral' | 'warning' | 'destructive';
 
 interface KPICardProps {
   title: string;
@@ -14,102 +19,32 @@ interface KPICardProps {
   icon: LucideIcon;
   description?: string;
   className?: string;
-  color?: CardColor;
-  variant?: 'default' | 'gradient' | 'outline';
+  tone?: KPITone;
 }
 
-const colorConfig: Record<CardColor, {
-  iconBg: string;
-  topBar: string;
-  glow: string;
-  sparkHex: string;
-  sparkFillHex: string;
-}> = {
-  indigo: {
-    iconBg:       'bg-gradient-to-br from-indigo-600 to-indigo-400',
-    topBar:       'bg-gradient-to-r from-indigo-500 to-indigo-400/40',
-    glow:         'bg-indigo-500/10',
-    sparkHex:     '#6366f1',
-    sparkFillHex: 'rgba(99,102,241,0.06)',
+const toneConfig: Record<KPITone, { iconBg: string; iconColor: string; topBar: string }> = {
+  neutral: {
+    iconBg: 'bg-muted',
+    iconColor: 'text-muted-foreground',
+    topBar: 'bg-border',
   },
-  amber: {
-    iconBg:       'bg-gradient-to-br from-amber-600 to-amber-400',
-    topBar:       'bg-gradient-to-r from-amber-500 to-amber-400/40',
-    glow:         'bg-amber-500/10',
-    sparkHex:     '#f59e0b',
-    sparkFillHex: 'rgba(245,158,11,0.06)',
+  warning: {
+    iconBg: 'bg-warning/12',
+    iconColor: 'text-warning',
+    topBar: 'bg-warning',
   },
-  emerald: {
-    iconBg:       'bg-gradient-to-br from-emerald-600 to-emerald-400',
-    topBar:       'bg-gradient-to-r from-emerald-500 to-emerald-400/40',
-    glow:         'bg-emerald-500/10',
-    sparkHex:     '#10b981',
-    sparkFillHex: 'rgba(16,185,129,0.06)',
-  },
-  rose: {
-    iconBg:       'bg-gradient-to-br from-rose-600 to-rose-400',
-    topBar:       'bg-gradient-to-r from-rose-500 to-rose-400/40',
-    glow:         'bg-rose-500/10',
-    sparkHex:     '#f43f5e',
-    sparkFillHex: 'rgba(244,63,94,0.06)',
-  },
-  violet: {
-    iconBg:       'bg-gradient-to-br from-violet-600 to-violet-400',
-    topBar:       'bg-gradient-to-r from-violet-500 to-violet-400/40',
-    glow:         'bg-violet-500/10',
-    sparkHex:     '#8b5cf6',
-    sparkFillHex: 'rgba(139,92,246,0.06)',
-  },
-  cyan: {
-    iconBg:       'bg-gradient-to-br from-cyan-600 to-cyan-400',
-    topBar:       'bg-gradient-to-r from-cyan-500 to-cyan-400/40',
-    glow:         'bg-cyan-500/10',
-    sparkHex:     '#06b6d4',
-    sparkFillHex: 'rgba(6,182,212,0.06)',
+  destructive: {
+    iconBg: 'bg-destructive/12',
+    iconColor: 'text-destructive',
+    topBar: 'bg-[image:var(--gradient-primary)]',
   },
 };
 
 const changeConfig = {
-  increase: { icon: TrendingUp,  className: 'bg-emerald-500/10 text-emerald-500' },
-  decrease: { icon: TrendingDown, className: 'bg-rose-500/10 text-rose-500' },
-  neutral:  { icon: Minus,       className: 'bg-slate-500/10 text-slate-400' },
+  increase: { icon: TrendingUp, className: 'bg-success/10 text-success' },
+  decrease: { icon: TrendingDown, className: 'bg-destructive/10 text-destructive' },
+  neutral: { icon: Minus, className: 'bg-muted text-muted-foreground' },
 };
-
-/* SVG Sparkline — stroke/fill sont des attributs SVG natifs, pas des styles CSS */
-function Sparkline({ strokeColor, fillColor }: { strokeColor: string; fillColor: string }) {
-  const points = [0, 40, 25, 55, 35, 20, 50, 60, 45, 70, 55, 40, 70, 65, 80, 45, 90, 55, 100, 35];
-  const w = 120;
-  const h = 40;
-
-  const coords: [number, number][] = [];
-  for (let i = 0; i < points.length; i += 2) {
-    coords.push([(points[i] / 100) * w, h - (points[i + 1] / 100) * h]);
-  }
-
-  const pathD = coords.reduce((acc, [x, y], idx) => {
-    if (idx === 0) return `M ${x},${y}`;
-    const [px, py] = coords[idx - 1];
-    const cx1 = px + (x - px) / 3;
-    const cx2 = x - (x - px) / 3;
-    return `${acc} C ${cx1},${py} ${cx2},${y} ${x},${y}`;
-  }, '');
-
-  const fillPath = `${pathD} L ${w},${h} L 0,${h} Z`;
-
-  return (
-    <svg
-      width={w}
-      height={h}
-      viewBox={`0 0 ${w} ${h}`}
-      preserveAspectRatio="none"
-      className="absolute bottom-0 right-0 w-[120px] h-[40px] pointer-events-none"
-      aria-hidden
-    >
-      <path d={fillPath} fill={fillColor} />
-      <path d={pathD} fill="none" stroke={strokeColor} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 export default function KPICard({
   title,
@@ -118,9 +53,9 @@ export default function KPICard({
   icon: Icon,
   description,
   className,
-  color = 'indigo',
+  tone = 'neutral',
 }: KPICardProps) {
-  const cfg = colorConfig[color];
+  const cfg = toneConfig[tone];
   const changeCfg = change ? changeConfig[change.type] : null;
   const ChangeIcon = changeCfg?.icon;
 
@@ -135,14 +70,8 @@ export default function KPICard({
         className
       )}
     >
-      {/* Top accent bar */}
+      {/* Top accent bar — plat pour le neutre, coloré seulement quand la carte porte un signal réel */}
       <div className={cn('absolute left-0 top-0 right-0 h-[3px] rounded-t-xl', cfg.topBar)} />
-
-      {/* Sparkline décorative */}
-      <Sparkline strokeColor={cfg.sparkHex} fillColor={cfg.sparkFillHex} />
-
-      {/* Glow orb */}
-      <div className={cn('pointer-events-none absolute right-0 top-0 h-28 w-28 rounded-full blur-3xl opacity-60', cfg.glow)} />
 
       <div className="relative p-5">
         <div className="flex items-start justify-between gap-3">
@@ -185,10 +114,10 @@ export default function KPICard({
 
           {/* Icon */}
           <div className={cn(
-            'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-md transition-transform duration-200 group-hover:scale-110',
+            'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-110',
             cfg.iconBg
           )}>
-            <Icon className="h-5 w-5 text-white" />
+            <Icon className={cn('h-5 w-5', cfg.iconColor)} />
           </div>
         </div>
       </div>
