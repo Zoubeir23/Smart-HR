@@ -117,6 +117,8 @@ export interface DashboardStats {
   open_positions: number;
   attendance_rate: number;
   churn_risk_high: number;
+  churn_risk_medium: number;
+  churn_risk_low: number;
   new_applications: number;
   payroll_pending: number;
 }
