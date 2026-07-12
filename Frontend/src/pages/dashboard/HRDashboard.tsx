@@ -9,7 +9,7 @@ import {
   Briefcase,
   Clock,
   AlertTriangle,
-  FileText,
+  AlertCircle,
   ArrowRight,
   Plus,
   Check,
@@ -188,6 +188,24 @@ function QuickAction({ icon: Icon, label, href, color }: { icon: React.ElementTy
   );
 }
 
+/* ─────────── État d'erreur de section ─────────── */
+
+function SectionErrorState({ message, compact = false }: { message: string; compact?: boolean }) {
+  return (
+    <div
+      role="alert"
+      className={cn(
+        'flex flex-col items-center justify-center gap-2 text-center',
+        compact ? 'py-8' : 'py-12'
+      )}
+    >
+      <AlertCircle className="h-8 w-8 text-destructive/60" />
+      <p className="text-sm font-medium">{message}</p>
+      <p className="text-xs text-muted-foreground">Réessayez dans quelques instants.</p>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════
    MAIN COMPONENT
    ═══════════════════════════════════════════ */
@@ -201,22 +219,22 @@ export default function HRDashboard() {
   const [leaveConfirmation, setLeaveConfirmation] = useState<{ leave: LeaveRequest; action: 'approve' | 'reject' } | null>(null);
 
   // ─── Data Fetching ─────────────────────
-  const { data: stats, isLoading: statsLoading } = useQuery<DashboardStats>({
+  const { data: stats, isLoading: statsLoading, isError: statsError } = useQuery<DashboardStats>({
     queryKey: ['employee-stats'],
     queryFn: employeeService.getStats,
   });
 
-  const { data: employeesData, isLoading: employeesLoading } = useQuery({
+  const { data: employeesData, isLoading: employeesLoading, isError: employeesError } = useQuery({
     queryKey: ['employees'],
     queryFn: () => employeeService.getAll(),
   });
 
-  const { data: leavesData, isLoading: leavesLoading } = useQuery({
+  const { data: leavesData, isLoading: leavesLoading, isError: leavesError } = useQuery({
     queryKey: ['leaves', 'pending'],
     queryFn: () => leaveService.getAll({ status: 'pending' }),
   });
 
-  const { data: applicationsData, isLoading: applicationsLoading } = useQuery({
+  const { data: applicationsData, isLoading: applicationsLoading, isError: applicationsError } = useQuery({
     queryKey: ['applications-recent', minScoreFilter],
     queryFn: () => recruitmentService.getApplications(
       minScoreFilter > 0
@@ -334,14 +352,6 @@ export default function HRDashboard() {
             </div>
             {(user?.role === 'RH' || user?.role === 'ADMIN') && (
               <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 text-xs h-9 !border-white/50 !bg-white/10 !text-white hover:!bg-white/20"
-                >
-                  <FileText className="h-3.5 w-3.5" />
-                  Exporter
-                </Button>
                 <Link to="/employees/create">
                   <Button
                     variant="secondary"
@@ -359,7 +369,11 @@ export default function HRDashboard() {
 
         {/* ────── KPI CARDS ────── */}
         <motion.div variants={item} className="grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {statsLoading ? (
+          {statsError ? (
+            <div className="col-span-full">
+              <SectionErrorState message="Impossible de charger les indicateurs" compact />
+            </div>
+          ) : statsLoading ? (
             Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="h-[110px] sm:h-[130px] w-full rounded-lg" />
             ))
@@ -431,7 +445,9 @@ export default function HRDashboard() {
               </div>
             </CardHeader>
             <CardContent className="flex flex-1 flex-col items-center justify-center gap-4">
-              {statsLoading ? (
+              {statsError ? (
+                <SectionErrorState message="Impossible de charger le risque de turnover" compact />
+              ) : statsLoading ? (
                 <Skeleton className="h-40 w-40 rounded-full" />
               ) : (
                 <>
@@ -467,7 +483,11 @@ export default function HRDashboard() {
             </CardHeader>
             <CardContent className="p-3 sm:p-4">
               <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
-                {employeesLoading ? (
+                {employeesError ? (
+                  <div className="col-span-1 sm:col-span-2">
+                    <SectionErrorState message="Impossible de charger les employés à risque" />
+                  </div>
+                ) : employeesLoading ? (
                   Array.from({ length: 4 }).map((_, i) => (
                     <Skeleton key={i} className="h-[160px] sm:h-[180px] w-full rounded-lg" />
                   ))
@@ -508,7 +528,9 @@ export default function HRDashboard() {
                 </Badge>
               </CardHeader>
               <CardContent className="p-3 sm:p-4 space-y-1.5 sm:space-y-2">
-                {leavesLoading ? (
+                {leavesError ? (
+                  <SectionErrorState message="Impossible de charger les congés en attente" compact />
+                ) : leavesLoading ? (
                   Array.from({ length: 3 }).map((_, i) => (
                     <Skeleton key={i} className="h-14 sm:h-16 w-full rounded-lg" />
                   ))
@@ -605,7 +627,9 @@ export default function HRDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                {applicationsLoading ? (
+                {applicationsError ? (
+                  <SectionErrorState message="Impossible de charger les candidatures" compact />
+                ) : applicationsLoading ? (
                   <div className="space-y-4">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <Skeleton key={i} className="h-14 w-full rounded-lg" />
