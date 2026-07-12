@@ -264,7 +264,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                 className={cn(
                   'group/item flex w-full items-center justify-center rounded-lg p-2 transition-all duration-150',
                   hasActiveChild
-                    ? 'bg-gradient-to-r from-[#D62828] to-[#e63c3c] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
+                    ? 'bg-[image:var(--gradient-primary)] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
                     : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                 )}
               >
@@ -340,7 +340,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
                       className={cn(
                         'group/child flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-sm transition-all duration-150',
                         childActive
-                          ? 'bg-gradient-to-r from-[#D62828] to-[#e63c3c] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
+                          ? 'bg-[image:var(--gradient-primary)] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
                           : 'text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                       )}
                     >
@@ -366,7 +366,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
           'group/item relative flex items-center gap-3 rounded-lg px-2.5 py-2 text-sm font-medium transition-all duration-150',
           collapsed && 'justify-center px-2',
           active
-            ? 'bg-gradient-to-r from-[#D62828] to-[#e63c3c] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
+            ? 'bg-[image:var(--gradient-primary)] text-white shadow-[0_4px_12px_rgba(214,40,40,0.30)]'
             : 'text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
         )}
       >
@@ -558,7 +558,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               onClick={() => navigate('/profile')}
               className="mb-2 flex w-full items-center gap-2.5 rounded-lg bg-sidebar-accent/50 p-2.5 text-left transition-all hover:bg-sidebar-accent hover:shadow-sm"
             >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#D62828] to-[#e63c3c] text-sm font-bold text-white shadow-sm">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[image:var(--gradient-primary)] text-sm font-bold text-white shadow-sm">
                 {user.first_name?.[0]}{user.last_name?.[0]}
               </div>
               <div className="min-w-0 flex-1">

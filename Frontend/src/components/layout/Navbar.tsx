@@ -23,13 +23,14 @@ interface NavbarProps {
   showMenuButton?: boolean;
 }
 
-const NOTIFICATION_TYPE_COLORS: Record<string, string> = {
-  leave_request: 'bg-blue-500',
-  leave_approved: 'bg-green-500',
-  leave_rejected: 'bg-red-500',
-  application_received: 'bg-purple-500',
-  task_assigned: 'bg-orange-500',
-  system: 'bg-gray-400',
+/* Tons sémantiques du design system — pas une couleur par type, mais par nature de signal */
+export const NOTIFICATION_TYPE_COLORS: Record<string, string> = {
+  leave_request: 'bg-warning',
+  leave_approved: 'bg-success',
+  leave_rejected: 'bg-destructive',
+  application_received: 'bg-primary',
+  task_assigned: 'bg-primary',
+  system: 'bg-muted-foreground',
 };
 
 export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
@@ -168,7 +169,7 @@ export default function Navbar({ onMenuClick, showMenuButton }: NavbarProps) {
                   >
                     <div className={cn(
                       'mt-0.5 h-2 w-2 shrink-0 rounded-full',
-                      NOTIFICATION_TYPE_COLORS[notification.notification_type] ?? 'bg-gray-400',
+                      NOTIFICATION_TYPE_COLORS[notification.notification_type] ?? 'bg-muted-foreground',
                       notification.is_read && 'opacity-30'
                     )} />
                     <div className="min-w-0 flex-1">

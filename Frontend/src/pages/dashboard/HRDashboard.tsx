@@ -112,11 +112,10 @@ function AnimatedValue({ value, suffix = '' }: { value: number; suffix?: string 
 /* ─────────── Risk Distribution Mini-Bar ─────────── */
 
 function RiskDistributionBar({ stats }: { stats: DashboardStats }) {
-  const total = stats.total_employees || 1;
   const high = stats.churn_risk_high ?? 0;
-  // Estimate medium ~20%, rest is low
-  const medium = Math.round(total * 0.2);
-  const low = total - high - medium;
+  const medium = stats.churn_risk_medium ?? 0;
+  const low = stats.churn_risk_low ?? 0;
+  const total = high + medium + low || 1;
   const pctLow = Math.round((low / total) * 100);
   const pctMed = Math.round((medium / total) * 100);
   const pctHigh = Math.round((high / total) * 100);
