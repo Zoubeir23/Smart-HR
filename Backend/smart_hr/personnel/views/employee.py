@@ -207,6 +207,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
             Employee.objects.values("department__name").annotate(count=Count("id")).order_by("-count"),
         )
         high_churn_risk = Employee.objects.filter(churn_risk__gte=70).count()
+        medium_churn_risk = Employee.objects.filter(churn_risk__gte=30, churn_risk__lt=70).count()
+        low_churn_risk = Employee.objects.filter(churn_risk__lt=30).count()
         pending_leaves = LeaveRequest.objects.filter(status=LeaveRequest.Status.PENDING).count()
         open_positions = JobOffer.objects.filter(status=JobOffer.Status.OPEN).count()
         new_applications = Application.objects.filter(status=Application.Status.PENDING).count()
@@ -220,6 +222,8 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                 "open_positions": open_positions,
                 "new_applications": new_applications,
                 "churn_risk_high": high_churn_risk,
+                "churn_risk_medium": medium_churn_risk,
+                "churn_risk_low": low_churn_risk,
                 # Champs détaillés conservés pour les autres consommateurs.
                 "by_status": by_status,
                 "by_department": by_department,
