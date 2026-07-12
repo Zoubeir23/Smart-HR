@@ -49,14 +49,11 @@ export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardPro
       className="group relative cursor-pointer rounded-xl border border-border bg-card overflow-hidden shadow-sm hover:shadow-lg hover:border-border/80 transition-shadow"
       onClick={goToProfile}
     >
-      {/* ── Gradient header ── */}
+      {/* ── En-tête navy de marque ── */}
       <div className={cn('relative h-20 bg-gradient-to-br', gradientClass)}>
-        {/* Subtle pattern overlay — bg-[image:...] = valeur arbitraire Tailwind pour backgroundImage */}
-        <div className="absolute inset-0 opacity-[0.08] bg-[image:repeating-linear-gradient(45deg,transparent,transparent_12px,rgba(255,255,255,0.4)_12px,rgba(255,255,255,0.4)_13px)]" />
-
         {/* High risk badge */}
         {hasHighChurnRisk && (
-          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-destructive/90 px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-lg backdrop-blur-sm">
+          <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-destructive px-2 py-0.5 text-[10px] font-bold text-destructive-foreground shadow-lg">
             <AlertTriangle className="h-3 w-3" />
             Risque élevé
           </div>
@@ -73,7 +70,7 @@ export default function EmployeeCard({ employee, onDeactivate }: EmployeeCardPro
                 variant="ghost"
                 size="icon"
                 aria-label={`Actions pour ${employee.user.first_name} ${employee.user.last_name}`}
-                className="h-7 w-7 bg-black/20 text-white hover:bg-black/40 hover:text-white backdrop-blur-sm"
+                className="h-7 w-7 bg-black/20 text-white hover:bg-black/40 hover:text-white"
               >
                 <MoreVertical className="h-3.5 w-3.5" />
               </Button>

@@ -53,7 +53,7 @@ describe('EmployeeCard — en-tête navy de marque constant, jamais de dégradé
     const { container, getByText } = renderCard(makeEmployee({ churn_risk: 85 }));
 
     expect(getByText('Risque élevé')).toBeInTheDocument();
-    expect(container.innerHTML).toContain('bg-destructive/90');
+    expect(container.innerHTML).toContain('bg-destructive');
     expect(container.innerHTML).not.toContain('bg-red-600');
   });
 
