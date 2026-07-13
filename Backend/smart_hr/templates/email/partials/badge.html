@@ -1,0 +1,20 @@
+{% comment %}
+  Pastille de statut.
+  Usage : {% include "email/partials/badge.html" with variant="approved" label="Approuvé" %}
+
+  Variantes : "approved" (vert), "rejected" (rouge braise), "pending" (orange
+  vigilance, texte encre pour le contraste), "neutral" (crème).
+  Toutes les combinaisons fond/texte sont vérifiées AA.
+{% endcomment %}
+<table role="presentation"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="margin:0 0 4px;">
+  <tr>
+    <td bgcolor="{% if variant == 'approved' %}#0b7a52{% elif variant == 'rejected' %}#d62828{% elif variant == 'pending' %}#f97316{% else %}#efe6d8{% endif %}"
+        style="border-radius:12px; padding:5px 14px; font-size:12px; font-weight:700; color:{% if variant == 'pending' or variant == 'neutral' %}#1c1410{% else %}#ffffff{% endif %};">
+      {{ label }}
+    </td>
+  </tr>
+</table>

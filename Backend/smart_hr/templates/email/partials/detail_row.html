@@ -1,0 +1,21 @@
+{% comment %}
+  Une ligne libellé / valeur dans une carte de détails.
+  Usage : {% include "email/partials/detail_row.html" with label="Poste" value=job_title %}
+
+  Options :
+  - accent=True     : met la valeur en rouge braise (signal, ex. score de risque)
+  - success=True    : met la valeur en vert validation (ex. primes)
+  - mono=True       : valeur en chasse fixe (ex. mot de passe temporaire)
+  - regular=True    : valeur en graisse normale (ex. texte libre, description)
+
+  La hiérarchie repose sur la graisse et la taille, pas sur la couleur
+  (cf. DESIGN.md — La Règle de la Graisse).
+{% endcomment %}
+<tr>
+  <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
+    <p style="margin:0 0 3px; font-size:12px; font-weight:600; color:#816e65;">{{ label }}</p>
+    <p style="margin:0; font-size:14px; {% if regular %}font-weight:400;{% else %}font-weight:700;{% endif %} {% if mono %}font-family:'Courier New',Courier,monospace; letter-spacing:1px;{% endif %} color:{% if accent %}#d62828{% elif success %}#0b7a52{% else %}#1c1410{% endif %};">
+      {{ value }}
+    </p>
+  </td>
+</tr>

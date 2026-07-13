@@ -1,0 +1,25 @@
+{% comment %}
+  Ouvre une liste d’étapes numérotées. À refermer avec steps_close.html.
+  La numérotation est ici légitime : les étapes forment une vraie séquence
+  ordonnée que le destinataire doit suivre dans l’ordre.
+  Usage : {% include "email/partials/steps_open.html" with steps_title="Premières étapes" %}
+{% endcomment %}
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="width:100%; margin:0 0 20px; border:1px solid #e5dccc; border-radius:12px; background-color:#ffffff;">
+  <tr>
+    <td style="padding:20px;">
+      {% if steps_title %}
+        <p style="margin:0 0 14px; padding:0 0 12px; border-bottom:1px solid #e5dccc; font-size:14px; font-weight:700; color:#1c1410;">
+          {{ steps_title }}
+        </p>
+      {% endif %}
+      <table role="presentation"
+             width="100%"
+             cellpadding="0"
+             cellspacing="0"
+             border="0"
+             style="width:100%;">
