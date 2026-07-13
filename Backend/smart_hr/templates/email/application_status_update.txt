@@ -1,0 +1,28 @@
+{% autoescape off %}Bonjour {{ first_name }},
+
+{% if is_accepted %}Excellente nouvelle ! Votre candidature pour le poste de {{ job_title }} a été
+retenue.{% elif is_interview %}Votre candidature pour le poste de {{ job_title }} a été sélectionnée pour un
+entretien.{% elif is_reviewing %}Notre équipe RH examine actuellement votre candidature pour le poste de
+{{ job_title }}.{% else %}Nous vous remercions de l'intérêt que vous portez à notre entreprise. Après
+examen attentif de votre candidature pour le poste de {{ job_title }}, nous ne
+sommes pas en mesure de donner suite.{% endif %}
+
+DÉTAILS DE VOTRE CANDIDATURE
+Nouveau statut : {% if is_accepted %}Accepté{% elif is_interview %}Entretien planifié{% elif is_reviewing %}En cours d'examen{% else %}Non retenu{% endif %}
+Poste          : {{ job_title }}
+
+{% if is_accepted %}PROCHAINE ÉTAPE : notre équipe RH vous contactera prochainement pour les
+modalités d'intégration.{% elif is_interview %}PROCHAINE ÉTAPE : notre équipe RH vous contactera pour vous communiquer les
+détails de l'entretien (date, heure, lieu ou lien visio).{% elif is_reviewing %}Nous vous informerons de la suite donnée à votre candidature dans les plus brefs
+délais.{% elif reason %}Commentaire : {{ reason }}{% else %}Nous vous encourageons à postuler à d'autres offres correspondant à votre profil.
+Bonne continuation !{% endif %}
+
+Voir mes candidatures :
+{{ dashboard_url }}
+
+Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}
