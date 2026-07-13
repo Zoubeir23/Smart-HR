@@ -1,83 +1,41 @@
 {% extends "email/email_base.html" %}
 
-{% load i18n %}
-
 {% block email_title %}
   Invitation — {{ meeting_title }} — Smart-HR
 {% endblock email_title %}
+{% block preheader %}
+  {{ meeting_title }} — début le {{ start_time }}.
+{% endblock preheader %}
 {% block email_content %}
-  <h1 class="email-title">Vous êtes invité à une réunion</h1>
-  <p class="email-subtitle">
-    Bonjour <strong>{{ first_name }}</strong>,
-    <br />
-    Une nouvelle réunion a été planifiée dans le cadre de la formation <strong>{{ formation_title }}</strong>.
-  </p>
-  <div class="divider"></div>
-  <div class="credentials-card">
-    <p class="credentials-title">Détails de la réunion</p>
-    <div class="credential-row">
-      <div class="credential-icon">T</div>
-      <div>
-        <p class="credential-label">Titre</p>
-        <p class="credential-value">{{ meeting_title }}</p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon blue">F</div>
-      <div>
-        <p class="credential-label">Formation associée</p>
-        <p class="credential-value">{{ formation_title }}</p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon green">D</div>
-      <div>
-        <p class="credential-label">Début</p>
-        <p class="credential-value">{{ start_time }}</p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon">F</div>
-      <div>
-        <p class="credential-label">Fin</p>
-        <p class="credential-value">{{ end_time }}</p>
-      </div>
-    </div>
-    {% if meeting_link %}
-      <div class="credential-row"
-           style="background:#f0fdf4;
-                  border-color:#bbf7d0">
-        <div class="credential-icon green">L</div>
-        <div style="flex:1;">
-          <p class="credential-label">Lien de connexion</p>
-          <a href="{{ meeting_link }}"
-             style="color:#D62828;
-                    font-weight:600;
-                    word-break:break-all;
-                    font-size:0.85rem">{{ meeting_link }}</a>
-        </div>
-      </div>
-    {% endif %}
-  </div>
+  {% include "email/partials/heading.html" with title="Vous êtes invité à une réunion" name=first_name lead="Une nouvelle réunion a été planifiée dans le cadre de votre formation." %}
+  {% include "email/partials/card_open.html" with card_title="Détails de la réunion" %}
+  {% include "email/partials/detail_row.html" with label="Titre" value=meeting_title %}
+  {% include "email/partials/detail_row.html" with label="Formation associée" value=formation_title %}
+  {% include "email/partials/detail_row.html" with label="Début" value=start_time %}
+  {% include "email/partials/detail_row.html" with label="Fin" value=end_time %}
   {% if meeting_link %}
-    <div class="alert alert-neutral">
-      <strong>Accès :</strong> Cliquez sur le lien ci-dessus ou sur le bouton ci-dessous pour rejoindre la réunion à l'heure prévue.
-    </div>
-    <div class="btn-wrapper">
-      <a href="{{ meeting_link }}" class="btn">Rejoindre la réunion →</a>
-    </div>
-  {% else %}
-    <div class="alert alert-neutral">
-      <strong>Rappel :</strong> Notez cet événement dans votre agenda. Le lien de connexion sera communiqué ultérieurement.
-    </div>
-    <div class="btn-wrapper">
-      <a href="{{ training_url }}" class="btn">Voir mes formations →</a>
-    </div>
+    <tr>
+      <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
+        <p style="margin:0 0 3px;
+                  font-size:12px;
+                  font-weight:600;
+                  color:#816e65">Lien de connexion</p>
+        <a href="{{ meeting_link }}"
+           style="font-size:14px;
+                  font-weight:700;
+                  color:#d62828;
+                  word-break:break-all;
+                  text-decoration:underline">{{ meeting_link }}</a>
+      </td>
+    </tr>
   {% endif %}
-  <p style="font-size:0.75rem;
-            color:#94a3b8;
-            margin-top:1.5rem;
-            line-height:1.65">
-    Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
-  </p>
+  {% include "email/partials/card_close.html" %}
+  {% if meeting_link %}
+    {% include "email/partials/alert.html" with variant="neutral" alert_title="Accès" text="Cliquez sur le lien ci-dessus ou sur le bouton ci-dessous pour rejoindre la réunion à l’heure prévue." %}
+    {% include "email/partials/button.html" with url=meeting_link label="Rejoindre la réunion" %}
+  {% else %}
+    {% include "email/partials/alert.html" with variant="neutral" alert_title="Rappel" text="Notez cet événement dans votre agenda. Le lien de connexion sera communiqué ultérieurement." %}
+    {% include "email/partials/button.html" with url=training_url label="Voir mes formations" %}
+  {% endif %}
+  {% include "email/partials/footnote.html" with text="Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement." %}
 {% endblock email_content %}

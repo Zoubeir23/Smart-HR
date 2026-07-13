@@ -1,0 +1,25 @@
+{% autoescape off %}Bonjour {{ first_name }},
+
+Une nouvelle réunion a été planifiée dans le cadre de la formation
+{{ formation_title }}.
+
+DÉTAILS DE LA RÉUNION
+Titre               : {{ meeting_title }}
+Formation associée  : {{ formation_title }}
+Début               : {{ start_time }}
+Fin                 : {{ end_time }}
+{% if meeting_link %}Lien de connexion   : {{ meeting_link }}
+
+Cliquez sur le lien ci-dessus pour rejoindre la réunion à l'heure prévue.{% else %}
+Notez cet événement dans votre agenda. Le lien de connexion sera communiqué
+ultérieurement.
+
+Voir mes formations :
+{{ training_url }}{% endif %}
+
+Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}
