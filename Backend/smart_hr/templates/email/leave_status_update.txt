@@ -1,0 +1,23 @@
+{% autoescape off %}Bonjour {{ first_name }},
+
+{% if is_approved %}Bonne nouvelle ! Votre demande de congé a été examinée et approuvée.{% else %}Votre demande de congé a été examinée. Elle n'a pas pu être approuvée pour le moment.{% endif %}
+
+DÉTAILS DE VOTRE DEMANDE
+Statut        : {% if is_approved %}Approuvé{% else %}Refusé{% endif %}
+Type de congé : {{ leave_type_label }}
+Période       : {{ start_date }} → {{ end_date }}
+{% if reviewer_name %}Traité par    : {{ reviewer_name }}{% endif %}
+
+{% if is_approved %}Votre congé est maintenant enregistré dans le système. Votre responsable en a
+été informé automatiquement.{% elif reason %}Motif : {{ reason }}{% else %}Pour en savoir plus sur cette décision, contactez votre responsable RH
+directement.{% endif %}
+
+Voir mes congés :
+{{ dashboard_url }}
+
+Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}
