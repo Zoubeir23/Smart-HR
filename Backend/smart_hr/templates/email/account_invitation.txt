@@ -1,0 +1,27 @@
+{% autoescape off %}Bonjour {{ first_name }} {{ last_name }},
+
+Un compte {{ role_label }} vient d'être créé pour vous sur la plateforme
+Smart-HR. Pour activer votre accès, définissez votre mot de passe.
+
+VOTRE IDENTIFIANT
+Adresse email : {{ email }}
+Rôle          : {{ role_label }}
+
+Définir mon mot de passe :
+{{ invitation_url }}
+
+LIEN TEMPORAIRE : ce lien expire dans {{ expiry_hours }} heures. Passé ce délai,
+contactez votre administrateur pour recevoir une nouvelle invitation.
+
+COMMENT ACCÉDER À VOTRE ESPACE
+1. Définissez votre mot de passe via le lien ci-dessus.
+2. Connectez-vous avec votre email et votre nouveau mot de passe.
+3. Explorez votre tableau de bord : congés, fiche de paie, tâches.
+
+Si vous n'attendiez pas cet email, ignorez-le : le lien expirera
+automatiquement.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}
