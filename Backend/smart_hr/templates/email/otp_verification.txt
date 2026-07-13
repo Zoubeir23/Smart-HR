@@ -1,0 +1,21 @@
+{% autoescape off %}Bonjour {{ first_name }},
+
+Bienvenue sur Smart-HR ! Pour finaliser la création de votre compte, utilisez le
+code de vérification ci-dessous.
+
+VOTRE CODE DE VÉRIFICATION : {{ otp_code }}
+Ce code expire dans {{ expiry_minutes }} minutes.
+
+SÉCURITÉ : ne partagez jamais ce code. Smart-HR ne vous le demandera jamais par
+téléphone ou par email.
+
+Vérifier mon email :
+{{ verify_url }}
+
+Si vous n'avez pas créé de compte sur Smart-HR, ignorez cet email. Ce code
+expirera automatiquement et aucune action ne sera requise de votre part.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}
