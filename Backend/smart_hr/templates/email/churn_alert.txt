@@ -1,0 +1,24 @@
+{% autoescape off %}Bonjour {{ rh_first_name }},
+
+Notre modèle de prédiction a identifié un employé présentant un risque de départ
+élevé. Une action proactive est recommandée.
+
+PROFIL À RISQUE
+Employé                     : {{ employee_full_name }}
+{% if employee_department %}Département                 : {{ employee_department }}{% endif %}
+Score de risque             : {{ risk_score|floatformat:0 }} %
+Facteur principal identifié : {{ main_risk_factor }}
+
+RECOMMANDATION : planifiez un entretien individuel avec cet employé pour évaluer
+sa satisfaction et identifier les leviers de rétention.
+
+Voir le tableau de bord churn :
+{{ dashboard_url }}
+
+Cet email est généré automatiquement par le modèle de prédiction de Smart-HR.
+Merci de ne pas y répondre.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}

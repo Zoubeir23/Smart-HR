@@ -1,63 +1,34 @@
 {% extends "email/email_base.html" %}
 
-{% load i18n %}
-
 {% block email_title %}
   Alerte churn — Employé à haut risque de départ
 {% endblock email_title %}
+{% block preheader %}
+  {{ employee_full_name }} présente un risque de départ de {{ risk_score|floatformat:0 }} %. Facteur principal : {{ main_risk_factor }}.
+{% endblock preheader %}
 {% block email_content %}
-  <h1 class="email-title">Alerte : Risque de départ élevé détecté</h1>
-  <p class="email-subtitle">
-    Bonjour <strong>{{ rh_first_name }}</strong>,
-    <br />
-    Notre système IA a identifié un employé avec un risque de départ élevé. Une action proactive est recommandée.
-  </p>
-  <div class="divider"></div>
-  <div class="credentials-card">
-    <p class="credentials-title">Profil à risque</p>
-    <div class="credential-row">
-      <div class="credential-icon">E</div>
-      <div>
-        <p class="credential-label">Employé</p>
-        <p class="credential-value">{{ employee_full_name }}</p>
-      </div>
-    </div>
-    {% if employee_department %}
-      <div class="credential-row">
-        <div class="credential-icon blue">D</div>
-        <div>
-          <p class="credential-label">Département</p>
-          <p class="credential-value">{{ employee_department }}</p>
-        </div>
-      </div>
-    {% endif %}
-    <div class="credential-row">
-      <div class="credential-icon red">%</div>
-      <div>
-        <p class="credential-label">Score de risque</p>
-        <p class="credential-value">
-          <span style="color:#D62828; font-weight:700; font-size:1.1rem;">{{ risk_score|floatformat:0 }}%</span>
-        </p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon amber">F</div>
-      <div>
-        <p class="credential-label">Facteur principal identifié</p>
-        <p class="credential-value" style="color:#D62828;">{{ main_risk_factor }}</p>
-      </div>
-    </div>
-  </div>
-  <div class="alert alert-amber">
-    <strong>Recommandation :</strong> Planifiez un entretien individuel avec cet employé pour évaluer sa satisfaction et identifier les leviers de rétention.
-  </div>
-  <div class="btn-wrapper">
-    <a href="{{ dashboard_url }}" class="btn">Voir le tableau de bord churn →</a>
-  </div>
-  <p style="font-size:0.75rem;
-            color:#94a3b8;
-            margin-top:1.5rem;
-            line-height:1.65">
-    Cet email est généré automatiquement par le système IA de Smart-HR. Merci de ne pas y répondre directement.
-  </p>
+  {% include "email/partials/heading.html" with title="Risque de départ élevé détecté" name=rh_first_name lead="Notre modèle de prédiction a identifié un employé présentant un risque de départ élevé. Une action proactive est recommandée." %}
+  {% include "email/partials/card_open.html" with card_title="Profil à risque" %}
+  {% include "email/partials/detail_row.html" with label="Employé" value=employee_full_name %}
+  {% if employee_department %}
+    {% include "email/partials/detail_row.html" with label="Département" value=employee_department %}
+  {% endif %}
+  <tr>
+    <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
+      <p style="margin:0 0 3px;
+                font-size:12px;
+                font-weight:600;
+                color:#816e65">Score de risque</p>
+      <p style="margin:0;
+                font-size:24px;
+                font-weight:800;
+                letter-spacing:-0.4px;
+                color:#d62828">{{ risk_score|floatformat:0 }} %</p>
+    </td>
+  </tr>
+  {% include "email/partials/detail_row.html" with label="Facteur principal identifié" value=main_risk_factor accent=True %}
+  {% include "email/partials/card_close.html" %}
+  {% include "email/partials/alert.html" with variant="vigilance" alert_title="Recommandation" text="Planifiez un entretien individuel avec cet employé pour évaluer sa satisfaction et identifier les leviers de rétention." %}
+  {% include "email/partials/button.html" with url=dashboard_url label="Voir le tableau de bord churn" %}
+  {% include "email/partials/footnote.html" with text="Cet email est généré automatiquement par le modèle de prédiction de Smart-HR. Merci de ne pas y répondre directement." %}
 {% endblock email_content %}
