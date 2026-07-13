@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-11T18:40:00Z",
+  "title": "Design System: Smart-HR",
+  "extensions": {
+    "colorMeta": {
+      "brand-red": {
+        "role": "primary",
+        "displayName": "Rouge Braise",
+        "canonical": "#D62828",
+        "tonalRamp": ["#3f0c0c", "#6b1414", "#961c1c", "#c41e1e", "#D62828", "#e86060", "#f2a3a3", "#fbe0e0"]
+      },
+      "brand-cream": {
+        "role": "neutral",
+        "displayName": "Crème Sahel",
+        "canonical": "#FFF3E0",
+        "tonalRamp": ["#2b2115", "#54432b", "#7d6544", "#a98a61", "#d4b892", "#efe6d8", "#FFF3E0", "#fffaf2"]
+      },
+      "brand-navy": {
+        "role": "neutral",
+        "displayName": "Navy Nuit",
+        "canonical": "#08111e",
+        "tonalRamp": ["#08111e", "#0a1628", "#12233d", "#1c3457", "#2c4a77", "#4a6a9a", "#7e97bd", "#c2cfe2"]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Encre",
+        "canonical": "#1c1410",
+        "tonalRamp": ["#1c1410", "#33261e", "#4d3a2e", "#6b5343", "#8d715d", "#b0947e", "#d2bba7", "#efe3d6"]
+      },
+      "muted-ink": {
+        "role": "neutral",
+        "displayName": "Encre Atténuée",
+        "canonical": "#816e65",
+        "tonalRamp": ["#1c1410", "#33261e", "#4d3a2e", "#6b5343", "#816e65", "#b0947e", "#d2bba7", "#efe3d6"]
+      },
+      "success-green": {
+        "role": "semantic",
+        "displayName": "Vert Validation",
+        "canonical": "#0b7a52",
+        "tonalRamp": ["#04291c", "#06442e", "#085f40", "#0b7a52", "#169668", "#3db388", "#7fd0af", "#c5ecdc"]
+      },
+      "warning-orange": {
+        "role": "semantic",
+        "displayName": "Orange Vigilance",
+        "canonical": "#f97316",
+        "tonalRamp": ["#4a1f04", "#7c3608", "#b04d0b", "#e06510", "#f97316", "#fb9a4d", "#fdc088", "#fee7cf"]
+      }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Titres de page, 800, tracking serré." },
+      "title": { "displayName": "Title", "purpose": "Titres de cartes et sections, 700." },
+      "body": { "displayName": "Body", "purpose": "Texte courant en 500 — signature du système, jamais 400." },
+      "label": { "displayName": "Label", "purpose": "Libellés de formulaires, en-têtes de colonnes, badges." }
+    },
+    "shadows": [
+      { "name": "repos", "value": "0 1px 2px 0 rgb(80 30 10 / 0.06)", "purpose": "Cartes au repos — à peine perceptible." },
+      { "name": "reponse", "value": "0 4px 8px -1px rgb(80 30 10 / 0.10), 0 2px 4px -2px rgb(80 30 10 / 0.06)", "purpose": "Hover et éléments soulevés." },
+      { "name": "flottant", "value": "0 10px 20px -3px rgb(80 30 10 / 0.12), 0 4px 8px -4px rgb(80 30 10 / 0.06)", "purpose": "Popovers, dropdowns, modales." },
+      { "name": "braise", "value": "0 0 20px -6px hsl(0 68% 50% / 0.22)", "purpose": "Halo rouge — moments de décision uniquement (CTA majeurs, IA active)." }
+    ],
+    "motion": [
+      { "name": "transition-standard", "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "États des composants (hover, focus, press)." },
+      { "name": "transition-surface", "value": "200ms cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Ombres et bordures de cartes." },
+      { "name": "entree-page", "value": "300ms ease-out, opacity + translateY(20px)", "purpose": "Entrée du contenu de page (Framer Motion), une seule fois par navigation." }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" },
+      { "name": "2xl-container", "value": "1400px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Bouton primaire",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "L'action principale — dégradé rouge braise, presse en scale 0.98.",
+      "html": "<button class=\"ds-btn-primary\">Valider la demande</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; border: none; border-radius: 10px; background: linear-gradient(135deg, #D62828 0%, #e63c3c 100%); color: #ffffff; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; box-shadow: 0 1px 2px 0 rgb(80 30 10 / 0.06); transition: filter 150ms cubic-bezier(0.4,0,0.2,1), box-shadow 150ms cubic-bezier(0.4,0,0.2,1), transform 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { filter: brightness(1.08); box-shadow: 0 4px 8px -1px rgb(80 30 10 / 0.10), 0 2px 4px -2px rgb(80 30 10 / 0.06); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 2px #FFF3E0, 0 0 0 4px #D62828; } .ds-btn-primary:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Bouton secondaire",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Le bouton calme — crème Sahel, texte rouge sombre.",
+      "html": "<button class=\"ds-btn-secondary\">Annuler</button>",
+      "css": ".ds-btn-secondary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 40px; padding: 8px 16px; border: 1px solid #e5dccc; border-radius: 10px; background: #FFF3E0; color: #c41e1e; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-size: 0.875rem; font-weight: 600; cursor: pointer; transition: background 150ms cubic-bezier(0.4,0,0.2,1); } .ds-btn-secondary:hover { background: #ffe0b2; } .ds-btn-secondary:focus-visible { outline: none; box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #D62828; } .ds-btn-secondary:active { transform: scale(0.98); }"
+    },
+    {
+      "name": "Champ de saisie",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Champ 44px (cible tactile AA), focus rouge braise à halo doux.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Rechercher un employé…\" />",
+      "css": ".ds-input { display: flex; height: 44px; width: 100%; max-width: 320px; padding: 8px 12px; border: 1px solid #e5dccc; border-radius: 10px; background: #ffffff; color: #1c1410; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; transition: border-color 150ms cubic-bezier(0.4,0,0.2,1), box-shadow 150ms cubic-bezier(0.4,0,0.2,1); } .ds-input::placeholder { color: #7a6a58; font-weight: 400; } .ds-input:focus-visible { outline: none; border-color: #D62828; box-shadow: 0 0 0 3px hsl(0 69% 50% / 0.08); } .ds-input:disabled { cursor: not-allowed; background: #efe6d8; color: #7a6a58; }"
+    },
+    {
+      "name": "Carte",
+      "kind": "card",
+      "refersTo": "card-default",
+      "description": "Blanc strict sur crème, plate au repos, bordure rouge/30 au hover interactif.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Demandes de congés</h3><p class=\"ds-card-body\">4 demandes en attente de validation.</p></div>",
+      "css": ".ds-card { border: 1px solid #e5dccc; border-radius: 12px; background: #ffffff; color: #1c1410; padding: 24px; box-shadow: 0 1px 2px 0 rgb(80 30 10 / 0.06); transition: box-shadow 200ms cubic-bezier(0.4,0,0.2,1), border-color 200ms cubic-bezier(0.4,0,0.2,1); } .ds-card:hover { border-color: hsl(0 69% 50% / 0.30); box-shadow: 0 4px 8px -1px rgb(80 30 10 / 0.10), 0 2px 4px -2px rgb(80 30 10 / 0.06); } .ds-card-title { margin: 0 0 8px; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-size: 1.125rem; font-weight: 700; letter-spacing: -0.015em; } .ds-card-body { margin: 0; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; color: #6b5b4a; }"
+    },
+    {
+      "name": "Item de navigation actif",
+      "kind": "nav",
+      "refersTo": "button-primary",
+      "description": "L'item actif de la sidebar navy — dégradé braise, point blanc témoin.",
+      "html": "<div class=\"ds-nav-demo\"><a class=\"ds-nav-item ds-nav-item--active\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><rect x=\"3\" y=\"3\" width=\"7\" height=\"9\"/><rect x=\"14\" y=\"3\" width=\"7\" height=\"5\"/><rect x=\"14\" y=\"12\" width=\"7\" height=\"9\"/><rect x=\"3\" y=\"16\" width=\"7\" height=\"5\"/></svg>Tableau de bord</a><a class=\"ds-nav-item\" href=\"#\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"><path d=\"M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>Personnel</a></div>",
+      "css": ".ds-nav-demo { display: flex; flex-direction: column; gap: 2px; width: 240px; padding: 12px; border-radius: 12px; background: linear-gradient(180deg, #08111e 0%, #0a1628 100%); } .ds-nav-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; color: rgba(226, 232, 240, 0.75); font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; text-decoration: none; transition: background 150ms cubic-bezier(0.4,0,0.2,1), color 150ms cubic-bezier(0.4,0,0.2,1); } .ds-nav-item:hover { background: rgba(44, 74, 119, 0.35); color: #e2e8f0; } .ds-nav-item--active { background: linear-gradient(90deg, #D62828 0%, #e63c3c 100%); color: #ffffff; box-shadow: 0 4px 12px rgba(214, 40, 40, 0.30); } .ds-nav-item--active:hover { background: linear-gradient(90deg, #D62828 0%, #e63c3c 100%); color: #ffffff; }"
+    },
+    {
+      "name": "Badge de risque churn",
+      "kind": "chip",
+      "refersTo": "button-primary",
+      "description": "Le signal IA par palier — vert < 40, orange 40-69, braise ≥ 70.",
+      "html": "<div class=\"ds-churn-row\"><span class=\"ds-churn ds-churn--low\">12 %</span><span class=\"ds-churn ds-churn--mid\">54 %</span><span class=\"ds-churn ds-churn--high\">83 %</span></div>",
+      "css": ".ds-churn-row { display: flex; gap: 8px; } .ds-churn { display: inline-flex; align-items: center; justify-content: center; min-width: 52px; padding: 4px 10px; border-radius: 9999px; font-family: 'Plus Jakarta Sans', Inter, system-ui, sans-serif; font-size: 0.75rem; font-weight: 700; } .ds-churn--low { background: rgba(11, 122, 82, 0.12); color: #0b7a52; } .ds-churn--mid { background: rgba(249, 115, 22, 0.14); color: #b04d0b; } .ds-churn--high { background: rgba(214, 40, 40, 0.12); color: #c41e1e; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "La Braise sous contrôle",
+    "overview": "Le rouge braise #D62828 est une énergie maîtrisée : il ne brûle que là où l'utilisateur agit — CTA, navigation active, focus, alertes churn. Partout ailleurs, la surface reste calme : crème Sahel en fond de travail, cartes blanches strictes, encres chaudes. La sensation premium vient de la précision (états complets, transitions 150-250 ms, espacements réguliers), jamais de la décoration. Ce système rejette explicitement le « logiciel de paie des années 2000 » et le SaaS générique interchangeable. Même en mode sombre, la chaleur demeure.",
+    "keyCharacteristics": [
+      "Un seul accent : le rouge braise, dosé — jamais plus de ~10 % d'une vue en usage courant",
+      "Surfaces chaudes en toute circonstance (cream en clair, brun-noir en sombre, ombres teintées 80/30/10)",
+      "Typographie mono-famille (Plus Jakarta Sans) : graisse 500 pour le corps, 700-800 pour les titres",
+      "Composants aux deux registres : précis dans les flux de gestion, généreux sur les moments de décision",
+      "Dark mode complet et chaleureux ; la sidebar reste navy dans les deux thèmes"
+    ],
+    "rules": [
+      { "name": "La Règle de la Braise", "body": "Le rouge est réservé à l'action et au signal. Un écran où le rouge dépasse ~10 % de la surface (hors moments de décision assumés) est un écran qui crie.", "section": "colors" },
+      { "name": "La Règle de la Chaleur", "body": "Aucun gris neutre nulle part : chaque neutre, ombre ou bordure est teinté chaud (hue 20-37). Un gris bleuté est un corps étranger.", "section": "colors" },
+      { "name": "La Règle de la Graisse", "body": "La hiérarchie s'exprime par le poids (500/600/700/800), jamais par une deuxième famille dans l'UI produit.", "section": "typography" },
+      { "name": "La Règle du Plat", "body": "Une surface au repos ne projette pas d'ombre visible. Si un écran statique montre des ombres marquées partout, il est faux.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do réserver le rouge braise à l'action et au signal ; le reste de l'écran travaille en crème, blanc et encre.",
+      "Do teinter chaud tout neutre, ombre ou bordure (hue 20-37) — y compris en mode sombre.",
+      "Do livrer chaque composant interactif avec ses états complets : default, hover, focus-visible, active, disabled, loading, error.",
+      "Do garder les cibles tactiles ≥ 44px et les contrastes AA ≥ 4.5:1.",
+      "Do respecter prefers-reduced-motion sur toute animation ; transitions 150-250 ms, easing ease-out.",
+      "Do penser aux connexions lentes : skeletons plutôt que spinners centraux, bundles légers, états vides qui enseignent l'interface."
+    ],
+    "donts": [
+      "Don't reproduire le « logiciel de paie des années 2000 » : tableaux gris denses sans hiérarchie, formulaires interminables sans respiration.",
+      "Don't introduire le SaaS générique interchangeable : dégradés violets, grilles de cards identiques, glassmorphisme décoratif.",
+      "Don't utiliser de gris neutre ou bleuté — chaque neutre appartient à la gamme chaude.",
+      "Don't utiliser de texte en dégradé (background-clip: text) dans l'UI produit.",
+      "Don't poser de bordure latérale colorée > 1px (side-stripe) sur cartes, alertes ou listes.",
+      "Don't faire porter la hiérarchie par une deuxième famille de caractères dans l'app : une famille, quatre graisses.",
+      "Don't animer en bounce/elastic ni orchestrer des séquences d'entrée de page ; le mouvement signale un état, il ne décore pas."
+    ]
+  }
+}
