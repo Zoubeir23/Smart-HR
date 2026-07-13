@@ -1,0 +1,22 @@
+{% autoescape off %}Bonjour {{ first_name }},
+
+Nous avons bien reçu votre candidature pour le poste ci-dessous. Notre équipe RH
+l'examinera dans les meilleurs délais.
+
+VOTRE CANDIDATURE
+Statut              : En cours d'examen
+Poste               : {{ job_title }}
+{% if department %}Département         : {{ department }}{% endif %}
+Date de candidature : {{ applied_on }}
+
+Vous serez notifié par email à chaque changement de statut de votre candidature.
+
+Suivre ma candidature :
+{{ dashboard_url }}
+
+Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}
