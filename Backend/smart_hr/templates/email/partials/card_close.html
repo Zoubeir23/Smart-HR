@@ -1,5 +1,13 @@
-{% comment %}Referme la carte ouverte par card_open.html.{% endcomment %}
-      </table>
-    </td>
-  </tr>
+{% comment %}
+  Referme la carte ouverte par card_open.html.
+
+  H025 (« orphan tag ») est désactivé ici : djLint analyse chaque fichier
+  isolément et n'a pas la notion de fragment. Les balises s'équilibrent bien,
+  mais entre les deux fichiers de la paire card_open / card_close.
+{% endcomment %}
+{# djlint:off H025 #}
 </table>
+</td>
+</tr>
+</table>
+{# djlint:on #}

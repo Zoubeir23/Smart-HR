@@ -1,23 +1,36 @@
 {% comment %}
-  Ouvre une carte de détails (table). À refermer avec card_close.html.
+  Ouvre une carte de détails : blanche sur la page crème, c'est le contraste de
+  surface qui la détache. À refermer avec card_close.html.
   Usage : {% include "email/partials/card_open.html" with card_title="Détails" %}
+
+  H025 (« orphan tag ») est désactivé ici : djLint analyse chaque fichier
+  isolément et n'a pas la notion de fragment. Les balises s'équilibrent bien,
+  mais entre les deux fichiers de la paire card_open / card_close.
 {% endcomment %}
+{# djlint:off H025 #}
 <table role="presentation"
        width="100%"
        cellpadding="0"
        cellspacing="0"
        border="0"
-       style="width:100%; margin:0 0 20px; border:1px solid #e5dccc; border-radius:12px; background-color:#ffffff;">
+       style="width:100%;
+              margin:0 0 24px;
+              border:1px solid #e5dccc;
+              border-radius:12px;
+              background-color:#ffffff">
   <tr>
-    <td style="padding:20px;">
+    {# Padding bas nul : la dernière ligne affleure le bord de la carte. #}
+    <td style="padding:24px 24px 0;">
       {% if card_title %}
-        <p style="margin:0 0 14px; padding:0 0 12px; border-bottom:1px solid #e5dccc; font-size:14px; font-weight:700; color:#1c1410;">
-          {{ card_title }}
-        </p>
+        <p style="margin:0 0 4px;
+                  font-size:14px;
+                  font-weight:700;
+                  color:#1c1410">{{ card_title }}</p>
       {% endif %}
       <table role="presentation"
              width="100%"
              cellpadding="0"
              cellspacing="0"
              border="0"
-             style="width:100%;">
+             style="width:100%">
+        {# djlint:on #}

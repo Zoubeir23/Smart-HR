@@ -1,5 +1,13 @@
-{% comment %}Referme la liste ouverte par steps_open.html.{% endcomment %}
-      </table>
-    </td>
-  </tr>
+{% comment %}
+  Referme la liste ouverte par steps_open.html.
+
+  H025 (« orphan tag ») est désactivé ici : djLint analyse chaque fichier
+  isolément et n'a pas la notion de fragment. Les balises s'équilibrent bien,
+  mais entre les deux fichiers de la paire steps_open / steps_close.
+{% endcomment %}
+{# djlint:off H025 #}
 </table>
+</td>
+</tr>
+</table>
+{# djlint:on #}
