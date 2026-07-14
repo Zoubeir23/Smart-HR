@@ -8,8 +8,10 @@ import smtplib
 from typing import Any
 
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
+from django.template import TemplateDoesNotExist
 from django.template.loader import render_to_string
+from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
 
@@ -41,25 +43,61 @@ class EmailService:
         )
 
     # ------------------------------------------------------------------
-    # Envoi générique (HTML brut)
+    # Envoi par template Django
     # ------------------------------------------------------------------
 
-    def send_html_email(
+    def _render_text_alternative(self, template: str, context: dict[str, Any]) -> str:
+        """
+        Rend la version texte brut d'un email.
+
+        Utilise le template `.txt` jumeau du `.html` lorsqu'il existe. À défaut,
+        replie sur un dégraissage du HTML : moins lisible, mais toujours préférable
+        à un envoi HTML seul (pénalisé par les filtres anti-spam et inexploitable
+        par les clients texte et les lecteurs d'écran).
+        """
+        text_template = template.rsplit(".", 1)[0] + ".txt"
+        try:
+            return render_to_string(template_name=text_template, context=context)
+        except TemplateDoesNotExist:
+            logger.warning(
+                "Pas d'alternative texte pour %s : repli sur un dégraissage du HTML.",
+                template,
+            )
+            html_body = render_to_string(template_name=template, context=context)
+            return strip_tags(html_body)
+
+    def send_template_email(
         self,
-        subject: str,
-        html_content: str,
+        template: str,
+        context: dict[str, Any],
         recipients: list[str],
-        from_email: str | None = None,
+        subject: str,
         attachments: list[str] | None = None,
     ) -> bool:
+        """
+        Envoie un email multipart (texte brut + HTML) rendu depuis un template.
+
+        L'alternative texte n'est pas optionnelle : un message HTML seul est
+        pénalisé par les filtres anti-spam et reste illisible pour les clients
+        texte et les lecteurs d'écran.
+        """
         try:
-            message = EmailMessage(
+            full_context = {
+                **context,
+                "site_url": self.site_url,
+                "company_name": self.COMPANY_NAME,
+                "company_tagline": self.COMPANY_TAGLINE,
+            }
+            html_body = render_to_string(template_name=template, context=full_context)
+            text_body = self._render_text_alternative(template, full_context)
+
+            message = EmailMultiAlternatives(
                 subject=subject,
-                body=html_content,
-                from_email=self._resolve_sender(from_email),
+                body=text_body,
+                from_email=self._resolve_sender(None),
                 to=recipients,
             )
-            message.content_subtype = "html"
+            message.attach_alternative(html_body, "text/html")
             message.encoding = "utf-8"
 
             if attachments:
@@ -80,40 +118,6 @@ class EmailService:
             logger.exception("Erreur réseau lors de l'envoi à %s", recipients)
             return False
         except (ValueError, TypeError):
-            logger.exception(
-                "Erreur de configuration/encodage SMTP lors de l'envoi à %s "
-                "(vérifiez DEFAULT_FROM_EMAIL et les paramètres TLS/SSL)",
-                recipients,
-            )
-            return False
-
-    # ------------------------------------------------------------------
-    # Envoi par template Django
-    # ------------------------------------------------------------------
-
-    def send_template_email(
-        self,
-        template: str,
-        context: dict[str, Any],
-        recipients: list[str],
-        subject: str,
-        attachments: list[str] | None = None,
-    ) -> bool:
-        try:
-            full_context = {
-                **context,
-                "site_url": self.site_url,
-                "company_name": self.COMPANY_NAME,
-                "company_tagline": self.COMPANY_TAGLINE,
-            }
-            html_body = render_to_string(template_name=template, context=full_context)
-            return self.send_html_email(
-                subject=subject,
-                html_content=html_body,
-                recipients=recipients,
-                attachments=attachments,
-            )
-        except (ValueError, TypeError, OSError):
             logger.exception("Erreur lors du rendu/envoi du template %s", template)
             return False
 

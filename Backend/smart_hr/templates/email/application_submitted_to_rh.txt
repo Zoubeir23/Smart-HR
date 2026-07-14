@@ -1,0 +1,22 @@
+{% autoescape off %}Nouvelle candidature reçue
+
+Un candidat vient de postuler à l'une de vos offres d'emploi.
+
+DÉTAILS DE LA CANDIDATURE
+Statut   : En attente de traitement
+Candidat : {{ candidate_name }}
+Poste    : {{ job_title }}
+Email    : {{ candidate_email }}
+
+ACTION REQUISE : connectez-vous à Smart-HR pour consulter le CV et traiter cette
+candidature.
+
+Voir les candidatures :
+{{ applications_url }}
+
+Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}

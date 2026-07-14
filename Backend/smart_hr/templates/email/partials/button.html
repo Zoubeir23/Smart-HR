@@ -1,0 +1,28 @@
+{% comment %}
+  Bouton d'action principal, en table (« bulletproof button »).
+  Usage : {% include "email/partials/button.html" with url=dashboard_url label="Voir mes congés" %}
+
+  Outlook ignore border-radius et rendra le bouton à angles droits : dégradation
+  acceptable, il reste cliquable et lisible.
+{% endcomment %}
+<table role="presentation"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       align="center"
+       style="margin:8px auto 24px">
+  <tr>
+    <td align="center" bgcolor="#d62828" style="border-radius:10px;">
+      <a href="{{ url }}"
+         style="display:inline-block;
+                padding:16px 34px;
+                border-radius:10px;
+                font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+                font-size:14px;
+                font-weight:700;
+                letter-spacing:0.2px;
+                color:#ffffff;
+                text-decoration:none">{{ label }}</a>
+    </td>
+  </tr>
+</table>

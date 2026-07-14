@@ -1,66 +1,47 @@
 {% extends "email/email_base.html" %}
 
-{% load i18n %}
-
 {% block email_title %}
   Invitation Smart-HR — Créez votre mot de passe
 {% endblock email_title %}
+{% block preheader %}
+  Votre compte {{ role_label }} est prêt. Définissez votre mot de passe pour activer votre accès.
+{% endblock preheader %}
 {% block email_content %}
-  <h1 class="email-title">Bienvenue sur Smart-HR !</h1>
-  <p class="email-subtitle">
-    Bonjour <strong>{{ first_name }} {{ last_name }}</strong>,
-    <br />
-    Un compte <strong>{{ role_label }}</strong> vient d'être créé pour vous sur la plateforme Smart-HR.
-    Pour activer votre accès, vous devez définir votre mot de passe en cliquant sur le bouton ci-dessous.
-  </p>
-  <div class="divider"></div>
-  <div class="credentials-card">
-    <p class="credentials-title">Votre identifiant de connexion</p>
-    <div class="credential-row">
-      <div class="credential-icon blue">@</div>
-      <div>
-        <p class="credential-label">Adresse email</p>
-        <p class="credential-value">{{ email }}</p>
-      </div>
-    </div>
-  </div>
-  <div class="btn-wrapper" style="margin: 2rem 0;">
-    <a href="{{ invitation_url|urlencode }}" class="btn">Définir mon mot de passe →</a>
-  </div>
-  <div class="alert alert-warning">
-    <strong>Ce lien expire dans {{ expiry_hours }} heures.</strong>
-    Après expiration, contactez votre administrateur pour recevoir un nouvel email d'invitation.
-  </div>
-  <div class="divider"></div>
-  <div class="feature-list">
-    <p class="feature-list-title">Comment accéder à votre espace</p>
-    <div class="feature-item">
-      <div class="feature-dot">1</div>
-      <div>
-        <p class="feature-text-title">Définissez votre mot de passe</p>
-        <p class="feature-text-desc">Cliquez sur le bouton ci-dessus et choisissez un mot de passe sécurisé.</p>
-      </div>
-    </div>
-    <div class="feature-item">
-      <div class="feature-dot">2</div>
-      <div>
-        <p class="feature-text-title">Connectez-vous</p>
-        <p class="feature-text-desc">Utilisez votre email et votre nouveau mot de passe pour accéder à la plateforme.</p>
-      </div>
-    </div>
-    <div class="feature-item">
-      <div class="feature-dot">3</div>
-      <div>
-        <p class="feature-text-title">Explorez votre tableau de bord</p>
-        <p class="feature-text-desc">Consultez vos congés, votre fiche de paie, vos tâches et bien plus.</p>
-      </div>
-    </div>
-  </div>
-  <p style="font-size:0.75rem;
-            color:#94a3b8;
-            margin-top:1.5rem;
-            line-height:1.65">
-    Si vous n'attendiez pas cet email ou pensez l'avoir reçu par erreur,
-    ignorez-le. Aucune action ne sera requise et le lien expirera automatiquement.
-  </p>
+  {% include "email/partials/heading.html" with title="Bienvenue sur Smart-HR" name=first_name lead="Un compte vient d’être créé pour vous sur la plateforme Smart-HR. Pour activer votre accès, définissez votre mot de passe." %}
+  {% include "email/partials/card_open.html" with card_title="Votre identifiant de connexion" %}
+  {% include "email/partials/detail_row.html" with label="Adresse email" value=email %}
+  {% include "email/partials/detail_row.html" with label="Rôle" value=role_label %}
+  {% include "email/partials/card_close.html" %}
+  {% comment %}
+    Pas de filtre |urlencode sur l’URL : il encoderait le « : » de https://,
+    ce qui cassait le lien d’invitation (bug corrigé lors de la refonte).
+  {% endcomment %}
+  {% include "email/partials/button.html" with url=invitation_url label="Définir mon mot de passe" %}
+  <table role="presentation"
+         width="100%"
+         cellpadding="0"
+         cellspacing="0"
+         border="0"
+         style="width:100%;
+                margin:0 0 20px;
+                border-radius:12px;
+                background-color:#efe6d8;
+                border:1px solid #d62828">
+    <tr>
+      <td style="padding:14px 16px;
+                 font-size:14px;
+                 line-height:1.6;
+                 color:#1c1410">
+        <strong style="color:#d62828;">Lien temporaire :</strong>
+        ce lien expire dans <strong>{{ expiry_hours }} heures</strong>. Passé ce délai, contactez votre
+        administrateur pour recevoir une nouvelle invitation.
+      </td>
+    </tr>
+  </table>
+  {% include "email/partials/steps_open.html" with steps_title="Comment accéder à votre espace" %}
+  {% include "email/partials/step_row.html" with number="1" step_title="Définissez votre mot de passe" desc="Cliquez sur le bouton ci-dessus et choisissez un mot de passe sécurisé." %}
+  {% include "email/partials/step_row.html" with number="2" step_title="Connectez-vous" desc="Utilisez votre email et votre nouveau mot de passe pour accéder à la plateforme." %}
+  {% include "email/partials/step_row.html" with number="3" step_title="Explorez votre tableau de bord" desc="Consultez vos congés, votre fiche de paie, vos tâches et bien plus." %}
+  {% include "email/partials/steps_close.html" %}
+  {% include "email/partials/footnote.html" with text="Si vous n’attendiez pas cet email ou pensez l’avoir reçu par erreur, ignorez-le. Aucune action ne sera requise et le lien expirera automatiquement." %}
 {% endblock email_content %}

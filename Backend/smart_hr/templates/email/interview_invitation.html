@@ -3,76 +3,22 @@
 {% block email_title %}
   Invitation à votre entretien IA — {{ job_title }}
 {% endblock email_title %}
+{% block preheader %}
+  Votre candidature au poste de {{ job_title }} est retenue pour un entretien vocal ({{ duration }}).
+{% endblock preheader %}
 {% block email_content %}
-  <h1 class="email-title">Invitation à votre entretien IA</h1>
-  <p class="email-subtitle">
-    Bonjour {{ first_name }},
-    <br />
-    Votre candidature pour le poste de <strong>{{ job_title }}</strong> a retenu notre attention.
-    Nous vous invitons à passer un entretien vocal avec notre assistant IA.
-  </p>
-  <div class="divider"></div>
-  <div class="credentials-card">
-    <p class="credentials-title">Détails de votre entretien</p>
-    <div class="credential-row">
-      <div class="credential-icon red">P</div>
-      <div>
-        <p class="credential-label">Poste</p>
-        <p class="credential-value">{{ job_title }}</p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon">D</div>
-      <div>
-        <p class="credential-label">Durée estimée</p>
-        <p class="credential-value">{{ duration }}</p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon blue">T</div>
-      <div>
-        <p class="credential-label">Type d'entretien</p>
-        <p class="credential-value">{{ interview_type }}</p>
-      </div>
-    </div>
-  </div>
-  <div class="feature-list">
-    <p class="feature-list-title">Comment ça se déroule</p>
-    <div class="feature-item">
-      <div class="feature-dot">1</div>
-      <div>
-        <p class="feature-text-title">Accédez à votre entretien</p>
-        <p class="feature-text-desc">Cliquez sur le bouton ci-dessous pour démarrer votre session personnalisée.</p>
-      </div>
-    </div>
-    <div class="feature-item">
-      <div class="feature-dot">2</div>
-      <div>
-        <p class="feature-text-title">Entretien vocal avec l'IA</p>
-        <p class="feature-text-desc">
-          Notre assistant IA vous posera des questions adaptées à votre profil et au poste. Répondez à voix haute, naturellement.
-        </p>
-      </div>
-    </div>
-    <div class="feature-item">
-      <div class="feature-dot">3</div>
-      <div>
-        <p class="feature-text-title">Résultats transmis à l'équipe RH</p>
-        <p class="feature-text-desc">À l'issue de l'entretien, un rapport est automatiquement transmis au responsable RH.</p>
-      </div>
-    </div>
-  </div>
-  <div class="btn-wrapper">
-    <a href="{{ interview_link }}" class="btn">Accéder à mon entretien →</a>
-  </div>
-  <div class="alert alert-warning">
-    <strong>Ce lien est personnel.</strong> Ne le partagez pas avec d'autres personnes.
-    Il vous donne accès directement à votre session d'entretien.
-  </div>
-  <div class="divider"></div>
-  <p class="email-subtitle">
-    Si vous avez des questions, n'hésitez pas à contacter notre équipe RH.
-    <br />
-    Bonne chance pour votre entretien !
-  </p>
+  {% include "email/partials/heading.html" with title="Invitation à votre entretien" name=first_name lead="Votre candidature a retenu notre attention. Nous vous invitons à passer un entretien vocal avec notre assistant IA." %}
+  {% include "email/partials/card_open.html" with card_title="Détails de votre entretien" %}
+  {% include "email/partials/detail_row.html" with label="Poste" value=job_title %}
+  {% include "email/partials/detail_row.html" with label="Durée estimée" value=duration %}
+  {% include "email/partials/detail_row.html" with label="Type d’entretien" value=interview_type %}
+  {% include "email/partials/card_close.html" %}
+  {% include "email/partials/steps_open.html" with steps_title="Comment ça se déroule" %}
+  {% include "email/partials/step_row.html" with number="1" step_title="Accédez à votre entretien" desc="Cliquez sur le bouton ci-dessous pour démarrer votre session personnalisée." %}
+  {% include "email/partials/step_row.html" with number="2" step_title="Entretien vocal avec l’IA" desc="Notre assistant vous posera des questions adaptées à votre profil et au poste. Répondez à voix haute, naturellement." %}
+  {% include "email/partials/step_row.html" with number="3" step_title="Résultats transmis à l’équipe RH" desc="À l’issue de l’entretien, un rapport est automatiquement transmis au responsable RH." %}
+  {% include "email/partials/steps_close.html" %}
+  {% include "email/partials/button.html" with url=interview_link label="Accéder à mon entretien" %}
+  {% include "email/partials/alert.html" with variant="danger" alert_title="Lien personnel" text="Ne partagez ce lien avec personne : il donne directement accès à votre session d’entretien." %}
+  {% include "email/partials/footnote.html" with text="Si vous avez des questions, contactez notre équipe RH. Bonne chance pour votre entretien !" %}
 {% endblock email_content %}

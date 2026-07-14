@@ -1,70 +1,42 @@
 {% extends "email/email_base.html" %}
 
-{% load i18n %}
-
 {% block email_title %}
   Nouvelle demande de congé — Smart-HR
 {% endblock email_title %}
+{% block preheader %}
+  {{ employee_name }} demande {{ days_count }} jour{{ days_count|pluralize }} de congé du {{ start_date }} au {{ end_date }}.
+{% endblock preheader %}
 {% block email_content %}
-  <h1 class="email-title">Nouvelle demande de congé</h1>
-  <p class="email-subtitle">Un employé vient de soumettre une demande de congé en attente de votre validation.</p>
-  <div class="divider"></div>
-  <div class="credentials-card">
-    <p class="credentials-title">Détails de la demande</p>
-    <div class="credential-row">
-      <div class="credential-icon">E</div>
-      <div>
-        <p class="credential-label">Employé</p>
-        <p class="credential-value">{{ employee_name }}</p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon blue">C</div>
-      <div>
-        <p class="credential-label">Type de congé</p>
-        <p class="credential-value">{{ leave_type_label }}</p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon">D</div>
-      <div>
-        <p class="credential-label">Période</p>
-        <p class="credential-value">
-          {{ start_date }} → {{ end_date }} <span style="color:#94a3b8;">({{ days_count }} jour{{ days_count|pluralize }})</span>
-        </p>
-      </div>
-    </div>
-    {% if reason %}
-      <div class="credential-row">
-        <div class="credential-icon">M</div>
-        <div>
-          <p class="credential-label">Motif</p>
-          <p class="credential-value" style="font-weight:400; color:#475569;">{{ reason }}</p>
-        </div>
-      </div>
-    {% endif %}
-    <div style="margin-top: 1rem;">
-      <p class="credential-label" style="margin-bottom:0.4rem;">Statut</p>
-      <span class="status-badge"
-            style="background:#fefce8;
-                   color:#854d0e;
-                   border:1px solid #fde68a;
-                   font-size:0.775rem;
-                   font-weight:700;
-                   padding:0.3rem 0.8rem;
-                   border-radius:999px">En attente de validation</span>
-    </div>
-  </div>
-  <div class="alert alert-neutral">
-    <strong>Action requise :</strong> Connectez-vous à Smart-HR pour approuver ou refuser cette demande.
-  </div>
-  <div class="btn-wrapper">
-    <a href="{{ leaves_url }}" class="btn">Gérer les congés →</a>
-  </div>
-  <p style="font-size:0.75rem;
-            color:#94a3b8;
-            margin-top:1.5rem;
-            line-height:1.65">
-    Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
-  </p>
+  {% include "email/partials/heading.html" with title="Nouvelle demande de congé" lead="Un employé vient de soumettre une demande de congé en attente de votre validation." %}
+  {% include "email/partials/card_open.html" with card_title="Détails de la demande" %}
+  <tr>
+    <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
+      <p style="margin:0 0 6px;
+                font-size:12px;
+                font-weight:600;
+                color:#816e65">Statut</p>
+      {% include "email/partials/badge.html" with variant="pending" label="En attente de validation" %}
+    </td>
+  </tr>
+  {% include "email/partials/detail_row.html" with label="Employé" value=employee_name %}
+  {% include "email/partials/detail_row.html" with label="Type de congé" value=leave_type_label %}
+  <tr>
+    <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
+      <p style="margin:0 0 3px;
+                font-size:12px;
+                font-weight:600;
+                color:#816e65">Période</p>
+      <p style="margin:0; font-size:14px; font-weight:700; color:#1c1410;">
+        {{ start_date }} → {{ end_date }}
+        <span style="font-weight:400; color:#816e65;">({{ days_count }} jour{{ days_count|pluralize }})</span>
+      </p>
+    </td>
+  </tr>
+  {% if reason %}
+    {% include "email/partials/detail_row.html" with label="Motif" value=reason regular=True %}
+  {% endif %}
+  {% include "email/partials/card_close.html" %}
+  {% include "email/partials/alert.html" with variant="neutral" alert_title="Action requise" text="Connectez-vous à Smart-HR pour approuver ou refuser cette demande." %}
+  {% include "email/partials/button.html" with url=leaves_url label="Gérer les congés" %}
+  {% include "email/partials/footnote.html" with text="Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement." %}
 {% endblock email_content %}

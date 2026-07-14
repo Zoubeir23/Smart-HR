@@ -1,0 +1,28 @@
+{% autoescape off %}Bonjour {{ first_name }},
+
+Votre candidature pour le poste de {{ job_title }} a retenu notre attention.
+Nous vous invitons à passer un entretien vocal avec notre assistant IA.
+
+DÉTAILS DE VOTRE ENTRETIEN
+Poste             : {{ job_title }}
+Durée estimée     : {{ duration }}
+Type d'entretien  : {{ interview_type }}
+
+COMMENT ÇA SE DÉROULE
+1. Accédez à votre entretien via le lien ci-dessous.
+2. Notre assistant IA vous posera des questions adaptées à votre profil.
+   Répondez à voix haute, naturellement.
+3. À l'issue de l'entretien, un rapport est transmis au responsable RH.
+
+Accéder à mon entretien :
+{{ interview_link }}
+
+LIEN PERSONNEL : ne le partagez avec personne, il donne directement accès à
+votre session d'entretien.
+
+Bonne chance pour votre entretien !
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}

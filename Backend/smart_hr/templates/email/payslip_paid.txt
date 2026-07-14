@@ -1,0 +1,25 @@
+{% autoescape off %}Bonjour {{ first_name }} {{ last_name }},
+
+Votre salaire du mois de {{ month_label }} a été traité et versé sur votre
+compte.
+
+RÉCAPITULATIF DE PAIE
+Période         : {{ month_label }}
+Salaire de base : {{ base_salary }} FCFA
+{% if bonuses and bonuses != "0.00" %}Primes et bonus : + {{ bonuses }} FCFA{% endif %}
+{% if deductions and deductions != "0.00" %}Retenues        : − {{ deductions }} FCFA{% endif %}
+SALAIRE NET     : {{ net_salary }} FCFA
+
+VERSEMENT CONFIRMÉ : le montant a été transféré sur votre compte bancaire
+enregistré.
+
+Voir ma fiche de paie :
+{{ payroll_url }}
+
+Cet email est généré automatiquement par Smart-HR. En cas d'anomalie, contactez
+votre service RH.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}
