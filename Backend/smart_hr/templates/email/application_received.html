@@ -1,65 +1,30 @@
 {% extends "email/email_base.html" %}
 
-{% load i18n %}
-
 {% block email_title %}
   Candidature reçue — Smart-HR
 {% endblock email_title %}
+{% block preheader %}
+  Votre candidature au poste de {{ job_title }} a bien été reçue et sera examinée par notre équipe RH.
+{% endblock preheader %}
 {% block email_content %}
-  <h1 class="email-title">Votre candidature a bien été reçue</h1>
-  <p class="email-subtitle">
-    Bonjour <strong>{{ first_name }}</strong>,
-    <br />
-    Nous avons bien reçu votre candidature pour le poste ci-dessous. Notre équipe RH l'examinera dans les meilleurs délais.
-  </p>
-  <div class="divider"></div>
-  <div class="credentials-card">
-    <p class="credentials-title">Votre candidature</p>
-    <div class="credential-row">
-      <div class="credential-icon red">P</div>
-      <div>
-        <p class="credential-label">Poste</p>
-        <p class="credential-value">{{ job_title }}</p>
-      </div>
-    </div>
-    {% if department %}
-      <div class="credential-row">
-        <div class="credential-icon blue">D</div>
-        <div>
-          <p class="credential-label">Département</p>
-          <p class="credential-value">{{ department }}</p>
-        </div>
-      </div>
-    {% endif %}
-    <div class="credential-row">
-      <div class="credential-icon">J</div>
-      <div>
-        <p class="credential-label">Date de candidature</p>
-        <p class="credential-value">{{ applied_on }}</p>
-      </div>
-    </div>
-    <div style="margin-top: 1rem;">
-      <p class="credential-label" style="margin-bottom:0.4rem;">Statut</p>
-      <span class="status-badge"
-            style="background:#fefce8;
-                   color:#854d0e;
-                   border:1px solid #fde68a;
-                   font-size:0.775rem;
-                   font-weight:700;
-                   padding:0.3rem 0.8rem;
-                   border-radius:999px">En cours d'examen</span>
-    </div>
-  </div>
-  <div class="alert alert-neutral">
-    Vous serez notifié par email à chaque changement de statut de votre candidature. Assurez-vous de consulter régulièrement votre boîte email.
-  </div>
-  <div class="btn-wrapper">
-    <a href="{{ dashboard_url }}" class="btn">Suivre ma candidature →</a>
-  </div>
-  <p style="font-size:0.75rem;
-            color:#94a3b8;
-            margin-top:1.5rem;
-            line-height:1.65">
-    Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
-  </p>
+  {% include "email/partials/heading.html" with title="Votre candidature a bien été reçue" name=first_name lead="Nous avons bien reçu votre candidature pour le poste ci-dessous. Notre équipe RH l’examinera dans les meilleurs délais." %}
+  {% include "email/partials/card_open.html" with card_title="Votre candidature" %}
+  <tr>
+    <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
+      <p style="margin:0 0 6px;
+                font-size:12px;
+                font-weight:600;
+                color:#816e65">Statut</p>
+      {% include "email/partials/badge.html" with variant="pending" label="En cours d’examen" %}
+    </td>
+  </tr>
+  {% include "email/partials/detail_row.html" with label="Poste" value=job_title %}
+  {% if department %}
+    {% include "email/partials/detail_row.html" with label="Département" value=department %}
+  {% endif %}
+  {% include "email/partials/detail_row.html" with label="Date de candidature" value=applied_on %}
+  {% include "email/partials/card_close.html" %}
+  {% include "email/partials/alert.html" with variant="neutral" text="Vous serez notifié par email à chaque changement de statut de votre candidature." %}
+  {% include "email/partials/button.html" with url=dashboard_url label="Suivre ma candidature" %}
+  {% include "email/partials/footnote.html" with text="Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement." %}
 {% endblock email_content %}

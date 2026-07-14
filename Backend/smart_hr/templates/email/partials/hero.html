@@ -1,0 +1,49 @@
+{% comment %}
+  La valeur focale de l'email : le chiffre ou le statut que le destinataire est
+  venu chercher (code OTP, salaire net, score de risque, décision).
+  Une seule par email — c'est ce qui doit dominer le titre.
+
+  Usage : {% include "email/partials/hero.html" with hero_label="Salaire net" hero_value=net_salary %}
+
+  Options :
+  - accent=True   : valeur en rouge braise (signal — risque, code à protéger)
+  - success=True  : valeur en vert validation (issue favorable)
+  - mono=True     : chasse fixe (chaînes à recopier : OTP, mot de passe)
+  - caption       : ligne d'appoint sous la valeur (ex. délai d'expiration)
+{% endcomment %}
+<table role="presentation"
+       width="100%"
+       cellpadding="0"
+       cellspacing="0"
+       border="0"
+       style="width:100%;
+              margin:0 0 24px;
+              border:1px solid #e5dccc;
+              border-radius:12px;
+              background-color:#ffffff">
+  <tr>
+    <td align="center" style="padding:32px 24px;">
+      <p style="margin:0 0 10px;
+                font-size:12px;
+                font-weight:600;
+                color:#816e65">{{ hero_label }}</p>
+      <p class="sh-display"
+         style="margin:0;
+                font-size:32px;
+                line-height:1.1;
+                font-weight:800;
+                {% if mono %}font-family:'Courier New',Courier,monospace;
+                letter-spacing:8px;
+                {% else %}letter-spacing:-0.6px;
+                {% endif %} color:{% if accent %}#d62828{% elif success %}#0b7a52{% else %}#1c1410{% endif %}">
+        {{ hero_value }}
+      </p>
+      {% if caption %}
+        <p style="margin:12px 0 0;
+                  font-size:12px;
+                  line-height:1.5;
+                  color:#816e65">{{ caption }}</p>
+      {% endif %}
+    </td>
+  </tr>
+</table>

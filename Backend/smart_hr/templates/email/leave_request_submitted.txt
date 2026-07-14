@@ -1,0 +1,24 @@
+{% autoescape off %}Nouvelle demande de congé
+
+Un employé vient de soumettre une demande de congé en attente de votre
+validation.
+
+DÉTAILS DE LA DEMANDE
+Statut        : En attente de validation
+Employé       : {{ employee_name }}
+Type de congé : {{ leave_type_label }}
+Période       : {{ start_date }} → {{ end_date }} ({{ days_count }} jour{{ days_count|pluralize }})
+{% if reason %}Motif         : {{ reason }}{% endif %}
+
+ACTION REQUISE : connectez-vous à Smart-HR pour approuver ou refuser cette
+demande.
+
+Gérer les congés :
+{{ leaves_url }}
+
+Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}

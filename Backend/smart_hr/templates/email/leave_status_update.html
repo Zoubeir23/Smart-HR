@@ -1,7 +1,5 @@
 {% extends "email/email_base.html" %}
 
-{% load i18n %}
-
 {% block email_title %}
   {% if is_approved %}
     Congé approuvé
@@ -10,80 +8,35 @@
   {% endif %}
   — Smart-HR
 {% endblock email_title %}
+{% block preheader %}
+  {% if is_approved %}
+    Votre demande de congé du {{ start_date }} au {{ end_date }} a été approuvée.
+  {% else %}
+    Votre demande de congé du {{ start_date }} au {{ end_date }} n'a pas été retenue.
+  {% endif %}
+{% endblock preheader %}
 {% block email_content %}
   {% if is_approved %}
-    <h1 class="email-title">Votre congé a été approuvé</h1>
-    <p class="email-subtitle">
-      Bonjour <strong>{{ first_name }}</strong>,
-      <br />
-      Bonne nouvelle ! Votre demande de congé a été examinée et <strong>approuvée</strong>.
-    </p>
+    {% include "email/partials/heading.html" with title="Votre congé a été approuvé" name=first_name lead="Bonne nouvelle ! Votre demande a été examinée et approuvée." %}
+    {% include "email/partials/hero.html" with hero_label="Statut de votre demande" hero_value="Approuvé" success=True caption=start_date|add:" → "|add:end_date %}
   {% else %}
-    <h1 class="email-title">Demande de congé refusée</h1>
-    <p class="email-subtitle">
-      Bonjour <strong>{{ first_name }}</strong>,
-      <br />
-      Votre demande de congé a été examinée. Elle n'a pas pu être <strong>approuvée</strong> pour le moment.
-    </p>
+    {% include "email/partials/heading.html" with title="Demande de congé refusée" name=first_name lead="Votre demande a été examinée. Elle n'a pas pu être approuvée pour le moment." %}
+    {% include "email/partials/hero.html" with hero_label="Statut de votre demande" hero_value="Refusé" accent=True caption=start_date|add:" → "|add:end_date %}
   {% endif %}
-  <div class="divider"></div>
-  <div class="credentials-card">
-    <p class="credentials-title">Détails de votre demande</p>
-    <div style="margin-bottom: 1rem;">
-      <p class="credential-label" style="margin-bottom:0.4rem;">Statut</p>
-      {% if is_approved %}
-        <span class="status-badge status-approved">Approuvé</span>
-      {% else %}
-        <span class="status-badge status-rejected">Refusé</span>
-      {% endif %}
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon blue">C</div>
-      <div>
-        <p class="credential-label">Type de congé</p>
-        <p class="credential-value">{{ leave_type_label }}</p>
-      </div>
-    </div>
-    <div class="credential-row">
-      <div class="credential-icon">D</div>
-      <div>
-        <p class="credential-label">Période</p>
-        <p class="credential-value">{{ start_date }} → {{ end_date }}</p>
-      </div>
-    </div>
-    {% if reviewer_name %}
-      <div class="credential-row">
-        <div class="credential-icon">R</div>
-        <div>
-          <p class="credential-label">Traité par</p>
-          <p class="credential-value">{{ reviewer_name }}</p>
-        </div>
-      </div>
-    {% endif %}
-  </div>
+  {% include "email/partials/card_open.html" with card_title="Détails de votre demande" %}
+  {% include "email/partials/detail_row.html" with label="Type de congé" value=leave_type_label %}
+  {% include "email/partials/detail_row.html" with label="Période" value=start_date|add:" → "|add:end_date %}
+  {% if reviewer_name %}
+    {% include "email/partials/detail_row.html" with label="Traité par" value=reviewer_name %}
+  {% endif %}
+  {% include "email/partials/card_close.html" %}
   {% if is_approved %}
-    <div class="alert alert-success">
-      <strong>Information :</strong> Votre congé est maintenant enregistré dans le système.
-      Votre responsable en a été informé automatiquement.
-    </div>
+    {% include "email/partials/alert.html" with variant="success" alert_title="Information" text="Votre congé est enregistré dans le système. Votre responsable en a été informé automatiquement." %}
+  {% elif reason %}
+    {% include "email/partials/alert.html" with variant="neutral" alert_title="Motif" text=reason %}
   {% else %}
-    {% if reason %}
-      <div class="alert alert-neutral">
-        <strong>Motif :</strong> {{ reason }}
-      </div>
-    {% else %}
-      <div class="alert alert-neutral">
-        Pour en savoir plus sur cette décision, contactez votre responsable RH directement.
-      </div>
-    {% endif %}
+    {% include "email/partials/alert.html" with variant="neutral" text="Pour en savoir plus sur cette décision, contactez votre responsable RH directement." %}
   {% endif %}
-  <div class="btn-wrapper">
-    <a href="{{ dashboard_url }}" class="btn">Voir mes congés →</a>
-  </div>
-  <p style="font-size:0.75rem;
-            color:#94a3b8;
-            margin-top:1.5rem;
-            line-height:1.65">
-    Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement.
-  </p>
+  {% include "email/partials/button.html" with url=dashboard_url label="Voir mes congés" %}
+  {% include "email/partials/footnote.html" with text="Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement." %}
 {% endblock email_content %}

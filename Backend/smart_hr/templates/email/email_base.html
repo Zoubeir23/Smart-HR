@@ -1,392 +1,150 @@
+{% comment %}
+  Squelette commun à tous les emails transactionnels Smart-HR.
+
+  Contraintes email, à respecter dans tous les templates enfants :
+
+  1. Mise en page en tables, jamais en flex ni grid. Outlook utilise le moteur
+     de rendu de Word, qui ignore display:flex et gap.
+  2. Styles critiques écrits en attribut style (inline). Plusieurs clients
+     (Yahoo mobile, Gmail sur comptes non-Gmail) suppriment la balise de style
+     du head. Celle déclarée ici ne porte que les media queries, qui ne peuvent
+     pas être inlinées et dont la perte est sans conséquence.
+  3. Unités en px. Outlook gère mal rem et em.
+  4. Identité de marque en texte, pas en image : les images sont bloquées par
+     défaut chez de nombreux destinataires, et le SVG n'est supporté nulle part.
+  5. Couleurs et tailles limitées aux tokens documentés dans DESIGN.md.
+
+  Trois niveaux de surface, comme dans l'app (DESIGN.md, section Colors) :
+  canvas tan, puis page crème, puis cartes blanches. C'est le contraste de
+  surface qui porte la hiérarchie ; les cartes ne flottent pas sur du blanc.
+
+  Le navy encadre le message en haut et en bas, comme la sidebar encadre le
+  travail dans l'app. L'encre atténuée n'a un contraste AA que sur blanc : sur
+  la page crème, le texte secondaire reste en encre pleine et c'est la taille
+  qui le rend discret.
+
+  Note : ne pas écrire de balises HTML entre chevrons dans ce commentaire.
+  djLint tenterait de les reformater et casserait le bloc endcomment.
+{% endcomment %}
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    {# Empêche Gmail et Apple Mail d'auto-inverser la palette chaude en sombre. #}
+    <meta name="color-scheme" content="light" />
+    <meta name="supported-color-schemes" content="light" />
     <title>
       {% block email_title %}
         Smart-HR
       {% endblock email_title %}
     </title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
-
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        background-color: #eef0f3;
-        margin: 0;
-        padding: 0;
-        -webkit-font-smoothing: antialiased;
-        color: #0f172a;
-      }
-
-      .email-outer {
-        background-color: #eef0f3;
-        padding: 2rem 1rem;
-      }
-
-      .email-wrapper {
-        max-width: 600px;
-        margin: 0 auto;
-        background: #ffffff;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 16px rgba(15, 23, 42, 0.10), 0 1px 3px rgba(15, 23, 42, 0.06);
-      }
-
-      /* ── Header ── */
-      .email-header {
-        background: #ffffff;
-        padding: 1.75rem 2.5rem;
-        text-align: center;
-        border-bottom: 3px solid #D62828;
-      }
-
-      /* ── Body ── */
-      .email-content {
-        padding: 2.25rem 2.5rem 2rem;
-        background: #ffffff;
-      }
-
-      .email-title {
-        font-size: 1.3rem;
-        font-weight: 700;
-        color: #0f172a;
-        margin-bottom: 0.55rem;
-        line-height: 1.3;
-      }
-
-      .email-subtitle {
-        font-size: 0.875rem;
-        color: #64748b;
-        margin-bottom: 1.5rem;
-        line-height: 1.7;
-      }
-
-      /* ── Info card ── */
-      .credentials-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .credentials-title {
-        font-size: 0.68rem;
-        font-weight: 700;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid #e2e8f0;
-      }
-
-      .credential-row {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.8rem 0.9rem;
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        margin-bottom: 0.6rem;
-      }
-
-      .credential-row:last-child {
-        margin-bottom: 0;
-      }
-
-      .credential-icon {
-        width: 32px;
-        height: 32px;
-        min-width: 32px;
-        background: #0f172a;
-        border-radius: 7px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        font-weight: 800;
-        color: #ffffff;
-        flex-shrink: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        letter-spacing: 0;
-      }
-
-      .credential-icon.red {
-        background: #D62828;
-      }
-
-      .credential-icon.green {
-        background: #16a34a;
-      }
-
-      .credential-icon.amber {
-        background: #d97706;
-      }
-
-      .credential-icon.blue {
-        background: #1d4ed8;
-      }
-
-      .credential-label {
-        font-size: 0.65rem;
-        font-weight: 600;
-        color: #94a3b8;
-        text-transform: uppercase;
-        letter-spacing: 0.06em;
-        margin-bottom: 2px;
-      }
-
-      .credential-value {
-        font-size: 0.875rem;
-        font-weight: 600;
-        color: #0f172a;
-      }
-
-      .credential-value.monospace {
-        font-family: 'Courier New', 'Lucida Console', monospace;
-        color: #D62828;
-        letter-spacing: 0.08em;
-      }
-
-      /* ── Alerts ── */
-      .alert {
-        padding: 0.9rem 1.1rem;
-        border-radius: 8px;
-        margin: 1.25rem 0;
-        font-size: 0.845rem;
-        line-height: 1.6;
-        border-left: 3px solid transparent;
-      }
-
-      .alert-warning {
-        background: #fef2f2;
-        border-left-color: #D62828;
-        color: #7f1d1d;
-      }
-
-      .alert-warning strong {
-        color: #D62828;
-      }
-
-      .alert-success {
-        background: #f0fdf4;
-        border-left-color: #16a34a;
-        color: #14532d;
-      }
-
-      .alert-success strong {
-        color: #16a34a;
-      }
-
-      .alert-neutral {
-        background: #f8fafc;
-        border-left-color: #94a3b8;
-        color: #475569;
-      }
-
-      .alert-amber {
-        background: #fffbeb;
-        border-left-color: #d97706;
-        color: #78350f;
-      }
-
-      .alert-amber strong {
-        color: #d97706;
-      }
-
-      /* ── Status badges ── */
-      .status-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.35rem;
-        padding: 0.3rem 0.8rem;
-        border-radius: 999px;
-        font-size: 0.775rem;
-        font-weight: 700;
-        letter-spacing: 0.015em;
-      }
-
-      .status-approved {
-        background: #dcfce7;
-        color: #15803d;
-        border: 1px solid #bbf7d0;
-      }
-
-      .status-rejected {
-        background: #fee2e2;
-        color: #b91c1c;
-        border: 1px solid #fecaca;
-      }
-
-      /* ── Feature list ── */
-      .feature-list {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 1.5rem;
-        margin: 1.5rem 0;
-      }
-
-      .feature-list-title {
-        font-size: 0.68rem;
-        font-weight: 700;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 0.07em;
-        margin-bottom: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid #e2e8f0;
-      }
-
-      .feature-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-        margin-bottom: 0.85rem;
-      }
-
-      .feature-item:last-child {
-        margin-bottom: 0;
-      }
-
-      .feature-dot {
-        width: 22px;
-        height: 22px;
-        min-width: 22px;
-        background: #0f172a;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 11px;
-        font-weight: 800;
-        color: #ffffff;
-        margin-top: 1px;
-      }
-
-      .feature-text-title {
-        font-size: 0.855rem;
-        font-weight: 600;
-        color: #0f172a;
-        margin-bottom: 0.15rem;
-      }
-
-      .feature-text-desc {
-        font-size: 0.79rem;
-        color: #64748b;
-        line-height: 1.5;
-      }
-
-      /* ── Divider ── */
-      .divider {
-        height: 1px;
-        background: #e2e8f0;
-        margin: 1.75rem 0;
-      }
-
-      /* ── CTA button ── */
-      .btn-wrapper {
-        text-align: center;
-        margin: 1.75rem 0;
-      }
-
-      .btn {
-        display: inline-block;
-        background: #D62828;
-        color: #ffffff !important;
-        font-size: 0.855rem;
-        font-weight: 700;
-        text-decoration: none;
-        padding: 0.8rem 2rem;
-        border-radius: 8px;
-        letter-spacing: 0.01em;
-      }
-
-      /* ── Footer ── */
-      .email-footer {
-        padding: 1.25rem 2.5rem;
-        background: #0f172a;
-        text-align: center;
-        border-top: 2px solid #D62828;
-      }
-
-      .footer-brand {
-        font-size: 0.78rem;
-        font-weight: 700;
-        color: rgba(255, 255, 255, 0.65);
-        letter-spacing: 0.02em;
-        margin-bottom: 0.35rem;
-      }
-
-      .footer-brand span {
-        color: #D62828;
-      }
-
-      .footer-text {
-        font-size: 0.7rem;
-        color: rgba(255, 255, 255, 0.28);
-        line-height: 1.6;
-      }
-
-      .footer-text a {
-        color: rgba(255, 255, 255, 0.35);
-        text-decoration: none;
-      }
-
-      /* ── Responsive ── */
-      @media only screen and (max-width: 600px) {
-        .email-wrapper {
-          border-radius: 0;
+      /* Media queries uniquement : non inlinables, perte sans conséquence. */
+      @media only screen and (max-width: 620px) {
+        .sh-wrapper {
+          width: 100% !important;
+          border-radius: 0 !important;
         }
 
-        .email-content {
-          padding: 1.5rem;
+        .sh-pad {
+          padding-left: 22px !important;
+          padding-right: 22px !important;
         }
 
-        .credentials-card {
-          padding: 1.1rem;
+        /* Le display redescend au cran headline sur petit écran. */
+        .sh-display {
+          font-size: 24px !important;
         }
       }
     </style>
   </head>
-  <body>
-    <div class="email-outer">
-      <div class="email-wrapper">
-        <!-- Header -->
-        <div class="email-header">
-          <img src="{{ site_url }}/static/images/logo.svg"
-               width="160"
-               height="38"
-               alt="Smart-HR"
-               style="display:block;
-                      margin:0 auto" />
-        </div>
-        <!-- Content -->
-        <div class="email-content">
-          {% block email_content %}
-          {% endblock email_content %}
-        </div>
-        <!-- Footer -->
-        <div class="email-footer">
-          <div class="footer-brand">
-            Smart<span>-HR</span>
-          </div>
-          <div class="footer-text">
-            © {% now "Y" %} Smart-HR · Votre SIRH Intelligent
-            <br />
-            <a href="{{ site_url }}">{{ site_url }}</a>
-          </div>
-        </div>
-      </div>
+  <body style="margin:0;
+               padding:0;
+               background-color:#e5dccc;
+               -webkit-font-smoothing:antialiased">
+    {# Texte d'aperçu affiché par la boîte de réception à côté de l'objet. #}
+    <div style="display:none;
+                max-height:0;
+                overflow:hidden;
+                opacity:0;
+                color:transparent;
+                height:0;
+                width:0">
+      {% block preheader %}
+      {% endblock preheader %}
     </div>
+    <table role="presentation"
+           width="100%"
+           cellpadding="0"
+           cellspacing="0"
+           border="0"
+           style="background-color:#e5dccc">
+      <tr>
+        <td align="center" style="padding:40px 12px;">
+          <table role="presentation"
+                 class="sh-wrapper"
+                 width="600"
+                 cellpadding="0"
+                 cellspacing="0"
+                 border="0"
+                 style="width:600px;
+                        max-width:600px;
+                        border-radius:12px;
+                        overflow:hidden">
+            {# En-tête navy : le cadre de marque, en texte. #}
+            <tr>
+              <td class="sh-pad"
+                  align="center"
+                  bgcolor="#08111e"
+                  style="padding:30px 44px;
+                         background-color:#08111e;
+                         border-bottom:3px solid #d62828">
+                <span style="font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+                             font-size:24px;
+                             font-weight:800;
+                             letter-spacing:-0.4px;
+                             color:#ffffff">Smart<span style="color:#e86060;">-HR</span></span>
+              </td>
+            </tr>
+            {# Page crème : les cartes blanches des templates enfants s'y détachent. #}
+            <tr>
+              <td class="sh-pad"
+                  bgcolor="#efe6d8"
+                  style="padding:40px 44px;
+                         background-color:#efe6d8;
+                         font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+                         color:#1c1410">
+                {% block email_content %}
+                {% endblock email_content %}
+              </td>
+            </tr>
+            {# Pied de page navy : ferme le cadre. #}
+            <tr>
+              <td class="sh-pad"
+                  align="center"
+                  bgcolor="#08111e"
+                  style="padding:26px 44px;
+                         background-color:#08111e;
+                         border-top:3px solid #d62828;
+                         font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+                <div style="font-size:14px;
+                            font-weight:700;
+                            color:#ffffff;
+                            margin-bottom:8px">
+                  Smart<span style="color:#e86060;">-HR</span>
+                </div>
+                <div style="font-size:12px; line-height:1.7; color:#e5dccc;">
+                  © {% now "Y" %} Smart-HR · Votre SIRH Intelligent
+                  <br />
+                  <a href="{{ site_url }}" style="color:#e86060; text-decoration:none">{{ site_url }}</a>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
   </body>
 </html>

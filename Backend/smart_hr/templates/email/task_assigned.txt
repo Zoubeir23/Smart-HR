@@ -1,0 +1,23 @@
+{% autoescape off %}Bonjour {{ first_name }},
+
+Une nouvelle tâche vient de vous être assignée par {{ assigned_by }}.
+
+DÉTAILS DE LA TÂCHE
+Titre        : {{ task_title }}
+{% if description %}Description  : {{ description|truncatechars:200 }}{% endif %}
+Priorité     : {% if priority == "high" %}Haute{% elif priority == "medium" %}Moyenne{% else %}Basse{% endif %}
+{% if due_date %}Échéance     : {{ due_date }}{% endif %}
+Assignée par : {{ assigned_by }}
+
+Connectez-vous à Smart-HR pour voir le détail complet de la tâche et mettre à
+jour son statut.
+
+Voir mes tâches :
+{{ tasks_url }}
+
+Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre.
+
+--
+Smart-HR · Votre SIRH Intelligent
+{{ site_url }}
+{% endautoescape %}
