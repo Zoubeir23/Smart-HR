@@ -9,51 +9,35 @@
   {% elif is_interview %}
     Vous êtes invité à un entretien pour le poste de {{ job_title }}.
   {% elif is_reviewing %}
-    Votre candidature au poste de {{ job_title }} est en cours d’examen.
+    Votre candidature au poste de {{ job_title }} est en cours d'examen.
   {% else %}
     Une mise à jour concernant votre candidature au poste de {{ job_title }}.
   {% endif %}
 {% endblock preheader %}
 {% block email_content %}
   {% if is_accepted %}
-    {% include "email/partials/heading.html" with title="Félicitations, vous êtes accepté !" name=first_name lead="Excellente nouvelle ! Votre candidature a été retenue." %}
+    {% include "email/partials/heading.html" with title="Félicitations, vous êtes accepté !" name=first_name lead="Excellente nouvelle : votre candidature a été retenue." %}
+    {% include "email/partials/hero.html" with hero_label="Nouveau statut" hero_value="Accepté" success=True caption=job_title %}
   {% elif is_interview %}
     {% include "email/partials/heading.html" with title="Vous êtes invité à un entretien" name=first_name lead="Votre candidature a été sélectionnée pour un entretien." %}
+    {% include "email/partials/hero.html" with hero_label="Nouveau statut" hero_value="Entretien planifié" caption=job_title %}
   {% elif is_reviewing %}
-    {% include "email/partials/heading.html" with title="Votre candidature est en cours d’examen" name=first_name lead="Notre équipe RH examine actuellement votre candidature." %}
+    {% include "email/partials/heading.html" with title="Votre candidature est en cours d'examen" name=first_name lead="Notre équipe RH examine actuellement votre candidature." %}
+    {% include "email/partials/hero.html" with hero_label="Nouveau statut" hero_value="En cours d'examen" caption=job_title %}
   {% else %}
-    {% include "email/partials/heading.html" with title="Mise à jour de votre candidature" name=first_name lead="Nous vous remercions de l’intérêt que vous portez à notre entreprise. Après examen attentif de votre candidature, nous ne sommes pas en mesure de donner suite." %}
+    {% include "email/partials/heading.html" with title="Mise à jour de votre candidature" name=first_name lead="Nous vous remercions de l'intérêt que vous portez à notre entreprise. Après examen attentif de votre candidature, nous ne sommes pas en mesure de donner suite." %}
+    {% include "email/partials/hero.html" with hero_label="Nouveau statut" hero_value="Non retenu" accent=True caption=job_title %}
   {% endif %}
-  {% include "email/partials/card_open.html" with card_title="Détails de votre candidature" %}
-  <tr>
-    <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
-      <p style="margin:0 0 6px;
-                font-size:12px;
-                font-weight:600;
-                color:#816e65">Nouveau statut</p>
-      {% if is_accepted %}
-        {% include "email/partials/badge.html" with variant="approved" label="Accepté" %}
-      {% elif is_interview %}
-        {% include "email/partials/badge.html" with variant="neutral" label="Entretien planifié" %}
-      {% elif is_reviewing %}
-        {% include "email/partials/badge.html" with variant="pending" label="En cours d’examen" %}
-      {% else %}
-        {% include "email/partials/badge.html" with variant="rejected" label="Non retenu" %}
-      {% endif %}
-    </td>
-  </tr>
-  {% include "email/partials/detail_row.html" with label="Poste" value=job_title %}
-  {% include "email/partials/card_close.html" %}
   {% if is_accepted %}
-    {% include "email/partials/alert.html" with variant="success" alert_title="Prochaine étape" text="Notre équipe RH vous contactera prochainement pour les modalités d’intégration." %}
+    {% include "email/partials/alert.html" with variant="success" alert_title="Prochaine étape" text="Notre équipe RH vous contactera prochainement pour les modalités d'intégration." %}
   {% elif is_interview %}
-    {% include "email/partials/alert.html" with variant="neutral" alert_title="Prochaine étape" text="Notre équipe RH vous contactera pour vous communiquer les détails de l’entretien (date, heure, lieu ou lien visio)." %}
+    {% include "email/partials/alert.html" with variant="neutral" alert_title="Prochaine étape" text="Notre équipe RH vous contactera pour vous communiquer les détails de l'entretien (date, heure, lieu ou lien visio)." %}
   {% elif is_reviewing %}
     {% include "email/partials/alert.html" with variant="neutral" text="Nous vous informerons de la suite donnée à votre candidature dans les plus brefs délais." %}
   {% elif reason %}
     {% include "email/partials/alert.html" with variant="neutral" alert_title="Commentaire" text=reason %}
   {% else %}
-    {% include "email/partials/alert.html" with variant="neutral" text="Nous vous encourageons à postuler à d’autres offres correspondant à votre profil. Bonne continuation !" %}
+    {% include "email/partials/alert.html" with variant="neutral" text="Nous vous encourageons à postuler à d'autres offres correspondant à votre profil. Bonne continuation !" %}
   {% endif %}
   {% include "email/partials/button.html" with url=dashboard_url label="Voir mes candidatures" %}
   {% include "email/partials/footnote.html" with text="Cet email est généré automatiquement par Smart-HR. Merci de ne pas y répondre directement." %}

@@ -8,24 +8,12 @@
 {% endblock preheader %}
 {% block email_content %}
   {% include "email/partials/heading.html" with title="Risque de départ élevé détecté" name=rh_first_name lead="Notre modèle de prédiction a identifié un employé présentant un risque de départ élevé. Une action proactive est recommandée." %}
+  {% include "email/partials/hero.html" with hero_label="Score de risque de départ" hero_value=risk_score|floatformat:0|add:" %" accent=True caption=employee_full_name %}
   {% include "email/partials/card_open.html" with card_title="Profil à risque" %}
   {% include "email/partials/detail_row.html" with label="Employé" value=employee_full_name %}
   {% if employee_department %}
     {% include "email/partials/detail_row.html" with label="Département" value=employee_department %}
   {% endif %}
-  <tr>
-    <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
-      <p style="margin:0 0 3px;
-                font-size:12px;
-                font-weight:600;
-                color:#816e65">Score de risque</p>
-      <p style="margin:0;
-                font-size:24px;
-                font-weight:800;
-                letter-spacing:-0.4px;
-                color:#d62828">{{ risk_score|floatformat:0 }} %</p>
-    </td>
-  </tr>
   {% include "email/partials/detail_row.html" with label="Facteur principal identifié" value=main_risk_factor accent=True %}
   {% include "email/partials/card_close.html" %}
   {% include "email/partials/alert.html" with variant="vigilance" alert_title="Recommandation" text="Planifiez un entretien individuel avec cet employé pour évaluer sa satisfaction et identifier les leviers de rétention." %}

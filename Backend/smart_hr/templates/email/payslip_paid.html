@@ -8,8 +8,8 @@
 {% endblock preheader %}
 {% block email_content %}
   {% include "email/partials/heading.html" with title="Votre salaire a été versé" name=first_name lead="Votre salaire du mois a été traité et versé sur votre compte." %}
-  {% include "email/partials/card_open.html" with card_title="Récapitulatif de paie" %}
-  {% include "email/partials/detail_row.html" with label="Période" value=month_label %}
+  {% include "email/partials/hero.html" with hero_label="Salaire net versé" hero_value=net_salary|add:" FCFA" success=True caption=month_label %}
+  {% include "email/partials/card_open.html" with card_title="Détail du calcul" %}
   {% include "email/partials/detail_row.html" with label="Salaire de base" value=base_salary|add:" FCFA" %}
   {% if bonuses and bonuses != "0.00" %}
     {% include "email/partials/detail_row.html" with label="Primes et bonus" value="+ "|add:bonuses|add:" FCFA" success=True %}
@@ -17,21 +17,8 @@
   {% if deductions and deductions != "0.00" %}
     {% include "email/partials/detail_row.html" with label="Retenues" value="− "|add:deductions|add:" FCFA" accent=True %}
   {% endif %}
-  <tr>
-    <td style="padding:16px 0 4px;">
-      <p style="margin:0 0 4px;
-                font-size:12px;
-                font-weight:600;
-                color:#816e65">Salaire net</p>
-      <p style="margin:0;
-                font-size:24px;
-                font-weight:800;
-                letter-spacing:-0.4px;
-                color:#1c1410">{{ net_salary }} FCFA</p>
-    </td>
-  </tr>
   {% include "email/partials/card_close.html" %}
-  {% include "email/partials/alert.html" with variant="success" alert_title="Versement confirmé" text="Le montant a été transféré sur votre compte bancaire enregistré. Consultez votre fiche de paie complète sur Smart-HR." %}
+  {% include "email/partials/alert.html" with variant="success" alert_title="Versement confirmé" text="Le montant a été transféré sur votre compte bancaire enregistré." %}
   {% include "email/partials/button.html" with url=payroll_url label="Voir ma fiche de paie" %}
-  {% include "email/partials/footnote.html" with text="Cet email est généré automatiquement par Smart-HR. En cas d’anomalie, contactez votre service RH." %}
+  {% include "email/partials/footnote.html" with text="Cet email est généré automatiquement par Smart-HR. En cas d'anomalie, contactez votre service RH." %}
 {% endblock email_content %}

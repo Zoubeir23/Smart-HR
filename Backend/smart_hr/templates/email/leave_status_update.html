@@ -12,29 +12,18 @@
   {% if is_approved %}
     Votre demande de congé du {{ start_date }} au {{ end_date }} a été approuvée.
   {% else %}
-    Votre demande de congé du {{ start_date }} au {{ end_date }} n’a pas été retenue.
+    Votre demande de congé du {{ start_date }} au {{ end_date }} n'a pas été retenue.
   {% endif %}
 {% endblock preheader %}
 {% block email_content %}
   {% if is_approved %}
-    {% include "email/partials/heading.html" with title="Votre congé a été approuvé" name=first_name lead="Bonne nouvelle ! Votre demande de congé a été examinée et approuvée." %}
+    {% include "email/partials/heading.html" with title="Votre congé a été approuvé" name=first_name lead="Bonne nouvelle ! Votre demande a été examinée et approuvée." %}
+    {% include "email/partials/hero.html" with hero_label="Statut de votre demande" hero_value="Approuvé" success=True caption=start_date|add:" → "|add:end_date %}
   {% else %}
-    {% include "email/partials/heading.html" with title="Demande de congé refusée" name=first_name lead="Votre demande de congé a été examinée. Elle n’a pas pu être approuvée pour le moment." %}
+    {% include "email/partials/heading.html" with title="Demande de congé refusée" name=first_name lead="Votre demande a été examinée. Elle n'a pas pu être approuvée pour le moment." %}
+    {% include "email/partials/hero.html" with hero_label="Statut de votre demande" hero_value="Refusé" accent=True caption=start_date|add:" → "|add:end_date %}
   {% endif %}
   {% include "email/partials/card_open.html" with card_title="Détails de votre demande" %}
-  <tr>
-    <td style="padding:10px 0; border-bottom:1px solid #e5dccc;">
-      <p style="margin:0 0 6px;
-                font-size:12px;
-                font-weight:600;
-                color:#816e65">Statut</p>
-      {% if is_approved %}
-        {% include "email/partials/badge.html" with variant="approved" label="Approuvé" %}
-      {% else %}
-        {% include "email/partials/badge.html" with variant="rejected" label="Refusé" %}
-      {% endif %}
-    </td>
-  </tr>
   {% include "email/partials/detail_row.html" with label="Type de congé" value=leave_type_label %}
   {% include "email/partials/detail_row.html" with label="Période" value=start_date|add:" → "|add:end_date %}
   {% if reviewer_name %}
@@ -42,7 +31,7 @@
   {% endif %}
   {% include "email/partials/card_close.html" %}
   {% if is_approved %}
-    {% include "email/partials/alert.html" with variant="success" alert_title="Information" text="Votre congé est maintenant enregistré dans le système. Votre responsable en a été informé automatiquement." %}
+    {% include "email/partials/alert.html" with variant="success" alert_title="Information" text="Votre congé est enregistré dans le système. Votre responsable en a été informé automatiquement." %}
   {% elif reason %}
     {% include "email/partials/alert.html" with variant="neutral" alert_title="Motif" text=reason %}
   {% else %}
