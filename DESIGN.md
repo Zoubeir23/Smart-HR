@@ -16,6 +16,12 @@ colors:
   success-green: "#0b7a52"
   warning-orange: "#f97316"
 typography:
+  display:
+    fontFamily: "Plus Jakarta Sans, Inter, system-ui, sans-serif"
+    fontSize: "2rem"
+    fontWeight: 800
+    lineHeight: 1.1
+    letterSpacing: "-0.02em"
   headline:
     fontFamily: "Plus Jakarta Sans, Inter, system-ui, sans-serif"
     fontSize: "1.5rem"
@@ -127,6 +133,7 @@ Une palette chaude à accent unique : le rouge agit, le crème porte, le navy en
 **Character:** Une seule famille, géométrique et contemporaine, qui fait tout : la hiérarchie vient des graisses (500 → 800) et non d'un changement de voix. Corps en 500 — plus affirmé que le 400 standard, c'est une signature du système.
 
 ### Hierarchy
+- **Display** (800, 2rem, tracking -0.02em): réservé à LA valeur focale d'une surface transactionnelle — le code OTP, le salaire net, le score de risque. Une seule par écran ou par email : c'est le chiffre que le destinataire est venu chercher, il doit dominer le titre. Jamais utilisé pour du texte courant.
 - **Headline** (800, 1.5rem, tracking -0.025em): titres de page. `tracking-tighter` est la marque des h1.
 - **Title** (700, 1.125rem, tracking -0.015em): titres de cartes et de sections.
 - **Body** (500, 0.875rem, lh 1.5): texte courant, cellules de tableau. Prose longue plafonnée à 65-75ch.

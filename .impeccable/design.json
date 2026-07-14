@@ -48,6 +48,7 @@
       }
     },
     "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "La valeur focale d'une surface transactionnelle (code OTP, salaire net, score de risque). Une seule par écran ou par email." },
       "headline": { "displayName": "Headline", "purpose": "Titres de page, 800, tracking serré." },
       "title": { "displayName": "Title", "purpose": "Titres de cartes et sections, 700." },
       "body": { "displayName": "Body", "purpose": "Texte courant en 500 — signature du système, jamais 400." },
