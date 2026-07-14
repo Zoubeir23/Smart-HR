@@ -1,7 +1,13 @@
 {% comment %}
-  Mention de bas d’email (texte légal / automatique).
+  Mention de bas d'email (texte légal / automatique). Posée sur la page crème :
+  l'encre atténuée n'y tient pas le contraste AA, le texte reste donc en encre
+  et c'est la taille qui le rend discret.
   Usage : {% include "email/partials/footnote.html" with text="..." %}
 {% endcomment %}
-<p style="margin:24px 0 0; padding:16px 0 0; border-top:1px solid #e5dccc; font-size:12px; line-height:1.65; color:#816e65;">
-  {{ text }}
-</p>
+<p style="margin:8px 0 0;
+          padding:18px 0 0;
+          border-top:1px solid #e5dccc;
+          font-size:12px;
+          line-height:1.7;
+          font-weight:500;
+          color:#1c1410">{{ text }}</p>
