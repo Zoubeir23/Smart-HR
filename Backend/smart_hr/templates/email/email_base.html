@@ -11,8 +11,17 @@
      pas être inlinées et dont la perte est sans conséquence.
   3. Unités en px. Outlook gère mal rem et em.
   4. Identité de marque en texte, pas en image : les images sont bloquées par
-     défaut chez de nombreux destinataires, et le SVG n’est supporté nulle part.
+     défaut chez de nombreux destinataires, et le SVG n'est supporté nulle part.
   5. Couleurs et tailles limitées aux tokens documentés dans DESIGN.md.
+
+  Trois niveaux de surface, comme dans l'app (DESIGN.md, section Colors) :
+  canvas tan, puis page crème, puis cartes blanches. C'est le contraste de
+  surface qui porte la hiérarchie ; les cartes ne flottent pas sur du blanc.
+
+  Le navy encadre le message en haut et en bas, comme la sidebar encadre le
+  travail dans l'app. L'encre atténuée n'a un contraste AA que sur blanc : sur
+  la page crème, le texte secondaire reste en encre pleine et c'est la taille
+  qui le rend discret.
 
   Note : ne pas écrire de balises HTML entre chevrons dans ce commentaire.
   djLint tenterait de les reformater et casserait le bloc endcomment.
@@ -23,7 +32,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    {# Empêche Gmail et Apple Mail d’auto-inverser la palette chaude en sombre. #}
+    {# Empêche Gmail et Apple Mail d'auto-inverser la palette chaude en sombre. #}
     <meta name="color-scheme" content="light" />
     <meta name="supported-color-schemes" content="light" />
     <title>
@@ -40,17 +49,22 @@
         }
 
         .sh-pad {
-          padding-left: 24px !important;
-          padding-right: 24px !important;
+          padding-left: 22px !important;
+          padding-right: 22px !important;
+        }
+
+        /* Le display redescend au cran headline sur petit écran. */
+        .sh-display {
+          font-size: 24px !important;
         }
       }
     </style>
   </head>
   <body style="margin:0;
                padding:0;
-               background-color:#efe6d8;
+               background-color:#e5dccc;
                -webkit-font-smoothing:antialiased">
-    {# Texte d’aperçu affiché par la boîte de réception à côté de l’objet. #}
+    {# Texte d'aperçu affiché par la boîte de réception à côté de l'objet. #}
     <div style="display:none;
                 max-height:0;
                 overflow:hidden;
@@ -66,9 +80,9 @@
            cellpadding="0"
            cellspacing="0"
            border="0"
-           style="background-color:#efe6d8">
+           style="background-color:#e5dccc">
       <tr>
-        <td align="center" style="padding:32px 12px;">
+        <td align="center" style="padding:40px 12px;">
           <table role="presentation"
                  class="sh-wrapper"
                  width="600"
@@ -77,48 +91,51 @@
                  border="0"
                  style="width:600px;
                         max-width:600px;
-                        background-color:#ffffff;
                         border-radius:12px;
-                        border:1px solid #e5dccc">
-            {# En-tête : wordmark en texte, jamais bloqué, jamais en 404. #}
+                        overflow:hidden">
+            {# En-tête navy : le cadre de marque, en texte. #}
             <tr>
               <td class="sh-pad"
                   align="center"
-                  style="padding:26px 40px;
+                  bgcolor="#08111e"
+                  style="padding:30px 44px;
+                         background-color:#08111e;
                          border-bottom:3px solid #d62828">
                 <span style="font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
                              font-size:24px;
                              font-weight:800;
                              letter-spacing:-0.4px;
-                             color:#1c1410">Smart<span style="color:#d62828;">-HR</span></span>
+                             color:#ffffff">Smart<span style="color:#e86060;">-HR</span></span>
               </td>
             </tr>
-            {# Contenu propre à chaque email. #}
+            {# Page crème : les cartes blanches des templates enfants s'y détachent. #}
             <tr>
               <td class="sh-pad"
-                  style="padding:34px 40px 30px;
+                  bgcolor="#efe6d8"
+                  style="padding:40px 44px;
+                         background-color:#efe6d8;
                          font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
                          color:#1c1410">
                 {% block email_content %}
                 {% endblock email_content %}
               </td>
             </tr>
-            {# Pied de page. #}
+            {# Pied de page navy : ferme le cadre. #}
             <tr>
               <td class="sh-pad"
                   align="center"
-                  style="padding:22px 40px;
+                  bgcolor="#08111e"
+                  style="padding:26px 44px;
                          background-color:#08111e;
-                         border-top:2px solid #d62828;
-                         border-radius:0 0 12px 12px;
+                         border-top:3px solid #d62828;
                          font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
                 <div style="font-size:14px;
                             font-weight:700;
                             color:#ffffff;
-                            margin-bottom:6px">
+                            margin-bottom:8px">
                   Smart<span style="color:#e86060;">-HR</span>
                 </div>
-                <div style="font-size:12px; line-height:1.6; color:#e5dccc;">
+                <div style="font-size:12px; line-height:1.7; color:#e5dccc;">
                   © {% now "Y" %} Smart-HR · Votre SIRH Intelligent
                   <br />
                   <a href="{{ site_url }}" style="color:#e86060; text-decoration:none">{{ site_url }}</a>
