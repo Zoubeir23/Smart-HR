@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { motion, useInView } from 'framer-motion';
 import {
   TrendingDown,
@@ -21,9 +22,29 @@ import {
   X,
   Sun,
   Moon,
+  Briefcase,
+  MapPin,
+  Loader2,
 } from 'lucide-react';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
+import { recruitmentService } from '@/services/recruitmentService';
+
+const JOB_TYPE_LABELS: Record<string, string> = {
+  full_time: 'Temps plein',
+  part_time: 'Temps partiel',
+  contract: 'Contrat',
+  internship: 'Stage',
+};
+
+interface PublicJobOffer {
+  id: number;
+  title: string;
+  department: string;
+  location: string;
+  jobType: string;
+  description: string;
+}
 
 /* AnimatedCounter */
 function AnimatedCounter({ target, suffix = '', prefix = '', duration = 2000 }: { target: number; suffix?: string; prefix?: string; duration?: number }) {
@@ -136,7 +157,8 @@ function DashboardMockup() {
 /* ═══════ LANDING PAGE ═══════ */
 export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -151,9 +173,37 @@ export default function LandingPage() {
   const NAV_LINKS = [
     { label: 'Produit', id: 'produit' },
     { label: 'Modules', id: 'modules' },
-    { label: 'Solutions', id: 'solutions' },
+    { label: 'Carrières', id: 'carrieres' },
     { label: 'Tarifs', id: 'tarifs' },
   ];
+
+  /* Offres publiées, visibles sans compte — le backend ne renvoie déjà
+   * que les offres ouvertes et non internes pour un visiteur anonyme. */
+  const { data: jobOffersData, isLoading: jobOffersLoading } = useQuery({
+    queryKey: ['public-job-offers'],
+    queryFn: () => recruitmentService.getJobs(),
+  });
+
+  const jobOffers: PublicJobOffer[] = (jobOffersData?.results || jobOffersData || []).map(
+    (offer: Record<string, unknown>) => ({
+      id: offer.id as number,
+      title: (offer.title as string) || '',
+      department: (offer.department as string) || '',
+      location: (offer.location as string) || '',
+      jobType: (offer.job_type as string) || 'full_time',
+      description: (offer.description as string) || '',
+    })
+  );
+
+  const handleApply = (jobId: number) => {
+    if (isAuthenticated && user?.role === 'CANDIDATE') {
+      navigate(`/jobs/${jobId}/apply`);
+    } else if (isAuthenticated) {
+      navigate('/jobs');
+    } else {
+      navigate('/login', { state: { from: { pathname: `/jobs/${jobId}/apply` } } });
+    }
+  };
 
   return (
     <div className="bg-background text-foreground antialiased">
@@ -430,6 +480,69 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* CARRIÈRES #carrieres — offres publiques, candidature après connexion */}
+      <section id="carrieres" className="bg-background py-28">
+        <div className="mx-auto max-w-7xl px-6">
+          <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-16 max-w-2xl">
+            <h2 className="font-display text-4xl leading-tight text-foreground lg:text-5xl">
+              Rejoignez<br /><span className="italic text-foreground/70">les équipes</span> qui bâtissent Smart-HR.
+            </h2>
+            <p className="mt-4 text-base leading-relaxed text-muted-foreground">
+              Consultez nos offres ouvertes. La candidature se fait en quelques clics, une fois connecté.
+            </p>
+          </motion.div>
+
+          {jobOffersLoading && (
+            <div className="flex items-center justify-center py-16 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span className="ml-3 text-sm">Chargement des offres...</span>
+            </div>
+          )}
+
+          {!jobOffersLoading && jobOffers.length === 0 && (
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-border py-16 text-center">
+              <Briefcase className="h-10 w-10 text-muted-foreground/50" />
+              <h3 className="mt-4 text-lg font-semibold text-foreground">Aucune offre ouverte pour le moment</h3>
+              <p className="mt-1 max-w-sm text-sm text-muted-foreground">Revenez bientôt, ou contactez-nous directement pour une candidature spontanée.</p>
+            </div>
+          )}
+
+          {!jobOffersLoading && jobOffers.length > 0 && (
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              {jobOffers.map((offer, i) => (
+                <motion.div key={offer.id} initial={{ y: 16 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.15 }} transition={{ duration: 0.5, delay: (i % 3) * 0.08 }} className="flex flex-col rounded-3xl border border-border bg-card p-7 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-display text-lg text-foreground">{offer.title}</h3>
+                    <span className="shrink-0 rounded-full border border-primary/30 bg-primary/8 px-3 py-1 text-xs font-bold text-primary">
+                      {JOB_TYPE_LABELS[offer.jobType] || offer.jobType}
+                    </span>
+                  </div>
+                  <div className="mt-3 space-y-1.5 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Briefcase className="h-4 w-4 shrink-0" />
+                      <span>{offer.department}</span>
+                    </div>
+                    {offer.location && (
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 shrink-0" />
+                        <span>{offer.location}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="mt-4 line-clamp-3 flex-1 text-sm leading-relaxed text-muted-foreground">{offer.description}</p>
+                  <button
+                    onClick={() => handleApply(offer.id)}
+                    className="mt-6 flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 text-sm font-bold text-primary-foreground transition-all hover:bg-brand-red-dark active:scale-95"
+                  >
+                    Postuler <ArrowRight className="h-4 w-4" />
+                  </button>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
