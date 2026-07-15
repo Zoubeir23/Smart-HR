@@ -229,51 +229,52 @@ export default function LandingPage() {
       {/* HERO — cream/light by default */}
       <section className="relative min-h-screen overflow-hidden bg-background">
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-32 right-1/3 h-[500px] w-[500px] rounded-full bg-primary/6 blur-[120px]" />
-          <div className="absolute bottom-0 left-1/4 h-[300px] w-[300px] rounded-full bg-primary/4 blur-[80px]" />
+          <div className="absolute -top-32 right-0 h-[500px] w-[500px] rounded-full bg-primary/6 blur-[120px]" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl px-6 pt-36 pb-24 lg:pt-48 lg:pb-32">
-          <div className="flex flex-col items-center text-center">
-            <div className="space-y-8 max-w-3xl w-full">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/8 px-4 py-1.5">
-                <Brain className="h-3.5 w-3.5 text-primary" />
-                <span className="text-xs font-bold uppercase tracking-widest text-primary">SIRH propulsé par l'IA</span>
-              </motion.div>
+        <div className="relative mx-auto grid max-w-7xl items-center gap-16 px-6 pt-36 pb-24 lg:grid-cols-[1.05fr_1fr] lg:pt-44 lg:pb-32">
+          <div className="space-y-8 text-center lg:text-left">
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/8 px-4 py-1.5">
+              <Brain className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-bold uppercase tracking-widest text-primary">SIRH propulsé par l'IA</span>
+            </motion.div>
 
-              <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="font-display text-5xl leading-[1.05] tracking-tight text-foreground lg:text-[4.5rem]">
-                Le SIRH
-                <br /><span className="italic text-foreground/60">augmenté</span>
-                <br />par l'<span className="text-primary">Intelligence.</span>
-              </motion.h1>
+            <motion.h1 initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7, delay: 0.1 }} className="font-display text-5xl leading-[1.05] tracking-tight text-foreground lg:text-[4rem]">
+              Le SIRH
+              <br /><span className="italic text-foreground/60">augmenté</span>
+              <br />par l'<span className="text-primary">Intelligence.</span>
+            </motion.h1>
 
-              <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }} className="max-w-lg text-lg font-medium leading-relaxed text-muted-foreground">
-                Smart-HR anticipe les départs, automatise le recrutement et transforme vos données RH en décisions stratégiques.
-              </motion.p>
+            <motion.p initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.25 }} className="max-w-lg text-lg font-medium leading-relaxed text-muted-foreground lg:mx-0 mx-auto">
+              Smart-HR anticipe les départs, automatise le recrutement et transforme vos données RH en décisions stratégiques.
+            </motion.p>
 
-              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }} className="flex flex-wrap justify-center gap-3">
-                <Link
-                  to={isAuthenticated ? '/dashboard' : '/register'}
-                  className="group flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-brand-red-dark active:scale-95"
-                >
-                  {isAuthenticated ? 'Tableau de bord' : 'Inscription'} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-                <button onClick={() => scrollTo('produit')} className="flex items-center gap-2 rounded-xl border border-border bg-card px-7 py-3.5 text-base font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-secondary active:scale-95">
-                  Voir les fonctionnalités
-                </button>
-              </motion.div>
+            <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.35 }} className="flex flex-wrap justify-center gap-3 lg:justify-start">
+              <Link
+                to={isAuthenticated ? '/dashboard' : '/register'}
+                className="group flex items-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-brand-red-dark active:scale-95"
+              >
+                {isAuthenticated ? 'Tableau de bord' : 'Inscription'} <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <button onClick={() => scrollTo('produit')} className="flex items-center gap-2 rounded-xl border border-border bg-card px-7 py-3.5 text-base font-semibold text-foreground transition-all hover:border-primary/30 hover:bg-secondary active:scale-95">
+                Voir les fonctionnalités
+              </button>
+            </motion.div>
 
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.5 }} className="flex items-center justify-center gap-6 pt-2">
-                <div className="flex -space-x-2">
-                  {['A', 'B', 'M', 'S'].map((l) => (
-                    <div key={l} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary to-brand-red-dark text-[11px] font-bold text-white">{l}</div>
-                  ))}
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-secondary text-[9px] font-bold text-muted-foreground">+1.5k</div>
-                </div>
-                <p className="text-sm text-muted-foreground">Rejoints par <span className="font-bold text-foreground">1 500+ PME</span></p>
-              </motion.div>
-            </div>
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.5 }} className="flex items-center justify-center gap-6 pt-2 lg:justify-start">
+              <div className="flex -space-x-2">
+                {['A', 'B', 'M', 'S'].map((l) => (
+                  <div key={l} className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br from-primary to-brand-red-dark text-[11px] font-bold text-white">{l}</div>
+                ))}
+                <div className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-secondary text-[9px] font-bold text-muted-foreground">+1.5k</div>
+              </div>
+              <p className="text-sm text-muted-foreground">Rejoints par <span className="font-bold text-foreground">1 500+ PME</span></p>
+            </motion.div>
           </div>
+
+          <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8, delay: 0.3 }} className="hidden lg:block">
+            <DashboardMockup />
+          </motion.div>
 
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="absolute bottom-8 left-1/2 -translate-x-1/2">
             <motion.div animate={{ y: [0, 8, 0] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}>
@@ -288,29 +289,43 @@ export default function LandingPage() {
       <section id="produit" className="bg-secondary/30 py-28">
         <div className="mx-auto max-w-7xl px-6">
           <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6 }} className="mb-20 max-w-2xl">
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">Fonctionnalités IA</p>
             <h2 className="font-display text-4xl leading-tight text-foreground lg:text-5xl">
               Trois piliers qui transforment<br /><span className="italic text-foreground/70">votre quotidien RH.</span>
             </h2>
           </motion.div>
 
-          <div className="grid gap-8 md:grid-cols-3">
-            {[
-              { icon: TrendingDown, title: 'Prédiction du Churn', desc: "Notre Random Forest analyse 40+ signaux — satisfaction, ancienneté, salaire — pour identifier les collaborateurs à risque avec 80% de précision.", stat: '80%', statLabel: 'de précision', delay: 0 },
-              { icon: FileSearch, title: 'Analyse NLP des CVs', desc: "Gemini 2.5 Flash extrait compétences, expériences et compatibilité en moins de 3 secondes. Plus jamais de tri manuel de CVs.", stat: '< 3s', statLabel: "d'analyse", delay: 0.1 },
-              { icon: Bot, title: 'Assistant IA Conversationnel', desc: "Posez vos questions RH en langage naturel. L'assistant accède aux données réelles pour des réponses précises et contextualisées.", stat: '24/7', statLabel: 'disponible', delay: 0.2 },
-            ].map((feature) => (
-              <motion.div key={feature.title} initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: feature.delay }} className="group relative overflow-hidden rounded-3xl border border-border bg-card p-8 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
-                <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/12 ring-1 ring-primary/20">
-                  <feature.icon className="h-5 w-5 text-primary" />
+          <div className="grid gap-5 lg:grid-cols-3 lg:grid-rows-2">
+            <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6 }} className="group relative overflow-hidden rounded-3xl bg-brand-navy p-9 lg:col-span-2 lg:row-span-2">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-52 w-52 rounded-full bg-brand-red/15 blur-[90px]" />
+              <div className="relative flex h-full flex-col">
+                <div className="flex items-center gap-3">
+                  <TrendingDown className="h-5 w-5 text-brand-red-light" />
+                  <h3 className="font-display text-2xl text-white">Prédiction du Churn</h3>
                 </div>
-                <h3 className="mb-3 font-display text-2xl text-foreground">{feature.title}</h3>
-                <p className="mb-6 text-sm leading-relaxed text-muted-foreground">{feature.desc}</p>
-                <div className="flex items-baseline gap-1.5 border-t border-border pt-5">
-                  <span className="font-display text-3xl text-primary">{feature.stat}</span>
+                <p className="mt-4 max-w-md text-sm leading-relaxed text-white/50">
+                  Notre Random Forest analyse 40+ signaux — satisfaction, ancienneté, salaire — pour identifier les collaborateurs à risque avant qu'ils ne partent.
+                </p>
+                <div className="mt-auto flex items-end gap-3 pt-10">
+                  <span className="font-display text-6xl leading-none text-white lg:text-7xl">80%</span>
+                  <span className="pb-2 text-xs font-bold uppercase tracking-widest text-white/40">de précision</span>
+                </div>
+              </div>
+            </motion.div>
+
+            {[
+              { icon: FileSearch, title: 'Analyse NLP des CVs', desc: "Gemini 2.5 Flash extrait compétences et compatibilité en moins de 3 secondes.", stat: '< 3s', statLabel: "d'analyse", delay: 0.1 },
+              { icon: Bot, title: 'Assistant IA Conversationnel', desc: "Posez vos questions RH en langage naturel, réponses contextualisées 24/7.", stat: '24/7', statLabel: 'disponible', delay: 0.2 },
+            ].map((feature) => (
+              <motion.div key={feature.title} initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: feature.delay }} className="group relative overflow-hidden rounded-3xl border border-border bg-card p-7 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
+                <div className="flex items-center gap-2.5">
+                  <feature.icon className="h-4.5 w-4.5 text-primary" />
+                  <h3 className="font-display text-lg text-foreground">{feature.title}</h3>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{feature.desc}</p>
+                <div className="mt-5 flex items-baseline gap-1.5 border-t border-border pt-4">
+                  <span className="font-display text-2xl text-primary">{feature.stat}</span>
                   <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{feature.statLabel}</span>
                 </div>
-                <div className="absolute bottom-0 left-0 h-0.5 w-0 bg-gradient-primary transition-all duration-500 group-hover:w-full" />
               </motion.div>
             ))}
           </div>
@@ -322,7 +337,6 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-20 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">Modules opérationnels</p>
               <h2 className="font-display text-4xl leading-tight text-foreground lg:text-5xl">
                 Une plateforme,<br /><span className="italic text-foreground/70">zéro friction.</span>
               </h2>
@@ -360,7 +374,6 @@ export default function LandingPage() {
         </div>
         <div className="relative mx-auto max-w-7xl px-6">
           <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-20 text-center">
-            <p className="mb-4 text-xs font-bold uppercase tracking-widest text-primary">Impact mesurable</p>
             <h2 className="font-display text-4xl text-foreground dark:text-white lg:text-5xl">
               Des résultats, <span className="italic text-muted-foreground dark:text-brand-cream/60">pas des promesses.</span>
             </h2>
@@ -388,7 +401,6 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="grid items-center gap-16 lg:grid-cols-2">
             <motion.div initial={{ x: -16 }} whileInView={{ x: 0 }} viewport={{ once: true, amount: 0.2 }} className="space-y-8">
-              <p className="text-xs font-bold uppercase tracking-widest text-primary">Pourquoi Smart-HR</p>
               <h2 className="font-display text-4xl leading-tight text-foreground lg:text-5xl">
                 Conçu pour<br /><span className="italic text-foreground/70">les équipes RH</span><br />modernes.
               </h2>
@@ -430,7 +442,6 @@ export default function LandingPage() {
               <div className="absolute -bottom-16 -left-16 h-64 w-64 rounded-full bg-black/10 blur-3xl" />
             </div>
             <div className="relative space-y-6">
-              <p className="text-xs font-bold uppercase tracking-widest text-white/60">Accès immédiat</p>
               <h2 className="font-display text-4xl text-white lg:text-6xl">
                 Prêt à transformer<br /><span className="italic text-white/80">votre culture RH ?</span>
               </h2>
