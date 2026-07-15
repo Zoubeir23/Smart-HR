@@ -318,7 +318,7 @@ export default function LandingPage() {
             ].map((feature) => (
               <motion.div key={feature.title} initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} transition={{ duration: 0.6, delay: feature.delay }} className="group relative overflow-hidden rounded-3xl border border-border bg-card p-7 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-md">
                 <div className="flex items-center gap-2.5">
-                  <feature.icon className="h-4.5 w-4.5 text-primary" />
+                  <feature.icon className="h-5 w-5 text-primary" />
                   <h3 className="font-display text-lg text-foreground">{feature.title}</h3>
                 </div>
                 <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{feature.desc}</p>
