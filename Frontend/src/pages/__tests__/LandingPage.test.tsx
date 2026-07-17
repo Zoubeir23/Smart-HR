@@ -75,7 +75,7 @@ describe('LandingPage', () => {
     });
   });
 
-  describe('Section Carrières — offres publiques', () => {
+  describe("Section Offres d'emploi — offres publiques", () => {
     it('affiche les offres publiées sans authentification', async () => {
       useAuthMock.mockReturnValue({ isAuthenticated: false });
       getJobsMock.mockResolvedValueOnce({
