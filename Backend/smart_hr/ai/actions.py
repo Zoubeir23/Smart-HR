@@ -113,7 +113,7 @@ def detect_action_intent(question: str) -> str | None:
     Retourne le nom de l'action si détectée, None sinon.
 
     Actions supportées : 'leave_request', 'leave_approval', 'objective_creation',
-    'onboarding_creation'
+    'onboarding_creation', 'job_offer_creation'
 
     `leave_approval` (RH valide/refuse la demande d'un tiers) est vérifié avant
     `leave_request` (un employé pose son propre congé) car les deux formulations
@@ -128,6 +128,8 @@ def detect_action_intent(question: str) -> str | None:
         return "objective_creation"
     if any(kw in lower for kw in _ONBOARDING_INTENT_KEYWORDS):
         return "onboarding_creation"
+    if any(kw in lower for kw in _JOB_OFFER_INTENT_KEYWORDS):
+        return "job_offer_creation"
     return None
 
 
