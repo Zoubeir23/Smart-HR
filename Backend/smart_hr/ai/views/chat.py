@@ -302,6 +302,7 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
         if user_role in ("EMPLOYEE", "RH", "ADMIN"):
             from smart_hr.ai.actions import detect_action_intent
             from smart_hr.ai.actions import execute_action
+            from smart_hr.ai.actions import extract_job_offer_parameters
             from smart_hr.ai.actions import extract_leave_approval_parameters
             from smart_hr.ai.actions import extract_leave_parameters
             from smart_hr.ai.actions import extract_objective_parameters
@@ -319,6 +320,9 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
                 action_result = execute_action(action_intent, request.user, params)
             elif action_intent == "onboarding_creation":
                 params = extract_onboarding_parameters(question)
+                action_result = execute_action(action_intent, request.user, params)
+            elif action_intent == "job_offer_creation":
+                params = extract_job_offer_parameters(question)
                 action_result = execute_action(action_intent, request.user, params)
 
         # Le contenu du document n'est injecté que dans le prompt de CE tour ;
