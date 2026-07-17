@@ -216,6 +216,10 @@ _ACTION_ERROR_MESSAGES = {
         "\n\nJe n'ai pas compris votre décision. Précisez si vous souhaitez valider ou refuser la demande de congé."
     ),
     "no_pending_leave": "\n\nAucune demande de congé en attente n'a été trouvée pour cet employé.",
+    "job_offer_info_missing": (
+        "\n\nPour créer l'offre automatiquement, précisez au minimum l'intitulé du poste, "
+        "le département et une description du poste."
+    ),
 }
 
 
