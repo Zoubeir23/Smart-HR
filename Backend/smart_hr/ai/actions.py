@@ -449,6 +449,8 @@ def execute_action(action_intent: str, user, params: dict) -> dict:
         return _execute_objective_creation(user, params)
     if action_intent == "onboarding_creation":
         return _execute_onboarding_creation(user, params)
+    if action_intent == "job_offer_creation":
+        return _execute_job_offer_creation(user, params)
     return {"success": False, "error": f"Action '{action_intent}' non supportée."}
 
 
