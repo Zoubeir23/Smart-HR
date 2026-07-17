@@ -732,3 +732,56 @@ def _execute_onboarding_creation(user, params: dict) -> dict:
             "steps_count": len(steps_payload),
         },
     }
+
+
+# ─── Agent Recrutement — exécution ───────────────────────────────────────────
+
+
+def _execute_job_offer_creation(user, params: dict) -> dict:
+    """Crée une offre d'emploi via le serializer DRF existant — même chemin de
+    validation que POST /api/v1/recruitment/job-offers/. Réservé RH/Admin
+    (même règle que `JobOfferViewSet.get_permissions` pour l'action 'create')."""
+    from smart_hr.recruitment.serializers import JobOfferSerializer
+
+    user_role = getattr(user, "role", "").upper()
+    if user_role not in ("RH", "ADMIN"):
+        return {
+            "success": False,
+            "error": "Seuls les responsables RH peuvent créer une offre d'emploi.",
+        }
+
+    title = params.get("title")
+    department = params.get("department")
+    description = params.get("description")
+    if not title or not department or not description:
+        return {"success": False, "error": "job_offer_info_missing"}
+
+    payload = {
+        "title": title,
+        "department": department,
+        "location": params.get("location") or "",
+        "job_type": params.get("job_type", "full_time"),
+        "description": description,
+        "requirements": params.get("requirements") or "",
+        "salary_range": params.get("salary_range") or "",
+    }
+
+    serializer = JobOfferSerializer(data=payload)
+    if not serializer.is_valid():
+        logger.warning("Offre d'emploi via chatbot invalide pour %s : %s", user.email, serializer.errors)
+        return {"success": False, "error": "Impossible de créer cette offre avec les informations fournies."}
+
+    job_offer = serializer.save(created_by=user)
+
+    return {
+        "success": True,
+        "type": "job_offer_created",
+        "label": "Offre d'emploi créée",
+        "data": {
+            "job_offer_id": job_offer.pk,
+            "title": job_offer.title,
+            "department": job_offer.department,
+            "job_type_display": job_offer.get_job_type_display(),
+            "status_display": job_offer.get_status_display(),
+        },
+    }
