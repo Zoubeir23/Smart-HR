@@ -188,6 +188,13 @@ def _format_action_success_suffix(action_result: dict) -> str:
             f"\n\n✅ Demande de congé de **{decision_data['employee_name']}** {verb} : "
             f"**{decision_data['leave_type']}** du {decision_data['start_date']} au {decision_data['end_date']}."
         )
+    if action_result["type"] == "job_offer_created":
+        job_offer_data = action_result["data"]
+        return (
+            f"\n\n✅ Offre d'emploi créée : **{job_offer_data['title']}** "
+            f"({job_offer_data['department']}, {job_offer_data['job_type_display']}) — "
+            f"{job_offer_data['status_display']}."
+        )
     return ""
 
 
