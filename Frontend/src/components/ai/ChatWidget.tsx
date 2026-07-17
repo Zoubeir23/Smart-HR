@@ -22,8 +22,8 @@ function buildWelcomeText(firstName?: string, role?: string): string {
   // rôle : seuls RH/Admin valident les congés d'un tiers ; un employé pose
   // ses propres congés ; un candidat n'a pas d'action, uniquement des questions.
   const invitationsByRole: Record<string, string> = {
-    ADMIN: 'Posez-moi une question ou demandez-moi d\'agir (ex: "Valide le congé de Awa Diallo").',
-    RH: 'Posez-moi une question ou demandez-moi d\'agir (ex: "Valide le congé de Awa Diallo").',
+    ADMIN: 'Posez-moi une question ou demandez-moi d\'agir (ex: "Crée une offre d\'emploi pour un développeur Django").',
+    RH: 'Posez-moi une question ou demandez-moi d\'agir (ex: "Crée une offre d\'emploi pour un développeur Django").',
     EMPLOYEE: 'Posez-moi une question ou demandez-moi d\'agir (ex: "Pose un congé du 12 au 15 août").',
     CANDIDATE: 'Posez-moi une question (ex: "Où en est ma candidature ?").',
   };
@@ -35,7 +35,7 @@ function buildWelcomeText(firstName?: string, role?: string): string {
 /**
  * Widget IA flottant, présent sur toutes les pages authentifiées (monté une
  * seule fois par `DashboardLayout`) — permet de dialoguer avec l'assistant IA
- * (et de déclencher les agents actionnables congés/OKR/onboarding) sans
+ * (et de déclencher les agents actionnables congés/OKR/onboarding/recrutement) sans
  * quitter la page en cours. Conserve son propre fil de conversation, distinct
  * de la page complète `/ai-chat`.
  */
