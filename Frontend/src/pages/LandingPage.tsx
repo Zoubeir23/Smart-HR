@@ -173,7 +173,7 @@ export default function LandingPage() {
   const NAV_LINKS = [
     { label: 'Produit', id: 'produit' },
     { label: 'Modules', id: 'modules' },
-    { label: 'Carrières', id: 'carrieres' },
+    { label: "Offres d'emploi", id: 'carrieres' },
     { label: 'Tarifs', id: 'tarifs' },
   ];
 
@@ -483,7 +483,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CARRIÈRES #carrieres — offres publiques, candidature après connexion */}
+      {/* OFFRES D'EMPLOI #carrieres — offres publiques, candidature après connexion */}
       <section id="carrieres" className="bg-background py-28">
         <div className="mx-auto max-w-7xl px-6">
           <motion.div initial={{ y: 20 }} whileInView={{ y: 0 }} viewport={{ once: true, amount: 0.2 }} className="mb-16 max-w-2xl">
