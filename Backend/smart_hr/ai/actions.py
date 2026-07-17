@@ -89,6 +89,23 @@ _ONBOARDING_INTENT_KEYWORDS = (
     "nouvelle recrue",
 )
 
+_JOB_OFFER_INTENT_KEYWORDS = (
+    "offre d'emploi",
+    "offre d emploi",
+    "crée une offre",
+    "creer une offre",
+    "créer une offre",
+    "publier une offre",
+    "publie une offre",
+    "poste à pourvoir",
+    "poste a pourvoir",
+    "ouvrir un poste",
+    "ouvre un poste",
+    "recruter pour",
+    "annonce de recrutement",
+    "fiche de poste",
+)
+
 
 def detect_action_intent(question: str) -> str | None:
     """
