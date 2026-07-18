@@ -290,6 +290,8 @@ export default function AIChatPage() {
           text: responseText,
           sender: 'ai',
           timestamp: new Date(),
+          actionType: data?.action_type || undefined,
+          actionData: data?.action_data,
         },
       ]);
 
