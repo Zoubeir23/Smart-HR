@@ -84,9 +84,7 @@ export const employeeService = {
   importEmployees: async (file: File): Promise<BulkImportResult> => {
     const formData = new FormData();
     formData.append('file', file);
-    const { data } = await api.post('/personnel/employees/import/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const { data } = await api.post('/personnel/employees/import/', formData);
     return data;
   },
 
