@@ -49,6 +49,12 @@ export interface Conversation {
   updated_at: string;
 }
 
+export interface SupportedAction {
+  intent: string;
+  label: string;
+  example: string;
+}
+
 export interface ChatHistoryEntry {
   id: number;
   conversation: number | null;
@@ -129,6 +135,18 @@ export const aiService = {
     try {
       const { data } = await api.get('/ai/chat/');
       return data;
+    } catch (error: unknown) {
+      throw new Error(getAxiosErrorMessage(error));
+    }
+  },
+
+  // Intents actionnables visibles pour le rôle connecté (ex: RH voit
+  // "Créer une offre d'emploi", un employé ne le voit pas) — construit une
+  // aide contextuelle dynamique plutôt qu'une liste figée en dur.
+  getSupportedActions: async (): Promise<SupportedAction[]> => {
+    try {
+      const { data } = await api.get('/ai/actions/');
+      return data?.actions ?? [];
     } catch (error: unknown) {
       throw new Error(getAxiosErrorMessage(error));
     }

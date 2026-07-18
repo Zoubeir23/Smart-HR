@@ -17,6 +17,49 @@ from datetime import date
 
 logger = logging.getLogger(__name__)
 
+# ─── Métadonnées des intents (introspection pour le frontend) ───────────────
+
+ACTION_METADATA: dict[str, dict] = {
+    "leave_request": {
+        "label": "Poser un congé",
+        "roles": ("EMPLOYEE", "RH", "ADMIN"),
+        "example": "Pose un congé du 12 au 15 août",
+    },
+    "leave_approval": {
+        "label": "Valider ou refuser un congé",
+        "roles": ("RH", "ADMIN"),
+        "example": "Valide le congé de Awa Diallo",
+    },
+    "objective_creation": {
+        "label": "Créer un objectif OKR",
+        "roles": ("EMPLOYEE", "RH", "ADMIN"),
+        "example": "Crée un objectif de 10 clients signés pour Q1 2026",
+    },
+    "onboarding_creation": {
+        "label": "Créer un programme d'intégration",
+        "roles": ("RH", "ADMIN"),
+        "example": "Crée un onboarding pour Awa Diallo, développeuse backend",
+    },
+    "job_offer_creation": {
+        "label": "Créer une offre d'emploi",
+        "roles": ("RH", "ADMIN"),
+        "example": "Crée une offre d'emploi pour un développeur Django à Dakar",
+    },
+}
+
+
+def list_supported_actions_for_role(role: str) -> list[dict]:
+    """Retourne les intents actionnables du chat visibles pour ce rôle
+    (utilisé par GET /api/v1/ai/actions/ pour construire une aide contextuelle
+    côté frontend plutôt qu'une liste figée en dur)."""
+    role_upper = (role or "").upper()
+    return [
+        {"intent": intent, "label": meta["label"], "example": meta["example"]}
+        for intent, meta in ACTION_METADATA.items()
+        if role_upper in meta["roles"]
+    ]
+
+
 # ─── Intents supportés ───────────────────────────────────────────────────────
 
 _LEAVE_INTENT_KEYWORDS = (
@@ -89,6 +132,23 @@ _ONBOARDING_INTENT_KEYWORDS = (
     "nouvelle recrue",
 )
 
+_JOB_OFFER_INTENT_KEYWORDS = (
+    "offre d'emploi",
+    "offre d emploi",
+    "crée une offre",
+    "creer une offre",
+    "créer une offre",
+    "publier une offre",
+    "publie une offre",
+    "poste à pourvoir",
+    "poste a pourvoir",
+    "ouvrir un poste",
+    "ouvre un poste",
+    "recruter pour",
+    "annonce de recrutement",
+    "fiche de poste",
+)
+
 
 def detect_action_intent(question: str) -> str | None:
     """
@@ -96,7 +156,7 @@ def detect_action_intent(question: str) -> str | None:
     Retourne le nom de l'action si détectée, None sinon.
 
     Actions supportées : 'leave_request', 'leave_approval', 'objective_creation',
-    'onboarding_creation'
+    'onboarding_creation', 'job_offer_creation'
 
     `leave_approval` (RH valide/refuse la demande d'un tiers) est vérifié avant
     `leave_request` (un employé pose son propre congé) car les deux formulations
@@ -111,6 +171,8 @@ def detect_action_intent(question: str) -> str | None:
         return "objective_creation"
     if any(kw in lower for kw in _ONBOARDING_INTENT_KEYWORDS):
         return "onboarding_creation"
+    if any(kw in lower for kw in _JOB_OFFER_INTENT_KEYWORDS):
+        return "job_offer_creation"
     return None
 
 
@@ -346,6 +408,74 @@ def extract_onboarding_parameters(question: str) -> dict:
     return parsed
 
 
+# ─── Agent Recrutement — génération de l'offre d'emploi via Gemini ──────────
+
+
+def extract_job_offer_parameters(question: str) -> dict:
+    """
+    Génère une offre d'emploi structurée depuis le message via le LLM actif —
+    même principe de génération de contenu que `extract_onboarding_parameters`,
+    et même structure de sortie que POST /api/v1/recruitment/job-offers/generate/
+    (pour ne pas dupliquer les règles de validation du serializer).
+
+    Retourne :
+        {
+            "title": str | None,
+            "department": str | None,
+            "location": str,
+            "job_type": "full_time|part_time|contract|internship",
+            "description": str | None,
+            "requirements": str,
+            "salary_range": str,
+        }
+    """
+    prompt = (
+        "Analyse ce message d'un responsable RH qui souhaite créer une offre d'emploi.\n"
+        "Retourne UNIQUEMENT un JSON valide, sans markdown ni backticks.\n\n"
+        f'Message : "{question}"\n\n'
+        "JSON attendu :\n"
+        "{\n"
+        '  "title": "intitulé du poste, ou null si non déterminable",\n'
+        '  "department": "nom du département/service concerné, ou null si non déterminable",\n'
+        '  "location": "lieu de travail mentionné, ou chaîne vide",\n'
+        '  "job_type": "full_time|part_time|contract|internship (full_time par défaut si ambigu)",\n'
+        '  "description": "description complète et engageante du poste (plusieurs phrases), '
+        'ou null si aucun contexte suffisant",\n'
+        '  "requirements": "liste des prérequis, un par ligne (séparés par \\n), ou chaîne vide",\n'
+        '  "salary_range": "fourchette salariale si mentionnée, sinon chaîne vide"\n'
+        "}\n\n"
+        "- Ne déduis jamais title ou description s'ils ne sont pas identifiables dans le message\n"
+        "- Si un poste/contexte métier est mentionné, génère une description et des prérequis pertinents"
+    )
+
+    try:
+        from smart_hr.ai.llm_providers import get_llm_provider
+        from smart_hr.ai.llm_providers.base import strip_llm_code_fences
+
+        provider = get_llm_provider()
+        raw = strip_llm_code_fences(provider.extract_json(prompt))
+        parsed = json.loads(raw)
+    except Exception as exc:
+        logger.warning("Génération LLM de l'offre d'emploi échouée : %s", exc)
+        parsed = {
+            "title": None,
+            "department": None,
+            "location": "",
+            "job_type": "full_time",
+            "description": None,
+            "requirements": "",
+            "salary_range": "",
+        }
+
+    valid_job_types = {"full_time", "part_time", "contract", "internship"}
+    if parsed.get("job_type") not in valid_job_types:
+        parsed["job_type"] = "full_time"
+    parsed.setdefault("location", "")
+    parsed.setdefault("requirements", "")
+    parsed.setdefault("salary_range", "")
+    return parsed
+
+
 # ─── Exécution d'actions ─────────────────────────────────────────────────────
 
 
@@ -362,6 +492,8 @@ def execute_action(action_intent: str, user, params: dict) -> dict:
         return _execute_objective_creation(user, params)
     if action_intent == "onboarding_creation":
         return _execute_onboarding_creation(user, params)
+    if action_intent == "job_offer_creation":
+        return _execute_job_offer_creation(user, params)
     return {"success": False, "error": f"Action '{action_intent}' non supportée."}
 
 
@@ -641,5 +773,58 @@ def _execute_onboarding_creation(user, params: dict) -> dict:
             "employee_name": employee.user.get_full_name(),
             "program_type_display": program.get_program_type_display(),
             "steps_count": len(steps_payload),
+        },
+    }
+
+
+# ─── Agent Recrutement — exécution ───────────────────────────────────────────
+
+
+def _execute_job_offer_creation(user, params: dict) -> dict:
+    """Crée une offre d'emploi via le serializer DRF existant — même chemin de
+    validation que POST /api/v1/recruitment/job-offers/. Réservé RH/Admin
+    (même règle que `JobOfferViewSet.get_permissions` pour l'action 'create')."""
+    from smart_hr.recruitment.serializers import JobOfferSerializer
+
+    user_role = getattr(user, "role", "").upper()
+    if user_role not in ("RH", "ADMIN"):
+        return {
+            "success": False,
+            "error": "Seuls les responsables RH peuvent créer une offre d'emploi.",
+        }
+
+    title = params.get("title")
+    department = params.get("department")
+    description = params.get("description")
+    if not title or not department or not description:
+        return {"success": False, "error": "job_offer_info_missing"}
+
+    payload = {
+        "title": title,
+        "department": department,
+        "location": params.get("location") or "",
+        "job_type": params.get("job_type", "full_time"),
+        "description": description,
+        "requirements": params.get("requirements") or "",
+        "salary_range": params.get("salary_range") or "",
+    }
+
+    serializer = JobOfferSerializer(data=payload)
+    if not serializer.is_valid():
+        logger.warning("Offre d'emploi via chatbot invalide pour %s : %s", user.email, serializer.errors)
+        return {"success": False, "error": "Impossible de créer cette offre avec les informations fournies."}
+
+    job_offer = serializer.save(created_by=user)
+
+    return {
+        "success": True,
+        "type": "job_offer_created",
+        "label": "Offre d'emploi créée",
+        "data": {
+            "job_offer_id": job_offer.pk,
+            "title": job_offer.title,
+            "department": job_offer.department,
+            "job_type_display": job_offer.get_job_type_display(),
+            "status_display": job_offer.get_status_display(),
         },
     }
