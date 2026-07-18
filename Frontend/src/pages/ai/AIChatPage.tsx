@@ -75,7 +75,7 @@ function formatTime(date: Date) {
   return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
 }
 
-function chatHistoryToMessages(history: ChatHistoryEntry[]): Message[] {
+export function chatHistoryToMessages(history: ChatHistoryEntry[]): Message[] {
   return history.flatMap((entry) => [
     { id: `${entry.id}-q`, text: entry.question, sender: 'user' as const, timestamp: new Date(entry.created_at) },
     {
