@@ -3,6 +3,21 @@
 from __future__ import annotations
 
 
+def require_role(user, allowed_roles: tuple[str, ...], error_message: str) -> dict | None:
+    """Garde-fou de permission avant l'exécution d'une action du chatbot.
+
+    Retourne None si l'utilisateur est autorisé, ou le dict {success: False, error}
+    à renvoyer tel quel sinon — point de vérification unique pour les agents dont
+    la permission se résume à un rôle fixe (RH/Admin). Les agents avec un modèle
+    de permission plus riche (ex. `_execute_leave_approval`, qui autorise aussi
+    les managers de département via `conge.services._assert_can_approve_or_reject`)
+    ne passent pas par ce garde-fou et gèrent leur propre logique."""
+    user_role = getattr(user, "role", "").upper()
+    if user_role not in allowed_roles:
+        return {"success": False, "error": error_message}
+    return None
+
+
 def find_employee_by_full_name(full_name: str):
     """Résout un employé par correspondance exacte (insensible à la casse) sur
     prénom+nom. Retourne None si aucune correspondance ou plusieurs candidats
