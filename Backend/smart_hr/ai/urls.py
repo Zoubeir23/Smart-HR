@@ -4,6 +4,7 @@ from rest_framework.routers import DefaultRouter
 
 from smart_hr.ai.views import ChatHistoryViewSet
 from smart_hr.ai.views import ConversationViewSet
+from smart_hr.ai.views.actions import SupportedActionsView
 from smart_hr.ai.views.interview import GenerateInterviewFeedbackView
 from smart_hr.ai.views.interview import GenerateInterviewQuestionsView
 from smart_hr.ai.views.interview_session import InterviewSessionCreateView
@@ -17,6 +18,7 @@ router.register("conversations", ConversationViewSet, basename="conversation")
 
 urlpatterns = [
     path("", include(router.urls)),
+    path("actions/", SupportedActionsView.as_view(), name="supported-actions"),
     path("interview/questions/", GenerateInterviewQuestionsView.as_view(), name="interview-questions"),
     path("interview/feedback/", GenerateInterviewFeedbackView.as_view(), name="interview-feedback"),
     path("interview/sessions/", InterviewSessionListView.as_view(), name="interview-session-list"),
