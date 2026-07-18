@@ -1,46 +1,13 @@
-"""Agent Dashboard — validation/refus de congé via Gemini."""
+"""Agent Dashboard — exécution de la validation/refus de congé.
+
+L'extraction des paramètres (employé, décision) est déléguée au function-calling
+natif du LLM actif (voir `tool_schemas.py`)."""
 
 from __future__ import annotations
 
-import json
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-def extract_leave_approval_parameters(question: str) -> dict:
-    """
-    Extrait de quel employé et de quelle décision (approve/reject) il s'agit
-    pour une validation/refus de congé demandée via le chat.
-
-    Retourne : {"employee_name": str | None, "decision": "approve|reject|None"}
-    """
-    prompt = (
-        "Analyse ce message d'un responsable RH qui souhaite valider ou refuser "
-        "une demande de congé d'un employé.\n"
-        "Retourne UNIQUEMENT un JSON valide, sans markdown ni backticks.\n\n"
-        f'Message : "{question}"\n\n'
-        "JSON attendu :\n"
-        "{\n"
-        '  "employee_name": "prénom et nom complets de l\'employé mentionné, ou null",\n'
-        '  "decision": "approve" si le RH valide/approuve, "reject" si le RH refuse/rejette, sinon null\n'
-        "}\n"
-    )
-
-    try:
-        from smart_hr.ai.llm_providers import get_llm_provider
-        from smart_hr.ai.llm_providers.base import strip_llm_code_fences
-
-        provider = get_llm_provider()
-        raw = strip_llm_code_fences(provider.extract_json(prompt))
-        parsed = json.loads(raw)
-    except Exception as exc:
-        logger.warning("Extraction LLM de la décision de congé échouée : %s", exc)
-        parsed = {"employee_name": None, "decision": None}
-
-    if parsed.get("decision") not in ("approve", "reject"):
-        parsed["decision"] = None
-    return parsed
 
 
 def execute_leave_approval(user, params: dict) -> dict:

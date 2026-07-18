@@ -2,9 +2,11 @@
 Moteur d'actions métier du chatbot Smart-HR.
 
 Flux :
-  1. detect_action_intent()      — détecte si le message contient une intention d'action
-  2. extract_leave_parameters()  — extrait les paramètres via le LLM actif (dates, type, etc.)
-  3. execute_action()            — exécute l'action Django (crée le congé, etc.)
+  1. build_available_tools(role)          — liste des tools visibles pour ce rôle
+  2. provider.detect_action(...)          — function-calling natif du LLM actif :
+                                             détecte l'action ET en extrait les
+                                             paramètres en un seul appel structuré
+  3. execute_action()                     — exécute l'action Django (crée le congé, etc.)
   4. Retourne un dict structuré {success, type, label, data} pour la réponse API
 
 Chaque agent (congé, validation de congé, OKR, onboarding, offre d'emploi) vit dans
@@ -15,33 +17,23 @@ son propre module ; ce fichier ne fait que ré-exporter l'API publique et dispat
 from __future__ import annotations
 
 from smart_hr.ai.actions.intent_detection import ACTION_METADATA
-from smart_hr.ai.actions.intent_detection import detect_action_intent
 from smart_hr.ai.actions.intent_detection import list_supported_actions_for_role
 from smart_hr.ai.actions.job_offer import execute_job_offer_creation
-from smart_hr.ai.actions.job_offer import extract_job_offer_parameters
 from smart_hr.ai.actions.leave import execute_leave_request
-from smart_hr.ai.actions.leave import extract_leave_parameters
 from smart_hr.ai.actions.leave_approval import execute_leave_approval
-from smart_hr.ai.actions.leave_approval import extract_leave_approval_parameters
 from smart_hr.ai.actions.objective import execute_objective_creation
-from smart_hr.ai.actions.objective import extract_objective_parameters
 from smart_hr.ai.actions.onboarding import execute_onboarding_creation
-from smart_hr.ai.actions.onboarding import extract_onboarding_parameters
+from smart_hr.ai.actions.tool_schemas import build_available_tools
 
 __all__ = [
     "ACTION_METADATA",
-    "detect_action_intent",
+    "build_available_tools",
     "execute_action",
     "execute_job_offer_creation",
     "execute_leave_approval",
     "execute_leave_request",
     "execute_objective_creation",
     "execute_onboarding_creation",
-    "extract_job_offer_parameters",
-    "extract_leave_approval_parameters",
-    "extract_leave_parameters",
-    "extract_objective_parameters",
-    "extract_onboarding_parameters",
     "list_supported_actions_for_role",
 ]
 

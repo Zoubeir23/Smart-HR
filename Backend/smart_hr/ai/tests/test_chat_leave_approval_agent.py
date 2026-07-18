@@ -18,16 +18,18 @@ CHAT_URL = "/api/v1/ai/chat/"
 
 
 class _FakeChatProvider:
+    """Simule le function-calling natif : `detect_action` retourne directement
+    (nom_de_l_action, arguments) comme le ferait un fournisseur réel."""
+
+    def __init__(self, action_intent=None, action_params=None):
+        self._action_intent = action_intent
+        self._action_params = action_params or {}
+
     def generate_response(self, system_prompt, history, question):
         return "Voici votre réponse."
 
-
-class _FakeExtractionProvider:
-    def __init__(self, json_response: str):
-        self._json_response = json_response
-
-    def extract_json(self, prompt):
-        return self._json_response
+    def detect_action(self, system_prompt, question, tools):
+        return self._action_intent, self._action_params
 
 
 @pytest.fixture
@@ -64,12 +66,12 @@ def _authenticated_client(as_user) -> APIClient:
 
 class TestLeaveApprovalAgentIntegration:
     def test_chat_message_approves_leave_end_to_end(self, rh_user, employee, pending_leave):
-        json_response = '{"employee_name": "Awa Diallo", "decision": "approve"}'
+        provider = _FakeChatProvider(
+            action_intent="leave_approval",
+            action_params={"employee_name": "Awa Diallo", "decision": "approve"},
+        )
         client = _authenticated_client(rh_user)
-        with (
-            patch("smart_hr.ai.views.chat.get_llm_provider", return_value=_FakeChatProvider()),
-            patch("smart_hr.ai.llm_providers.get_llm_provider", return_value=_FakeExtractionProvider(json_response)),
-        ):
+        with patch("smart_hr.ai.views.chat.get_llm_provider", return_value=provider):
             response = client.post(
                 CHAT_URL,
                 {"question": "Valide le congé de Awa Diallo"},
@@ -83,12 +85,12 @@ class TestLeaveApprovalAgentIntegration:
         assert pending_leave.status == LeaveRequest.Status.APPROVED
 
     def test_chat_message_rejects_leave_end_to_end(self, rh_user, employee, pending_leave):
-        json_response = '{"employee_name": "Awa Diallo", "decision": "reject"}'
+        provider = _FakeChatProvider(
+            action_intent="leave_approval",
+            action_params={"employee_name": "Awa Diallo", "decision": "reject"},
+        )
         client = _authenticated_client(rh_user)
-        with (
-            patch("smart_hr.ai.views.chat.get_llm_provider", return_value=_FakeChatProvider()),
-            patch("smart_hr.ai.llm_providers.get_llm_provider", return_value=_FakeExtractionProvider(json_response)),
-        ):
+        with patch("smart_hr.ai.views.chat.get_llm_provider", return_value=provider):
             response = client.post(
                 CHAT_URL,
                 {"question": "Refuse le congé de Awa Diallo"},
@@ -101,13 +103,13 @@ class TestLeaveApprovalAgentIntegration:
         assert pending_leave.status == LeaveRequest.Status.REJECTED
 
     def test_employee_cannot_approve_someone_elses_leave(self, employee_user, employee, pending_leave):
+        """Un EMPLOYEE n'a pas accès au tool leave_approval (filtré par rôle dans
+        `build_available_tools`, réservé RH/Admin) : le function-calling ne peut
+        donc pas le déclencher, quelle que soit la question posée."""
         other_employee_user = UserFactory.create(role=User.Role.EMPLOYEE, first_name="Autre", last_name="Employé")
-        json_response = '{"employee_name": "Awa Diallo", "decision": "approve"}'
+        provider = _FakeChatProvider()
         client = _authenticated_client(other_employee_user)
-        with (
-            patch("smart_hr.ai.views.chat.get_llm_provider", return_value=_FakeChatProvider()),
-            patch("smart_hr.ai.llm_providers.get_llm_provider", return_value=_FakeExtractionProvider(json_response)),
-        ):
+        with patch("smart_hr.ai.views.chat.get_llm_provider", return_value=provider):
             response = client.post(
                 CHAT_URL,
                 {"question": "Valide le congé de Awa Diallo"},

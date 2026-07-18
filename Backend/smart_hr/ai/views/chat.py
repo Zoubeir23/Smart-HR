@@ -244,6 +244,36 @@ def _format_action_result_suffix(action_result: dict) -> str:
     return f"\n\n⚠️ {error}" if error else ""
 
 
+_ACTION_ROLES = ("EMPLOYEE", "RH", "ADMIN")
+
+
+def _run_chatbot_action(user, user_role: str, question: str) -> dict:
+    """Détecte et exécute une éventuelle action métier (congé, OKR, onboarding,
+    offre d'emploi) via le function-calling natif du LLM actif.
+
+    Le tool-calling ne connaît que les tools exposés par `build_available_tools`
+    (déjà filtrés par rôle) — un utilisateur ne voit donc jamais un tool qui ne
+    lui est pas destiné, sans qu'un message d'erreur de permission ne pollue la
+    réponse chat normale. Retourne {} si aucune action n'a été détectée/exécutée."""
+    if user_role not in _ACTION_ROLES:
+        return {}
+
+    from smart_hr.ai.actions import build_available_tools
+    from smart_hr.ai.actions import execute_action
+
+    tools = build_available_tools(user_role)
+    if not tools:
+        return {}
+
+    provider = get_llm_provider()
+    system_prompt = f"Tu es l'assistant RH de Smart-HR. Utilisateur : {user.get_full_name() or user.email} (rôle {user_role})."
+    action_intent, params = provider.detect_action(system_prompt, question, tools)
+    if not action_intent:
+        return {}
+
+    return execute_action(action_intent, user, params)
+
+
 # ─── ViewSet ─────────────────────────────────────────────────────────────────
 
 
@@ -296,40 +326,8 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
             conversation.title = _truncate_title(question)
         conversation.save()
 
-        action_intent = None
-        action_result: dict = {}
         user_role = getattr(request.user, "role", "").upper()
-        if user_role in ("EMPLOYEE", "RH", "ADMIN"):
-            from smart_hr.ai.actions import ACTION_METADATA
-            from smart_hr.ai.actions import detect_action_intent
-            from smart_hr.ai.actions import execute_action
-            from smart_hr.ai.actions import extract_job_offer_parameters
-            from smart_hr.ai.actions import extract_leave_approval_parameters
-            from smart_hr.ai.actions import extract_leave_parameters
-            from smart_hr.ai.actions import extract_objective_parameters
-            from smart_hr.ai.actions import extract_onboarding_parameters
-
-            action_intent = detect_action_intent(question)
-            # Un intent détecté pour un rôle non autorisé (ex: EMPLOYEE demandant
-            # une offre d'emploi) ne doit pas déclencher d'appel LLM d'extraction
-            # ni de message d'erreur d'action : on répond simplement en chat normal.
-            if action_intent and user_role not in ACTION_METADATA.get(action_intent, {}).get("roles", ()):
-                action_intent = None
-            if action_intent == "leave_request":
-                params = extract_leave_parameters(question)
-                action_result = execute_action(action_intent, request.user, params)
-            elif action_intent == "leave_approval":
-                params = extract_leave_approval_parameters(question)
-                action_result = execute_action(action_intent, request.user, params)
-            elif action_intent == "objective_creation":
-                params = extract_objective_parameters(question, can_manage=user_role in ("RH", "ADMIN"))
-                action_result = execute_action(action_intent, request.user, params)
-            elif action_intent == "onboarding_creation":
-                params = extract_onboarding_parameters(question)
-                action_result = execute_action(action_intent, request.user, params)
-            elif action_intent == "job_offer_creation":
-                params = extract_job_offer_parameters(question)
-                action_result = execute_action(action_intent, request.user, params)
+        action_result = _run_chatbot_action(request.user, user_role, question)
 
         # Le contenu du document n'est injecté que dans le prompt de CE tour ;
         # l'historique stocke la question de l'utilisateur avec un simple

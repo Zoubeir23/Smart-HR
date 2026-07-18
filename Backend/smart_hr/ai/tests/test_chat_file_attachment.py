@@ -30,6 +30,9 @@ class _RecordingChatProvider:
         self.last_question = question
         return "Voici l'offre d'emploi générée à partir de votre fiche de poste."
 
+    def detect_action(self, system_prompt, question, tools):
+        return None, {}
+
 
 @pytest.fixture
 def rh_user(db) -> User:

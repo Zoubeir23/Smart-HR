@@ -1,27 +1,16 @@
 from __future__ import annotations
 
 import datetime
-from unittest.mock import patch
 
 import pytest
 
-from smart_hr.ai.actions import detect_action_intent
 from smart_hr.ai.actions import execute_action
-from smart_hr.ai.actions import extract_leave_approval_parameters
 from smart_hr.conge.models import LeaveRequest
 from smart_hr.personnel.models import Employee
 from smart_hr.users.models import User
 from smart_hr.users.tests.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
-
-
-class _FakeLLMProvider:
-    def __init__(self, json_response: str):
-        self._json_response = json_response
-
-    def extract_json(self, prompt):
-        return self._json_response
 
 
 @pytest.fixture
@@ -50,48 +39,6 @@ def pending_leave(db, employee) -> LeaveRequest:
     )
 
 
-class TestDetectLeaveApprovalIntent:
-    @pytest.mark.parametrize(
-        "message",
-        [
-            "Valider le congé de Awa Diallo",
-            "Approuve la demande de congé de Awa Diallo",
-            "Refuser le congé de Awa Diallo",
-            "Refuse la demande de congé de Awa Diallo",
-            "Rejeter la demande de congé de Awa Diallo",
-            "Rejette la demande de congé de Awa Diallo",
-        ],
-    )
-    def test_detects_leave_approval_intent(self, message):
-        assert detect_action_intent(message) == "leave_approval"
-
-    def test_leave_approval_takes_priority_over_leave_request(self):
-        assert detect_action_intent("Valider le congé de Awa Diallo") == "leave_approval"
-
-    def test_plain_leave_request_is_not_an_approval(self):
-        assert detect_action_intent("Je veux poser un congé demain") == "leave_request"
-
-
-class TestExtractLeaveApprovalParameters:
-    def test_extracts_employee_name_and_decision(self):
-        json_response = '{"employee_name": "Awa Diallo", "decision": "approve"}'
-        with patch("smart_hr.ai.llm_providers.get_llm_provider", return_value=_FakeLLMProvider(json_response)):
-            params = extract_leave_approval_parameters("Valide le congé de Awa Diallo")
-        assert params["employee_name"] == "Awa Diallo"
-        assert params["decision"] == "approve"
-
-    def test_invalid_decision_is_normalized_to_none(self):
-        json_response = '{"employee_name": "Awa Diallo", "decision": "peut-être"}'
-        with patch("smart_hr.ai.llm_providers.get_llm_provider", return_value=_FakeLLMProvider(json_response)):
-            params = extract_leave_approval_parameters("Que fait-on du congé de Awa ?")
-        assert params["decision"] is None
-
-    def test_falls_back_on_llm_error(self):
-        with patch("smart_hr.ai.llm_providers.get_llm_provider", side_effect=Exception("boom")):
-            params = extract_leave_approval_parameters("Valide le congé de Awa Diallo")
-        assert params == {"employee_name": None, "decision": None}
-
-
 class TestExecuteLeaveApproval:
     def test_rh_approves_pending_leave(self, rh_user, employee, pending_leave):
         params = {"employee_name": "Awa Diallo", "decision": "approve"}
@@ -110,6 +57,15 @@ class TestExecuteLeaveApproval:
 
     def test_missing_decision_is_rejected(self, rh_user, employee, pending_leave):
         params = {"employee_name": "Awa Diallo", "decision": None}
+        result = execute_action("leave_approval", rh_user, params)
+        assert result["success"] is False
+        assert result["error"] == "leave_decision_missing"
+
+    def test_invalid_decision_is_rejected(self, rh_user, employee, pending_leave):
+        """Garde-fou serveur : le schéma du tool contraint déjà decision à
+        approve|reject, mais l'exécution ne doit jamais faire confiance
+        aveuglément à ce que le LLM a réellement extrait."""
+        params = {"employee_name": "Awa Diallo", "decision": "peut-être"}
         result = execute_action("leave_approval", rh_user, params)
         assert result["success"] is False
         assert result["error"] == "leave_decision_missing"
