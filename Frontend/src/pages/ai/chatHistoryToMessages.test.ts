@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chatHistoryToMessages } from './AIChatPage';
+import { chatHistoryToMessages } from './chatHistoryToMessages';
 import type { ChatHistoryEntry } from '@/services/aiService';
 
 function buildEntry(overrides: Partial<ChatHistoryEntry> = {}): ChatHistoryEntry {
