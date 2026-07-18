@@ -24,21 +24,11 @@ import remarkGfm from 'remark-gfm';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/AuthContext';
-import { aiService, ChatHistoryEntry } from '@/services/aiService';
+import { aiService } from '@/services/aiService';
 import { cn } from '@/lib/utils';
 import ConversationSidebar from '@/components/ai/ConversationSidebar';
 import ActionResultCard from '@/components/ai/ActionResultCard';
-
-/* ─────────── Types ─────────── */
-
-interface Message {
-  id: string;
-  text: string;
-  sender: 'user' | 'ai';
-  timestamp: Date;
-  actionType?: string;
-  actionData?: Record<string, unknown>;
-}
+import { chatHistoryToMessages, type Message } from './chatHistoryToMessages';
 
 /* ─────────── Suggestion Chips par rôle ─────────── */
 
@@ -73,20 +63,6 @@ const SUGGESTIONS_BY_ROLE: Record<string, { text: string; icon: React.ElementTyp
 
 function formatTime(date: Date) {
   return date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-}
-
-export function chatHistoryToMessages(history: ChatHistoryEntry[]): Message[] {
-  return history.flatMap((entry) => [
-    { id: `${entry.id}-q`, text: entry.question, sender: 'user' as const, timestamp: new Date(entry.created_at) },
-    {
-      id: `${entry.id}-r`,
-      text: entry.response,
-      sender: 'ai' as const,
-      timestamp: new Date(entry.created_at),
-      actionType: entry.action_type || undefined,
-      actionData: entry.action_data,
-    },
-  ]);
 }
 
 /* ─────────── Typing Indicator ─────────── */
