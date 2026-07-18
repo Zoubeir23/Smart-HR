@@ -77,16 +77,20 @@ class TestOnboardingAgentIntegration:
         assert program.steps.count() == 2
 
     def test_employee_cannot_trigger_onboarding_creation(self, new_hire_user):
-        json_response = (
+        """Un EMPLOYEE ne doit pas déclencher l'agent d'action onboarding (ni appel
+        LLM d'extraction, ni message d'erreur) : réponse de chat normale."""
+        extraction_provider = _FakeExtractionProvider(
             '{"employee_name": "Awa Diallo", "program_type": "onboarding", "title": "X", "steps": [{"title": "Étape"}]}'
         )
         client = _authenticated_client(new_hire_user)
         with (
             patch("smart_hr.ai.views.chat.get_llm_provider", return_value=_FakeChatProvider()),
-            patch("smart_hr.ai.llm_providers.get_llm_provider", return_value=_FakeExtractionProvider(json_response)),
+            patch("smart_hr.ai.llm_providers.get_llm_provider", return_value=extraction_provider) as mocked_llm,
         ):
             response = client.post(CHAT_URL, {"question": "Crée un onboarding pour moi"}, format="json")
 
         assert response.status_code == status.HTTP_201_CREATED
-        assert "Seuls les responsables RH" in response.data["response"]
+        assert response.data["response"] == "Voici votre réponse."
+        assert response.data["action_type"] == ""
+        mocked_llm.assert_not_called()
         assert not OnboardingProgram.objects.exists()
