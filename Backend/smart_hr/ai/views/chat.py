@@ -188,6 +188,13 @@ def _format_action_success_suffix(action_result: dict) -> str:
             f"\n\n✅ Demande de congé de **{decision_data['employee_name']}** {verb} : "
             f"**{decision_data['leave_type']}** du {decision_data['start_date']} au {decision_data['end_date']}."
         )
+    if action_result["type"] == "job_offer_created":
+        job_offer_data = action_result["data"]
+        return (
+            f"\n\n✅ Offre d'emploi créée : **{job_offer_data['title']}** "
+            f"({job_offer_data['department']}, {job_offer_data['job_type_display']}) — "
+            f"{job_offer_data['status_display']}."
+        )
     return ""
 
 
@@ -209,6 +216,10 @@ _ACTION_ERROR_MESSAGES = {
         "\n\nJe n'ai pas compris votre décision. Précisez si vous souhaitez valider ou refuser la demande de congé."
     ),
     "no_pending_leave": "\n\nAucune demande de congé en attente n'a été trouvée pour cet employé.",
+    "job_offer_info_missing": (
+        "\n\nPour créer l'offre automatiquement, précisez au minimum l'intitulé du poste, "
+        "le département et une description du poste."
+    ),
 }
 
 
@@ -291,6 +302,7 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
         if user_role in ("EMPLOYEE", "RH", "ADMIN"):
             from smart_hr.ai.actions import detect_action_intent
             from smart_hr.ai.actions import execute_action
+            from smart_hr.ai.actions import extract_job_offer_parameters
             from smart_hr.ai.actions import extract_leave_approval_parameters
             from smart_hr.ai.actions import extract_leave_parameters
             from smart_hr.ai.actions import extract_objective_parameters
@@ -308,6 +320,9 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
                 action_result = execute_action(action_intent, request.user, params)
             elif action_intent == "onboarding_creation":
                 params = extract_onboarding_parameters(question)
+                action_result = execute_action(action_intent, request.user, params)
+            elif action_intent == "job_offer_creation":
+                params = extract_job_offer_parameters(question)
                 action_result = execute_action(action_intent, request.user, params)
 
         # Le contenu du document n'est injecté que dans le prompt de CE tour ;
