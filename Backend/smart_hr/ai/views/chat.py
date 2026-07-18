@@ -300,6 +300,7 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
         action_result: dict = {}
         user_role = getattr(request.user, "role", "").upper()
         if user_role in ("EMPLOYEE", "RH", "ADMIN"):
+            from smart_hr.ai.actions import ACTION_METADATA
             from smart_hr.ai.actions import detect_action_intent
             from smart_hr.ai.actions import execute_action
             from smart_hr.ai.actions import extract_job_offer_parameters
@@ -309,6 +310,11 @@ class ChatHistoryViewSet(viewsets.ModelViewSet):
             from smart_hr.ai.actions import extract_onboarding_parameters
 
             action_intent = detect_action_intent(question)
+            # Un intent détecté pour un rôle non autorisé (ex: EMPLOYEE demandant
+            # une offre d'emploi) ne doit pas déclencher d'appel LLM d'extraction
+            # ni de message d'erreur d'action : on répond simplement en chat normal.
+            if action_intent and user_role not in ACTION_METADATA.get(action_intent, {}).get("roles", ()):
+                action_intent = None
             if action_intent == "leave_request":
                 params = extract_leave_parameters(question)
                 action_result = execute_action(action_intent, request.user, params)
