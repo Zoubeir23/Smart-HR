@@ -527,6 +527,9 @@ export default function AIChatPage() {
                       >
                         {message.text}
                       </ReactMarkdown>
+                      {message.actionType && message.actionData && (
+                        <ActionResultCard actionType={message.actionType} actionData={message.actionData} />
+                      )}
                     </div>
                     <div
                       className={cn(
