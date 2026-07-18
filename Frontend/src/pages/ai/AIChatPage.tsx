@@ -78,7 +78,14 @@ function formatTime(date: Date) {
 function chatHistoryToMessages(history: ChatHistoryEntry[]): Message[] {
   return history.flatMap((entry) => [
     { id: `${entry.id}-q`, text: entry.question, sender: 'user' as const, timestamp: new Date(entry.created_at) },
-    { id: `${entry.id}-r`, text: entry.response, sender: 'ai' as const, timestamp: new Date(entry.created_at) },
+    {
+      id: `${entry.id}-r`,
+      text: entry.response,
+      sender: 'ai' as const,
+      timestamp: new Date(entry.created_at),
+      actionType: entry.action_type || undefined,
+      actionData: entry.action_data,
+    },
   ]);
 }
 
