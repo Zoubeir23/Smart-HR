@@ -27,6 +27,7 @@ import { useAuth } from '@/context/AuthContext';
 import { aiService, ChatHistoryEntry } from '@/services/aiService';
 import { cn } from '@/lib/utils';
 import ConversationSidebar from '@/components/ai/ConversationSidebar';
+import ActionResultCard from '@/components/ai/ActionResultCard';
 
 /* ─────────── Types ─────────── */
 
@@ -35,6 +36,8 @@ interface Message {
   text: string;
   sender: 'user' | 'ai';
   timestamp: Date;
+  actionType?: string;
+  actionData?: Record<string, unknown>;
 }
 
 /* ─────────── Suggestion Chips par rôle ─────────── */
