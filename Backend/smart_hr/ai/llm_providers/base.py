@@ -58,3 +58,29 @@ class BaseLLMProvider(ABC):
         Returns:
             Chaîne JSON brute retournée par le modèle.
         """
+
+    @abstractmethod
+    def detect_action(
+        self,
+        system_prompt: str,
+        question: str,
+        tools: list[dict],
+    ) -> tuple[str | None, dict]:
+        """
+        Détecte si la question de l'utilisateur correspond à l'appel d'un des
+        `tools` fournis (function-calling natif du fournisseur) et en extrait
+        les arguments — en un seul appel structuré, sans détection par mots-clés
+        ni prompt d'extraction JSON séparé par action.
+
+        Args:
+            system_prompt: contexte utilisateur (nom, rôle) pour guider la décision.
+            question: message courant de l'utilisateur.
+            tools: liste de schémas {"name", "description", "parameters"} — le
+                dict "parameters" suit le format JSON Schema standard.
+
+        Returns:
+            (nom_de_l_action, arguments) si un tool a été appelé, sinon (None, {}).
+            Ne lève jamais d'exception : un échec (API indisponible, réponse
+            invalide) retourne (None, {}) pour ne pas casser la réponse chat
+            normale qui suit.
+        """
