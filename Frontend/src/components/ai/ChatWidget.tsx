@@ -8,11 +8,14 @@ import remarkGfm from 'remark-gfm';
 import { useAuth } from '@/context/AuthContext';
 import { aiService } from '@/services/aiService';
 import { cn } from '@/lib/utils';
+import ActionResultCard from './ActionResultCard';
 
 interface WidgetMessage {
   id: string;
   text: string;
   sender: 'user' | 'ai';
+  actionType?: string;
+  actionData?: Record<string, unknown>;
 }
 
 function buildWelcomeText(firstName?: string, role?: string): string {
@@ -75,7 +78,16 @@ export default function ChatWidget() {
     onSuccess: (data) => {
       const responseText = data?.response || data?.answer || data?.message || 'Désolé, je n\'ai pas de réponse.';
       if (conversationId === null && data?.conversation) setConversationId(data.conversation);
-      setMessages((prev) => [...prev, { id: `${Date.now()}-ai`, text: responseText, sender: 'ai' }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `${Date.now()}-ai`,
+          text: responseText,
+          sender: 'ai',
+          actionType: data?.action_type || undefined,
+          actionData: data?.action_data,
+        },
+      ]);
     },
     onError: () => {
       setMessages((prev) => [
@@ -195,6 +207,9 @@ export default function ChatWidget() {
                     >
                       {message.text}
                     </ReactMarkdown>
+                    {message.actionType && message.actionData && (
+                      <ActionResultCard actionType={message.actionType} actionData={message.actionData} />
+                    )}
                   </div>
                 </div>
               ))}
