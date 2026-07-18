@@ -67,9 +67,7 @@ def execute_onboarding_creation(user, params: dict) -> dict:
     from smart_hr.personnel.models import OnboardingStep
     from smart_hr.personnel.serializers import OnboardingProgramSerializer
 
-    permission_error = require_role(
-        user, ("RH", "ADMIN"), "Seuls les responsables RH peuvent créer un programme d'intégration."
-    )
+    permission_error = require_role(user, ("RH", "ADMIN"), "Seuls les responsables RH peuvent créer un programme d'intégration.")
     if permission_error is not None:
         return permission_error
 
