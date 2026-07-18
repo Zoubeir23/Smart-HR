@@ -34,9 +34,7 @@ export const recruitmentService = {
       const formData = new FormData();
       if (params.jobDescription) formData.append('job_description', params.jobDescription);
       formData.append('file', params.file);
-      const { data } = await api.post('/recruitment/job-offers/generate/', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const { data } = await api.post('/recruitment/job-offers/generate/', formData);
       return data;
     }
     const { data } = await api.post('/recruitment/job-offers/generate/', { job_description: params.jobDescription });
@@ -49,9 +47,7 @@ export const recruitmentService = {
   },
 
   apply: async (formData: FormData) => {
-    const { data } = await api.post('/recruitment/applications/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const { data } = await api.post('/recruitment/applications/', formData);
     return data;
   },
 
@@ -77,9 +73,7 @@ export const recruitmentService = {
 
   uploadApplicationDocument: async (applicationId: number, formData: FormData) => {
     formData.append('application', String(applicationId));
-    const { data } = await api.post('/recruitment/application-documents/', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const { data } = await api.post('/recruitment/application-documents/', formData);
     return data;
   },
 
@@ -93,7 +87,6 @@ export const recruitmentService = {
     // Chaque CV déclenche 2 appels IA séquentiels côté serveur (identité + scoring) :
     // le timeout par défaut (15s) est insuffisant dès qu'il y a plus d'un fichier.
     const { data } = await api.post(`/recruitment/job-offers/${jobOfferId}/bulk-upload-cvs/`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 120000,
     });
     return data;

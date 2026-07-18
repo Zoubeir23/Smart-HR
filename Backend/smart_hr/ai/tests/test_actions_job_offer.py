@@ -7,6 +7,8 @@ import pytest
 from smart_hr.ai.actions import detect_action_intent
 from smart_hr.ai.actions import execute_action
 from smart_hr.ai.actions import extract_job_offer_parameters
+from smart_hr.personnel.models import Department
+from smart_hr.personnel.models import Employee
 from smart_hr.recruitment.models import JobOffer
 from smart_hr.users.models import User
 from smart_hr.users.tests.factories import UserFactory
@@ -127,3 +129,40 @@ class TestExecuteJobOfferCreation:
         assert result["success"] is False
         assert result["error"] == "job_offer_info_missing"
         assert not JobOffer.objects.exists()
+
+    def test_missing_department_falls_back_to_requester_employee_department(self, rh_user):
+        """Si le LLM n'a pas extrait de département (cas fréquent, la plupart des
+        messages ne le précisent pas explicitement), on retombe sur le département
+        de l'employé RH demandeur plutôt que de bloquer la création."""
+        department = Department.objects.create(name="Technique")
+        Employee.objects.create(user=rh_user, department=department, hire_date="2023-01-01")
+
+        params = {
+            "title": "Développeur Backend Django",
+            "department": None,
+            "location": "Dakar",
+            "job_type": "full_time",
+            "description": "Nous recherchons un développeur Django expérimenté.",
+            "requirements": "",
+            "salary_range": "",
+        }
+        result = execute_action("job_offer_creation", rh_user, params)
+        assert result["success"] is True
+        job_offer = JobOffer.objects.get(pk=result["data"]["job_offer_id"])
+        assert job_offer.department == "Technique"
+
+    def test_missing_department_without_employee_profile_is_rejected(self, rh_user):
+        """Un compte RH sans profil Employee (pas de département à déduire) reste
+        bloqué par le message d'information manquante — comportement inchangé."""
+        params = {
+            "title": "Développeur Backend Django",
+            "department": None,
+            "location": "",
+            "job_type": "full_time",
+            "description": "Description",
+            "requirements": "",
+            "salary_range": "",
+        }
+        result = execute_action("job_offer_creation", rh_user, params)
+        assert result["success"] is False
+        assert result["error"] == "job_offer_info_missing"

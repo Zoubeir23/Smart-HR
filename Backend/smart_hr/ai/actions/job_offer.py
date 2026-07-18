@@ -73,6 +73,18 @@ def extract_job_offer_parameters(question: str) -> dict:
     return parsed
 
 
+def _default_department_for(user) -> str | None:
+    """Déduit le département par défaut d'une offre d'emploi depuis le profil
+    Employee du RH qui la demande, quand le LLM n'a pas pu l'extraire du message
+    (la plupart des demandes ne précisent pas explicitement de département)."""
+    from smart_hr.personnel.models import Employee
+
+    employee = Employee.objects.select_related("department").filter(user=user).first()
+    if employee is None or employee.department is None:
+        return None
+    return employee.department.name
+
+
 def execute_job_offer_creation(user, params: dict) -> dict:
     """Crée une offre d'emploi via le serializer DRF existant — même chemin de
     validation que POST /api/v1/recruitment/job-offers/. Réservé RH/Admin
@@ -85,7 +97,7 @@ def execute_job_offer_creation(user, params: dict) -> dict:
         return permission_error
 
     title = params.get("title")
-    department = params.get("department")
+    department = params.get("department") or _default_department_for(user)
     description = params.get("description")
     if not title or not department or not description:
         return {"success": False, "error": "job_offer_info_missing"}

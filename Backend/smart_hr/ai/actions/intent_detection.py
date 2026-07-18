@@ -127,7 +127,11 @@ _JOB_OFFER_INTENT_KEYWORDS = (
     "ouvre un poste",
     "recruter pour",
     "annonce de recrutement",
-    "fiche de poste",
+    "créer une fiche de poste",
+    "creer une fiche de poste",
+    "rédiger une fiche de poste",
+    "rediger une fiche de poste",
+    "fiche de poste pour",
 )
 
 
