@@ -63,15 +63,15 @@ def execute_onboarding_creation(user, params: dict) -> dict:
     DRF existant — même chemin que POST /api/v1/personnel/onboarding-programs/.
     Réservé RH/Admin (même règle que l'API REST)."""
     from smart_hr.ai.actions.shared import find_employee_by_full_name
+    from smart_hr.ai.actions.shared import require_role
     from smart_hr.personnel.models import OnboardingStep
     from smart_hr.personnel.serializers import OnboardingProgramSerializer
 
-    user_role = getattr(user, "role", "").upper()
-    if user_role not in ("RH", "ADMIN"):
-        return {
-            "success": False,
-            "error": "Seuls les responsables RH peuvent créer un programme d'intégration.",
-        }
+    permission_error = require_role(
+        user, ("RH", "ADMIN"), "Seuls les responsables RH peuvent créer un programme d'intégration."
+    )
+    if permission_error is not None:
+        return permission_error
 
     employee = find_employee_by_full_name(params.get("employee_name") or "")
     if employee is None:
