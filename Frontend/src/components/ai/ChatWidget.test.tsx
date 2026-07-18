@@ -83,12 +83,12 @@ describe('ChatWidget', () => {
     expect(screen.queryByText(/valide le congé de awa diallo/i)).not.toBeInTheDocument();
   });
 
-  it('adapte le message de bienvenue au rôle : RH → valider un congé', () => {
+  it('adapte le message de bienvenue au rôle : RH → créer une offre d\'emploi', () => {
     useAuthMock.mockReturnValue({ user: { first_name: 'Fatou', role: 'RH' } });
     renderWidget();
     fireEvent.click(screen.getByRole('button', { name: /ouvrir l'assistant ia/i }));
 
-    expect(screen.getByText(/valide le congé de awa diallo/i)).toBeInTheDocument();
+    expect(screen.getByText(/crée une offre d'emploi pour un développeur django/i)).toBeInTheDocument();
   });
 
   it('adapte le message de bienvenue au rôle : candidat → aucune action proposée', () => {
