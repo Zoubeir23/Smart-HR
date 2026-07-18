@@ -29,6 +29,7 @@ import {
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
 import { recruitmentService } from '@/services/recruitmentService';
+import { useToast } from '@/hooks/use-toast';
 
 const JOB_TYPE_LABELS: Record<string, string> = {
   full_time: 'Temps plein',
@@ -159,6 +160,7 @@ export default function LandingPage() {
   const { theme, toggleTheme } = useTheme();
   const { isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
@@ -199,6 +201,11 @@ export default function LandingPage() {
     if (isAuthenticated && user?.role === 'CANDIDATE') {
       navigate(`/jobs/${jobId}/apply`);
     } else if (isAuthenticated) {
+      toast({
+        variant: 'destructive',
+        title: 'Candidature impossible',
+        description: 'Postuler est réservé aux comptes Candidat. Connectez-vous avec un compte candidat pour postuler.',
+      });
       navigate('/jobs');
     } else {
       navigate('/login', { state: { from: { pathname: `/jobs/${jobId}/apply` } } });
