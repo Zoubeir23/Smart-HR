@@ -49,6 +49,12 @@ export interface Conversation {
   updated_at: string;
 }
 
+export interface SupportedAction {
+  intent: string;
+  label: string;
+  example: string;
+}
+
 export interface ChatHistoryEntry {
   id: number;
   conversation: number | null;
