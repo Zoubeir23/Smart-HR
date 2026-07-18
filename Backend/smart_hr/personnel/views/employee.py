@@ -252,10 +252,12 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         if request.user.role not in [User.Role.ADMIN, User.Role.RH]:
             return Response(status=status.HTTP_403_FORBIDDEN)
 
+        from datetime import timedelta
+
         from django.db.models.functions import TruncMonth
         from django.utils import timezone
 
-        cutoff = timezone.now() - timezone.timedelta(days=365)
+        cutoff = timezone.now() - timedelta(days=365)
         monthly = (
             Employee.objects.filter(created_at__gte=cutoff)
             .annotate(month=TruncMonth("created_at"))

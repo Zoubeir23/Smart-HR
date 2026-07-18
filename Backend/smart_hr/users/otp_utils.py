@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import secrets
+from datetime import timedelta
 
 from django.conf import settings
 from django.db import transaction
@@ -31,7 +32,7 @@ def _verify_otp_hash(raw_code: str, stored_hash: str) -> bool:
 
 def create_otp_for_user(user: User) -> tuple[OTPCode, str]:
     """Crée (ou remplace) un OTP actif. Retourne (otp_code, raw_code) — raw_code à envoyer par email."""
-    expiry_date = timezone.now() + timezone.timedelta(
+    expiry_date = timezone.now() + timedelta(
         minutes=OTPCode.OTP_EXPIRY_MINUTES,
     )
     raw_code = generate_otp_code()
@@ -74,7 +75,7 @@ def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:  #
         otp.refresh_from_db()
         if otp.failed_attempts >= OTPCode.MAX_FAILED_ATTEMPTS:
             OTPCode.objects.filter(pk=otp.pk).update(
-                locked_until=timezone.now() + timezone.timedelta(minutes=LOCKOUT_DURATION_MINUTES),
+                locked_until=timezone.now() + timedelta(minutes=LOCKOUT_DURATION_MINUTES),
             )
             return (
                 False,
