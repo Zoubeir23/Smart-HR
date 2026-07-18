@@ -77,14 +77,12 @@ def execute_job_offer_creation(user, params: dict) -> dict:
     """Crée une offre d'emploi via le serializer DRF existant — même chemin de
     validation que POST /api/v1/recruitment/job-offers/. Réservé RH/Admin
     (même règle que `JobOfferViewSet.get_permissions` pour l'action 'create')."""
+    from smart_hr.ai.actions.shared import require_role
     from smart_hr.recruitment.serializers import JobOfferSerializer
 
-    user_role = getattr(user, "role", "").upper()
-    if user_role not in ("RH", "ADMIN"):
-        return {
-            "success": False,
-            "error": "Seuls les responsables RH peuvent créer une offre d'emploi.",
-        }
+    permission_error = require_role(user, ("RH", "ADMIN"), "Seuls les responsables RH peuvent créer une offre d'emploi.")
+    if permission_error is not None:
+        return permission_error
 
     title = params.get("title")
     department = params.get("department")
