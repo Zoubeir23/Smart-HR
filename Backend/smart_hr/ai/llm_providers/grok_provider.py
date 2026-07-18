@@ -63,3 +63,43 @@ class GrokProvider(BaseLLMProvider):
         except Exception as exc:
             logger.error("GrokProvider.extract_json error: %s", exc)
             raise
+
+    def detect_action(
+        self,
+        system_prompt: str,
+        question: str,
+        tools: list[dict],
+    ) -> tuple[str | None, dict]:
+        if not self._api_key or not tools:
+            return None, {}
+        try:
+            import json
+
+            client = self._get_client()
+            response = client.chat.completions.create(
+                model=self._model,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": question},
+                ],
+                tools=[
+                    {
+                        "type": "function",
+                        "function": {
+                            "name": tool["name"],
+                            "description": tool["description"],
+                            "parameters": tool["parameters"],
+                        },
+                    }
+                    for tool in tools
+                ],
+                tool_choice="auto",
+            )
+            tool_calls = response.choices[0].message.tool_calls
+            if not tool_calls:
+                return None, {}
+            call = tool_calls[0]
+            return call.function.name, json.loads(call.function.arguments)
+        except Exception as exc:
+            logger.error("GrokProvider.detect_action error: %s", exc)
+            return None, {}

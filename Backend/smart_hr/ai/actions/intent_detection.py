@@ -1,4 +1,10 @@
-"""Métadonnées des intents actionnables et détection d'intention par mots-clés."""
+"""Métadonnées des intents actionnables du chatbot (utilisées côté frontend
+et pour dériver la liste de tools du function-calling natif).
+
+La détection d'intention elle-même n'est plus basée sur des mots-clés : elle
+est déléguée au function-calling natif du LLM actif (voir `tool_schemas.py`
+et `BaseLLMProvider.detect_action`), qui choisit l'action et en extrait les
+paramètres en un seul appel structuré plutôt qu'un pré-filtrage par regex."""
 
 from __future__ import annotations
 
@@ -41,121 +47,3 @@ def list_supported_actions_for_role(role: str) -> list[dict]:
         for intent, meta in ACTION_METADATA.items()
         if role_upper in meta["roles"]
     ]
-
-
-_LEAVE_INTENT_KEYWORDS = (
-    "congé",
-    "conge",
-    "vacances",
-    "absent",
-    "absence",
-    "malade",
-    "maladie",
-    "arrêt maladie",
-    "repos",
-    "arret",
-    "poser un congé",
-    "demande de congé",
-    "je veux prendre",
-    "jour de repos",
-    "partir en vacances",
-    "jours de vacances",
-    "congé maternité",
-    "congé personnel",
-    "congé annuel",
-)
-
-
-_LEAVE_APPROVAL_KEYWORDS = (
-    "valider le congé",
-    "valide le congé",
-    "valider la demande de congé",
-    "valide la demande de congé",
-    "approuver le congé",
-    "approuve le congé",
-    "approuver la demande de congé",
-    "approuve la demande de congé",
-    "refuser le congé",
-    "refuse le congé",
-    "refuser la demande de congé",
-    "refuse la demande de congé",
-    "rejeter le congé",
-    "rejette le congé",
-    "rejeter la demande de congé",
-    "rejette la demande de congé",
-)
-
-
-_OBJECTIVE_INTENT_KEYWORDS = (
-    "objectif",
-    "okr",
-    "résultat clé",
-    "resultat cle",
-    "key result",
-    "objectif stratégique",
-    "objectif d'entreprise",
-    "objectif de département",
-)
-
-_ONBOARDING_INTENT_KEYWORDS = (
-    "onboarding",
-    "programme d'intégration",
-    "parcours d'intégration",
-    "intégration du nouvel employé",
-    "intégration de la nouvelle",
-    "intégrer un nouvel employé",
-    "intégrer une nouvelle recrue",
-    "programme d'accueil",
-    "parcours d'accueil",
-    "offboarding",
-    "programme de départ",
-    "nouvel employé",
-    "nouvelle recrue",
-)
-
-_JOB_OFFER_INTENT_KEYWORDS = (
-    "offre d'emploi",
-    "offre d emploi",
-    "crée une offre",
-    "creer une offre",
-    "créer une offre",
-    "publier une offre",
-    "publie une offre",
-    "poste à pourvoir",
-    "poste a pourvoir",
-    "ouvrir un poste",
-    "ouvre un poste",
-    "recruter pour",
-    "annonce de recrutement",
-    "créer une fiche de poste",
-    "creer une fiche de poste",
-    "rédiger une fiche de poste",
-    "rediger une fiche de poste",
-    "fiche de poste pour",
-)
-
-
-def detect_action_intent(question: str) -> str | None:
-    """
-    Détecte l'intention d'action dans la question de l'utilisateur.
-    Retourne le nom de l'action si détectée, None sinon.
-
-    Actions supportées : 'leave_request', 'leave_approval', 'objective_creation',
-    'onboarding_creation', 'job_offer_creation'
-
-    `leave_approval` (RH valide/refuse la demande d'un tiers) est vérifié avant
-    `leave_request` (un employé pose son propre congé) car les deux formulations
-    contiennent toutes deux le mot "congé" — la plus spécifique doit gagner.
-    """
-    lower = question.lower()
-    if any(kw in lower for kw in _LEAVE_APPROVAL_KEYWORDS):
-        return "leave_approval"
-    if any(kw in lower for kw in _LEAVE_INTENT_KEYWORDS):
-        return "leave_request"
-    if any(kw in lower for kw in _OBJECTIVE_INTENT_KEYWORDS):
-        return "objective_creation"
-    if any(kw in lower for kw in _ONBOARDING_INTENT_KEYWORDS):
-        return "onboarding_creation"
-    if any(kw in lower for kw in _JOB_OFFER_INTENT_KEYWORDS):
-        return "job_offer_creation"
-    return None

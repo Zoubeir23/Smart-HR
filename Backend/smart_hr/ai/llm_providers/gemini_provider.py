@@ -65,3 +65,40 @@ class GeminiProvider(BaseLLMProvider):
         except Exception as exc:
             logger.error("GeminiProvider.extract_json error: %s", exc)
             raise
+
+    def detect_action(
+        self,
+        system_prompt: str,
+        question: str,
+        tools: list[dict],
+    ) -> tuple[str | None, dict]:
+        if not self._api_key or not tools:
+            return None, {}
+        try:
+            from google.genai import types
+
+            client = self._get_client()
+            declarations = [
+                types.FunctionDeclaration(
+                    name=tool["name"],
+                    description=tool["description"],
+                    parameters_json_schema=tool["parameters"],
+                )
+                for tool in tools
+            ]
+            response = client.models.generate_content(
+                model=self._model,
+                contents=question,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    tools=[types.Tool(function_declarations=declarations)],
+                ),
+            )
+            calls = response.function_calls
+            if not calls:
+                return None, {}
+            call = calls[0]
+            return call.name, dict(call.args or {})
+        except Exception as exc:
+            logger.error("GeminiProvider.detect_action error: %s", exc)
+            return None, {}

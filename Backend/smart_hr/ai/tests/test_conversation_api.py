@@ -39,6 +39,9 @@ class _FakeLLMProvider:
     def extract_json(self, prompt):
         return "{}"
 
+    def detect_action(self, system_prompt, question, tools):
+        return None, {}
+
 
 def _authenticated_client(as_user) -> APIClient:
     client = APIClient()
@@ -168,6 +171,9 @@ class TestChatCreatesConversationAutomatically:
 
             def extract_json(self, prompt):
                 return "{}"
+
+            def detect_action(self, system_prompt, question, tools):
+                return None, {}
 
         provider = _CapturingProvider()
         client = _authenticated_client(user)

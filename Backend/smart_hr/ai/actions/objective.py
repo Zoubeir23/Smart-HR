@@ -1,64 +1,17 @@
-"""Agent OKR/Objectifs — extraction de paramètres et exécution via Gemini."""
+"""Agent OKR/Objectifs — exécution de la création d'objectif.
+
+L'extraction des paramètres est déléguée au function-calling natif du LLM actif
+(voir `tool_schemas.py`) : le schéma `objective_creation` ne restreint pas le
+champ "level" par rôle (le tool-calling n'a pas connaissance des permissions),
+donc le clamp RH/Admin ci-dessous reste indispensable côté serveur — un simple
+employé ne doit jamais pouvoir créer un objectif de département/entreprise,
+quoi que le LLM ait extrait."""
 
 from __future__ import annotations
 
-import json
 import logging
 
 logger = logging.getLogger(__name__)
-
-
-def extract_objective_parameters(question: str, can_manage: bool) -> dict:
-    """
-    Extrait les paramètres d'un objectif OKR depuis le message via le LLM actif.
-
-    `can_manage` (RH/Admin) autorise les niveaux department/company ; un simple
-    employé est toujours ramené au niveau individual, quoi que le LLM retourne
-    (garde-fou serveur, ne dépend jamais uniquement de l'extraction IA).
-
-    Retourne :
-        {
-            "level": "individual|department|company",
-            "department_name": str | None,
-            "title": str | None,
-            "period": str | None,
-            "key_results": [{"title": str, "unit": str, "target_value": float}],
-        }
-    """
-    allowed_levels = "individual, department ou company" if can_manage else "individual uniquement"
-
-    prompt = (
-        "Analyse ce message d'un utilisateur RH/employé qui souhaite créer un objectif OKR.\n"
-        "Retourne UNIQUEMENT un JSON valide, sans markdown ni backticks.\n\n"
-        f'Message : "{question}"\n\n'
-        "JSON attendu :\n"
-        "{\n"
-        f'  "level": "{allowed_levels}",\n'
-        '  "department_name": "nom du département mentionné, ou null",\n'
-        '  "title": "titre de l\'objectif, ou null si non déterminable",\n'
-        '  "period": "période mentionnée (ex: Q1 2026), ou null",\n'
-        '  "key_results": [{"title": "résultat clé", "unit": "unité ou chaîne vide", "target_value": nombre}]\n'
-        "}\n\n"
-        "- key_results : liste vide si aucun résultat clé mesurable n'est mentionné\n"
-        "- Ne déduis jamais de valeurs par défaut : si une information est absente, utilise null"
-    )
-
-    try:
-        from smart_hr.ai.llm_providers import get_llm_provider
-        from smart_hr.ai.llm_providers.base import strip_llm_code_fences
-
-        provider = get_llm_provider()
-        raw = strip_llm_code_fences(provider.extract_json(prompt))
-        parsed = json.loads(raw)
-    except Exception as exc:
-        logger.warning("Extraction LLM des paramètres objectif échouée : %s", exc)
-        parsed = {"level": "individual", "department_name": None, "title": None, "period": None, "key_results": []}
-
-    if not can_manage or parsed.get("level") not in ("individual", "department", "company"):
-        parsed["level"] = "individual"
-
-    parsed.setdefault("key_results", [])
-    return parsed
 
 
 def execute_objective_creation(user, params: dict) -> dict:
@@ -76,7 +29,12 @@ def execute_objective_creation(user, params: dict) -> dict:
     if not title or not period or not key_results_payload:
         return {"success": False, "error": "objective_info_missing"}
 
+    user_role = getattr(user, "role", "").upper()
+    can_manage = user_role in ("RH", "ADMIN")
     level = params.get("level", "individual")
+    if not can_manage or level not in ("individual", "department", "company"):
+        level = "individual"
+
     payload: dict = {"level": level, "title": title, "period": period}
 
     if level == "individual":

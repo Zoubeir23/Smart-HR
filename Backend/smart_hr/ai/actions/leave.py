@@ -1,95 +1,17 @@
-"""Agent Congé — extraction de paramètres et exécution de la demande de congé."""
+"""Agent Congé — exécution de la demande de congé.
+
+L'extraction des paramètres (dates, type, raison) est déléguée au
+function-calling natif du LLM actif (voir `tool_schemas.py`) : ce module ne
+contient plus que la logique métier d'exécution et ses validations serveur."""
 
 from __future__ import annotations
 
-import json
 import logging
-import re
 from datetime import date
 
 logger = logging.getLogger(__name__)
 
-
-def extract_leave_parameters(question: str) -> dict:
-    """
-    Extrait les paramètres de congé depuis le message via Gemini.
-    Fallback sur regex si l'API est indisponible.
-
-    Retourne :
-        {
-            "leave_type": "vacation|sick|personal|maternity|other",
-            "start_date": "YYYY-MM-DD" ou None,
-            "end_date":   "YYYY-MM-DD" ou None,
-            "reason":     str,
-        }
-    """
-    today = date.today().isoformat()
-
-    prompt = (
-        f"Aujourd'hui nous sommes le {today}.\n"
-        "Analyse ce message et extrait les informations de demande de congé.\n"
-        "Retourne UNIQUEMENT un JSON valide, sans markdown ni backticks.\n\n"
-        f'Message : "{question}"\n\n'
-        "JSON attendu :\n"
-        "{\n"
-        '  "leave_type": "vacation|sick|personal|maternity|other",\n'
-        '  "start_date": "YYYY-MM-DD ou null",\n'
-        '  "end_date": "YYYY-MM-DD ou null",\n'
-        '  "reason": "raison extraite ou vide"\n'
-        "}\n\n"
-        "Règles :\n"
-        "- Si 'demain' → start_date = demain, end_date = demain\n"
-        "- Si 'semaine prochaine' → start_date = lundi prochain, end_date = vendredi prochain\n"
-        "- Si les dates ne sont pas précisées → null\n"
-        "- leave_type 'sick' si maladie/malade/médical, 'personal' si personnel/famille, sinon 'vacation'"
-    )
-
-    try:
-        from smart_hr.ai.llm_providers import get_llm_provider
-        from smart_hr.ai.llm_providers.base import strip_llm_code_fences
-
-        provider = get_llm_provider()
-        raw = strip_llm_code_fences(provider.extract_json(prompt))
-        return json.loads(raw)
-    except Exception as exc:
-        logger.warning("Extraction LLM des paramètres congé échouée : %s", exc)
-
-    return _regex_extract_leave_parameters(question)
-
-
-def _regex_extract_leave_parameters(question: str) -> dict:
-    """Extraction de dates par regex — fallback si Gemini indisponible."""
-    result: dict = {
-        "leave_type": "vacation",
-        "start_date": None,
-        "end_date": None,
-        "reason": "",
-    }
-
-    date_pattern = r"\b(\d{1,2})[/\-\.](\d{1,2})[/\-\.](\d{4})\b"
-    dates_found = re.findall(date_pattern, question)
-    if dates_found:
-        try:
-            day, month, year = dates_found[0]
-            result["start_date"] = f"{year}-{int(month):02d}-{int(day):02d}"
-        except ValueError:
-            pass
-    if len(dates_found) >= 2:
-        try:
-            day, month, year = dates_found[1]
-            result["end_date"] = f"{year}-{int(month):02d}-{int(day):02d}"
-        except ValueError:
-            pass
-
-    lower = question.lower()
-    if any(w in lower for w in ("malade", "maladie", "arrêt", "médical", "médecin")):
-        result["leave_type"] = "sick"
-    elif any(w in lower for w in ("personnel", "familial", "famille", "personnel")):
-        result["leave_type"] = "personal"
-    elif any(w in lower for w in ("maternité",)):
-        result["leave_type"] = "maternity"
-
-    return result
+_VALID_LEAVE_TYPES = ("vacation", "sick", "personal", "maternity", "other")
 
 
 def _parse_and_validate_leave_dates(
@@ -143,10 +65,14 @@ def execute_leave_request(user, params: dict) -> dict:
             "error": "Une demande de congé active existe déjà pour cette période.",
         }
 
+    leave_type = params.get("leave_type")
+    if leave_type not in _VALID_LEAVE_TYPES:
+        leave_type = LeaveRequest.LeaveType.VACATION
+
     try:
         leave = LeaveRequest.objects.create(
             employee=employee,
-            leave_type=params.get("leave_type", LeaveRequest.LeaveType.VACATION),
+            leave_type=leave_type,
             start_date=start,
             end_date=end,
             reason=params.get("reason") or "Demande créée via l'assistant IA Smart-HR",
