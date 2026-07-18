@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import timedelta
 from typing import TYPE_CHECKING
 
 from django.db.models import Avg
@@ -111,7 +112,7 @@ class HRAnalyticsView(APIView):
         historique de l'endpoint avant l'introduction de ce filtre)."""
         period = request.query_params.get("period")
         days = _PERIOD_DAYS.get(period, _PERIOD_DAYS["1y"])
-        return timezone.now() - timezone.timedelta(days=days)
+        return timezone.now() - timedelta(days=days)
 
     def _build_overview_data(self, department_ids=None, department=None, since_date=None) -> dict:
         """Construit l'intégralité des données People Analytics — partagée
@@ -163,7 +164,7 @@ class HRAnalyticsView(APIView):
         }
 
     def _parse_since_date_default(self):
-        return timezone.now() - timezone.timedelta(days=_PERIOD_DAYS["1y"])
+        return timezone.now() - timedelta(days=_PERIOD_DAYS["1y"])
 
     def _build_age_pyramid(self, employees) -> list[dict]:
         """Distribution des employes par groupe d'age."""

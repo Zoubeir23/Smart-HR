@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 
 import pytest
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -53,8 +52,8 @@ def formation(db) -> Formation:
         title="Formation Django REST",
         description="Approfondissement Django et DRF",
         instructor="Alice Dupont",
-        start_date=timezone.datetime(2024, 9, 1, 9, 0, tzinfo=datetime.UTC),
-        end_date=timezone.datetime(2024, 9, 3, 17, 0, tzinfo=datetime.UTC),
+        start_date=datetime.datetime(2024, 9, 1, 9, 0, tzinfo=datetime.UTC),
+        end_date=datetime.datetime(2024, 9, 3, 17, 0, tzinfo=datetime.UTC),
     )
 
 
