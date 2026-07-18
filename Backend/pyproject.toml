@@ -213,7 +213,7 @@ overrides = [
   { module = "*.migrations.*", ignore_errors = true },
   # django-stubs does not export timezone.datetime/timezone.timedelta even though
   # Django re-exports them for the naive-datetime-then-make_aware() idiom used here:
-  { module = "*.management.commands.seed_demo_data", disable_error_code = ["attr-defined"] },
+  { module = "*.management.commands.seed_demo_data", disable_error_code = [ "attr-defined" ] },
 ]
 
 [tool.django-stubs]
