@@ -146,7 +146,11 @@ _JOB_OFFER_INTENT_KEYWORDS = (
     "ouvre un poste",
     "recruter pour",
     "annonce de recrutement",
-    "fiche de poste",
+    "créer une fiche de poste",
+    "creer une fiche de poste",
+    "rédiger une fiche de poste",
+    "rediger une fiche de poste",
+    "fiche de poste pour",
 )
 
 
@@ -780,6 +784,18 @@ def _execute_onboarding_creation(user, params: dict) -> dict:
 # ─── Agent Recrutement — exécution ───────────────────────────────────────────
 
 
+def _default_department_for(user) -> str | None:
+    """Déduit le département par défaut d'une offre d'emploi depuis le profil
+    Employee du RH qui la demande, quand le LLM n'a pas pu l'extraire du message
+    (la plupart des demandes ne précisent pas explicitement de département)."""
+    from smart_hr.personnel.models import Employee
+
+    employee = Employee.objects.select_related("department").filter(user=user).first()
+    if employee is None or employee.department is None:
+        return None
+    return employee.department.name
+
+
 def _execute_job_offer_creation(user, params: dict) -> dict:
     """Crée une offre d'emploi via le serializer DRF existant — même chemin de
     validation que POST /api/v1/recruitment/job-offers/. Réservé RH/Admin
@@ -794,7 +810,7 @@ def _execute_job_offer_creation(user, params: dict) -> dict:
         }
 
     title = params.get("title")
-    department = params.get("department")
+    department = params.get("department") or _default_department_for(user)
     description = params.get("description")
     if not title or not department or not description:
         return {"success": False, "error": "job_offer_info_missing"}
