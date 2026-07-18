@@ -61,3 +61,35 @@ class AnthropicProvider(BaseLLMProvider):
         except Exception as exc:
             logger.error("AnthropicProvider.extract_json error: %s", exc)
             raise
+
+    def detect_action(
+        self,
+        system_prompt: str,
+        question: str,
+        tools: list[dict],
+    ) -> tuple[str | None, dict]:
+        if not self._api_key or not tools:
+            return None, {}
+        try:
+            client = self._get_client()
+            response = client.messages.create(
+                model=self._model,
+                max_tokens=_MAX_TOKENS,
+                system=system_prompt,
+                messages=[{"role": "user", "content": question}],
+                tools=[
+                    {
+                        "name": tool["name"],
+                        "description": tool["description"],
+                        "input_schema": tool["parameters"],
+                    }
+                    for tool in tools
+                ],
+            )
+            for block in response.content:
+                if block.type == "tool_use":
+                    return block.name, dict(block.input or {})
+            return None, {}
+        except Exception as exc:
+            logger.error("AnthropicProvider.detect_action error: %s", exc)
+            return None, {}
