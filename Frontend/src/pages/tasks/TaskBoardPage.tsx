@@ -37,6 +37,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -66,6 +76,7 @@ interface Task {
   id: string;
   title: string;
   assignee: string;
+  assigneeId: string;
   assigneeInitials: string;
   priority: TaskPriority;
   dueDate: string;
@@ -90,11 +101,14 @@ const priorityConfig: Record<TaskPriority, { label: string; className: string }>
 interface TaskCardProps {
   task: Task;
   onMove: (taskId: string, status: TaskStatus) => void;
+  canManage?: boolean;
+  onEdit?: (task: Task) => void;
+  onDelete?: (taskId: string) => void;
   isDragging?: boolean;
   isOverlay?: boolean;
 }
 
-function TaskCard({ task, onMove, isDragging = false, isOverlay = false }: TaskCardProps) {
+function TaskCard({ task, onMove, canManage = false, onEdit, onDelete, isDragging = false, isOverlay = false }: TaskCardProps) {
   const {
     attributes,
     listeners,
@@ -150,6 +164,7 @@ function TaskCard({ task, onMove, isDragging = false, isOverlay = false }: TaskC
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={`Actions pour la tâche ${task.title}`}
                   className="h-7 w-7 shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -170,6 +185,20 @@ function TaskCard({ task, onMove, isDragging = false, isOverlay = false }: TaskC
                     {config.title}
                   </DropdownMenuItem>
                 ))}
+                {canManage && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="gap-2 text-sm" onClick={() => onEdit?.(task)}>
+                      Modifier
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="gap-2 text-sm text-destructive focus:text-destructive"
+                      onClick={() => onDelete?.(task.id)}
+                    >
+                      Supprimer
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -208,10 +237,13 @@ interface DropColumnProps {
   status: TaskStatus;
   tasks: Task[];
   onMove: (taskId: string, status: TaskStatus) => void;
+  canManage?: boolean;
+  onEdit?: (task: Task) => void;
+  onDelete?: (taskId: string) => void;
   isOver: boolean;
 }
 
-function DropColumn({ status, tasks, onMove, isOver }: DropColumnProps) {
+function DropColumn({ status, tasks, onMove, canManage = false, onEdit, onDelete, isOver }: DropColumnProps) {
   const config = columnConfig[status];
 
   return (
@@ -250,7 +282,14 @@ function DropColumn({ status, tasks, onMove, isOver }: DropColumnProps) {
           <div className="space-y-2.5">
             <AnimatePresence mode="popLayout">
               {tasks.map((task) => (
-                <TaskCard key={task.id} task={task} onMove={onMove} />
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onMove={onMove}
+                  canManage={canManage}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
               ))}
             </AnimatePresence>
           </div>
@@ -311,6 +350,7 @@ const TaskBoardPage = () => {
     id: String(t.id),
     title: (t.title as string) || '',
     assignee: (t.assignee_name as string) || (t.assignee as string) || '',
+    assigneeId: t.assignee != null ? String(t.assignee) : '',
     assigneeInitials: ((t.assignee_name as string) || (t.assignee as string) || '')
       .split(' ')
       .map((n: string) => n[0])
@@ -359,6 +399,66 @@ const TaskBoardPage = () => {
     if (!task || task.status === newStatus) return;
     optimisticStatusRef.current[taskId] = newStatus;
     updateStatusMutation.mutate({ id: Number(taskId), status: newStatus });
+  };
+
+  const [editTarget, setEditTarget] = useState<Task | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '', description: '', assignee: '', priority: 'medium' as TaskPriority, due_date: '',
+  });
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const updateTaskMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      taskService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setEditTarget(null);
+      toast({ title: 'Tâche modifiée' });
+    },
+    onError: () => {
+      toast({ title: 'Erreur', description: 'Impossible de modifier la tâche.', variant: 'destructive' });
+    },
+  });
+
+  const deleteTaskMutation = useMutation({
+    mutationFn: (id: number) => taskService.delete(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tasks'] });
+      setDeleteId(null);
+      toast({ title: 'Tâche supprimée' });
+    },
+    onError: () => {
+      toast({ title: 'Erreur', description: 'Impossible de supprimer la tâche.', variant: 'destructive' });
+    },
+  });
+
+  const openEditTask = (task: Task) => {
+    setEditTarget(task);
+    setEditForm({
+      title: task.title,
+      description: task.description,
+      assignee: task.assigneeId,
+      priority: task.priority,
+      due_date: task.dueDate,
+    });
+  };
+
+  const handleEditTaskSubmit = () => {
+    if (!editTarget) return;
+    if (!editForm.title || !editForm.assignee) {
+      toast({ title: 'Champs requis', description: 'Le titre et l\'assigné sont obligatoires.', variant: 'destructive' });
+      return;
+    }
+    updateTaskMutation.mutate({
+      id: Number(editTarget.id),
+      data: {
+        title: editForm.title,
+        description: editForm.description,
+        assignee: editForm.assignee,
+        priority: editForm.priority,
+        due_date: editForm.due_date,
+      },
+    });
   };
 
   const getTasksByStatus = (status: TaskStatus) =>
@@ -541,6 +641,9 @@ const TaskBoardPage = () => {
                   status={status}
                   tasks={getTasksByStatus(status)}
                   onMove={moveTask}
+                  canManage={canManage}
+                  onEdit={openEditTask}
+                  onDelete={(taskId) => setDeleteId(taskId)}
                   isOver={isColumnOver(status)}
                 />
               ))}
@@ -556,6 +659,111 @@ const TaskBoardPage = () => {
               )}
             </DragOverlay>
           </DndContext>
+        )}
+
+        {/* Edit Task Dialog */}
+        {canManage && (
+        <Dialog open={editTarget !== null} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Modifier la tâche</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-title">Titre</Label>
+                <Input
+                  id="edit-title"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  rows={3}
+                  value={editForm.description}
+                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-assignee">Assigné à</Label>
+                  <SearchableSelect
+                    id="edit-assignee"
+                    value={editForm.assignee}
+                    onChange={(value) => setEditForm({ ...editForm, assignee: value })}
+                    placeholder="Sélectionner un employé"
+                    searchPlaceholder="Rechercher un employé…"
+                    emptyText="Aucun employé trouvé."
+                    options={employees.map((emp: { id: number; user: { first_name: string; last_name: string } }) => ({
+                      value: String(emp.id),
+                      label: `${emp.user?.first_name ?? ''} ${emp.user?.last_name ?? ''}`.trim(),
+                    }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-priority">Priorité</Label>
+                  <Select
+                    value={editForm.priority}
+                    onValueChange={(value) => setEditForm({ ...editForm, priority: value as TaskPriority })}
+                  >
+                    <SelectTrigger id="edit-priority">
+                      <SelectValue placeholder="Sélectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="low">Faible</SelectItem>
+                      <SelectItem value="medium">Moyen</SelectItem>
+                      <SelectItem value="high">Élevé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-due-date">Date d'échéance</Label>
+                <Input
+                  id="edit-due-date"
+                  type="date"
+                  value={editForm.due_date}
+                  onChange={(e) => setEditForm({ ...editForm, due_date: e.target.value })}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditTarget(null)}>Annuler</Button>
+              <Button
+                className="bg-primary text-primary-foreground"
+                onClick={handleEditTaskSubmit}
+                disabled={updateTaskMutation.isPending}
+              >
+                {updateTaskMutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        )}
+
+        {/* Delete Task Confirmation */}
+        {canManage && (
+        <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette tâche ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est définitive et ne peut pas être annulée.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteId !== null && deleteTaskMutation.mutate(Number(deleteId))}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         )}
       </motion.div>
   );

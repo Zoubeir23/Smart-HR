@@ -13,13 +13,23 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { GraduationCap, Calendar, Users, Video, Clock, BookOpen, Plus, Loader2 } from 'lucide-react';
+import { GraduationCap, Calendar, Users, Video, Clock, BookOpen, Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trainingService } from '@/services/trainingService';
@@ -145,6 +155,66 @@ export default function TrainingPage() {
     createMutation.mutate({ ...newFormationForm, cost: newFormationForm.cost ? Number(newFormationForm.cost) : 0 });
   };
 
+  const [editFormationTarget, setEditFormationTarget] = useState<ApiFormation | null>(null);
+  const [editFormationForm, setEditFormationForm] = useState<NewFormationForm>({
+    title: '', description: '', start_date: '', end_date: '', instructor: '', cost: '',
+  });
+  const [deleteFormationId, setDeleteFormationId] = useState<number | null>(null);
+
+  const updateFormationMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      trainingService.updateFormation(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      toast.success('Formation modifiée avec succès.');
+      setEditFormationTarget(null);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la modification de la formation.');
+    },
+  });
+
+  const deleteFormationMutation = useMutation({
+    mutationFn: (id: number) => trainingService.deleteFormation(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      queryClient.invalidateQueries({ queryKey: ['reunions'] });
+      toast.success('Formation supprimée.');
+      setDeleteFormationId(null);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la suppression de la formation.');
+    },
+  });
+
+  const openEditFormation = (formation: ApiFormation) => {
+    setEditFormationTarget(formation);
+    setEditFormationForm({
+      title: formation.title,
+      description: formation.description,
+      start_date: formation.start_date,
+      end_date: formation.end_date,
+      instructor: formation.instructor,
+      cost: String(formation.cost ?? ''),
+    });
+  };
+
+  const handleEditFormationSubmit = () => {
+    if (!editFormationTarget) return;
+    if (!editFormationForm.title || !editFormationForm.start_date || !editFormationForm.end_date || !editFormationForm.instructor) {
+      toast.error('Le titre, le formateur et les dates sont obligatoires.');
+      return;
+    }
+    if (new Date(editFormationForm.end_date) <= new Date(editFormationForm.start_date)) {
+      toast.error('La date de fin doit être après la date de début.');
+      return;
+    }
+    updateFormationMutation.mutate({
+      id: editFormationTarget.id,
+      data: { ...editFormationForm, cost: editFormationForm.cost ? Number(editFormationForm.cost) : 0 },
+    });
+  };
+
   const createMeetingMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) => trainingService.createMeeting(data),
     onSuccess: () => {
@@ -174,6 +244,70 @@ export default function TrainingPage() {
       start_time: newMeetingForm.start_time,
       end_time: newMeetingForm.end_time,
       meeting_link: newMeetingForm.meeting_link || null,
+    });
+  };
+
+  const [editMeetingTarget, setEditMeetingTarget] = useState<ApiMeeting | null>(null);
+  const [editMeetingForm, setEditMeetingForm] = useState<NewMeetingForm>(EMPTY_MEETING_FORM);
+  const [deleteMeetingId, setDeleteMeetingId] = useState<number | null>(null);
+
+  const updateMeetingMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      trainingService.updateMeeting(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reunions'] });
+      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      toast.success('Réunion modifiée avec succès.');
+      setEditMeetingTarget(null);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la modification de la réunion.');
+    },
+  });
+
+  const deleteMeetingMutation = useMutation({
+    mutationFn: (id: number) => trainingService.deleteMeeting(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reunions'] });
+      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      toast.success('Réunion supprimée.');
+      setDeleteMeetingId(null);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la suppression de la réunion.');
+    },
+  });
+
+  const openEditMeeting = (meeting: ApiMeeting) => {
+    setEditMeetingTarget(meeting);
+    setEditMeetingForm({
+      title: meeting.title,
+      formation: String(meeting.formation),
+      start_time: meeting.start_time,
+      end_time: meeting.end_time,
+      meeting_link: meeting.meeting_link || '',
+    });
+  };
+
+  const handleEditMeetingSubmit = () => {
+    if (!editMeetingTarget) return;
+    if (!editMeetingForm.title || !editMeetingForm.formation || !editMeetingForm.start_time || !editMeetingForm.end_time) {
+      toast.error('Le titre, la formation et les dates sont obligatoires.');
+      return;
+    }
+    if (new Date(editMeetingForm.end_time) <= new Date(editMeetingForm.start_time)) {
+      toast.error('La date de fin doit être après la date de début.');
+      return;
+    }
+    updateMeetingMutation.mutate({
+      id: editMeetingTarget.id,
+      data: {
+        title: editMeetingForm.title,
+        formation: Number(editMeetingForm.formation),
+        start_time: editMeetingForm.start_time,
+        end_time: editMeetingForm.end_time,
+        meeting_link: editMeetingForm.meeting_link || null,
+      },
     });
   };
 
@@ -313,11 +447,37 @@ export default function TrainingPage() {
                   >
                     <Card className="border border-border shadow-sm rounded-lg">
                       <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
+                        <div className="flex items-start justify-between gap-2">
                           <CardTitle className="text-lg text-foreground">{formation.title}</CardTitle>
-                          <Badge className={statusConfig[status].className}>
-                            {statusConfig[status].label}
-                          </Badge>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <Badge className={statusConfig[status].className}>
+                              {statusConfig[status].label}
+                            </Badge>
+                            {canManage && (
+                              <>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  aria-label="Modifier la formation"
+                                  title="Modifier la formation"
+                                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                  onClick={() => openEditFormation(formation)}
+                                >
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  aria-label="Supprimer la formation"
+                                  title="Supprimer la formation"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => setDeleteFormationId(formation.id)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </div>
                       </CardHeader>
                       <CardContent className="space-y-3">
@@ -430,6 +590,30 @@ export default function TrainingPage() {
                       <Badge variant="outline">
                         {reunion.status === 'scheduled' ? 'Planifiée' : reunion.status === 'completed' ? 'Terminée' : 'Annulée'}
                       </Badge>
+                      {canManage && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Modifier la réunion"
+                            title="Modifier la réunion"
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            onClick={() => openEditMeeting(reunion)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            aria-label="Supprimer la réunion"
+                            title="Supprimer la réunion"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => setDeleteMeetingId(reunion.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
+                      )}
                     </motion.div>
                   ))}
                 </div>
@@ -511,6 +695,102 @@ export default function TrainingPage() {
         </Dialog>
         )}
 
+        {/* Edit Formation Dialog — réservé RH/Admin */}
+        {canManage && (
+        <Dialog open={editFormationTarget !== null} onOpenChange={(open) => { if (!open) setEditFormationTarget(null); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Modifier la formation</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid gap-2">
+                <Label>Titre *</Label>
+                <Input
+                  value={editFormationForm.title}
+                  onChange={(e) => setEditFormationForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Ex: Formation Django REST Framework"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Formateur *</Label>
+                <Input
+                  value={editFormationForm.instructor}
+                  onChange={(e) => setEditFormationForm((prev) => ({ ...prev, instructor: e.target.value }))}
+                  placeholder="Ex: Marie Dupont"
+                />
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label>Date de début *</Label>
+                  <Input
+                    type="datetime-local"
+                    value={editFormationForm.start_date}
+                    onChange={(e) => setEditFormationForm((prev) => ({ ...prev, start_date: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Date de fin *</Label>
+                  <Input
+                    type="datetime-local"
+                    value={editFormationForm.end_date}
+                    onChange={(e) => setEditFormationForm((prev) => ({ ...prev, end_date: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Coût (FCFA)</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  value={editFormationForm.cost}
+                  onChange={(e) => setEditFormationForm((prev) => ({ ...prev, cost: e.target.value }))}
+                  placeholder="Ex: 500000"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={editFormationForm.description}
+                  onChange={(e) => setEditFormationForm((prev) => ({ ...prev, description: e.target.value }))}
+                  placeholder="Objectifs et contenu de la formation..."
+                  rows={3}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditFormationTarget(null)}>Annuler</Button>
+              <Button onClick={handleEditFormationSubmit} disabled={updateFormationMutation.isPending}>
+                {updateFormationMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        )}
+
+        {/* Delete Formation Confirmation */}
+        {canManage && (
+        <AlertDialog open={deleteFormationId !== null} onOpenChange={(open) => { if (!open) setDeleteFormationId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette formation ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est définitive. Les réunions et participations associées à cette formation seront également supprimées.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteFormationId !== null && deleteFormationMutation.mutate(deleteFormationId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        )}
+
         {/* Create Meeting Dialog — réservé RH/Admin */}
         {canManage && (
         <Dialog open={isCreateMeetingDialogOpen} onOpenChange={setIsCreateMeetingDialogOpen}>
@@ -581,6 +861,101 @@ export default function TrainingPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
+
+        {/* Edit Meeting Dialog — réservé RH/Admin */}
+        {canManage && (
+        <Dialog open={editMeetingTarget !== null} onOpenChange={(open) => { if (!open) setEditMeetingTarget(null); }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Modifier la réunion</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid gap-2">
+                <Label>Titre *</Label>
+                <Input
+                  value={editMeetingForm.title}
+                  onChange={(e) => setEditMeetingForm((prev) => ({ ...prev, title: e.target.value }))}
+                  placeholder="Ex: Point d'avancement semaine 1"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Formation *</Label>
+                <Select
+                  value={editMeetingForm.formation}
+                  onValueChange={(value) => setEditMeetingForm((prev) => ({ ...prev, formation: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une formation" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {formations.map((formation) => (
+                      <SelectItem key={formation.id} value={String(formation.id)}>
+                        {formation.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label>Date de début *</Label>
+                  <Input
+                    type="datetime-local"
+                    value={editMeetingForm.start_time}
+                    onChange={(e) => setEditMeetingForm((prev) => ({ ...prev, start_time: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Date de fin *</Label>
+                  <Input
+                    type="datetime-local"
+                    value={editMeetingForm.end_time}
+                    onChange={(e) => setEditMeetingForm((prev) => ({ ...prev, end_time: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="grid gap-2">
+                <Label>Lien de la réunion</Label>
+                <Input
+                  value={editMeetingForm.meeting_link}
+                  onChange={(e) => setEditMeetingForm((prev) => ({ ...prev, meeting_link: e.target.value }))}
+                  placeholder="Ex: https://meet.google.com/xxx-xxxx-xxx"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditMeetingTarget(null)}>Annuler</Button>
+              <Button onClick={handleEditMeetingSubmit} disabled={updateMeetingMutation.isPending}>
+                {updateMeetingMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enregistrer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        )}
+
+        {/* Delete Meeting Confirmation */}
+        {canManage && (
+        <AlertDialog open={deleteMeetingId !== null} onOpenChange={(open) => { if (!open) setDeleteMeetingId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette réunion ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est définitive et ne peut pas être annulée.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteMeetingId !== null && deleteMeetingMutation.mutate(deleteMeetingId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         )}
       </motion.div>
   );

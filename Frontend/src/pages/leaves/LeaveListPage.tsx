@@ -8,6 +8,16 @@ import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle, DialogTrigger,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -19,7 +29,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { useAuth } from '@/context/AuthContext';
-import { Calendar, List, Plus, Check, X, ChevronLeft, ChevronRight, Briefcase } from 'lucide-react';
+import { Calendar, List, Plus, Check, X, ChevronLeft, ChevronRight, Briefcase, Pencil, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import DataPagination, { usePagination } from '@/components/common/DataPagination';
@@ -178,6 +188,60 @@ export default function LeaveListPage() {
     mutationFn: (id: number) => leaveService.reject(id),
     onSuccess: () => { invalidate(); toast({ title: 'Congé refusé' }); },
   });
+
+  const [editTarget, setEditTarget] = useState<LeaveItem | null>(null);
+  const [editForm, setEditForm] = useState({
+    leave_type: '', start_date: '', end_date: '', reason: '',
+  });
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      leaveService.update(id, data),
+    onSuccess: () => {
+      invalidate();
+      setEditTarget(null);
+      toast({ title: 'Demande modifiée' });
+    },
+    onError: () => toast({ title: 'Erreur', description: 'Impossible de modifier la demande.', variant: 'destructive' }),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => leaveService.delete(id),
+    onSuccess: () => {
+      invalidate();
+      setDeleteId(null);
+      toast({ title: 'Demande supprimée' });
+    },
+    onError: () => toast({ title: 'Erreur', description: 'Impossible de supprimer la demande.', variant: 'destructive' }),
+  });
+
+  const openEdit = (leave: LeaveItem) => {
+    setEditTarget(leave);
+    setEditForm({
+      leave_type: leave.leave_type,
+      start_date: leave.start_date,
+      end_date: leave.end_date,
+      reason: leave.reason,
+    });
+  };
+
+  const handleEditSubmit = () => {
+    if (!editTarget) return;
+    if (!editForm.leave_type || !editForm.start_date || !editForm.end_date) {
+      toast({ title: 'Champs requis', description: 'Type, date de début et date de fin sont obligatoires.', variant: 'destructive' });
+      return;
+    }
+    if (editForm.end_date < editForm.start_date) {
+      toast({ title: 'Date invalide', description: 'La date de fin doit être après la date de début.', variant: 'destructive' });
+      return;
+    }
+    updateMutation.mutate({ id: editTarget.id, data: { ...editForm } });
+  };
+
+  function canModify(leave: LeaveItem): boolean {
+    return isManager || leave.status === 'pending';
+  }
 
   // ── Calendar helpers ──────────────────────────────────────────────
   function leavesForDay(day: Date): LeaveItem[] {
@@ -348,7 +412,7 @@ export default function LeaveListPage() {
                     <TableHead className="hidden md:table-cell">Durée</TableHead>
                     <TableHead className="hidden lg:table-cell">Déductible</TableHead>
                     <TableHead>Statut</TableHead>
-                    {isManager && <TableHead className="text-right">Actions</TableHead>}
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -377,10 +441,10 @@ export default function LeaveListPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>{getStatusBadge(leave.status)}</TableCell>
-                      {isManager && (
-                        <TableCell className="text-right">
-                          {leave.status === 'pending' ? (
-                            <div className="flex justify-end gap-2">
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          {isManager && leave.status === 'pending' && (
+                            <>
                               <Button
                                 size="sm"
                                 className="bg-success text-success-foreground hover:bg-success/90"
@@ -397,12 +461,37 @@ export default function LeaveListPage() {
                               >
                                 <X className="mr-1 h-4 w-4" /> Refuser
                               </Button>
-                            </div>
-                          ) : (
+                            </>
+                          )}
+                          {canModify(leave) && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                aria-label="Modifier la demande"
+                                title="Modifier la demande"
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                onClick={() => openEdit(leave)}
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                aria-label="Supprimer la demande"
+                                title="Supprimer la demande"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => setDeleteId(leave.id)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          )}
+                          {!isManager && leave.status !== 'pending' && (
                             <span className="text-sm text-muted-foreground">—</span>
                           )}
-                        </TableCell>
-                      )}
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -506,6 +595,79 @@ export default function LeaveListPage() {
             </div>
           </Card>
         )}
+
+        {/* Edit Leave Dialog */}
+        <Dialog open={editTarget !== null} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Modifier la demande de congé</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-leave-type">Type de congé <span className="text-destructive">*</span></Label>
+                <Select value={editForm.leave_type} onValueChange={(v) => setEditForm((f) => ({ ...f, leave_type: v }))}>
+                  <SelectTrigger id="edit-leave-type"><SelectValue placeholder="Sélectionnez un type" /></SelectTrigger>
+                  <SelectContent>
+                    {LEAVE_TYPE_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-start-date">Date de début <span className="text-destructive">*</span></Label>
+                <Input
+                  id="edit-start-date" type="date"
+                  value={editForm.start_date}
+                  onChange={(e) => setEditForm((f) => ({ ...f, start_date: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-end-date">Date de fin <span className="text-destructive">*</span></Label>
+                <Input
+                  id="edit-end-date" type="date"
+                  value={editForm.end_date}
+                  onChange={(e) => setEditForm((f) => ({ ...f, end_date: e.target.value }))}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="edit-reason">Motif</Label>
+                <Textarea
+                  id="edit-reason" rows={3} placeholder="Motif optionnel…"
+                  value={editForm.reason}
+                  onChange={(e) => setEditForm((f) => ({ ...f, reason: e.target.value }))}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditTarget(null)}>Annuler</Button>
+              <Button onClick={handleEditSubmit} disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? 'Enregistrement…' : 'Enregistrer'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Delete Leave Confirmation */}
+        <AlertDialog open={deleteId !== null} onOpenChange={(open) => { if (!open) setDeleteId(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer cette demande de congé ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est définitive et ne peut pas être annulée.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteId !== null && deleteMutation.mutate(deleteId)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Supprimer
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </motion.div>
   );
 }
