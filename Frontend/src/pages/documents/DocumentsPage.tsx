@@ -11,6 +11,7 @@ import {
   List,
   Loader2,
   X,
+  Pencil,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -106,6 +107,8 @@ export default function DocumentsPage() {
     employee: '',
   });
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [editTarget, setEditTarget] = useState<ApiDocument | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', document_type: 'other' as DocumentType });
 
   const { data, isLoading } = useQuery({
     queryKey: ['documents'],
@@ -145,6 +148,33 @@ export default function DocumentsPage() {
       toast.error('Erreur lors de la suppression.');
     },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
+      documentService.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast.success('Document modifié.');
+      setEditTarget(null);
+    },
+    onError: () => {
+      toast.error('Erreur lors de la modification.');
+    },
+  });
+
+  const openEdit = (doc: ApiDocument) => {
+    setEditTarget(doc);
+    setEditForm({ name: doc.name, document_type: doc.document_type });
+  };
+
+  const handleEditSubmit = () => {
+    if (!editTarget) return;
+    if (!editForm.name) {
+      toast.error('Le nom du document est obligatoire.');
+      return;
+    }
+    updateMutation.mutate({ id: editTarget.id, data: { ...editForm } });
+  };
 
   const handleFileSelect = (file: File) => {
     setSelectedFile(file);
@@ -360,14 +390,24 @@ export default function DocumentsPage() {
                           <Download className="h-4 w-4" />
                         </Button>
                         {canManage && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeleteConfirmId(doc.id)}
-                            title="Supprimer"
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEdit(doc)}
+                              title="Modifier"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => setDeleteConfirmId(doc.id)}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </>
                         )}
                       </div>
                     </TableCell>
@@ -405,9 +445,14 @@ export default function DocumentsPage() {
                       Télécharger
                     </Button>
                     {canManage && (
-                      <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setDeleteConfirmId(doc.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      <>
+                        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => openEdit(doc)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setDeleteConfirmId(doc.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </>
                     )}
                   </div>
                 </CardContent>
@@ -515,6 +560,50 @@ export default function DocumentsPage() {
               <Button onClick={handleUploadSubmit} disabled={uploadMutation.isPending || !selectedFile}>
                 {uploadMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Téléverser
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+        )}
+
+        {/* Edit Document Dialog — réservé RH/Admin */}
+        {canManage && (
+        <Dialog open={editTarget !== null} onOpenChange={(open) => { if (!open) setEditTarget(null); }}>
+          <DialogContent className="sm:max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Modifier le document</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid gap-2">
+                <Label>Nom du document</Label>
+                <Input
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((prev) => ({ ...prev, name: e.target.value }))}
+                  placeholder="Ex: Contrat CDI 2025"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Type</Label>
+                <Select
+                  value={editForm.document_type}
+                  onValueChange={(value) => setEditForm((prev) => ({ ...prev, document_type: value as DocumentType }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(DOCUMENT_TYPE_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>{label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditTarget(null)}>Annuler</Button>
+              <Button onClick={handleEditSubmit} disabled={updateMutation.isPending}>
+                {updateMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Enregistrer
               </Button>
             </DialogFooter>
           </DialogContent>
