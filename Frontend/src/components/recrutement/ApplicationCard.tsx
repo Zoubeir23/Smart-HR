@@ -1,4 +1,4 @@
-import { Bot, CheckCircle2, ChevronDown, Loader2, SlidersHorizontal, UserCheck } from 'lucide-react';
+import { Bot, CheckCircle2, ChevronDown, Loader2, SlidersHorizontal, Trash2, UserCheck } from 'lucide-react';
 import { STATUS_TRANSITIONS } from '@/components/recrutement/applicationConstants';
 import {
   getCandidateFullName,
@@ -28,6 +28,7 @@ interface ApplicationCardProps {
   onStatusChange: (applicationId: number, newStatus: ApplicationStatus) => void;
   onSendInterview: (application: Application) => void;
   onOnboard: (application: Application) => void;
+  onDelete: (application: Application) => void;
   isStatusChangePending: boolean;
   isOnboardPending: boolean;
   isSelected: boolean;
@@ -40,6 +41,7 @@ export function ApplicationCard({
   onStatusChange,
   onSendInterview,
   onOnboard,
+  onDelete,
   isStatusChangePending,
   isOnboardPending,
   isSelected,
@@ -188,6 +190,18 @@ export function ApplicationCard({
                   </Button>
                 )
               )}
+
+              {/* Delete button */}
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Supprimer la candidature"
+                title="Supprimer la candidature"
+                className="ml-auto gap-1.5 text-muted-foreground hover:text-destructive"
+                onClick={() => onDelete(application)}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </Button>
             </div>
           </div>
         </div>
