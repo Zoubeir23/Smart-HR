@@ -621,8 +621,17 @@ export default function LandingPage() {
             <div>
               <p className={`mb-5 text-xs font-bold uppercase tracking-widest ${theme === 'dark' ? 'text-white/30' : 'text-muted-foreground'}`}>Légal</p>
               <ul className="space-y-3 text-sm">
-                {['Confidentialité', 'CGU', 'RGPD', 'Mentions légales'].map((item) => (
-                  <li key={item}><a href="#" className={`${theme === 'dark' ? 'text-white/50 hover:text-white' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>{item}</a></li>
+                {[
+                  { label: 'Confidentialité', to: '/privacy' },
+                  { label: 'CGU', to: '/terms' },
+                  { label: 'RGPD', to: '/gdpr' },
+                  { label: 'Mentions légales', to: '/legal-notice' },
+                ].map((item) => (
+                  <li key={item.label}>
+                    <Link to={item.to} className={`${theme === 'dark' ? 'text-white/50 hover:text-white' : 'text-muted-foreground hover:text-foreground'} transition-colors`}>
+                      {item.label}
+                    </Link>
+                  </li>
                 ))}
               </ul>
               <div className="mt-8">
