@@ -19,6 +19,15 @@ export const trainingService = {
     return data;
   },
 
+  updateFormation: async (id: number, formationData: Record<string, unknown>) => {
+    const { data } = await api.patch(`/formation/formations/${id}/`, formationData);
+    return data;
+  },
+
+  deleteFormation: async (id: number) => {
+    await api.delete(`/formation/formations/${id}/`);
+  },
+
   getMeetings: async () => {
     const { data } = await api.get('/formation/meetings/');
     return data;
@@ -27,6 +36,15 @@ export const trainingService = {
   createMeeting: async (meetingData: Record<string, unknown>) => {
     const { data } = await api.post('/formation/meetings/', meetingData);
     return data;
+  },
+
+  updateMeeting: async (id: number, meetingData: Record<string, unknown>) => {
+    const { data } = await api.patch(`/formation/meetings/${id}/`, meetingData);
+    return data;
+  },
+
+  deleteMeeting: async (id: number) => {
+    await api.delete(`/formation/meetings/${id}/`);
   },
 
   getCompletionStats: async (): Promise<CompletionStats> => {
