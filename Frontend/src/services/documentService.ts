@@ -16,6 +16,11 @@ export const documentService = {
     return data;
   },
 
+  update: async (id: number, documentData: Record<string, unknown>) => {
+    const { data } = await api.patch(`/document/documents/${id}/`, documentData);
+    return data;
+  },
+
   delete: async (id: number) => {
     await api.delete(`/document/documents/${id}/`);
   },
