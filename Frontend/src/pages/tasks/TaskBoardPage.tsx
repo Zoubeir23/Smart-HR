@@ -164,6 +164,7 @@ function TaskCard({ task, onMove, canManage = false, onEdit, onDelete, isDraggin
                 <Button
                   variant="ghost"
                   size="icon"
+                  aria-label={`Actions pour la tâche ${task.title}`}
                   className="h-7 w-7 shrink-0"
                   onClick={(e) => e.stopPropagation()}
                 >
