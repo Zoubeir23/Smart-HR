@@ -22,6 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ApplicationsManagementPage() {
@@ -47,6 +57,9 @@ export default function ApplicationsManagementPage() {
 
   // Track the application being onboarded
   const [onboardingApplicationId, setOnboardingApplicationId] = useState<number | null>(null);
+
+  // Delete confirmation state
+  const [deleteTarget, setDeleteTarget] = useState<Application | null>(null);
 
   // ── Data fetching ──
 
@@ -161,6 +174,22 @@ export default function ApplicationsManagementPage() {
       toast({
         title: 'Erreur lors de l\'envoi',
         description: 'Impossible d\'envoyer l\'invitation d\'entretien. Réessayez.',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const deleteApplicationMutation = useMutation({
+    mutationFn: (applicationId: number) => recruitmentService.deleteApplication(applicationId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['applications-management'] });
+      setDeleteTarget(null);
+      toast({ title: 'Candidature supprimée' });
+    },
+    onError: () => {
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de supprimer la candidature. Réessayez.',
         variant: 'destructive',
       });
     },
@@ -453,6 +482,7 @@ export default function ApplicationsManagementPage() {
                     onStatusChange={handleStatusChange}
                     onSendInterview={handleOpenInterviewDialog}
                     onOnboard={handleOnboard}
+                    onDelete={setDeleteTarget}
                     isStatusChangePending={
                       updateStatusMutation.isPending &&
                       updateStatusMutation.variables?.applicationId === application.id
@@ -485,6 +515,28 @@ export default function ApplicationsManagementPage() {
         onConfirm={handleConfirmBulkSendInterview}
         isPending={bulkSendProgress !== null}
       />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteTarget !== null} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette candidature ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est définitive. Le CV et les documents associés à{' '}
+              {deleteTarget ? getCandidateFullName(deleteTarget) : 'ce candidat'} seront également supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTarget && deleteApplicationMutation.mutate(deleteTarget.id)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
