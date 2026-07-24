@@ -21,6 +21,10 @@ import ResetPasswordPage from "@/pages/auth/ResetPasswordPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import UnauthorizedPage from "@/pages/UnauthorizedPage";
 import LandingPage from "@/pages/LandingPage";
+import PrivacyPolicyPage from "@/pages/legal/PrivacyPolicyPage";
+import TermsOfServicePage from "@/pages/legal/TermsOfServicePage";
+import GdprPage from "@/pages/legal/GdprPage";
+import LegalNoticePage from "@/pages/legal/LegalNoticePage";
 
 // Pages interview public (sans login, chargement immédiat)
 import InterviewLandingPage from "@/pages/interview/InterviewLandingPage";
@@ -145,6 +149,12 @@ const App = () => (
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password/:uid/:token" element={<ResetPasswordPage />} />
               <Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+              {/* Pages légales — publiques, sans login */}
+              <Route path="/privacy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms" element={<TermsOfServicePage />} />
+              <Route path="/gdpr" element={<GdprPage />} />
+              <Route path="/legal-notice" element={<LegalNoticePage />} />
 
               {/* Entretien IA partagé — public, sans login */}
               <Route path="/interview/:token" element={<InterviewLandingPage />} />
