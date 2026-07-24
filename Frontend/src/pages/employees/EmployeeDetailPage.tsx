@@ -1,10 +1,21 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Loader2, Mail, Pencil } from 'lucide-react';
+import { ArrowLeft, Loader2, Mail, Pencil, ShieldOff, Trash2 } from 'lucide-react';
 import { employeeService } from '@/services/employeeService';
 import { documentService } from '@/services/documentService';
+import { useAuth } from '@/context/AuthContext';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import OnboardingProgramsCard from '@/components/employees/OnboardingProgramsCard';
 import ObjectivesCard from '@/components/employees/ObjectivesCard';
 import { EmployeeChurnRiskCard } from '@/components/employees/EmployeeChurnRiskCard';
@@ -21,7 +32,13 @@ import { toast } from 'sonner';
 export default function EmployeeDetailPage() {
   const { id } = useParams();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
+
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAnonymizeDialogOpen, setIsAnonymizeDialogOpen] = useState(false);
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editForm, setEditForm] = useState<EditEmployeeForm>({
@@ -103,6 +120,32 @@ export default function EmployeeDetailPage() {
     },
     onError: () => {
       toast.error('Erreur lors de la désactivation.');
+    },
+  });
+
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: () => employeeService.delete(Number(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employees'] });
+      toast.success('Employé supprimé définitivement.');
+      navigate('/employees');
+    },
+    onError: () => {
+      toast.error('Erreur lors de la suppression.');
+      setIsDeleteDialogOpen(false);
+    },
+  });
+
+  const anonymizeMutation = useMutation({
+    mutationFn: () => employeeService.anonymize(Number(id)),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      toast.success('Données personnelles anonymisées (RGPD).');
+      setIsAnonymizeDialogOpen(false);
+    },
+    onError: (error: Error & { response?: { data?: { detail?: string } } }) => {
+      toast.error(error?.response?.data?.detail ?? 'Erreur lors de l\'anonymisation.');
+      setIsAnonymizeDialogOpen(false);
     },
   });
 
@@ -246,6 +289,33 @@ export default function EmployeeDetailPage() {
               {disableMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Désactiver
             </Button>
+            {isAdmin && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                  disabled={!['inactive', 'terminated'].includes(employee?.status ?? '')}
+                  title={
+                    !['inactive', 'terminated'].includes(employee?.status ?? '')
+                      ? "Seuls les employés inactifs ou dont le contrat est terminé peuvent être anonymisés."
+                      : undefined
+                  }
+                  onClick={() => setIsAnonymizeDialogOpen(true)}
+                >
+                  <ShieldOff className="mr-2 h-4 w-4" />
+                  Anonymiser (RGPD)
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Supprimer définitivement
+                </Button>
+              </>
+            )}
           </div>
         </div>
 
@@ -259,6 +329,60 @@ export default function EmployeeDetailPage() {
           isPending={updateMutation.isPending}
           onSubmit={handleEditSubmit}
         />
+
+        {isAdmin && (
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Supprimer définitivement cet employé ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Cette action est irréversible : la fiche employé, son historique de congés,
+                de présences, de paie et ses documents seront définitivement supprimés. Pour
+                un départ standard, préférez « Désactiver ». Utilisez cette action uniquement
+                pour corriger une erreur (ex. profil créé par erreur ou en double).
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => deleteEmployeeMutation.mutate()}
+                disabled={deleteEmployeeMutation.isPending}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleteEmployeeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Supprimer définitivement
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        )}
+
+        {isAdmin && (
+        <AlertDialog open={isAnonymizeDialogOpen} onOpenChange={setIsAnonymizeDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Anonymiser les données personnelles (RGPD) ?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Le CIN, l'adresse, la nationalité, la date de naissance et le contact d'urgence
+                seront définitivement effacés. Le nom sera remplacé par un identifiant anonyme.
+                L'historique RH agrégé (ancienneté, paie) est conservé. Cette action est
+                irréversible.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => anonymizeMutation.mutate()}
+                disabled={anonymizeMutation.isPending}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {anonymizeMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Anonymiser
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        )}
 
         {/* Main Layout */}
         <div className="grid gap-6 lg:grid-cols-3">

@@ -327,13 +327,13 @@ const RegisterPage = () => {
           className="text-center text-sm text-muted-foreground mt-8"
         >
           En créant un compte, vous acceptez nos{' '}
-          <a href="#" className="text-primary hover:underline">
+          <Link to="/terms" className="text-primary hover:underline">
             conditions d'utilisation
-          </a>{' '}
+          </Link>{' '}
           et notre{' '}
-          <a href="#" className="text-primary hover:underline">
+          <Link to="/privacy" className="text-primary hover:underline">
             politique de confidentialité
-          </a>
+          </Link>
         </motion.p>
       </motion.div>
     </div>
