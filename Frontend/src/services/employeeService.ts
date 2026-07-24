@@ -33,6 +33,11 @@ export const employeeService = {
     await api.delete(`/personnel/employees/${id}/`);
   },
 
+  anonymize: async (id: number) => {
+    const { data } = await api.post(`/personnel/employees/${id}/anonymize/`);
+    return data;
+  },
+
   getStats: async () => {
     const { data } = await api.get('/personnel/employees/stats/');
     return data;
