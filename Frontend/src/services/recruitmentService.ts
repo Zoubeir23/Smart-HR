@@ -56,6 +56,15 @@ export const recruitmentService = {
     return data;
   },
 
+  updateApplication: async (id: number, applicationData: Record<string, unknown>) => {
+    const { data } = await api.patch(`/recruitment/applications/${id}/`, applicationData);
+    return data;
+  },
+
+  deleteApplication: async (id: number) => {
+    await api.delete(`/recruitment/applications/${id}/`);
+  },
+
   createInterview: async (applicationId: number, options?: { duration?: string; interview_type?: string }) => {
     const { data } = await api.post(`/recruitment/applications/${applicationId}/create-interview/`, options ?? {});
     return data;
