@@ -42,9 +42,7 @@ def sanitize_free_text(text: str, max_length: int = 3000) -> str:
     """
     if not text:
         return ""
-    lines = [
-        "[ligne supprimée]" if _starts_with_injection_pattern(line) else line for line in text.splitlines()
-    ]
+    lines = ["[ligne supprimée]" if _starts_with_injection_pattern(line) else line for line in text.splitlines()]
     return "\n".join(lines)[:max_length]
 
 
