@@ -21,13 +21,24 @@ def require_role(user, allowed_roles: tuple[str, ...], error_message: str) -> di
 def find_employee_by_full_name(full_name: str):
     """Résout un employé par correspondance exacte (insensible à la casse) sur
     prénom+nom. Retourne None si aucune correspondance ou plusieurs candidats
-    ambigus — mieux vaut demander une précision que de cibler le mauvais employé."""
+    ambigus — mieux vaut demander une précision que de cibler le mauvais employé.
+
+    La correspondance est faite en base : charger toute la table pour filtrer en
+    Python coûterait un scan complet à chaque action nommant un employé. La limite
+    à 2 résultats suffit, puisqu'au-delà d'une correspondance le cas est ambigu."""
+    from django.db.models import Value
+    from django.db.models.functions import Concat
+    from django.db.models.functions import Trim
+
     from smart_hr.personnel.models import Employee
 
-    target = (full_name or "").strip().lower()
+    target = (full_name or "").strip()
     if not target:
         return None
 
-    candidates = Employee.objects.select_related("user")
-    matches = [e for e in candidates if f"{e.user.first_name} {e.user.last_name}".strip().lower() == target]
+    matches = list(
+        Employee.objects.select_related("user")
+        .annotate(computed_full_name=Trim(Concat("user__first_name", Value(" "), "user__last_name")))
+        .filter(computed_full_name__iexact=target)[:2],
+    )
     return matches[0] if len(matches) == 1 else None

@@ -7,6 +7,8 @@ from __future__ import annotations
 
 import logging
 
+from smart_hr.core.prompt_safety import sanitize_identity_label
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,7 +48,7 @@ def _build_rh_leave_lines() -> list[str]:
     if pending_leaves:
         lines.append(f"Demandes de congé en attente ({pending_leaves.count()}) :")
         for leave in pending_leaves:
-            name = leave.employee.user.get_full_name() or leave.employee.user.email
+            name = sanitize_identity_label(leave.employee.user.get_full_name() or leave.employee.user.email)
             lines.append(
                 f"  - {name} | {leave.get_leave_type_display()} | "
                 f"du {_fmt_date(leave.start_date)} au {_fmt_date(leave.end_date)} "
@@ -94,7 +96,7 @@ def _build_rh_attendance_lines() -> list[str]:
     if absents_today.exists():
         lines.append(f"Absences aujourd'hui ({absents_today.count()}) :")
         for att in absents_today[:8]:
-            name = att.employee.user.get_full_name() or att.employee.user.email
+            name = sanitize_identity_label(att.employee.user.get_full_name() or att.employee.user.email)
             lines.append(f"  - {name} : {att.get_status_display()}")
     else:
         lines.append("Aucune absence enregistrée aujourd'hui.")
@@ -117,8 +119,9 @@ def _build_rh_task_lines() -> list[str]:
     if overdue.exists():
         lines.append("Tâches en retard :")
         for task in overdue[:5]:
-            assignee_name = task.assignee.user.get_full_name() if task.assignee else "Non assigné"
-            lines.append(f"  - {task.title} | {assignee_name} | Échéance : {_fmt_date(task.due_date)}")
+            assignee_name = sanitize_identity_label(task.assignee.user.get_full_name()) if task.assignee else "Non assigné"
+            task_title = sanitize_identity_label(task.title)
+            lines.append(f"  - {task_title} | {assignee_name} | Échéance : {_fmt_date(task.due_date)}")
     return lines
 
 
@@ -134,9 +137,10 @@ def _build_rh_recruitment_lines() -> list[str]:
     if recent:
         lines.append("5 dernières candidatures :")
         for app in recent:
-            name = app.candidate.get_full_name() or app.candidate.email
+            name = sanitize_identity_label(app.candidate.get_full_name() or app.candidate.email)
+            job_title = sanitize_identity_label(app.job_offer.title)
             score = f"{app.matching_score:.0f}%" if app.matching_score is not None else "non analysé"
-            lines.append(f"  - {name} → {app.job_offer.title} | {app.get_status_display()} | IA : {score}")
+            lines.append(f"  - {name} → {job_title} | {app.get_status_display()} | IA : {score}")
     return lines
 
 
@@ -363,7 +367,7 @@ def build_system_prompt(user) -> str:
     répondre avec les mêmes données réelles, scopées selon le même rôle.
     """
     role = getattr(user, "role", "EMPLOYEE").upper()
-    full_name = user.get_full_name() or user.email
+    full_name = sanitize_identity_label(user.get_full_name() or user.email)
 
     context_lines = [f"Utilisateur : {full_name} | Rôle : {role}"]
 
