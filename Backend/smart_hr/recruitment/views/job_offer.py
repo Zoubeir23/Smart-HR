@@ -12,12 +12,12 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from smart_hr.ai.llm_providers import get_llm_provider
+from smart_hr.core.prompt_safety import sanitize_free_text
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.models import JobOffer
 from smart_hr.recruitment.serializers import ApplicationSerializer
 from smart_hr.recruitment.serializers import JobOfferSerializer
 from smart_hr.recruitment.services.bulk_cv_upload import upload_cvs_to_job_offer
-from smart_hr.recruitment.services.cv_analysis_service import _sanitize_user_content
 from smart_hr.recruitment.services.document_text_extraction import SUPPORTED_DOCUMENT_EXTENSIONS
 from smart_hr.recruitment.services.document_text_extraction import extract_text_from_uploaded_document
 from smart_hr.users.permissions import IsRH
@@ -139,7 +139,7 @@ class JobOfferViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        safe_description = _sanitize_user_content(combined_description, max_length=6000)
+        safe_description = sanitize_free_text(combined_description, max_length=6000)
         prompt = _GENERATE_PROMPT.format(
             job_description=safe_description,
             job_type_values=", ".join(_JOB_TYPE_VALUES),
