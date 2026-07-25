@@ -303,7 +303,9 @@ export default function UserManagementPage() {
     queryFn: authService.listAllUsers,
   });
 
-  const allUsers: ManagedUser[] = usersData ?? [];
+  // Mémoïsé car `?? []` crée un nouveau tableau à chaque rendu : sans cela, le
+  // `useMemo` de `filteredUsers` qui en dépend recalculerait à chaque rendu.
+  const allUsers: ManagedUser[] = useMemo(() => usersData ?? [], [usersData]);
 
   const filteredUsers = useMemo(() => {
     let list = allUsers;
