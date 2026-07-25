@@ -15,39 +15,9 @@ import logging
 import os
 from typing import TypedDict
 
+from smart_hr.core.prompt_safety import sanitize_free_text
+
 logger = logging.getLogger(__name__)
-
-_INJECTION_PATTERN_PREFIXES = (
-    "ignore ",
-    "forget ",
-    "disregard ",
-    "override ",
-    "system:",
-    "assistant:",
-    "user:",
-    "[system]",
-    "[inst]",
-    "</s>",
-    "<|",
-)
-
-
-def _sanitize_user_content(text: str, max_length: int = 3000) -> str:
-    """Neutralise les tentatives de prompt injection dans le contenu utilisateur.
-
-    Stratégie : suppression des lignes qui commencent par des patterns d'injection connus,
-    puis troncature. Le contenu est ensuite encadré par des balises explicites dans les prompts.
-    """
-    if not text:
-        return ""
-    lines = []
-    for line in text.splitlines():
-        stripped = line.strip().lower()
-        if any(stripped.startswith(prefix) for prefix in _INJECTION_PATTERN_PREFIXES):
-            lines.append("[ligne supprimée]")
-        else:
-            lines.append(line)
-    return "\n".join(lines)[:max_length]
 
 
 class CVAnalysisResult(TypedDict):
@@ -94,8 +64,8 @@ def analyze_cv_against_job_offer(
         logger.warning("GEMINI_API_KEY absent — analyse CV désactivée.")
         return _default_result()
 
-    safe_cv = _sanitize_user_content(cv_text, max_length=2500)
-    safe_cover_letter = _sanitize_user_content(cover_letter, max_length=500)
+    safe_cv = sanitize_free_text(cv_text, max_length=2500)
+    safe_cover_letter = sanitize_free_text(cover_letter, max_length=500)
 
     prompt = (
         "Tu es un expert RH en analyse de CV. Analyse ce candidat pour le poste suivant "
@@ -185,8 +155,8 @@ def generate_interview_questions_from_cv(
 
     skills_text = ", ".join(skills_extracted) if skills_extracted else "Non renseignées"
 
-    safe_cv = _sanitize_user_content(cv_text, max_length=2500)
-    safe_summary = _sanitize_user_content(ai_summary, max_length=500)
+    safe_cv = sanitize_free_text(cv_text, max_length=2500)
+    safe_summary = sanitize_free_text(ai_summary, max_length=500)
 
     prompt = (
         f"Tu es un expert RH spécialisé en conduite d'entretiens. "
@@ -326,7 +296,7 @@ def extract_candidate_identity(cv_text: str) -> CandidateIdentity:
         logger.warning("GEMINI_API_KEY absent — extraction d'identité candidat désactivée.")
         return CandidateIdentity(first_name="", last_name="", email="")
 
-    safe_cv = _sanitize_user_content(cv_text, max_length=2500)
+    safe_cv = sanitize_free_text(cv_text, max_length=2500)
 
     prompt = (
         "Tu es un assistant RH. Extrais l'identité du candidat depuis ce CV et retourne "
