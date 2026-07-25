@@ -2,120 +2,81 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { GraduationCap, Calendar, Users, Video, Clock, BookOpen, Plus, Loader2, Pencil, Trash2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { trainingService } from '@/services/trainingService';
 import CompletionRateSection from '@/components/training/CompletionRateSection';
 import TrainingProviderDirectory from '@/components/training/TrainingProviderDirectory';
+import FormationFormDialog from '@/components/training/FormationFormDialog';
+import MeetingFormDialog from '@/components/training/MeetingFormDialog';
+import ConfirmDeleteDialog from '@/components/training/ConfirmDeleteDialog';
+import {
+  EMPTY_FORMATION_FORM,
+  EMPTY_MEETING_FORM,
+  FORMATION_STATUS_CONFIG,
+  getFormationStatus,
+  type ApiFormation,
+  type ApiMeeting,
+  type FormationFormValues,
+  type MeetingFormValues,
+} from '@/components/training/trainingTypes';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
 
-interface ApiMeeting {
-  id: number;
-  title: string;
-  start_time: string;
-  end_time: string;
-  meeting_link: string | null;
-  status: string;
-  formation: number;
+/** Règles de validation communes à la création et à la modification d'une formation. */
+function validateFormationForm(values: FormationFormValues): string | null {
+  if (!values.title || !values.start_date || !values.end_date || !values.instructor) {
+    return 'Le titre, le formateur et les dates sont obligatoires.';
+  }
+  if (new Date(values.end_date) <= new Date(values.start_date)) {
+    return 'La date de fin doit être après la date de début.';
+  }
+  return null;
 }
 
-interface ApiFormation {
-  id: number;
-  title: string;
-  description: string;
-  start_date: string;
-  end_date: string;
-  instructor: string;
-  cost: number;
-  meetings: ApiMeeting[];
-  created_at: string;
+/** Règles de validation communes à la création et à la modification d'une réunion. */
+function validateMeetingForm(values: MeetingFormValues): string | null {
+  if (!values.title || !values.formation || !values.start_time || !values.end_time) {
+    return 'Le titre, la formation et les dates sont obligatoires.';
+  }
+  if (new Date(values.end_time) <= new Date(values.start_time)) {
+    return 'La date de fin doit être après la date de début.';
+  }
+  return null;
 }
 
-function getFormationStatus(formation: ApiFormation): 'en_cours' | 'planifie' | 'termine' {
-  const now = new Date();
-  const start = new Date(formation.start_date);
-  const end = new Date(formation.end_date);
-  if (now < start) return 'planifie';
-  if (now > end) return 'termine';
-  return 'en_cours';
+function toFormationPayload(values: FormationFormValues): Record<string, unknown> {
+  return { ...values, cost: values.cost ? Number(values.cost) : 0 };
 }
 
-const statusConfig = {
-  en_cours: { label: 'En cours', className: 'bg-primary text-primary-foreground' },
-  planifie: { label: 'Planifié', className: 'bg-warning text-warning-foreground' },
-  termine: { label: 'Terminé', className: 'bg-success text-success-foreground' },
-};
-
-interface NewFormationForm {
-  title: string;
-  description: string;
-  start_date: string;
-  end_date: string;
-  instructor: string;
-  cost: string;
+function toMeetingPayload(values: MeetingFormValues): Record<string, unknown> {
+  return {
+    title: values.title,
+    formation: Number(values.formation),
+    start_time: values.start_time,
+    end_time: values.end_time,
+    meeting_link: values.meeting_link || null,
+  };
 }
-
-interface NewMeetingForm {
-  title: string;
-  formation: string;
-  start_time: string;
-  end_time: string;
-  meeting_link: string;
-}
-
-const EMPTY_MEETING_FORM: NewMeetingForm = {
-  title: '',
-  formation: '',
-  start_time: '',
-  end_time: '',
-  meeting_link: '',
-};
 
 export default function TrainingPage() {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   // Seuls RH/Admin planifient des formations ; l'employé consulte.
   const canManage = user?.role === 'RH' || user?.role === 'ADMIN';
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [newFormationForm, setNewFormationForm] = useState<NewFormationForm>({
-    title: '',
-    description: '',
-    start_date: '',
-    end_date: '',
-    instructor: '',
-    cost: '',
-  });
+  const [newFormationForm, setNewFormationForm] = useState<FormationFormValues>(EMPTY_FORMATION_FORM);
+  const [editFormationTarget, setEditFormationTarget] = useState<ApiFormation | null>(null);
+  const [editFormationForm, setEditFormationForm] = useState<FormationFormValues>(EMPTY_FORMATION_FORM);
+  const [deleteFormationId, setDeleteFormationId] = useState<number | null>(null);
+
   const [isCreateMeetingDialogOpen, setIsCreateMeetingDialogOpen] = useState(false);
-  const [newMeetingForm, setNewMeetingForm] = useState<NewMeetingForm>(EMPTY_MEETING_FORM);
+  const [newMeetingForm, setNewMeetingForm] = useState<MeetingFormValues>(EMPTY_MEETING_FORM);
+  const [editMeetingTarget, setEditMeetingTarget] = useState<ApiMeeting | null>(null);
+  const [editMeetingForm, setEditMeetingForm] = useState<MeetingFormValues>(EMPTY_MEETING_FORM);
+  const [deleteMeetingId, setDeleteMeetingId] = useState<number | null>(null);
 
   const { data: formationsData, isLoading: isLoadingFormations } = useQuery({
     queryKey: ['formations'],
@@ -130,42 +91,28 @@ export default function TrainingPage() {
   const formations: ApiFormation[] = formationsData?.results ?? formationsData ?? [];
   const reunions: ApiMeeting[] = reunionsData?.results ?? reunionsData ?? [];
 
+  const invalidateFormations = () => queryClient.invalidateQueries({ queryKey: ['formations'] });
+  const invalidateMeetings = () => queryClient.invalidateQueries({ queryKey: ['reunions'] });
+
+  // ── Formations ────────────────────────────────────────────────────
   const createMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) => trainingService.createFormation(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      invalidateFormations();
       toast.success('Formation créée avec succès.');
       setIsCreateDialogOpen(false);
-      setNewFormationForm({ title: '', description: '', start_date: '', end_date: '', instructor: '', cost: '' });
+      setNewFormationForm(EMPTY_FORMATION_FORM);
     },
     onError: () => {
       toast.error('Erreur lors de la création de la formation.');
     },
   });
 
-  const handleCreateSubmit = () => {
-    if (!newFormationForm.title || !newFormationForm.start_date || !newFormationForm.end_date || !newFormationForm.instructor) {
-      toast.error('Le titre, le formateur et les dates sont obligatoires.');
-      return;
-    }
-    if (new Date(newFormationForm.end_date) <= new Date(newFormationForm.start_date)) {
-      toast.error('La date de fin doit être après la date de début.');
-      return;
-    }
-    createMutation.mutate({ ...newFormationForm, cost: newFormationForm.cost ? Number(newFormationForm.cost) : 0 });
-  };
-
-  const [editFormationTarget, setEditFormationTarget] = useState<ApiFormation | null>(null);
-  const [editFormationForm, setEditFormationForm] = useState<NewFormationForm>({
-    title: '', description: '', start_date: '', end_date: '', instructor: '', cost: '',
-  });
-  const [deleteFormationId, setDeleteFormationId] = useState<number | null>(null);
-
   const updateFormationMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       trainingService.updateFormation(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      invalidateFormations();
       toast.success('Formation modifiée avec succès.');
       setEditFormationTarget(null);
     },
@@ -177,8 +124,8 @@ export default function TrainingPage() {
   const deleteFormationMutation = useMutation({
     mutationFn: (id: number) => trainingService.deleteFormation(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['formations'] });
-      queryClient.invalidateQueries({ queryKey: ['reunions'] });
+      invalidateFormations();
+      invalidateMeetings();
       toast.success('Formation supprimée.');
       setDeleteFormationId(null);
     },
@@ -186,6 +133,15 @@ export default function TrainingPage() {
       toast.error('Erreur lors de la suppression de la formation.');
     },
   });
+
+  const handleCreateSubmit = () => {
+    const validationError = validateFormationForm(newFormationForm);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    createMutation.mutate(toFormationPayload(newFormationForm));
+  };
 
   const openEditFormation = (formation: ApiFormation) => {
     setEditFormationTarget(formation);
@@ -201,25 +157,23 @@ export default function TrainingPage() {
 
   const handleEditFormationSubmit = () => {
     if (!editFormationTarget) return;
-    if (!editFormationForm.title || !editFormationForm.start_date || !editFormationForm.end_date || !editFormationForm.instructor) {
-      toast.error('Le titre, le formateur et les dates sont obligatoires.');
-      return;
-    }
-    if (new Date(editFormationForm.end_date) <= new Date(editFormationForm.start_date)) {
-      toast.error('La date de fin doit être après la date de début.');
+    const validationError = validateFormationForm(editFormationForm);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
     updateFormationMutation.mutate({
       id: editFormationTarget.id,
-      data: { ...editFormationForm, cost: editFormationForm.cost ? Number(editFormationForm.cost) : 0 },
+      data: toFormationPayload(editFormationForm),
     });
   };
 
+  // ── Réunions ──────────────────────────────────────────────────────
   const createMeetingMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) => trainingService.createMeeting(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reunions'] });
-      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      invalidateMeetings();
+      invalidateFormations();
       toast.success('Réunion planifiée avec succès.');
       setIsCreateMeetingDialogOpen(false);
       setNewMeetingForm(EMPTY_MEETING_FORM);
@@ -229,34 +183,12 @@ export default function TrainingPage() {
     },
   });
 
-  const handleCreateMeetingSubmit = () => {
-    if (!newMeetingForm.title || !newMeetingForm.formation || !newMeetingForm.start_time || !newMeetingForm.end_time) {
-      toast.error('Le titre, la formation et les dates sont obligatoires.');
-      return;
-    }
-    if (new Date(newMeetingForm.end_time) <= new Date(newMeetingForm.start_time)) {
-      toast.error('La date de fin doit être après la date de début.');
-      return;
-    }
-    createMeetingMutation.mutate({
-      title: newMeetingForm.title,
-      formation: Number(newMeetingForm.formation),
-      start_time: newMeetingForm.start_time,
-      end_time: newMeetingForm.end_time,
-      meeting_link: newMeetingForm.meeting_link || null,
-    });
-  };
-
-  const [editMeetingTarget, setEditMeetingTarget] = useState<ApiMeeting | null>(null);
-  const [editMeetingForm, setEditMeetingForm] = useState<NewMeetingForm>(EMPTY_MEETING_FORM);
-  const [deleteMeetingId, setDeleteMeetingId] = useState<number | null>(null);
-
   const updateMeetingMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: Record<string, unknown> }) =>
       trainingService.updateMeeting(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reunions'] });
-      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      invalidateMeetings();
+      invalidateFormations();
       toast.success('Réunion modifiée avec succès.');
       setEditMeetingTarget(null);
     },
@@ -268,8 +200,8 @@ export default function TrainingPage() {
   const deleteMeetingMutation = useMutation({
     mutationFn: (id: number) => trainingService.deleteMeeting(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['reunions'] });
-      queryClient.invalidateQueries({ queryKey: ['formations'] });
+      invalidateMeetings();
+      invalidateFormations();
       toast.success('Réunion supprimée.');
       setDeleteMeetingId(null);
     },
@@ -277,6 +209,15 @@ export default function TrainingPage() {
       toast.error('Erreur lors de la suppression de la réunion.');
     },
   });
+
+  const handleCreateMeetingSubmit = () => {
+    const validationError = validateMeetingForm(newMeetingForm);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
+    createMeetingMutation.mutate(toMeetingPayload(newMeetingForm));
+  };
 
   const openEditMeeting = (meeting: ApiMeeting) => {
     setEditMeetingTarget(meeting);
@@ -291,23 +232,14 @@ export default function TrainingPage() {
 
   const handleEditMeetingSubmit = () => {
     if (!editMeetingTarget) return;
-    if (!editMeetingForm.title || !editMeetingForm.formation || !editMeetingForm.start_time || !editMeetingForm.end_time) {
-      toast.error('Le titre, la formation et les dates sont obligatoires.');
-      return;
-    }
-    if (new Date(editMeetingForm.end_time) <= new Date(editMeetingForm.start_time)) {
-      toast.error('La date de fin doit être après la date de début.');
+    const validationError = validateMeetingForm(editMeetingForm);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
     updateMeetingMutation.mutate({
       id: editMeetingTarget.id,
-      data: {
-        title: editMeetingForm.title,
-        formation: Number(editMeetingForm.formation),
-        start_time: editMeetingForm.start_time,
-        end_time: editMeetingForm.end_time,
-        meeting_link: editMeetingForm.meeting_link || null,
-      },
+      data: toMeetingPayload(editMeetingForm),
     });
   };
 
@@ -450,8 +382,8 @@ export default function TrainingPage() {
                         <div className="flex items-start justify-between gap-2">
                           <CardTitle className="text-lg text-foreground">{formation.title}</CardTitle>
                           <div className="flex items-center gap-2 shrink-0">
-                            <Badge className={statusConfig[status].className}>
-                              {statusConfig[status].label}
+                            <Badge className={FORMATION_STATUS_CONFIG[status].className}>
+                              {FORMATION_STATUS_CONFIG[status].label}
                             </Badge>
                             {canManage && (
                               <>
@@ -622,340 +554,71 @@ export default function TrainingPage() {
           )}
         </div>
 
-        {/* Create Formation Dialog — réservé RH/Admin */}
+        {/* Dialogues de gestion — réservés RH/Admin */}
         {canManage && (
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Planifier une formation</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="grid gap-2">
-                <Label>Titre *</Label>
-                <Input
-                  value={newFormationForm.title}
-                  onChange={(e) => setNewFormationForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Ex: Formation Django REST Framework"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Formateur *</Label>
-                <Input
-                  value={newFormationForm.instructor}
-                  onChange={(e) => setNewFormationForm((prev) => ({ ...prev, instructor: e.target.value }))}
-                  placeholder="Ex: Marie Dupont"
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Date de début *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={newFormationForm.start_date}
-                    onChange={(e) => setNewFormationForm((prev) => ({ ...prev, start_date: e.target.value }))}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Date de fin *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={newFormationForm.end_date}
-                    onChange={(e) => setNewFormationForm((prev) => ({ ...prev, end_date: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Coût (FCFA)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={newFormationForm.cost}
-                  onChange={(e) => setNewFormationForm((prev) => ({ ...prev, cost: e.target.value }))}
-                  placeholder="Ex: 500000"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={newFormationForm.description}
-                  onChange={(e) => setNewFormationForm((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Objectifs et contenu de la formation..."
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Annuler</Button>
-              <Button onClick={handleCreateSubmit} disabled={createMutation.isPending}>
-                {createMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Créer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        )}
+          <>
+            <FormationFormDialog
+              isOpen={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
+              title="Planifier une formation"
+              submitLabel="Créer"
+              values={newFormationForm}
+              onValuesChange={setNewFormationForm}
+              onSubmit={handleCreateSubmit}
+              isPending={createMutation.isPending}
+            />
 
-        {/* Edit Formation Dialog — réservé RH/Admin */}
-        {canManage && (
-        <Dialog open={editFormationTarget !== null} onOpenChange={(open) => { if (!open) setEditFormationTarget(null); }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Modifier la formation</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="grid gap-2">
-                <Label>Titre *</Label>
-                <Input
-                  value={editFormationForm.title}
-                  onChange={(e) => setEditFormationForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Ex: Formation Django REST Framework"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Formateur *</Label>
-                <Input
-                  value={editFormationForm.instructor}
-                  onChange={(e) => setEditFormationForm((prev) => ({ ...prev, instructor: e.target.value }))}
-                  placeholder="Ex: Marie Dupont"
-                />
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Date de début *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={editFormationForm.start_date}
-                    onChange={(e) => setEditFormationForm((prev) => ({ ...prev, start_date: e.target.value }))}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Date de fin *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={editFormationForm.end_date}
-                    onChange={(e) => setEditFormationForm((prev) => ({ ...prev, end_date: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Coût (FCFA)</Label>
-                <Input
-                  type="number"
-                  min="0"
-                  value={editFormationForm.cost}
-                  onChange={(e) => setEditFormationForm((prev) => ({ ...prev, cost: e.target.value }))}
-                  placeholder="Ex: 500000"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Description</Label>
-                <Textarea
-                  value={editFormationForm.description}
-                  onChange={(e) => setEditFormationForm((prev) => ({ ...prev, description: e.target.value }))}
-                  placeholder="Objectifs et contenu de la formation..."
-                  rows={3}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditFormationTarget(null)}>Annuler</Button>
-              <Button onClick={handleEditFormationSubmit} disabled={updateFormationMutation.isPending}>
-                {updateFormationMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enregistrer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        )}
+            <FormationFormDialog
+              isOpen={editFormationTarget !== null}
+              onOpenChange={(open) => { if (!open) setEditFormationTarget(null); }}
+              title="Modifier la formation"
+              submitLabel="Enregistrer"
+              values={editFormationForm}
+              onValuesChange={setEditFormationForm}
+              onSubmit={handleEditFormationSubmit}
+              isPending={updateFormationMutation.isPending}
+            />
 
-        {/* Delete Formation Confirmation */}
-        {canManage && (
-        <AlertDialog open={deleteFormationId !== null} onOpenChange={(open) => { if (!open) setDeleteFormationId(null); }}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer cette formation ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est définitive. Les réunions et participations associées à cette formation seront également supprimées.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteFormationId !== null && deleteFormationMutation.mutate(deleteFormationId)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Supprimer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        )}
+            <ConfirmDeleteDialog
+              isOpen={deleteFormationId !== null}
+              onOpenChange={(open) => { if (!open) setDeleteFormationId(null); }}
+              title="Supprimer cette formation ?"
+              description="Cette action est définitive. Les réunions et participations associées à cette formation seront également supprimées."
+              onConfirm={() => deleteFormationId !== null && deleteFormationMutation.mutate(deleteFormationId)}
+            />
 
-        {/* Create Meeting Dialog — réservé RH/Admin */}
-        {canManage && (
-        <Dialog open={isCreateMeetingDialogOpen} onOpenChange={setIsCreateMeetingDialogOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Planifier une réunion</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="grid gap-2">
-                <Label>Titre *</Label>
-                <Input
-                  value={newMeetingForm.title}
-                  onChange={(e) => setNewMeetingForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Ex: Point d'avancement semaine 1"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Formation *</Label>
-                <Select
-                  value={newMeetingForm.formation}
-                  onValueChange={(value) => setNewMeetingForm((prev) => ({ ...prev, formation: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une formation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formations.map((formation) => (
-                      <SelectItem key={formation.id} value={String(formation.id)}>
-                        {formation.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Date de début *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={newMeetingForm.start_time}
-                    onChange={(e) => setNewMeetingForm((prev) => ({ ...prev, start_time: e.target.value }))}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Date de fin *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={newMeetingForm.end_time}
-                    onChange={(e) => setNewMeetingForm((prev) => ({ ...prev, end_time: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Lien de la réunion</Label>
-                <Input
-                  value={newMeetingForm.meeting_link}
-                  onChange={(e) => setNewMeetingForm((prev) => ({ ...prev, meeting_link: e.target.value }))}
-                  placeholder="Ex: https://meet.google.com/xxx-xxxx-xxx"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsCreateMeetingDialogOpen(false)}>Annuler</Button>
-              <Button onClick={handleCreateMeetingSubmit} disabled={createMeetingMutation.isPending}>
-                {createMeetingMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Créer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        )}
+            <MeetingFormDialog
+              isOpen={isCreateMeetingDialogOpen}
+              onOpenChange={setIsCreateMeetingDialogOpen}
+              title="Planifier une réunion"
+              submitLabel="Créer"
+              values={newMeetingForm}
+              onValuesChange={setNewMeetingForm}
+              formations={formations}
+              onSubmit={handleCreateMeetingSubmit}
+              isPending={createMeetingMutation.isPending}
+            />
 
-        {/* Edit Meeting Dialog — réservé RH/Admin */}
-        {canManage && (
-        <Dialog open={editMeetingTarget !== null} onOpenChange={(open) => { if (!open) setEditMeetingTarget(null); }}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>Modifier la réunion</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="grid gap-2">
-                <Label>Titre *</Label>
-                <Input
-                  value={editMeetingForm.title}
-                  onChange={(e) => setEditMeetingForm((prev) => ({ ...prev, title: e.target.value }))}
-                  placeholder="Ex: Point d'avancement semaine 1"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Formation *</Label>
-                <Select
-                  value={editMeetingForm.formation}
-                  onValueChange={(value) => setEditMeetingForm((prev) => ({ ...prev, formation: value }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Sélectionner une formation" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {formations.map((formation) => (
-                      <SelectItem key={formation.id} value={String(formation.id)}>
-                        {formation.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="grid gap-2">
-                  <Label>Date de début *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={editMeetingForm.start_time}
-                    onChange={(e) => setEditMeetingForm((prev) => ({ ...prev, start_time: e.target.value }))}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Date de fin *</Label>
-                  <Input
-                    type="datetime-local"
-                    value={editMeetingForm.end_time}
-                    onChange={(e) => setEditMeetingForm((prev) => ({ ...prev, end_time: e.target.value }))}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Lien de la réunion</Label>
-                <Input
-                  value={editMeetingForm.meeting_link}
-                  onChange={(e) => setEditMeetingForm((prev) => ({ ...prev, meeting_link: e.target.value }))}
-                  placeholder="Ex: https://meet.google.com/xxx-xxxx-xxx"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditMeetingTarget(null)}>Annuler</Button>
-              <Button onClick={handleEditMeetingSubmit} disabled={updateMeetingMutation.isPending}>
-                {updateMeetingMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Enregistrer
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-        )}
+            <MeetingFormDialog
+              isOpen={editMeetingTarget !== null}
+              onOpenChange={(open) => { if (!open) setEditMeetingTarget(null); }}
+              title="Modifier la réunion"
+              submitLabel="Enregistrer"
+              values={editMeetingForm}
+              onValuesChange={setEditMeetingForm}
+              formations={formations}
+              onSubmit={handleEditMeetingSubmit}
+              isPending={updateMeetingMutation.isPending}
+            />
 
-        {/* Delete Meeting Confirmation */}
-        {canManage && (
-        <AlertDialog open={deleteMeetingId !== null} onOpenChange={(open) => { if (!open) setDeleteMeetingId(null); }}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Supprimer cette réunion ?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est définitive et ne peut pas être annulée.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => deleteMeetingId !== null && deleteMeetingMutation.mutate(deleteMeetingId)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Supprimer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+            <ConfirmDeleteDialog
+              isOpen={deleteMeetingId !== null}
+              onOpenChange={(open) => { if (!open) setDeleteMeetingId(null); }}
+              title="Supprimer cette réunion ?"
+              description="Cette action est définitive et ne peut pas être annulée."
+              onConfirm={() => deleteMeetingId !== null && deleteMeetingMutation.mutate(deleteMeetingId)}
+            />
+          </>
         )}
       </motion.div>
   );
