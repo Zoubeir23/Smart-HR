@@ -67,7 +67,22 @@ if MINIO_STORAGE_ENABLED:
     AWS_S3_REGION_NAME = "us-east-1"
     AWS_DEFAULT_ACL = None
     AWS_S3_FILE_OVERWRITE = False
-    AWS_QUERYSTRING_AUTH = False
+
+    # URLs signées et expirantes — NE JAMAIS repasser à False.
+    #
+    # Les médias contiennent des données RH hautement sensibles (CV, contrats,
+    # bulletins de paie, pièces d'identité, pièces disciplinaires). `ProtectedMediaView`
+    # (voir `smart_hr.core.protected_media`) applique le contrôle d'accès par
+    # propriétaire, mais elle lit le disque local : avec un stockage objet, elle
+    # est hors du chemin de lecture et ne protège plus rien.
+    #
+    # Avec AWS_QUERYSTRING_AUTH=False, `file.url` produit des URLs permanentes et
+    # non signées, qui n'ont d'intérêt que si le bucket autorise la lecture
+    # anonyme — soit une exposition publique de tous les documents RH à qui
+    # connaît ou devine l'URL. À True, `file.url` renvoie une URL signée valable
+    # AWS_QUERYSTRING_EXPIRE secondes, et le bucket reste privé.
+    AWS_QUERYSTRING_AUTH = True
+    AWS_QUERYSTRING_EXPIRE = env.int("DJANGO_AWS_QUERYSTRING_EXPIRE", default=3600)
 
     STORAGES = {
         "default": {
@@ -81,7 +96,9 @@ if MINIO_STORAGE_ENABLED:
         },
     }
 
-    MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{AWS_STORAGE_BUCKET_NAME}/media/"
+    # MEDIA_URL n'est volontairement pas surchargé vers le préfixe public du
+    # bucket : S3Boto3Storage construit lui-même l'URL signée complète dans
+    # `file.url`, et publier ce préfixe donnerait une base d'URLs non signées.
 
 else:
     STORAGES = {
