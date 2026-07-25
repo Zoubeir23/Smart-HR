@@ -496,12 +496,16 @@ export default function CalendarPage() {
 
   const hasError = leavesError || tasksError || formationsError || meetingsError;
 
-  const leaves: Record<string, unknown>[] = leavesData?.results ?? leavesData ?? [];
-  const tasks: Record<string, unknown>[] = tasksData?.results ?? tasksData ?? [];
-  const formations: Record<string, unknown>[] = formationsData?.results ?? formationsData ?? [];
-  const meetings: Record<string, unknown>[] = meetingsData?.results ?? meetingsData ?? [];
-
-  const allEvents = useMemo(() => buildAllEvents(leaves, tasks, formations, meetings), [leaves, tasks, formations, meetings]);
+  // L'extraction est faite dans le callback : `?? []` crée un nouveau tableau à
+  // chaque rendu, donc en dépendre annulerait la mémoïsation (recalcul systématique).
+  // Les objets de réponse React Query, eux, restent stables tant que la donnée ne change pas.
+  const allEvents = useMemo(() => {
+    const leaves: Record<string, unknown>[] = leavesData?.results ?? leavesData ?? [];
+    const tasks: Record<string, unknown>[] = tasksData?.results ?? tasksData ?? [];
+    const formations: Record<string, unknown>[] = formationsData?.results ?? formationsData ?? [];
+    const meetings: Record<string, unknown>[] = meetingsData?.results ?? meetingsData ?? [];
+    return buildAllEvents(leaves, tasks, formations, meetings);
+  }, [leavesData, tasksData, formationsData, meetingsData]);
   const filteredEvents = useMemo(() => allEvents.filter((e) => activeFilters.has(e.type)), [allEvents, activeFilters]);
 
   function toggleFilter(type: EventType) {
