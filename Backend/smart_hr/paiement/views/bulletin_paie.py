@@ -54,7 +54,14 @@ class BulletinPaieViewSet(viewsets.ReadOnlyModelViewSet):
         return qs.filter(employee__user=user)
 
     def get_permissions(self):
-        if self.action in ("list", "generer"):
+        """Seule la génération est réservée au RH.
+
+        La lecture (`list`, `retrieve`, `pdf`) reste ouverte à tout utilisateur
+        authentifié : `get_queryset` cloisonne déjà chaque employé sur ses propres
+        bulletins. Gater `list` sur IsRH rendait au contraire la branche employé du
+        queryset inatteignable, et empêchait l'employé de consulter sa propre paie.
+        """
+        if self.action == "generer":
             return [IsRH()]
         return [IsAuthenticated()]
 
