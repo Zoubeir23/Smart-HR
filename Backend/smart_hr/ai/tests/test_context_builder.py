@@ -180,3 +180,42 @@ class TestBuildSystemPromptRoleIsolation:
         employee_prompt = build_system_prompt(employee.user)
         rh_prompt = build_system_prompt(rh_user)
         assert employee_prompt != rh_prompt
+
+
+class TestCapabilitiesBlock:
+    """Le prompt doit déclarer les actions réellement déclenchables par le rôle.
+
+    Régression : sans ce bloc, l'assistant ignorait ses propres capacités et
+    répondait « je ne suis pas en mesure de créer des offres d'emploi » à un RH,
+    contredisant le message d'accueil de l'interface qui propose cette action.
+    """
+
+    def test_rh_sait_qu_il_peut_creer_une_offre(self):
+        rh_user = UserFactory.create(role=User.Role.RH)
+        prompt = build_system_prompt(rh_user)
+        assert "ACTIONS QUE TU PEUX DÉCLENCHER" in prompt
+        assert "Créer une offre d'emploi" in prompt
+        assert "Crée une offre d'emploi pour un développeur Django à Dakar" in prompt
+
+    def test_rh_connait_aussi_la_validation_de_conge(self):
+        rh_user = UserFactory.create(role=User.Role.RH)
+        prompt = build_system_prompt(rh_user)
+        assert "Valider ou refuser un congé" in prompt
+
+    def test_employe_ne_voit_pas_les_actions_reservees_au_rh(self, employee):
+        prompt = build_system_prompt(employee.user)
+        assert "Poser un congé" in prompt
+        assert "Créer une offre d'emploi" not in prompt
+        assert "Valider ou refuser un congé" not in prompt
+
+    def test_candidat_n_a_aucune_action(self):
+        candidate = UserFactory.create(role=User.Role.CANDIDATE)
+        prompt = build_system_prompt(candidate)
+        assert "Tu n'as aucune action à exécuter" in prompt
+        assert "Créer une offre d'emploi" not in prompt
+
+    def test_interdit_de_pretendre_avoir_execute(self):
+        """L'exécution passe par le function-calling, pas par cette réponse."""
+        rh_user = UserFactory.create(role=User.Role.RH)
+        prompt = build_system_prompt(rh_user)
+        assert "Ne prétends jamais avoir déjà exécuté" in prompt
