@@ -33,11 +33,24 @@ export default defineConfig(({ mode }) => ({
           // deux déploiements. Ne PAS ajouter de fallback générique ici — ça
           // aspirerait aussi jspdf/html2canvas/recharts, déjà correctement
           // code-splittés par Rollup via leurs import() dynamiques.
-          if (id.includes("react-dom") || id.includes("/react/") || id.includes("react-router")) {
+          // Radix est volontairement DANS le même chunk que React.
+          //
+          // Les séparer créait un cycle vendor-react <-> vendor-radix : Rollup
+          // place les modules partagés par deux chunks manuels dans l'un des
+          // deux, et l'autre les réimporte. Un cycle entre chunks ES rend
+          // l'ordre d'évaluation indéterminé — Radix lisait `React.forwardRef`
+          // avant l'initialisation de vendor-react, React ne montait jamais et
+          // la page restait blanche en production.
+          //
+          // Ne pas re-séparer ces deux paquets sans vérifier, sur le build, que
+          // les chunks ne s'importent pas mutuellement.
+          if (
+            id.includes("@radix-ui") ||
+            id.includes("react-dom") ||
+            id.includes("/react/") ||
+            id.includes("react-router")
+          ) {
             return "vendor-react";
-          }
-          if (id.includes("@radix-ui")) {
-            return "vendor-radix";
           }
           if (id.includes("@tanstack")) {
             return "vendor-query";
