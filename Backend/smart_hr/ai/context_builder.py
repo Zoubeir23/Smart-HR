@@ -380,6 +380,7 @@ def build_system_prompt(user) -> str:
 
     context_block = "\n".join(context_lines)
     instructions = _ROLE_INSTRUCTIONS.get(role, _ROLE_INSTRUCTIONS["EMPLOYEE"])
+    capabilities_block = _build_capabilities_block(role)
 
     return (
         "Tu es Smart-HR Assistant, un assistant IA expert en ressources humaines. "
@@ -388,5 +389,43 @@ def build_system_prompt(user) -> str:
         "Si la question porte sur une donnée absente du contexte, dis-le clairement. "
         "Si la question est hors sujet RH, redirige poliment.\n\n"
         f"=== DONNÉES TEMPS RÉEL ===\n{context_block}\n=========================\n\n"
+        f"{capabilities_block}"
         f"INSTRUCTIONS ({role}) :\n{instructions}"
+    )
+
+
+def _build_capabilities_block(role: str) -> str:
+    """Déclare au LLM les actions qu'il peut réellement déclencher pour ce rôle.
+
+    Sans ce bloc, l'assistant ignorait ses propres capacités : interrogé sur ce
+    qu'il sait faire (« peux-tu créer une offre d'emploi ? »), il répondait qu'il
+    se limitait à consulter des données — contredisant le message d'accueil de
+    l'interface, qui propose justement cette action.
+
+    L'exécution reste pilotée par le function-calling (`_run_chatbot_action`),
+    déclenché uniquement par une demande formulée à l'impératif. Ce bloc sert
+    donc à répondre juste aux questions de capacité et à indiquer la formulation
+    qui déclenche l'action, jamais à prétendre l'avoir exécutée.
+    """
+    from smart_hr.ai.actions.intent_detection import list_supported_actions_for_role
+
+    actions = list_supported_actions_for_role(role)
+    if not actions:
+        return (
+            "=== ACTIONS ===\n"
+            "Tu n'as aucune action à exécuter pour ce rôle : tu réponds uniquement "
+            "à des questions. Si on te demande d'agir, explique-le clairement.\n"
+            "===============\n\n"
+        )
+
+    listed = "\n".join(f"- {action['label']} — exemple : « {action['example']} »" for action in actions)
+    return (
+        "=== ACTIONS QUE TU PEUX DÉCLENCHER ===\n"
+        f"{listed}\n"
+        "Si on te demande si tu sais faire l'une d'elles, réponds OUI et cite la "
+        "formulation d'exemple à employer. Ne prétends jamais avoir déjà exécuté "
+        "une action : elle ne se déclenche que sur une demande formulée à "
+        "l'impératif, traitée séparément. Pour toute action absente de cette "
+        "liste, dis qu'elle n'est pas disponible pour ce rôle.\n"
+        "======================================\n\n"
     )
