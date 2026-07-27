@@ -10,6 +10,7 @@ from rest_framework.views import APIView
 from smart_hr.ai.llm_providers import get_llm_provider
 from smart_hr.core.prompt_safety import sanitize_conversation_message
 from smart_hr.core.prompt_safety import sanitize_free_text
+from smart_hr.core.prompt_safety import sanitize_identity_label
 from smart_hr.core.prompt_safety import validate_conversation
 from smart_hr.core.throttles import AILLMUserThrottle
 from smart_hr.users.permissions import IsRH
@@ -86,8 +87,8 @@ class GenerateInterviewQuestionsView(APIView):
         prompt = _QUESTIONS_PROMPT.format(
             job_position=sanitize_free_text(job_position, max_length=200),
             job_description=sanitize_free_text(job_description, max_length=6000),
-            duration=duration,
-            interview_type=interview_type,
+            duration=sanitize_identity_label(duration, max_length=50),
+            interview_type=sanitize_identity_label(interview_type, max_length=50),
         )
 
         try:
