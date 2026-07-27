@@ -4,11 +4,16 @@ import json
 import logging
 
 from rest_framework import status
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from smart_hr.ai.llm_providers import get_llm_provider
+from smart_hr.core.prompt_safety import sanitize_conversation_message
+from smart_hr.core.prompt_safety import sanitize_free_text
+from smart_hr.core.prompt_safety import sanitize_identity_label
+from smart_hr.core.prompt_safety import validate_conversation
+from smart_hr.core.throttles import AILLMUserThrottle
+from smart_hr.users.permissions import IsRH
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +65,12 @@ class GenerateInterviewQuestionsView(APIView):
     """
     POST /api/v1/ai/interview/questions/
     Body: { job_position, job_description, duration, interview_type }
-    Génère une liste de questions d'entretien via le LLM actif.
+    Génère une liste de questions d'entretien via le LLM actif. Réservé RH/Admin,
+    seul rôle exposé à cette action côté frontend (`/recruteur-ia`).
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsRH]
+    throttle_classes = [AILLMUserThrottle]
 
     def post(self, request) -> Response:
         job_position = request.data.get("job_position", "").strip()
@@ -78,10 +85,10 @@ class GenerateInterviewQuestionsView(APIView):
             )
 
         prompt = _QUESTIONS_PROMPT.format(
-            job_position=job_position,
-            job_description=job_description,
-            duration=duration,
-            interview_type=interview_type,
+            job_position=sanitize_free_text(job_position, max_length=200),
+            job_description=sanitize_free_text(job_description, max_length=6000),
+            duration=sanitize_identity_label(duration, max_length=50),
+            interview_type=sanitize_identity_label(interview_type, max_length=50),
         )
 
         try:
@@ -107,10 +114,16 @@ class GenerateInterviewFeedbackView(APIView):
     """
     POST /api/v1/ai/interview/feedback/
     Body: { conversation: [{"role": "assistant"|"candidate", "content": str}, ...] }
-    Génère un feedback structuré via le LLM actif.
+    Génère un feedback structuré via le LLM actif. Réservé RH/Admin (auto-test
+    d'entretien depuis `/recruteur-ia`).
+
+    Durci au même niveau que son équivalent candidat public
+    (`InterviewSessionFeedbackCreateView`) : le contenu de `conversation` reste du
+    texte utilisateur atteignant un prompt LLM, quel que soit le rôle qui l'envoie.
     """
 
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsRH]
+    throttle_classes = [AILLMUserThrottle]
 
     def post(self, request) -> Response:
         conversation = request.data.get("conversation", [])
@@ -121,7 +134,18 @@ class GenerateInterviewFeedbackView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        conversation_text = "\n".join(f"{msg.get('role', 'inconnu').upper()} : {msg.get('content', '')}" for msg in conversation)
+        is_valid, error_message = validate_conversation(conversation)
+        if not is_valid:
+            return Response({"detail": error_message}, status=status.HTTP_400_BAD_REQUEST)
+
+        sanitized_conversation = [
+            {
+                "role": msg.get("role", "inconnu"),
+                "content": sanitize_conversation_message(str(msg.get("content", ""))),
+            }
+            for msg in conversation
+        ]
+        conversation_text = "\n".join(f"{msg['role'].upper()} : {msg['content']}" for msg in sanitized_conversation)
 
         prompt = _FEEDBACK_PROMPT.format(conversation=conversation_text)
 
