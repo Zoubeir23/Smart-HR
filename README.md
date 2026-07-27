@@ -67,7 +67,7 @@
 | **Présences** | Pointage quotidien, rapports mensuels |
 | **Paie** | Historique salaires, fiches de paie |
 | **Documents** | Upload sécurisé, contrats, attestations (par rôle) |
-| **Formations & Réunions** | Catalogue, planification, intégration Zoom |
+| **Formations & Réunions** | Catalogue, planification, lien de réunion (visioconférence externe) |
 | **Tâches** | Kanban (À faire → En cours → En revue → Terminée) |
 
 ### Recrutement
@@ -96,8 +96,12 @@
 - Argon2 (hachage des mots de passe)
 - OTP email 6 chiffres (brute-force : verrouillage 15 min après 5 tentatives)
 - RBAC : 4 rôles (Admin, RH, Employé, Candidat)
+- Content-Security-Policy sur l'API (Django) et sur le document HTML de la SPA (nginx)
+- Fichiers sensibles (CV, contrats, bulletins de paie) servis via une vue protégée avec contrôle d'accès par propriétaire, URLs signées et expirantes en cas de stockage objet
 - Logs d'audit (`AuditLog`) pour toutes les actions critiques
-- Export RGPD des données personnelles (endpoint dédié)
+- Export RGPD des données personnelles (droit à la portabilité, endpoint dédié)
+- Anonymisation RGPD des données d'un employé (droit à l'oubli, réservé Admin)
+- Pages légales dédiées : Politique de confidentialité, CGU, RGPD, Mentions légales (`/privacy`, `/terms`, `/gdpr`, `/legal-notice`)
 
 ---
 
@@ -111,7 +115,7 @@
                          │  REST API (JWT)
 ┌────────────────────────▼─────────────────────────────────┐
 │              Backend  Django 6 + DRF                      │
-│  users · personnel · recruitment · leaves · ai · ai_engine│
+│  users · personnel · recruitment · conge · ai · ai_engine │
 │  Celery Workers  │  Celery Beat (cron hebdo)              │
 └──────┬───────────┴──────────────────────┬────────────────┘
        │                                  │
@@ -141,19 +145,21 @@ Smart-HR/
 │   │   ├── users/              # Auth JWT, OTP, RBAC
 │   │   ├── personnel/          # Employés, départements, postes
 │   │   ├── recruitment/        # Offres d'emploi, candidatures, analyse CV
-│   │   ├── leaves/             # Demandes et validation de congés
-│   │   ├── attendance/         # Pointage et présences
-│   │   ├── payroll/            # Salaires et fiches de paie
-│   │   ├── documents/          # Gestion documentaire
-│   │   ├── training/           # Formations et réunions
-│   │   ├── tasks/              # Gestion des tâches (Kanban)
-│   │   ├── ai/                 # Chatbot multi-LLM + actions RH
-│   │   ├── ai_engine/          # Prédiction churn (Random Forest)
-│   │   └── core/               # Modèles partagés (AuditLog)
-│   ├── requirements/
-│   │   ├── base.txt
-│   │   ├── local.txt
-│   │   └── production.txt
+│   │   ├── conge/               # Demandes et validation de congés
+│   │   ├── presence/            # Pointage et présences
+│   │   ├── paiement/            # Salaires, bulletins de paie (moteur multi-pays)
+│   │   ├── document/            # Gestion documentaire (contrats, attestations)
+│   │   ├── formation/           # Formations et réunions
+│   │   ├── tache/               # Gestion des tâches (Kanban)
+│   │   ├── performance/        # Évaluations, feedback 360, coaching
+│   │   ├── discipline/         # Actions disciplinaires
+│   │   ├── communication/      # Messages internes, alertes de détresse
+│   │   ├── survey/              # Enquêtes internes
+│   │   ├── ai/                  # Chatbot multi-LLM + actions RH (function-calling)
+│   │   ├── ai_agents/           # Sessions d'assistant vocal RH (mêmes LLM que le chatbot)
+│   │   ├── ai_engine/           # Prédiction churn (Random Forest)
+│   │   └── core/                # Modèles partagés, sécurité média, AuditLog
+│   ├── pyproject.toml           # Dépendances (gérées via `uv`)
 │   └── Dockerfile
 │
 ├── Frontend/
@@ -192,8 +198,10 @@ Smart-HR/
 git clone https://github.com/Zoubeir23/Smart-HR.git
 cd Smart-HR
 
-# Copier et configurer les variables d'environnement
-cp Backend/.envs/.local/.django.example Backend/.envs/.local/.django
+# Créer les fichiers de variables d'environnement (voir la section
+# "Variables d'Environnement" pour la liste complète des clés à renseigner)
+mkdir -p Backend/.envs/.local
+touch Backend/.envs/.local/.django Backend/.envs/.local/.postgres
 cp Frontend/.env.example Frontend/.env
 # Éditer les fichiers .env avec vos clés API
 
@@ -214,16 +222,17 @@ docker compose exec django python manage.py seed_demo_data
 ```bash
 cd Backend
 
-# Créer l'environnement virtuel (uv recommandé)
+# Installer uv (gestionnaire de dépendances, remplace pip/venv)
 pip install uv
-uv venv && source .venv/bin/activate
 
-# Installer les dépendances
-uv pip install -r requirements/local.txt
+# Installer les dépendances et créer l'environnement virtuel automatiquement
+uv sync
+source .venv/bin/activate
 
-# Variables d'environnement
-cp .envs/.local/.django.example .envs/.local/.django
-# Éditer le fichier avec vos paramètres
+# Variables d'environnement — créer .envs/.local/.django (voir la section
+# "Variables d'Environnement" ci-dessous pour la liste complète des clés)
+mkdir -p .envs/.local
+touch .envs/.local/.django .envs/.local/.postgres
 
 # Base de données
 python manage.py migrate
@@ -302,7 +311,7 @@ Configuration requise :
 VITE_VAPI_PUBLIC_KEY=votre_cle_publique_vapi
 ```
 
-### Chatbot RH Multi-LLM
+### Chatbot RH Multi-LLM (actionnable)
 
 L'assistant conversationnel supporte 4 fournisseurs de LLM configurables :
 
@@ -312,6 +321,18 @@ L'assistant conversationnel supporte 4 fournisseurs de LLM configurables :
 | **OpenAI** | `gpt-4o-mini` | `OPENAI_API_KEY` |
 | **Anthropic** | `claude-3-5-haiku` | `ANTHROPIC_API_KEY` |
 | **xAI Grok** | `grok-3-mini` | `GROK_API_KEY` |
+
+Au-delà de la conversation, le chatbot exécute directement des actions métier via function-calling natif, filtrées par rôle :
+
+| Action | Rôles | Exemple |
+|--------|-------|---------|
+| Poser un congé | Employé, RH, Admin | « Pose un congé du 12 au 15 août » |
+| Valider/refuser un congé | RH, Admin | « Valide le congé de Awa Diallo » |
+| Créer un objectif OKR | Employé, RH, Admin | « Crée un objectif de 10 clients signés pour Q1 » |
+| Créer un programme d'onboarding | RH, Admin | « Crée un onboarding pour Awa Diallo » |
+| Créer une offre d'emploi | RH, Admin | « Crée une offre pour un développeur Django » |
+
+Une fiche de poste ou un document peut être joint au message : son contenu (assaini contre l'injection de prompt) alimente à la fois la réponse conversationnelle et la détection d'action — « crée l'offre à partir de ce fichier » fonctionne directement.
 
 Le chatbot détecte la confusion de l'utilisateur (2 réponses consécutives hors-contexte) et propose automatiquement une escalade vers un RH humain.
 
@@ -327,7 +348,7 @@ Le projet est déployé sur VPS avec Dokploy comme orchestrateur Docker. La conf
 # Variables d'environnement de production critiques
 DATABASE_URL=postgres://...
 REDIS_URL=redis://...
-SECRET_KEY=...
+DJANGO_SECRET_KEY=...
 DJANGO_SETTINGS_MODULE=config.settings.production
 
 # IA
@@ -343,19 +364,24 @@ EMAIL_HOST_PASSWORD=...  # App password Gmail
 
 ### CI/CD GitHub Actions
 
-Le pipeline CI/CD (`.github/workflows/`) se déclenche sur chaque push vers `main` :
+Deux workflows (`.github/workflows/ci.yml` et `cd.yml`) :
 
-1. Tests Django (`pytest`)
-2. Build et push de l'image Docker
+**CI** — 4 jobs en parallèle sur chaque push/PR vers `main` :
+1. **Backend — Lint** : hooks pre-commit (ruff, djLint, django-upgrade)
+2. **Backend — Tests** : `pytest` dans un environnement Docker Compose complet (PostgreSQL inclus)
+3. **Frontend — Quality** : `tsc --noEmit`, ESLint, Vitest, build de production
+4. **Security — Trivy Scan** : scan de vulnérabilités (dépendances + filesystem)
+
+**CD** — se déclenche uniquement si la CI complète réussit :
+1. Build et push des images Docker (Backend + Frontend) vers GHCR
+2. Scan Trivy des images construites
 3. Déploiement automatique sur le VPS
 
 ### Nginx
 
-Le fichier `nginx/nginx.conf` sert de reverse proxy :
-- `/api/` → Django (port 8000)
-- `/` → Frontend React (port 80)
-- Compression gzip activée
-- Headers de sécurité configurés
+Le frontend est servi par nginx avec deux configurations :
+- `Frontend/nginx.vps.conf` — utilisée en production (Dockerfile) : proxy `/api/` et `/admin/` vers Django, Content-Security-Policy et headers de sécurité sur le document HTML de la SPA, blocage des scans de vulnérabilités courants, cache 1 an sur les assets statiques
+- `Frontend/nginx.conf` — configuration de développement, plus minimale
 
 ---
 
@@ -364,29 +390,42 @@ Le fichier `nginx/nginx.conf` sert de reverse proxy :
 ### Backend (`Backend/.envs/.local/.django`)
 
 ```env
-# Django
-SECRET_KEY=your-secret-key
-DEBUG=True
-ALLOWED_HOSTS=localhost,127.0.0.1
-
-# Base de données
-DATABASE_URL=postgres://postgres:password@localhost:5432/smarthr
+# Général
+USE_DOCKER=yes
+DJANGO_SECRET_KEY=your-secret-key   # generer via: python -c "import secrets; print(secrets.token_urlsafe(50))"
+IPYTHONDIR=/app/.ipython
 
 # Cache & Celery
-REDIS_URL=redis://localhost:6379/0
+REDIS_URL=redis://redis:6379/0
+CELERY_FLOWER_USER=your_flower_user
+CELERY_FLOWER_PASSWORD=your_flower_password
 
-# Email (OTP)
-EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+# Email — Gmail SMTP (OTP, notifications recrutement)
 EMAIL_HOST=smtp.gmail.com
 EMAIL_PORT=587
+EMAIL_USE_TLS=True
 EMAIL_HOST_USER=your@gmail.com
 EMAIL_HOST_PASSWORD=your_app_password
 
-# IA
+# Admin — notifications d'erreurs Django
+DJANGO_ADMIN_NAME=Admin
+DJANGO_ADMIN_EMAIL=admin@example.com
+
+# IA — Google Gemini par défaut ; les autres fournisseurs sont optionnels
 GEMINI_API_KEY=...
 OPENAI_API_KEY=...
 ANTHROPIC_API_KEY=...
 GROK_API_KEY=...
+```
+
+### Base de données (`Backend/.envs/.local/.postgres`)
+
+```env
+POSTGRES_HOST=postgres
+POSTGRES_PORT=5432
+POSTGRES_DB=smart_hr
+POSTGRES_USER=smart_hr
+POSTGRES_PASSWORD=your-password
 ```
 
 ### Frontend (`Frontend/.env`)
@@ -399,6 +438,8 @@ VITE_VAPI_PUBLIC_KEY=your_vapi_public_key
 ---
 
 ## Tests
+
+765 tests backend (pytest) et 238 tests frontend (Vitest), exécutés à chaque push via la CI.
 
 ```bash
 # Backend — tests unitaires et d'intégration
