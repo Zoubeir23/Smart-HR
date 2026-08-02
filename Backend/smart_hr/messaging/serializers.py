@@ -112,10 +112,7 @@ class ConversationSerializer(serializers.ModelSerializer):
     def get_last_message(self, obj: Conversation) -> dict | None:
         """Utilise la carte pré-calculée par la vue liste, sinon requête unitaire."""
         last_messages: dict[int, Message] | None = self.context.get("last_messages")
-        if last_messages is not None:
-            message = last_messages.get(obj.pk)
-        else:
-            message = obj.messages.order_by("-created_at", "-id").first()
+        message = last_messages.get(obj.pk) if last_messages is not None else obj.messages.order_by("-created_at", "-id").first()
         if message is None:
             return None
         return MessageSerializer(message, context=self.context).data
