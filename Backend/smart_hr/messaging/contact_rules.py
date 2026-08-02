@@ -16,9 +16,12 @@ candidature) et répondre aux messages qu'on lui adresse.
 
 from __future__ import annotations
 
-from django.db.models import QuerySet
+from typing import TYPE_CHECKING
 
 from smart_hr.users.models import User
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 CONTACTABLE_ROLES: dict[str, frozenset[str]] = {
     User.Role.ADMIN: frozenset(
