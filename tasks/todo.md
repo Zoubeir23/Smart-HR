@@ -44,28 +44,28 @@ sans nouvelle dépendance d'infra, suffisant pour l'usage RH.
 ## Découpage
 
 ### Backend — `smart_hr/messaging/`
-- [ ] `apps.py`, `__init__.py`, `migrations/__init__.py`
-- [ ] `models.py` : `Conversation`, `ConversationParticipant`, `Message`
-- [ ] `contact_rules.py` : matrice des rôles + `allowed_contacts_queryset`
-- [ ] `services.py` : `get_or_create_direct_conversation`, `post_message`
-- [ ] `serializers.py`
-- [ ] `views/contact.py`, `views/conversation.py`
-- [ ] `urls.py` + branchement dans `config/urls.py`
-- [ ] `admin.py`
-- [ ] migration initiale
-- [ ] `core.Notification` : ajout du choix `message_received` + migration
-- [ ] throttle `messaging_send` dans `REST_FRAMEWORK`
-- [ ] tests : règles de contact, unicité conversation, permissions, non-lus
+- [x] `apps.py`, `__init__.py`, `migrations/__init__.py`
+- [x] `models.py` : `Conversation`, `ConversationParticipant`, `Message`
+- [x] `contact_rules.py` : matrice des rôles + `allowed_contacts_queryset`
+- [x] `services.py` : `get_or_create_direct_conversation`, `post_message`
+- [x] `serializers.py`
+- [x] `views/contact.py`, `views/conversation.py`
+- [x] `urls.py` + branchement dans `config/urls.py`
+- [x] `admin.py`
+- [x] migration initiale
+- [x] `core.Notification` : ajout du choix `message_received` + migration
+- [x] throttle `messaging_send` dans `REST_FRAMEWORK`
+- [x] tests : règles de contact, unicité conversation, permissions, non-lus
 
 ### Frontend — `Frontend/src/`
-- [ ] `services/messagingService.ts`
-- [ ] `pages/messaging/MessagingPage.tsx` (liste conversations + fil + composeur)
-- [ ] `components/messaging/` (ConversationList, MessageThread, NewConversationDialog)
-- [ ] route `/messages` dans `App.tsx` (4 rôles)
-- [ ] entrée sidebar + badge non-lus
-- [ ] tests service + composants
+- [x] `services/messagingService.ts`
+- [x] `pages/messaging/MessagingPage.tsx` (liste conversations + fil + composeur)
+- [x] `components/messaging/` (ConversationList, MessageThread, NewConversationDialog)
+- [x] route `/messages` dans `App.tsx` (4 rôles)
+- [x] entrée sidebar + badge non-lus
+- [x] tests service + composants
 
 ## Vérification
-- [ ] `pytest smart_hr/messaging`
-- [ ] `npm test` (Frontend)
-- [ ] `pre-commit run --all-files` avant push
+- [x] `pytest smart_hr/messaging`
+- [x] `npm test` (Frontend)
+- [x] `pre-commit run --all-files` avant push
