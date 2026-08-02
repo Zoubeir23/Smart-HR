@@ -28,9 +28,7 @@ class ContactListView(ListAPIView):
         search_term = self.request.query_params.get("search", "").strip()
         if search_term:
             queryset = queryset.filter(
-                Q(first_name__icontains=search_term)
-                | Q(last_name__icontains=search_term)
-                | Q(email__icontains=search_term),
+                Q(first_name__icontains=search_term) | Q(last_name__icontains=search_term) | Q(email__icontains=search_term),
             )
 
         return queryset
