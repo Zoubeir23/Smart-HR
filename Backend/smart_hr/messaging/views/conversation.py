@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from django.shortcuts import get_object_or_404
 from rest_framework import status
@@ -11,13 +12,15 @@ from rest_framework.response import Response
 
 from smart_hr.messaging import services
 from smart_hr.messaging.contact_rules import can_start_conversation
-from smart_hr.messaging.models import Conversation
 from smart_hr.messaging.serializers import ConversationCreateSerializer
 from smart_hr.messaging.serializers import ConversationSerializer
 from smart_hr.messaging.serializers import MessageCreateSerializer
 from smart_hr.messaging.serializers import MessageSerializer
 from smart_hr.messaging.throttles import MessageSendThrottle
 from smart_hr.users.models import User
+
+if TYPE_CHECKING:
+    from smart_hr.messaging.models import Conversation
 
 logger = logging.getLogger(__name__)
 

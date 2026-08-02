@@ -9,6 +9,7 @@ endroit.
 from __future__ import annotations
 
 import logging
+from typing import TYPE_CHECKING
 
 from django.db import transaction
 from django.db.models import Count
@@ -25,7 +26,9 @@ from smart_hr.core.models import Notification
 from smart_hr.messaging.models import Conversation
 from smart_hr.messaging.models import ConversationParticipant
 from smart_hr.messaging.models import Message
-from smart_hr.users.models import User
+
+if TYPE_CHECKING:
+    from smart_hr.users.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -164,11 +167,7 @@ def count_total_unread_messages(user: User) -> int:
 
 def conversations_for_user(user: User) -> QuerySet[Conversation]:
     """Conversations auxquelles l'utilisateur participe, prêtes à être sérialisées."""
-    return (
-        Conversation.objects.filter(participant_links__user=user)
-        .prefetch_related("participant_links__user")
-        .distinct()
-    )
+    return Conversation.objects.filter(participant_links__user=user).prefetch_related("participant_links__user").distinct()
 
 
 def search_conversations(user: User, search_term: str) -> QuerySet[Conversation]:
