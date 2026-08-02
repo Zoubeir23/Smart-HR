@@ -95,6 +95,7 @@ class Notification(TimeStampedModel):
         LEAVE_REJECTED = "leave_rejected", _("Congé refusé")
         APPLICATION_RECEIVED = "application_received", _("Candidature reçue")
         TASK_ASSIGNED = "task_assigned", _("Tâche assignée")
+        MESSAGE_RECEIVED = "message_received", _("Message reçu")
         SYSTEM = "system", _("Système")
 
     recipient = models.ForeignKey(
