@@ -84,6 +84,14 @@ Object.defineProperty(globalThis, "IntersectionObserver", {
   value: IntersectionObserverMock,
 });
 
+// jsdom n'implémente pas Element.scrollIntoView — utilisé pour dérouler
+// automatiquement le fil de discussion de la messagerie sur un nouveau message.
+Object.defineProperty(window.Element.prototype, "scrollIntoView", {
+  configurable: true,
+  writable: true,
+  value: () => {},
+});
+
 Object.defineProperty(window, "matchMedia", {
   writable: true,
   value: (query: string) => ({
