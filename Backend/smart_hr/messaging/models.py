@@ -37,7 +37,7 @@ class Conversation(TimeStampedModel):
     participants = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
         through="messaging.ConversationParticipant",
-        related_name="conversations",
+        related_name="messaging_conversations",
         verbose_name="Participants",
     )
     last_message_at = models.DateTimeField(
