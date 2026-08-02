@@ -13,6 +13,7 @@ import logging
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import F
+from django.db.models import Max
 from django.db.models import Q
 from django.db.models import QuerySet
 from django.utils import timezone
@@ -166,6 +167,26 @@ def search_conversations(user: User, search_term: str) -> QuerySet[Conversation]
         | Q(participant_links__user__last_name__icontains=search_term)
         | Q(participant_links__user__email__icontains=search_term),
     ).distinct()
+
+
+def last_messages_by_conversation(conversation_ids: list[int]) -> dict[int, Message]:
+    """Dernier message de chaque conversation, en deux requêtes au total.
+
+    `Max("id")` sert de proxy portable au dernier message : les identifiants
+    étant monotones, ils suivent l'ordre chronologique d'insertion. Évite le
+    `DISTINCT ON` réservé à PostgreSQL.
+    """
+    if not conversation_ids:
+        return {}
+
+    latest_ids = (
+        Message.objects.filter(conversation_id__in=conversation_ids)
+        .values("conversation_id")
+        .annotate(latest_id=Max("id"))
+        .values_list("latest_id", flat=True)
+    )
+    messages = Message.objects.filter(id__in=list(latest_ids)).select_related("sender")
+    return {message.conversation_id: message for message in messages}
 
 
 def visible_participants(conversation: Conversation, user: User) -> list[User]:
