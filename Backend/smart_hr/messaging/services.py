@@ -13,9 +13,12 @@ import logging
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import F
+from django.db.models import IntegerField
 from django.db.models import Max
+from django.db.models import OuterRef
 from django.db.models import Q
 from django.db.models import QuerySet
+from django.db.models import Subquery
 from django.utils import timezone
 
 from smart_hr.core.models import Notification
@@ -30,13 +33,25 @@ NOTIFICATION_PREVIEW_LENGTH = 120
 
 
 def find_direct_conversation(first_user: User, second_user: User) -> Conversation | None:
-    """Retourne la conversation directe reliant exactement ces deux utilisateurs."""
+    """Retourne la conversation directe reliant exactement ces deux utilisateurs.
+
+    Le total de participants est calculé par sous-requête : une agrégation
+    directe compterait les lignes déjà restreintes par les `filter()` sur
+    `participant_links` et renverrait toujours 1.
+    """
+    participant_total = Subquery(
+        ConversationParticipant.objects.filter(conversation=OuterRef("pk"))
+        .values("conversation")
+        .annotate(total=Count("id"))
+        .values("total")[:1],
+        output_field=IntegerField(),
+    )
     return (
         Conversation.objects.filter(kind=Conversation.Kind.DIRECT)
         .filter(participant_links__user=first_user)
         .filter(participant_links__user=second_user)
-        .annotate(participant_count=Count("participant_links", distinct=True))
-        .filter(participant_count=2)
+        .annotate(participant_total=participant_total)
+        .filter(participant_total=2)
         .first()
     )
 
