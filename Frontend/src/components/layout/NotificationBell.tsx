@@ -17,6 +17,7 @@ const NOTIFICATION_TYPE_COLORS: Record<string, string> = {
   leave_rejected: 'bg-red-500',
   application_received: 'bg-purple-500',
   task_assigned: 'bg-orange-500',
+  message_received: 'bg-sky-500',
   system: 'bg-gray-400',
 };
 
