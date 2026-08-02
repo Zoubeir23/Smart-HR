@@ -34,7 +34,7 @@ export default function MessagingPage() {
     refetchInterval: CONVERSATIONS_REFRESH_MS,
   });
 
-  const conversations = conversationData?.results ?? [];
+  const conversations = useMemo(() => conversationData?.results ?? [], [conversationData]);
 
   const selectedConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === selectedConversationId) ?? null,
