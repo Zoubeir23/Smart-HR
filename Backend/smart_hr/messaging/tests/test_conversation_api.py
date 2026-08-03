@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import pytest
+from django.core.exceptions import ValidationError
 from rest_framework import status
 from rest_framework.test import APIClient
 from rest_framework.test import APIRequestFactory
@@ -266,6 +267,38 @@ class TestReadWatermark:
         employee_client.get(f"{CONVERSATIONS_URL}{conversation.id}/messages/", {"limit": "1"})
 
         assert employee_client.get(f"{CONVERSATIONS_URL}unread-count/").data["unread_total"] == 0
+
+
+class TestBodyLengthEnforcement:
+    def test_service_rejects_a_body_over_the_model_limit(self, rh_user, employee_user):
+        """La borne ne doit pas dépendre du seul serializer HTTP."""
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+
+        with pytest.raises(ValidationError):
+            post_message(
+                conversation=conversation,
+                sender=rh_user,
+                body="x" * (Message.MAX_BODY_LENGTH + 1),
+            )
+
+        assert Message.objects.count() == 0
+
+    def test_service_rejects_an_empty_body(self, rh_user, employee_user):
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+
+        with pytest.raises(ValidationError):
+            post_message(conversation=conversation, sender=rh_user, body="   ")
+
+    def test_api_rejects_a_body_over_the_limit(self, rh_user, employee_user):
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+
+        response = authenticated_client(rh_user).post(
+            f"{CONVERSATIONS_URL}{conversation.id}/messages/",
+            {"body": "x" * (Message.MAX_BODY_LENGTH + 1)},
+            format="json",
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 class TestSendThrottling:
