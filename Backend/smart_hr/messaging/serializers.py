@@ -78,7 +78,6 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = [
             "id",
-            "kind",
             "subject",
             "display_title",
             "participants_detail",

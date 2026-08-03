@@ -13,8 +13,8 @@ class ConversationParticipantInline(admin.TabularInline):
 
 @admin.register(Conversation)
 class ConversationAdmin(admin.ModelAdmin):
-    list_display = ["id", "kind", "subject", "created_by", "last_message_at", "created_at"]
-    list_filter = ["kind", "created_at"]
+    list_display = ["id", "subject", "created_by", "last_message_at", "created_at"]
+    list_filter = ["created_at"]
     search_fields = ["subject", "participant_links__user__email"]
     inlines = [ConversationParticipantInline]
 
