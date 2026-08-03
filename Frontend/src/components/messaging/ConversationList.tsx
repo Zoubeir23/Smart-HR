@@ -3,6 +3,7 @@ import { fr } from 'date-fns/locale';
 import { MessageSquare, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import type { Conversation } from '@/services/messagingService';
@@ -14,6 +15,9 @@ interface ConversationListProps {
   isLoading: boolean;
   onSearchChange: (value: string) => void;
   onSelect: (conversationId: number) => void;
+  /** D'autres conversations existent au-delà de la fenêtre chargée. */
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 function formatRelativeDate(isoDate: string | null): string {
@@ -28,6 +32,8 @@ export default function ConversationList({
   isLoading,
   onSearchChange,
   onSelect,
+  hasMore = false,
+  onLoadMore,
 }: ConversationListProps) {
   return (
     <div className="flex h-full flex-col">
@@ -80,6 +86,14 @@ export default function ConversationList({
             </li>
           ))}
         </ul>
+
+        {hasMore && (
+          <div className="flex justify-center px-2 pb-3">
+            <Button variant="outline" size="sm" onClick={onLoadMore}>
+              Afficher plus de conversations
+            </Button>
+          </div>
+        )}
       </ScrollArea>
     </div>
   );
