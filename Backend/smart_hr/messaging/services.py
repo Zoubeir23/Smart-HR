@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
+from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Count
 from django.db.models import F
@@ -52,8 +53,7 @@ def find_direct_conversation(first_user: User, second_user: User) -> Conversatio
         output_field=IntegerField(),
     )
     return (
-        Conversation.objects.filter(kind=Conversation.Kind.DIRECT)
-        .filter(participant_links__user=first_user)
+        Conversation.objects.filter(participant_links__user=first_user)
         .filter(participant_links__user=second_user)
         .annotate(participant_total=participant_total)
         .filter(participant_total=2)
@@ -72,10 +72,7 @@ def get_or_create_direct_conversation(initiator: User, recipient: User) -> tuple
     if existing is not None:
         return existing, False
 
-    conversation = Conversation.objects.create(
-        kind=Conversation.Kind.DIRECT,
-        created_by=initiator,
-    )
+    conversation = Conversation.objects.create(created_by=initiator)
     ConversationParticipant.objects.bulk_create(
         [
             ConversationParticipant(conversation=conversation, user=initiator),
@@ -87,8 +84,21 @@ def get_or_create_direct_conversation(initiator: User, recipient: User) -> tuple
 
 @transaction.atomic
 def post_message(*, conversation: Conversation, sender: User, body: str) -> Message:
-    """Ajoute un message au fil, marque l'expéditeur à jour et notifie les autres."""
-    message = Message.objects.create(conversation=conversation, sender=sender, body=body)
+    """Ajoute un message au fil, marque l'expéditeur à jour et notifie les autres.
+
+    La longueur est revalidée ici : `post_message` est l'unique chemin
+    d'écriture applicatif, la borne ne doit donc pas dépendre du seul
+    serializer HTTP (commandes de gestion, tâches asynchrones, shell).
+    """
+    cleaned_body = body.strip()
+    if not cleaned_body:
+        empty_body_error = "Le message ne peut pas être vide."
+        raise ValidationError(empty_body_error)
+    if len(cleaned_body) > Message.MAX_BODY_LENGTH:
+        too_long_error = f"Le message dépasse {Message.MAX_BODY_LENGTH} caractères."
+        raise ValidationError(too_long_error)
+
+    message = Message.objects.create(conversation=conversation, sender=sender, body=cleaned_body)
 
     now = timezone.now()
     Conversation.objects.filter(pk=conversation.pk).update(last_message_at=now)
