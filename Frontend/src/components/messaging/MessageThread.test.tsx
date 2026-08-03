@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
 import MessageThread from './MessageThread';
 import type { ChatMessage } from '@/services/messagingService';
 
@@ -35,5 +35,41 @@ describe('MessageThread', () => {
     render(<MessageThread messages={[buildMessage({ is_mine: true })]} isLoading={false} />);
 
     expect(screen.getByText(/^Vous ·/)).toBeInTheDocument();
+  });
+
+  it('propose de charger les messages plus anciens quand le fil est tronqué', () => {
+    const onLoadOlderMessages = vi.fn();
+    render(
+      <MessageThread
+        messages={[buildMessage()]}
+        isLoading={false}
+        hasOlderMessages
+        onLoadOlderMessages={onLoadOlderMessages}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /messages plus anciens/i }));
+
+    expect(onLoadOlderMessages).toHaveBeenCalled();
+  });
+
+  it('remplace le bouton par une explication à la fenêtre maximale', () => {
+    render(
+      <MessageThread
+        messages={[buildMessage()]}
+        isLoading={false}
+        hasOlderMessages
+        canLoadOlderMessages={false}
+      />,
+    );
+
+    expect(screen.queryByRole('button', { name: /messages plus anciens/i })).not.toBeInTheDocument();
+    expect(screen.getByText(/les plus récents sont affichés/)).toBeInTheDocument();
+  });
+
+  it("n'affiche aucune commande quand le fil est complet", () => {
+    render(<MessageThread messages={[buildMessage()]} isLoading={false} />);
+
+    expect(screen.queryByRole('button', { name: /messages plus anciens/i })).not.toBeInTheDocument();
   });
 });
