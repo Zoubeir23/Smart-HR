@@ -88,6 +88,7 @@ urlpatterns = [
     path("api/v1/agents/", include("smart_hr.ai_agents.urls")),
     path("api/v1/discipline/", include("smart_hr.discipline.urls")),
     path("api/v1/communication/", include("smart_hr.communication.urls")),
+    path("api/v1/messaging/", include("smart_hr.messaging.urls")),
     path("api/v1/performance/", include("smart_hr.performance.urls")),
     path("api/v1/surveys/", include("smart_hr.survey.urls")),
     # Media files — accès protégé par JWT
