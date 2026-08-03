@@ -52,6 +52,46 @@ describe('messagingService', () => {
     expect(postMock).toHaveBeenCalledWith('/messaging/conversations/3/messages/', { body: 'Merci' });
   });
 
+  it('borne la fenêtre du fil et normalise la réponse', async () => {
+    getMock.mockResolvedValue({ data: { results: [{ id: 1 }], total: 120, has_more: true } });
+
+    const thread = await messagingService.listMessages(3, 50);
+
+    expect(getMock).toHaveBeenCalledWith('/messaging/conversations/3/messages/', {
+      params: { limit: 50 },
+    });
+    expect(thread).toEqual({ results: [{ id: 1 }], total: 120, has_more: true });
+  });
+
+  it('normalise un fil dont la réponse est incomplète', async () => {
+    getMock.mockResolvedValue({ data: {} });
+
+    await expect(messagingService.listMessages(3)).resolves.toEqual({
+      results: [],
+      total: 0,
+      has_more: false,
+    });
+  });
+
+  it('demande une page bornée de conversations', async () => {
+    getMock.mockResolvedValue({ data: { results: [], unread_total: 0 } });
+
+    await messagingService.listConversations({ pageSize: 50 });
+
+    expect(getMock).toHaveBeenCalledWith('/messaging/conversations/', {
+      params: { page_size: 50 },
+    });
+  });
+
+  it('récupère une conversation à l\'unité pour les liens directs', async () => {
+    getMock.mockResolvedValue({ data: { id: 7 } });
+
+    const conversation = await messagingService.getConversation(7);
+
+    expect(getMock).toHaveBeenCalledWith('/messaging/conversations/7/');
+    expect(conversation.id).toBe(7);
+  });
+
   it('retourne 0 quand le compteur de non-lus est absent de la réponse', async () => {
     getMock.mockResolvedValue({ data: {} });
 

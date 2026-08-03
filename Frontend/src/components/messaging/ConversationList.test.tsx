@@ -49,6 +49,26 @@ describe('ConversationList', () => {
     expect(screen.getByText('3')).toBeInTheDocument();
   });
 
+  it('propose de charger plus de conversations quand la fenêtre est tronquée', () => {
+    const onLoadMore = vi.fn();
+    render(
+      <ConversationList
+        conversations={[buildConversation()]}
+        selectedConversationId={null}
+        searchTerm=""
+        isLoading={false}
+        onSearchChange={vi.fn()}
+        onSelect={vi.fn()}
+        hasMore
+        onLoadMore={onLoadMore}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: /plus de conversations/i }));
+
+    expect(onLoadMore).toHaveBeenCalled();
+  });
+
   it('remonte la conversation sélectionnée', () => {
     const onSelect = vi.fn();
     render(
