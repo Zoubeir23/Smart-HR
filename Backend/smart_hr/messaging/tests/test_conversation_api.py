@@ -125,6 +125,28 @@ class TestConversationCreation:
         assert Conversation.objects.count() == 1
 
 
+class TestExposedRoutes:
+    def test_post_on_the_collection_is_routed(self, rh_user, employee_user):
+        """Garde-fou : la route POST doit rester enregistrée par le routeur DRF."""
+        response = authenticated_client(rh_user).post(
+            CONVERSATIONS_URL,
+            {"participant_id": employee_user.id},
+            format="json",
+        )
+
+        assert response.status_code != status.HTTP_405_METHOD_NOT_ALLOWED
+
+    @pytest.mark.parametrize("http_method", ["put", "patch", "delete"])
+    def test_conversations_cannot_be_modified_or_deleted(self, rh_user, employee_user, http_method):
+        """Une conversation est immuable : aucune route d'écriture sur le détail."""
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+        client = authenticated_client(rh_user)
+
+        response = getattr(client, http_method)(f"{CONVERSATIONS_URL}{conversation.id}/")
+
+        assert response.status_code == status.HTTP_405_METHOD_NOT_ALLOWED
+
+
 class TestMessageThread:
     def test_candidate_can_reply_to_conversation_opened_by_rh(self, rh_user, candidate_user):
         conversation, _ = get_or_create_direct_conversation(rh_user, candidate_user)
