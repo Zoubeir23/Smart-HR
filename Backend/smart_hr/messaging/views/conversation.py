@@ -4,6 +4,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.shortcuts import get_object_or_404
+from rest_framework import mixins
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.decorators import action
@@ -34,12 +35,24 @@ MAX_THREAD_PAGE_SIZE = 200
 UNREACHABLE_RECIPIENT_DETAIL = "Ce destinataire n'est pas accessible depuis votre compte."
 
 
-class ConversationViewSet(viewsets.ReadOnlyModelViewSet):
+class ConversationViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
     """Fils de discussion de l'utilisateur courant.
 
     Un utilisateur ne voit que les conversations auxquelles il participe :
     le queryset est filtré sur `participant_links__user`, ce qui rend
     l'accès à une conversation tierce impossible (404).
+
+    Les mixins sont composés explicitement plutôt qu'hérités de
+    `ReadOnlyModelViewSet` : `create` y était surchargé sans mixin
+    correspondant, ce qui laissait croire — à la lecture comme aux analyseurs
+    statiques — que la route POST n'existait pas. Aucune route de
+    modification ou de suppression n'est exposée : une conversation et ses
+    messages sont immuables une fois postés.
     """
 
     serializer_class = ConversationSerializer
