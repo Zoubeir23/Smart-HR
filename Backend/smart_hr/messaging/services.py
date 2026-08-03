@@ -28,6 +28,8 @@ from smart_hr.messaging.models import ConversationParticipant
 from smart_hr.messaging.models import Message
 
 if TYPE_CHECKING:
+    from datetime import datetime
+
     from smart_hr.users.models import User
 
 logger = logging.getLogger(__name__)
@@ -130,11 +132,37 @@ def notify_recipients(message: Message) -> None:
         logger.exception("Échec création des notifications pour le message %s", message.pk)
 
 
-def mark_conversation_read(*, conversation: Conversation, user: User) -> None:
-    """Marque tous les messages de la conversation comme lus pour cet utilisateur."""
-    ConversationParticipant.objects.filter(conversation=conversation, user=user).update(
-        last_read_at=timezone.now(),
-    )
+def mark_conversation_read(
+    *,
+    conversation: Conversation,
+    user: User,
+    read_until: datetime | None = None,
+) -> None:
+    """Avance la date de lecture de l'utilisateur sur cette conversation.
+
+    `read_until` doit être l'horodatage du dernier message effectivement remis
+    au client : un message arrivé après cette date reste non lu, alors qu'un
+    marquage à `now()` l'effacerait silencieusement du compteur sans que
+    l'utilisateur l'ait jamais vu.
+
+    Le filtre sur `last_read_at` empêche de faire reculer le curseur si
+    l'utilisateur a déjà lu plus récemment depuis un autre onglet.
+    """
+    watermark = read_until or timezone.now()
+    ConversationParticipant.objects.filter(conversation=conversation, user=user).filter(
+        Q(last_read_at__isnull=True) | Q(last_read_at__lt=watermark),
+    ).update(last_read_at=watermark)
+
+
+def recent_messages(conversation: Conversation, limit: int) -> list[Message]:
+    """Les `limit` derniers messages du fil, remis en ordre chronologique.
+
+    Le fil est borné côté serveur : le frontend interroge cette route toutes
+    les quelques secondes, une réponse non bornée ferait croître la charge
+    proportionnellement à l'historique de la conversation.
+    """
+    newest_first = conversation.messages.select_related("sender").order_by("-created_at", "-id")[:limit]
+    return list(reversed(newest_first))
 
 
 def unread_messages_queryset(user: User) -> QuerySet[Message]:
