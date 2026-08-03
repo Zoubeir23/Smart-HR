@@ -39,7 +39,23 @@ export interface Conversation {
 export interface ConversationListResponse {
   results: Conversation[];
   unread_total: number;
+  /** Absent quand la réponse n'est pas paginée. */
+  count?: number;
+  next?: string | null;
 }
+
+export interface MessageThreadResponse {
+  results: ChatMessage[];
+  total: number;
+  /** `true` quand des messages plus anciens existent hors de la fenêtre chargée. */
+  has_more: boolean;
+}
+
+/** Fenêtres alignées sur les bornes serveur (`MAX_THREAD_PAGE_SIZE`, `max_page_size`). */
+export const DEFAULT_THREAD_WINDOW = 50;
+export const MAX_THREAD_WINDOW = 200;
+export const DEFAULT_CONVERSATIONS_WINDOW = 50;
+export const MAX_CONVERSATIONS_WINDOW = 200;
 
 export interface StartConversationPayload {
   participant_id: number;
@@ -56,8 +72,18 @@ export const messagingService = {
     return data.results ?? [];
   },
 
-  listConversations: async (params?: { search?: string }): Promise<ConversationListResponse> => {
-    const { data } = await api.get('/messaging/conversations/', { params });
+  listConversations: async (params?: { search?: string; pageSize?: number }): Promise<ConversationListResponse> => {
+    const { data } = await api.get('/messaging/conversations/', {
+      params: {
+        page_size: params?.pageSize ?? DEFAULT_CONVERSATIONS_WINDOW,
+        ...(params?.search ? { search: params.search } : {}),
+      },
+    });
+    return data;
+  },
+
+  getConversation: async (conversationId: number): Promise<Conversation> => {
+    const { data } = await api.get(`/messaging/conversations/${conversationId}/`);
     return data;
   },
 
@@ -66,9 +92,15 @@ export const messagingService = {
     return data;
   },
 
-  listMessages: async (conversationId: number): Promise<ChatMessage[]> => {
-    const { data } = await api.get(`/messaging/conversations/${conversationId}/messages/`);
-    return data.results ?? [];
+  listMessages: async (conversationId: number, limit = DEFAULT_THREAD_WINDOW): Promise<MessageThreadResponse> => {
+    const { data } = await api.get(`/messaging/conversations/${conversationId}/messages/`, {
+      params: { limit },
+    });
+    return {
+      results: data.results ?? [],
+      total: data.total ?? 0,
+      has_more: data.has_more ?? false,
+    };
   },
 
   sendMessage: async (conversationId: number, body: string): Promise<ChatMessage> => {
