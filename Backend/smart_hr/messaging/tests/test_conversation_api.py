@@ -3,11 +3,15 @@ from __future__ import annotations
 import pytest
 from rest_framework import status
 from rest_framework.test import APIClient
+from rest_framework.test import APIRequestFactory
 
 from smart_hr.core.models import Notification
 from smart_hr.messaging.models import Conversation
 from smart_hr.messaging.models import Message
 from smart_hr.messaging.services import get_or_create_direct_conversation
+from smart_hr.messaging.services import post_message
+from smart_hr.messaging.throttles import MessageSendThrottle
+from smart_hr.messaging.views import ConversationViewSet
 from smart_hr.users.models import User
 from smart_hr.users.tests.factories import UserFactory
 
@@ -79,14 +83,35 @@ class TestConversationCreation:
         assert response.status_code == status.HTTP_403_FORBIDDEN
         assert Conversation.objects.count() == 0
 
-    def test_unknown_recipient_returns_404(self, rh_user):
-        response = authenticated_client(rh_user).post(
+    def test_unknown_recipient_is_indistinguishable_from_a_forbidden_one(
+        self,
+        employee_user,
+        candidate_user,
+    ):
+        """Même statut et même message : pas d'énumération des comptes existants."""
+        client = authenticated_client(employee_user)
+        unknown = client.post(CONVERSATIONS_URL, {"participant_id": 999_999}, format="json")
+        forbidden = client.post(CONVERSATIONS_URL, {"participant_id": candidate_user.id}, format="json")
+
+        assert unknown.status_code == status.HTTP_403_FORBIDDEN
+        assert forbidden.status_code == status.HTTP_403_FORBIDDEN
+        assert unknown.data["detail"] == forbidden.data["detail"]
+
+    def test_subject_is_ignored_when_the_conversation_already_exists(self, rh_user, employee_user):
+        client = authenticated_client(rh_user)
+        first = client.post(
             CONVERSATIONS_URL,
-            {"participant_id": 999_999},
+            {"participant_id": employee_user.id, "subject": "Entretien annuel"},
+            format="json",
+        )
+        second = client.post(
+            CONVERSATIONS_URL,
+            {"participant_id": employee_user.id, "subject": "Autre sujet"},
             format="json",
         )
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert first.data["subject"] == "Entretien annuel"
+        assert second.data["subject"] == "Entretien annuel"
 
     def test_reopening_reuses_existing_conversation(self, rh_user, employee_user):
         client = authenticated_client(rh_user)
@@ -132,6 +157,63 @@ class TestMessageThread:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
+class TestThreadWindowing:
+    def test_thread_is_bounded_and_returns_the_most_recent_messages(self, rh_user, employee_user):
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+        for index in range(60):
+            post_message(conversation=conversation, sender=rh_user, body=f"message {index}")
+
+        response = authenticated_client(rh_user).get(f"{CONVERSATIONS_URL}{conversation.id}/messages/")
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 50
+        assert response.data["total"] == 60
+        assert response.data["has_more"] is True
+        # Fenêtre = les plus récents, rendus en ordre chronologique.
+        assert response.data["results"][0]["body"] == "message 10"
+        assert response.data["results"][-1]["body"] == "message 59"
+
+    def test_limit_parameter_is_capped(self, rh_user, employee_user):
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+        post_message(conversation=conversation, sender=rh_user, body="unique")
+
+        response = authenticated_client(rh_user).get(
+            f"{CONVERSATIONS_URL}{conversation.id}/messages/",
+            {"limit": "10000"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["has_more"] is False
+
+    def test_invalid_limit_falls_back_to_the_default(self, rh_user, employee_user):
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+        for index in range(55):
+            post_message(conversation=conversation, sender=rh_user, body=f"message {index}")
+
+        response = authenticated_client(rh_user).get(
+            f"{CONVERSATIONS_URL}{conversation.id}/messages/",
+            {"limit": "beaucoup"},
+        )
+
+        assert len(response.data["results"]) == 50
+
+
+class TestConversationListPagination:
+    def test_list_is_paginated_and_still_exposes_the_unread_total(self, rh_user, db):
+        for _ in range(3):
+            colleague = UserFactory.create(role=User.Role.EMPLOYEE)
+            conversation, _ = get_or_create_direct_conversation(rh_user, colleague)
+            post_message(conversation=conversation, sender=colleague, body="Bonjour")
+
+        response = authenticated_client(rh_user).get(CONVERSATIONS_URL, {"page_size": 2})
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.data["count"] == 3
+        assert len(response.data["results"]) == 2
+        assert response.data["next"] is not None
+        assert response.data["unread_total"] == 3
+
+
 class TestUnreadTracking:
     def test_recipient_sees_unread_count_then_zero_after_reading(self, rh_user, employee_user):
         conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
@@ -160,6 +242,42 @@ class TestUnreadTracking:
         )
 
         assert rh_client.get(f"{CONVERSATIONS_URL}unread-count/").data["unread_total"] == 0
+
+
+class TestReadWatermark:
+    def test_a_message_posted_after_reading_stays_unread(self, rh_user, employee_user):
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+        post_message(conversation=conversation, sender=rh_user, body="Premier")
+
+        employee_client = authenticated_client(employee_user)
+        employee_client.get(f"{CONVERSATIONS_URL}{conversation.id}/messages/")
+        post_message(conversation=conversation, sender=rh_user, body="Second")
+
+        assert employee_client.get(f"{CONVERSATIONS_URL}unread-count/").data["unread_total"] == 1
+
+    def test_reading_an_older_window_does_not_rewind_the_watermark(self, rh_user, employee_user):
+        """Lire une fenêtre plus ancienne ne doit pas faire réapparaître des messages déjà lus."""
+        conversation, _ = get_or_create_direct_conversation(rh_user, employee_user)
+        for index in range(3):
+            post_message(conversation=conversation, sender=rh_user, body=f"message {index}")
+
+        employee_client = authenticated_client(employee_user)
+        employee_client.get(f"{CONVERSATIONS_URL}{conversation.id}/messages/")
+        employee_client.get(f"{CONVERSATIONS_URL}{conversation.id}/messages/", {"limit": "1"})
+
+        assert employee_client.get(f"{CONVERSATIONS_URL}unread-count/").data["unread_total"] == 0
+
+
+class TestSendThrottling:
+    def test_opening_a_conversation_uses_the_message_send_throttle(self, rh_user):
+        """`create` poste un message : il doit subir la limite anti-spam, pas la limite générique."""
+        request = APIRequestFactory().post(CONVERSATIONS_URL)
+        request.user = rh_user
+        viewset = ConversationViewSet()
+        viewset.action = "create"
+        viewset.request = request
+
+        assert [type(throttle) for throttle in viewset.get_throttles()] == [MessageSendThrottle]
 
 
 class TestNotifications:
