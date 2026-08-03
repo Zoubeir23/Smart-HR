@@ -7,7 +7,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useToast } from '@/hooks/use-toast';
-import { messagingService } from '@/services/messagingService';
+import {
+  messagingService,
+  DEFAULT_THREAD_WINDOW,
+  MAX_THREAD_WINDOW,
+  DEFAULT_CONVERSATIONS_WINDOW,
+  MAX_CONVERSATIONS_WINDOW,
+} from '@/services/messagingService';
 import ConversationList from '@/components/messaging/ConversationList';
 import MessageThread from '@/components/messaging/MessageThread';
 import NewConversationDialog from '@/components/messaging/NewConversationDialog';
@@ -23,30 +29,51 @@ export default function MessagingPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [draftBody, setDraftBody] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [threadWindow, setThreadWindow] = useState(DEFAULT_THREAD_WINDOW);
+  const [conversationsWindow, setConversationsWindow] = useState(DEFAULT_CONVERSATIONS_WINDOW);
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
   const conversationIdParam = searchParams.get('conversation');
   const selectedConversationId = conversationIdParam ? Number(conversationIdParam) : null;
 
   const { data: conversationData, isLoading: isLoadingConversations } = useQuery({
-    queryKey: ['messaging-conversations', debouncedSearchTerm],
-    queryFn: () => messagingService.listConversations({ search: debouncedSearchTerm || undefined }),
+    queryKey: ['messaging-conversations', debouncedSearchTerm, conversationsWindow],
+    queryFn: () =>
+      messagingService.listConversations({
+        search: debouncedSearchTerm || undefined,
+        pageSize: conversationsWindow,
+      }),
     refetchInterval: CONVERSATIONS_REFRESH_MS,
   });
 
   const conversations = useMemo(() => conversationData?.results ?? [], [conversationData]);
 
-  const selectedConversation = useMemo(
+  const conversationFromList = useMemo(
     () => conversations.find((conversation) => conversation.id === selectedConversationId) ?? null,
     [conversations, selectedConversationId],
   );
 
-  const { data: messages = [], isLoading: isLoadingMessages } = useQuery({
-    queryKey: ['messaging-thread', selectedConversationId],
-    queryFn: () => messagingService.listMessages(selectedConversationId as number),
+  // Une conversation ouverte par lien direct (notification) peut être absente de
+  // la fenêtre chargée ou masquée par une recherche active : on la récupère à
+  // l'unité plutôt que d'afficher un panneau vide.
+  const { data: fetchedConversation = null } = useQuery({
+    queryKey: ['messaging-conversation', selectedConversationId],
+    queryFn: () => messagingService.getConversation(selectedConversationId as number),
+    enabled: selectedConversationId !== null && conversationFromList === null && !isLoadingConversations,
+  });
+
+  const selectedConversation = conversationFromList ?? fetchedConversation;
+
+  const { data: threadData, isLoading: isLoadingMessages } = useQuery({
+    queryKey: ['messaging-thread', selectedConversationId, threadWindow],
+    queryFn: () => messagingService.listMessages(selectedConversationId as number, threadWindow),
     enabled: selectedConversationId !== null,
     refetchInterval: THREAD_REFRESH_MS,
   });
+
+  const messages = useMemo(() => threadData?.results ?? [], [threadData]);
+  const hasOlderMessages = threadData?.has_more ?? false;
+  const hasMoreConversations = Boolean(conversationData?.next);
 
   // La lecture du fil marque les messages comme lus côté serveur : on rafraîchit
   // la liste (badges) dès que le contenu du fil change.
@@ -59,6 +86,15 @@ export default function MessagingPage() {
   const selectConversation = (conversationId: number) => {
     setSearchParams({ conversation: String(conversationId) });
     setDraftBody('');
+    setThreadWindow(DEFAULT_THREAD_WINDOW);
+  };
+
+  const loadOlderMessages = () => {
+    setThreadWindow((current) => Math.min(current * 2, MAX_THREAD_WINDOW));
+  };
+
+  const loadMoreConversations = () => {
+    setConversationsWindow((current) => Math.min(current * 2, MAX_CONVERSATIONS_WINDOW));
   };
 
   const invalidateMessaging = () => {
@@ -137,6 +173,8 @@ export default function MessagingPage() {
             isLoading={isLoadingConversations}
             onSearchChange={setSearchTerm}
             onSelect={selectConversation}
+            hasMore={hasMoreConversations}
+            onLoadMore={loadMoreConversations}
           />
         </section>
 
@@ -157,7 +195,13 @@ export default function MessagingPage() {
                 </p>
               </div>
 
-              <MessageThread messages={messages} isLoading={isLoadingMessages} />
+              <MessageThread
+                messages={messages}
+                isLoading={isLoadingMessages}
+                hasOlderMessages={hasOlderMessages}
+                canLoadOlderMessages={threadWindow < MAX_THREAD_WINDOW}
+                onLoadOlderMessages={loadOlderMessages}
+              />
 
               <div className="flex items-end gap-2 border-t p-3">
                 <Textarea
