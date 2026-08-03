@@ -26,7 +26,6 @@ export interface ChatMessage {
 
 export interface Conversation {
   id: number;
-  kind: 'direct' | 'group';
   subject: string;
   display_title: string;
   participants_detail: Contact[];

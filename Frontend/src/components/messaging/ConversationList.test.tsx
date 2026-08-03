@@ -6,7 +6,6 @@ import type { Conversation } from '@/services/messagingService';
 function buildConversation(overrides: Partial<Conversation> = {}): Conversation {
   return {
     id: 1,
-    kind: 'direct',
     subject: '',
     display_title: 'Awa Ndiaye',
     participants_detail: [],
