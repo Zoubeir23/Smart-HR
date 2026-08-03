@@ -14,6 +14,7 @@ import {
   Briefcase,
   BarChart3,
   MessageSquare,
+  MessageCircle,
   Mic,
   Volume2,
   Settings,
@@ -32,7 +33,9 @@ import {
   Network,
   Route,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/context/AuthContext';
+import { messagingService } from '@/services/messagingService';
 import { useTheme } from '@/context/ThemeContext';
 import { cn } from '@/lib/utils';
 import { NavGroup, NavItem, UserRole, USER_ROLES } from '@/types';
@@ -62,6 +65,12 @@ const navigationGroups: NavGroup[] = [
         href: '/calendar',
         icon: Calendar,
         roles: ['ADMIN', 'RH', 'EMPLOYEE'],
+      },
+      {
+        title: 'Messagerie',
+        href: '/messages',
+        icon: MessageCircle,
+        roles: ['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE'],
       },
     ],
   },
@@ -159,6 +168,14 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const { theme, setTheme } = useTheme();
   const [openDropdowns, setOpenDropdowns] = useState<Set<string>>(new Set());
 
+  // Badge « messages non lus » : polling léger, aligné sur la cloche de notifications.
+  const { data: unreadMessageTotal = 0 } = useQuery({
+    queryKey: ['messaging-unread-total'],
+    queryFn: messagingService.getUnreadTotal,
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+  });
+
   const normalizedRole = typeof user?.role === 'string' ? user.role.toUpperCase() : '';
   const hasValidRole = USER_ROLES.includes(normalizedRole as UserRole);
 
@@ -240,7 +257,11 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             if (filteredChildren.length === 0) return null;
             return { ...item, children: filteredChildren };
           }
-          return hasRole(item.roles) ? item : null;
+          if (!hasRole(item.roles)) return null;
+          if (item.href === '/messages' && unreadMessageTotal > 0) {
+            return { ...item, badge: unreadMessageTotal };
+          }
+          return item;
         })
         .filter((item): item is NavItem => item !== null),
     }))

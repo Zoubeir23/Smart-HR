@@ -115,6 +115,7 @@ LOCAL_APPS = [
     "smart_hr.ai_agents",
     "smart_hr.discipline",
     "smart_hr.communication",
+    "smart_hr.messaging",
     "smart_hr.performance",
     "smart_hr.survey",
 ]
@@ -404,6 +405,7 @@ REST_FRAMEWORK = {
         "registration": "5/hour",
         "ai_llm": "20/hour",
         "ai_llm_anon": "10/hour",
+        "messaging_send": "120/hour",
     },
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }

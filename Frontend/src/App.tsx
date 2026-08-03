@@ -54,6 +54,7 @@ const AttendancePage = React.lazy(() => import("@/pages/attendance/AttendancePag
 const PayrollPage = React.lazy(() => import("@/pages/payroll/PayrollPage"));
 const DisciplinePage = React.lazy(() => import("@/pages/discipline/DisciplinePage"));
 const CommunicationPage = React.lazy(() => import("@/pages/communication/CommunicationPage"));
+const MessagingPage = React.lazy(() => import("@/pages/messaging/MessagingPage"));
 const PerformancePage = React.lazy(() => import("@/pages/performance/PerformancePage"));
 const SurveysPage = React.lazy(() => import("@/pages/surveys/SurveysPage"));
 
@@ -318,6 +319,15 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE']}>
                     <CommunicationPage />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/messages"
+                element={
+                  <ProtectedRoute allowedRoles={['ADMIN', 'RH', 'EMPLOYEE', 'CANDIDATE']}>
+                    <MessagingPage />
                   </ProtectedRoute>
                 }
               />
