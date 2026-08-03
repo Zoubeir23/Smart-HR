@@ -3,19 +3,31 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { MessageSquare } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ChatMessage } from '@/services/messagingService';
 
 interface MessageThreadProps {
   messages: ChatMessage[];
   isLoading: boolean;
+  /** Des messages plus anciens existent hors de la fenêtre chargée. */
+  hasOlderMessages?: boolean;
+  /** `false` quand la fenêtre maximale autorisée par le serveur est atteinte. */
+  canLoadOlderMessages?: boolean;
+  onLoadOlderMessages?: () => void;
 }
 
 function formatTimestamp(isoDate: string): string {
   return format(new Date(isoDate), 'dd/MM/yyyy HH:mm', { locale: fr });
 }
 
-export default function MessageThread({ messages, isLoading }: MessageThreadProps) {
+export default function MessageThread({
+  messages,
+  isLoading,
+  hasOlderMessages = false,
+  canLoadOlderMessages = true,
+  onLoadOlderMessages,
+}: MessageThreadProps) {
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -37,6 +49,19 @@ export default function MessageThread({ messages, isLoading }: MessageThreadProp
 
   return (
     <ScrollArea className="flex-1">
+      {hasOlderMessages && (
+        <div className="flex justify-center px-4 pt-4">
+          {canLoadOlderMessages ? (
+            <Button variant="outline" size="sm" onClick={onLoadOlderMessages}>
+              Charger les messages plus anciens
+            </Button>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Seuls les {messages.length} messages les plus récents sont affichés.
+            </p>
+          )}
+        </div>
+      )}
       <ol className="flex flex-col gap-3 p-4">
         {messages.map((message) => (
           <li
