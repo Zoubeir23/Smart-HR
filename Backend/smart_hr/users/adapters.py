@@ -6,11 +6,11 @@ from allauth.account.adapter import DefaultAccountAdapter
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from django.conf import settings
 
+from smart_hr.users.models import User
+
 if typing.TYPE_CHECKING:
     from allauth.socialaccount.models import SocialLogin
     from django.http import HttpRequest
-
-    from smart_hr.users.models import User
 
 
 class AccountAdapter(DefaultAccountAdapter):
@@ -24,7 +24,14 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
         request: HttpRequest,
         sociallogin: SocialLogin,
     ) -> bool:
-        return getattr(settings, "ACCOUNT_ALLOW_REGISTRATION", True)
+        # Volontairement découplé de ACCOUNT_ALLOW_REGISTRATION : l'inscription
+        # libre par formulaire est fermée (un anonyme pouvait s'auto-attribuer
+        # le rôle EMPLOYEE), mais Google a déjà vérifié la propriété de
+        # l'adresse email — c'est une garantie qu'un simple formulaire n'offre
+        # pas. Seul Google est configuré (SOCIALACCOUNT_PROVIDERS), donc ce
+        # chemin ne crée en pratique que des comptes CANDIDATE (voir
+        # populate_user ci-dessous), jamais de compte interne.
+        return True
 
     def populate_user(
         self,
@@ -48,4 +55,12 @@ class SocialAccountAdapter(DefaultSocialAccountAdapter):
                 first_name, _, last_name = full_name.partition(" ")
             user.first_name = first_name
             user.last_name = last_name
+
+        # populate_user n'est appelé par allauth que pour un COMPTE INEXISTANT
+        # (une connexion qui correspond à un compte existant se connecte
+        # directement, sans repasser ici) : c'est donc systématiquement une
+        # nouvelle inscription candidat, jamais un compte interne. Google a
+        # déjà vérifié l'adresse email, l'OTP n'a donc pas lieu d'être.
+        user.role = User.Role.CANDIDATE
+        user.is_email_verified = True
         return user
