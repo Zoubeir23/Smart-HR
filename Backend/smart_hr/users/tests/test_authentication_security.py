@@ -62,6 +62,46 @@ class TestGoogleSingleSignOnRoute:
         }
 
 
+class _FakeSocialLogin:
+    """Substitut minimal de allauth.socialaccount.models.SocialLogin.
+
+    populate_user() ne lit que l'attribut `.user` de son deuxième argument —
+    inutile de construire une vraie négociation OAuth2 pour tester la logique
+    d'attribution du rôle.
+    """
+
+    def __init__(self, user: User) -> None:
+        self.user = user
+
+
+class TestGoogleSignupCreatesCandidateOnly:
+    """Un nouveau compte créé via Google doit être un CANDIDATE pré-vérifié,
+    jamais un compte interne — même si l'inscription libre classique est fermée."""
+
+    def test_populate_user_assigns_candidate_role_and_skips_otp(self):
+        from smart_hr.users.adapters import SocialAccountAdapter
+
+        new_user = User()
+        sociallogin = _FakeSocialLogin(new_user)
+        data = {"email": "candidat.google@example.com", "first_name": "Awa", "last_name": "Diallo"}
+
+        populated_user = SocialAccountAdapter().populate_user(request=None, sociallogin=sociallogin, data=data)
+
+        assert populated_user.role == User.Role.CANDIDATE
+        assert populated_user.is_email_verified is True
+        assert populated_user.first_name == "Awa"
+        assert populated_user.last_name == "Diallo"
+
+    def test_social_signup_stays_open_even_when_form_registration_is_closed(self, settings):
+        from smart_hr.users.adapters import SocialAccountAdapter
+
+        settings.ACCOUNT_ALLOW_REGISTRATION = False
+
+        is_open = SocialAccountAdapter().is_open_for_signup(request=None, sociallogin=_FakeSocialLogin(User()))
+
+        assert is_open is True
+
+
 class TestLoginDoesNotLeakSession:
     def test_unverified_candidate_gets_no_authenticated_session(self, client):
         candidate = User.objects.create_user(
