@@ -14,7 +14,7 @@ pytestmark = pytest.mark.django_db
 LOGIN_URL = "/api/v1/auth/login/"
 OPEN_REGISTRATION_URL = "/api/v1/auth/registration/"
 EMPLOYEE_DIRECTORY_URL = "/api/v1/personnel/employees/"
-STRONG_PASSWORD = "MotDePasseSolide2026!"
+STRONG_PASSWORD = "MotDePasseSolide2026!"  # noqa: S105 — identifiant de test, jamais utilisé en production
 
 
 class TestOpenRegistrationIsClosed:
