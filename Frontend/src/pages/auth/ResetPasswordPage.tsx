@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import Logo from '@/components/common/Logo';
 import { authService } from '@/services/authService';
+import { MINIMUM_PASSWORD_LENGTH, getPasswordLengthError } from '@/lib/passwordPolicy';
 
 export default function ResetPasswordPage() {
   const { uid, token } = useParams<{ uid: string; token: string }>();
@@ -35,6 +36,16 @@ export default function ResetPasswordPage() {
         variant: 'destructive',
         title: 'Erreur',
         description: 'Les mots de passe ne correspondent pas.',
+      });
+      return;
+    }
+
+    const passwordLengthError = getPasswordLengthError(newPassword);
+    if (passwordLengthError) {
+      toast({
+        variant: 'destructive',
+        title: 'Mot de passe trop court',
+        description: passwordLengthError,
       });
       return;
     }
@@ -127,7 +138,7 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="h-11 pl-10 pr-10 text-sm border-border/60 transition-all focus:border-primary/40 focus:shadow-[0_0_0_3px_hsl(var(--primary)/0.08)] focus:ring-0"
                       required
-                      minLength={8}
+                      minLength={MINIMUM_PASSWORD_LENGTH}
                       autoFocus
                     />
                     <button
@@ -157,7 +168,7 @@ export default function ResetPasswordPage() {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="h-11 pl-10 pr-10 text-sm border-border/60 transition-all focus:border-primary/40 focus:shadow-[0_0_0_3px_hsl(var(--primary)/0.08)] focus:ring-0"
                       required
-                      minLength={8}
+                      minLength={MINIMUM_PASSWORD_LENGTH}
                     />
                     <button
                       type="button"
