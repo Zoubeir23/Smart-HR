@@ -62,6 +62,13 @@ def verify_otp_for_user(user: User, submitted_code: str) -> tuple[bool, str]:  #
     if otp.is_locked:
         return False, "Trop de tentatives incorrectes. Réessayez dans 15 minutes."
 
+    if otp.locked_until is not None:
+        # Le verrou vient d'expirer : sans cette remise à zéro, le compteur
+        # restait à son maximum et la première erreur suivante reverrouillait
+        # immédiatement le compte pour 15 minutes.
+        OTPCode.objects.filter(pk=otp.pk).update(failed_attempts=0, locked_until=None)
+        otp.refresh_from_db()
+
     if otp.is_used:
         return False, "Ce code OTP a déjà été utilisé."
 
