@@ -42,6 +42,8 @@ SESSION_COOKIE_SECURE = _ssl_enabled
 CSRF_COOKIE_SECURE = _ssl_enabled
 SESSION_COOKIE_NAME = "__Secure-sessionid" if _ssl_enabled else "sessionid"
 CSRF_COOKIE_NAME = "__Secure-csrftoken" if _ssl_enabled else "csrftoken"
+# Le cookie HttpOnly qui porte le refresh token suit la même règle que les autres.
+REST_AUTH = {**REST_AUTH, "JWT_AUTH_SECURE": _ssl_enabled}  # noqa: F405
 SECURE_HSTS_SECONDS = env.int("DJANGO_SECURE_HSTS_SECONDS", default=31536000)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
     "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS",

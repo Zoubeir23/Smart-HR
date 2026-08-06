@@ -28,6 +28,10 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // Le refresh token vit dans un cookie HttpOnly posé par le backend : il doit
+  // accompagner les requêtes pour que /auth/token/refresh/ et /auth/logout/
+  // puissent le lire. Il n'est jamais accessible au JavaScript.
+  withCredentials: true,
 });
 
 // Request interceptor: attach JWT token
@@ -46,12 +50,22 @@ api.interceptors.request.use((config) => {
 // blacklister un refresh token déjà consommé et déconnecter l'utilisateur.
 let refreshPromise: Promise<string> | null = null;
 
-export function refreshAccessToken(refreshToken: string): Promise<string> {
+/**
+ * Renouvelle l'access token à partir du cookie HttpOnly de refresh.
+ *
+ * Le corps de la requête est vide : le backend lit le refresh token dans le
+ * cookie, le fait tourner et repose le nouveau cookie lui-même. Tant que ce
+ * jeton était géré côté JavaScript, la rotation le rendait obsolète en
+ * localStorage et la session sautait au deuxième rafraîchissement.
+ */
+export function refreshAccessToken(): Promise<string> {
   if (!refreshPromise) {
     refreshPromise = axios
-      .post<{ access: string }>(`${API_URL}/auth/token/refresh/`, {
-        refresh: refreshToken,
-      })
+      .post<{ access: string }>(
+        `${API_URL}/auth/token/refresh/`,
+        {},
+        { withCredentials: true },
+      )
       .then(({ data }) => {
         localStorage.setItem('access_token', data.access);
         return data.access;
@@ -63,30 +77,38 @@ export function refreshAccessToken(refreshToken: string): Promise<string> {
   return refreshPromise;
 }
 
+/**
+ * Renvoie vers la page de connexion en conservant la destination demandée,
+ * pour y ramener l'utilisateur une fois reconnecté.
+ */
+export function redirectToLogin(): void {
+  localStorage.removeItem('access_token');
+
+  const currentPath = `${window.location.pathname}${window.location.search}`;
+  const isAlreadyOnLogin = window.location.pathname === '/login';
+  window.location.assign(
+    isAlreadyOnLogin ? '/login' : `/login?next=${encodeURIComponent(currentPath)}`,
+  );
+}
+
 // Response interceptor: auto-refresh on 401
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      const refreshToken = localStorage.getItem('refresh_token');
+    const isRefreshRequest = originalRequest?.url?.includes('/auth/token/refresh/');
 
-      if (refreshToken) {
-        try {
-          const accessToken = await refreshAccessToken(refreshToken);
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          return api(originalRequest);
-        } catch {
-          // Refresh failed, clear tokens and redirect to login
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          window.location.href = '/login';
-        }
-      } else {
-        localStorage.removeItem('access_token');
-        window.location.href = '/login';
+    if (error.response?.status === 401 && !originalRequest._retry && !isRefreshRequest) {
+      originalRequest._retry = true;
+
+      try {
+        const accessToken = await refreshAccessToken();
+        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        return api(originalRequest);
+      } catch {
+        // Cookie de refresh absent ou expiré : la session est terminée.
+        redirectToLogin();
       }
     }
 

@@ -97,7 +97,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Verify stored token on startup
   useEffect(() => {
     const accessToken = localStorage.getItem('access_token');
-    const refreshToken = localStorage.getItem('refresh_token');
 
     if (accessToken) {
       authService.getCurrentUser()
@@ -105,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setState({
             user,
             accessToken,
-            refreshToken,
+            refreshToken: null,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -113,7 +112,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .catch((error: unknown) => {
           console.error('[AuthContext] Échec de la récupération du profil utilisateur :', error);
           localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
           setState(prev => ({ ...prev, isAuthenticated: false, user: null, accessToken: null, refreshToken: null, isLoading: false }));
         });
     } else {
@@ -127,23 +125,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const data = await authService.login(email, password);
 
-      // Tokens sauvés avant getCurrentUser() car l'intercepteur axios les lit depuis localStorage
+      // Access token sauvé avant getCurrentUser() car l'intercepteur axios le
+      // lit depuis localStorage. Le refresh token, lui, reste dans son cookie
+      // HttpOnly : le JavaScript n'y a jamais accès.
       localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
 
       let user: User;
       try {
         user = data.user ?? await authService.getCurrentUser();
       } catch {
         localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
         throw new Error('Impossible de récupérer le profil utilisateur');
       }
 
       setState({
         user,
         accessToken: data.access,
-        refreshToken: data.refresh,
+        refreshToken: null,
         isAuthenticated: true,
         isLoading: false,
       });
@@ -166,12 +164,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await authService.googleLogin(accessToken);
 
       localStorage.setItem('access_token', data.access);
-      localStorage.setItem('refresh_token', data.refresh);
 
       setState({
         user: data.user,
         accessToken: data.access,
-        refreshToken: data.refresh,
+        refreshToken: null,
         isAuthenticated: true,
         isLoading: false,
       });
@@ -188,17 +185,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    const refreshToken = localStorage.getItem('refresh_token');
-    if (refreshToken) {
-      try {
-        await authService.logout(refreshToken);
-      } catch {
-        // Ignore logout errors
-      }
+    try {
+      // Révoque le refresh token (lu dans le cookie) et efface les cookies JWT.
+      await authService.logout();
+    } catch {
+      // Ignore logout errors
     }
 
     localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
 
     setState({
       user: null,
