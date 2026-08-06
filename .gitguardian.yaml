@@ -5,6 +5,7 @@ paths-ignore:
   - "Backend/config/settings/test.py"
   - "Backend/smart_hr/**/management/commands/seed_demo_data.py"
   - "Backend/tests/**"
+  - "Backend/smart_hr/**/tests/**"
   - "smart-hr_api_bruno/**"
   - "docs/**"
   - "**/*.md"
