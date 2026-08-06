@@ -1,19 +1,13 @@
 import api from './api';
 import type { User } from '@/types';
 
+/**
+ * Réponse de connexion. Le refresh token est volontairement absent : il n'est
+ * remis que dans un cookie HttpOnly, hors de portée du JavaScript.
+ */
 interface LoginResponse {
   access: string;
-  refresh: string;
   user: User;
-}
-
-interface RegisterData {
-  email: string;
-  password1: string;
-  password2: string;
-  username: string;
-  first_name?: string;
-  last_name?: string;
 }
 
 export const authService = {
@@ -23,17 +17,15 @@ export const authService = {
     return data;
   },
 
-  // Google OAuth — POST /auth/google/ (allauth social)
+  // SSO Google — POST /auth/google/ (credential = ID token signé par Google)
   googleLogin: async (idToken: string): Promise<LoginResponse> => {
     const { data } = await api.post('/auth/google/', { id_token: idToken });
     return data;
   },
 
-  // dj_rest_auth registration — POST /auth/registration/
-  register: async (userData: RegisterData): Promise<LoginResponse> => {
-    const { data } = await api.post('/auth/registration/', userData);
-    return data;
-  },
+  // NOTE : il n'existe volontairement pas d'inscription libre côté API.
+  // Les candidats passent par POST /auth/register/candidate/ (avec OTP) et les
+  // comptes internes sont créés par un administrateur.
 
   // dj_rest_auth — GET /auth/user/
   getCurrentUser: async (): Promise<User> => {
@@ -58,14 +50,9 @@ export const authService = {
   },
 
   // dj_rest_auth — POST /auth/logout/
-  logout: async (refreshToken: string) => {
-    const { data } = await api.post('/auth/logout/', { refresh: refreshToken });
-    return data;
-  },
-
-  // simplejwt — POST /auth/token/refresh/
-  refreshToken: async (refresh: string) => {
-    const { data } = await api.post('/auth/token/refresh/', { refresh });
+  // Le refresh token à révoquer est lu par le backend dans le cookie HttpOnly.
+  logout: async () => {
+    const { data } = await api.post('/auth/logout/', {});
     return data;
   },
 

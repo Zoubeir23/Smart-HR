@@ -76,7 +76,6 @@ class AdminUserManagementView(APIView):
                 last_name=user.last_name or "",
                 role=user.role,
                 invitation_url=invitation_url,
-                expiry_hours=24,
             )
         except Exception:
             logger.exception("Échec envoi invitation à %s", user.email)

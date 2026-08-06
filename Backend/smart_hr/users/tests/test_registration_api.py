@@ -65,8 +65,8 @@ class TestCandidateRegisterView:
             "password2": "StrongPass123!",
         }
         response = client.post(REGISTER_URL, payload, format="json")
-        assert response.status_code == status.HTTP_200_OK
-        assert "code de vérification" in response.data["detail"].lower()
+        assert response.status_code == status.HTTP_201_CREATED
+        assert mock_send_email.called
 
     def test_missing_required_fields_rejected(self):
         client = APIClient()
@@ -74,15 +74,64 @@ class TestCandidateRegisterView:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @patch("smart_hr.users.views.registration.send_otp_verification_email")
-    def test_password_mismatch_rejected_for_existing_unverified(self, mock_send_email, unverified_candidate):
+    def test_existing_account_password_is_never_overwritten(self, mock_send_email, unverified_candidate):
+        """Un tiers ne doit pas pouvoir imposer son mot de passe à une inscription en attente."""
         client = APIClient()
         payload = {
             "email": unverified_candidate.email,
-            "password": "StrongPass123!",
-            "password2": "DifferentPass456!",
+            "first_name": "Attaquant",
+            "password": "MotDePasseAttaquant2026!",
+            "password2": "MotDePasseAttaquant2026!",
         }
         response = client.post(REGISTER_URL, payload, format="json")
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        assert response.status_code == status.HTTP_201_CREATED
+        unverified_candidate.refresh_from_db()
+        assert unverified_candidate.check_password("StrongPass123!")
+        assert not unverified_candidate.check_password("MotDePasseAttaquant2026!")
+        assert unverified_candidate.first_name != "Attaquant"
+
+    @patch("smart_hr.users.views.registration.send_otp_verification_email")
+    def test_response_does_not_reveal_existing_account(self, mock_send_email, verified_candidate):
+        """La réponse doit être identique pour un email libre et un email déjà pris."""
+        client = APIClient()
+        credentials = {"password": "StrongPass123!", "password2": "StrongPass123!"}
+
+        taken_email_response = client.post(
+            REGISTER_URL,
+            {"email": verified_candidate.email, **credentials},
+            format="json",
+        )
+        free_email_response = client.post(
+            REGISTER_URL,
+            {"email": "libre@test.com", "first_name": "Awa", **credentials},
+            format="json",
+        )
+
+        assert taken_email_response.status_code == free_email_response.status_code
+        assert taken_email_response.data["detail"] == free_email_response.data["detail"]
+
+    @patch("smart_hr.users.views.registration.send_otp_verification_email")
+    def test_username_is_generated_server_side_for_homonyms(self, mock_send_email):
+        """Deux parties locales identiques ne doivent plus provoquer d'erreur d'unicité."""
+        client = APIClient()
+        credentials = {"password": "StrongPass123!", "password2": "StrongPass123!"}
+
+        first_response = client.post(
+            REGISTER_URL,
+            {"email": "jean.dupont@example.com", **credentials},
+            format="json",
+        )
+        second_response = client.post(
+            REGISTER_URL,
+            {"email": "jean.dupont@autre-domaine.com", **credentials},
+            format="json",
+        )
+
+        assert first_response.status_code == status.HTTP_201_CREATED
+        assert second_response.status_code == status.HTTP_201_CREATED
+        usernames = set(User.objects.filter(email__startswith="jean.dupont").values_list("username", flat=True))
+        assert len(usernames) == 2
 
 
 class TestVerifyOTPView:
@@ -91,19 +140,23 @@ class TestVerifyOTPView:
         response = client.post(VERIFY_OTP_URL, {}, format="json")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
-    def test_nonexistent_email_returns_404(self):
+    def test_unknown_and_verified_emails_share_the_same_response(self, verified_candidate):
+        """Ni l'existence du compte ni son état de vérification ne doivent fuiter."""
         client = APIClient()
-        response = client.post(VERIFY_OTP_URL, {"email": "ghost@test.com", "code": "123456"}, format="json")
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-
-    def test_already_verified_returns_200(self, verified_candidate):
-        client = APIClient()
-        response = client.post(
+        unknown_email_response = client.post(
+            VERIFY_OTP_URL,
+            {"email": "ghost@test.com", "code": "123456"},
+            format="json",
+        )
+        verified_email_response = client.post(
             VERIFY_OTP_URL,
             {"email": verified_candidate.email, "code": "123456"},
             format="json",
         )
-        assert response.status_code == status.HTTP_200_OK
+
+        assert unknown_email_response.status_code == status.HTTP_400_BAD_REQUEST
+        assert verified_email_response.status_code == status.HTTP_400_BAD_REQUEST
+        assert unknown_email_response.data["detail"] == verified_email_response.data["detail"]
 
     def test_invalid_otp_code_rejected(self, unverified_candidate):
         client = APIClient()
@@ -139,10 +192,14 @@ class TestResendOTPView:
         response = client.post(RESEND_OTP_URL, {"email": "nobody@test.com"}, format="json")
         assert response.status_code == status.HTTP_200_OK
 
-    def test_already_verified_returns_400(self, verified_candidate):
+    @patch("smart_hr.users.views.registration.send_otp_verification_email")
+    def test_already_verified_gets_the_neutral_response(self, mock_send_email, verified_candidate):
+        """Un email déjà vérifié ne doit pas se distinguer d'un email inconnu."""
         client = APIClient()
         response = client.post(RESEND_OTP_URL, {"email": verified_candidate.email}, format="json")
-        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+        assert response.status_code == status.HTTP_200_OK
+        assert not mock_send_email.called
 
     @patch("smart_hr.users.views.registration.OTPResendThrottle.allow_request", return_value=True)
     @patch("smart_hr.users.views.registration.send_otp_verification_email")

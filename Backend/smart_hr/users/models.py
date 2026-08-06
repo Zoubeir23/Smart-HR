@@ -3,6 +3,7 @@ import uuid as uuid_lib
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import CharField
+from django.db.models.functions import Lower
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -30,6 +31,20 @@ class User(AbstractUser):
     is_email_verified = models.BooleanField(_("Email vérifié"), default=False)
 
     # first_name and last_name are inherited from AbstractUser (not overridden)
+
+    class Meta(AbstractUser.Meta):
+        constraints = [
+            # L'email sert d'identifiant de connexion et de clé de recherche
+            # (email__iexact) pour l'OTP et la réinitialisation de mot de passe :
+            # deux comptes partageant la même adresse rendaient ces parcours
+            # impossibles. La contrainte est insensible à la casse et ignore les
+            # emails vides (comptes techniques créés sans adresse).
+            models.UniqueConstraint(
+                Lower("email"),
+                condition=~models.Q(email=""),
+                name="unique_user_email_case_insensitive",
+            ),
+        ]
 
     def get_absolute_url(self) -> str:
         return reverse("users:detail", kwargs={"username": self.username})

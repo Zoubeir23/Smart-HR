@@ -1,7 +1,5 @@
 import logging
 
-from django.contrib.auth.password_validation import validate_password
-from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -39,6 +37,11 @@ class RegistrationThrottle(AnonRateThrottle):
 
 logger = logging.getLogger(__name__)
 
+# Message unique renvoyé que le compte existe ou non : sans cela, la réponse
+# permettait d'énumérer les emails déjà inscrits sur la plateforme.
+ACCOUNT_CREATION_NEUTRAL_MESSAGE = "Si cette adresse peut être utilisée, un code de vérification vient d'y être envoyé."
+OTP_INVALID_NEUTRAL_MESSAGE = "Code de vérification invalide ou expiré."
+
 
 class CandidateRegisterView(APIView):
     """
@@ -52,55 +55,42 @@ class CandidateRegisterView(APIView):
     def post(self, request):
         """Crée un compte candidat et déclenche l'envoi du code OTP.
 
-        Si un compte non vérifié existe déjà avec cet email, un nouvel OTP
-        est renvoyé sans recréer le compte.
+        Si un compte existe déjà pour cet email, aucune donnée existante n'est
+        modifiée : on se contente de renvoyer un OTP au propriétaire légitime
+        (compte non vérifié) et une réponse neutre dans tous les cas.
         """
         email = request.data.get("email", "").strip().lower()
-        existing_unverified_user = User.objects.filter(
-            email__iexact=email,
-            is_email_verified=False,
-        ).first()
+        existing_user = User.objects.filter(email__iexact=email).first()
 
-        if existing_unverified_user:
-            # Mettre à jour le mot de passe avec les nouvelles données pour éviter
-            # qu'un attaquant pré-enregistre l'email et bloque le vrai propriétaire.
-            new_password = request.data.get("password", "")
-            if new_password:
-                if new_password != request.data.get("password2", ""):
-                    return Response(
-                        {"password": "Les mots de passe ne correspondent pas."},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
+        if existing_user:
+            # Ne JAMAIS écraser les identifiants d'un compte existant depuis une
+            # requête anonyme : un tiers pouvait ainsi imposer son mot de passe à
+            # une inscription en attente, puis laisser la victime valider l'OTP
+            # et lui livrer le compte. On renvoie seulement un nouveau code au
+            # propriétaire de la boîte mail.
+            if not existing_user.is_email_verified:
+                _otp, raw_otp_code = create_otp_for_user(existing_user)
                 try:
-                    validate_password(new_password, existing_unverified_user)
-                except DjangoValidationError as exc:
-                    return Response(
-                        {"password": list(exc.messages)},
-                        status=status.HTTP_400_BAD_REQUEST,
+                    send_otp_verification_email(
+                        recipient_email=existing_user.email,
+                        first_name=existing_user.first_name or "",
+                        otp_code=raw_otp_code,
                     )
-                existing_unverified_user.set_password(new_password)
-                existing_unverified_user.first_name = request.data.get("first_name", existing_unverified_user.first_name)
-                existing_unverified_user.last_name = request.data.get("last_name", existing_unverified_user.last_name)
-                existing_unverified_user.save(update_fields=["password", "first_name", "last_name"])
-
-            _otp, raw_otp_code = create_otp_for_user(existing_unverified_user)
-            try:
-                send_otp_verification_email(
-                    recipient_email=existing_unverified_user.email,
-                    first_name=existing_unverified_user.first_name or "",
-                    otp_code=raw_otp_code,
+                except Exception:
+                    logger.exception(
+                        "Échec renvoi OTP pour compte non vérifié %s",
+                        existing_user.email,
+                    )
+            else:
+                logger.info(
+                    "Tentative d'inscription sur un email déjà vérifié : %s",
+                    existing_user.email,
                 )
-            except Exception:
-                logger.exception(
-                    "Échec renvoi OTP pour compte non vérifié %s",
-                    existing_unverified_user.email,
-                )
+            # Réponse identique au cas nominal : aucune fuite sur l'existence
+            # ni sur l'état de vérification du compte.
             return Response(
-                {
-                    "detail": "Un code de vérification a été renvoyé à votre adresse email.",
-                    "email": existing_unverified_user.email,
-                },
-                status=status.HTTP_200_OK,
+                {"detail": ACCOUNT_CREATION_NEUTRAL_MESSAGE, "email": email},
+                status=status.HTTP_201_CREATED,
             )
 
         serializer = UserRegisterSerializer(data=request.data)
@@ -123,10 +113,7 @@ class CandidateRegisterView(APIView):
             )
 
         return Response(
-            {
-                "detail": "Compte créé. Un code de vérification a été envoyé à votre adresse email.",
-                "email": user.email,
-            },
+            {"detail": ACCOUNT_CREATION_NEUTRAL_MESSAGE, "email": user.email},
             status=status.HTTP_201_CREATED,
         )
 
@@ -155,18 +142,23 @@ class VerifyOTPView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            user = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
+        # .filter().first() et non .get() : tant qu'un doublon d'email subsiste
+        # en base, .get() lèverait MultipleObjectsReturned (500) et rendrait la
+        # vérification impossible pour les deux comptes concernés.
+        user = User.objects.filter(email__iexact=email).order_by("date_joined").first()
+        if user is None:
+            # Réponse identique à un code erroné : pas de fuite d'existence.
             return Response(
-                {"detail": "Aucun compte trouvé avec cet email."},
-                status=status.HTTP_404_NOT_FOUND,
+                {"detail": OTP_INVALID_NEUTRAL_MESSAGE},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if user.is_email_verified:
+            # Même réponse qu'un code erroné : révéler qu'un email est déjà
+            # vérifié revient à confirmer qu'un compte existe derrière.
             return Response(
-                {"detail": "Cet email est déjà vérifié. Vous pouvez vous connecter."},
-                status=status.HTTP_200_OK,
+                {"detail": OTP_INVALID_NEUTRAL_MESSAGE},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         is_valid, error_message = verify_otp_for_user(user, code)
@@ -200,18 +192,12 @@ class ResendOTPView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        try:
-            user = User.objects.get(email__iexact=email)
-        except User.DoesNotExist:
+        user = User.objects.filter(email__iexact=email).order_by("date_joined").first()
+        if user is None or user.is_email_verified:
             # Réponse neutre pour ne pas confirmer l'existence du compte
+            # ni son état de vérification.
             return Response(
                 {"detail": "Si cet email existe, un nouveau code a été envoyé."},
-            )
-
-        if user.is_email_verified:
-            return Response(
-                {"detail": "Votre email est déjà vérifié."},
-                status=status.HTTP_400_BAD_REQUEST,
             )
 
         _otp, raw_otp_code = create_otp_for_user(user)

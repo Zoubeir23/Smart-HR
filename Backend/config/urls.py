@@ -14,8 +14,12 @@ from smart_hr.core.sitemap import sitemap_view
 from smart_hr.users.views import AdminStatsView
 from smart_hr.users.views import AdminUserManagementView
 from smart_hr.users.views import EmailVerifiedLoginView
+from smart_hr.users.views import GoogleLoginView
 from smart_hr.users.views import HRAnalyticsExportView
 from smart_hr.users.views import HRAnalyticsView
+from smart_hr.users.views import ThrottledPasswordChangeView
+from smart_hr.users.views import ThrottledPasswordResetConfirmView
+from smart_hr.users.views import ThrottledPasswordResetView
 from smart_hr.users.views.account import AccountDeleteView
 from smart_hr.users.views.account import PersonalDataExportView
 from smart_hr.users.views.registration import CandidateRegisterView
@@ -55,8 +59,24 @@ urlpatterns = [
     # API v1 — Authentification (dj-rest-auth + JWT)
     # Login avec vérification OTP pour les candidats (remplace le login dj_rest_auth)
     path("api/v1/auth/login/", EmailVerifiedLoginView.as_view(), name="email-verified-login"),
+    # Reset / changement de mot de passe : vues throttlées déclarées AVANT
+    # l'include dj_rest_auth pour prendre le pas sur les vues par défaut,
+    # qui ne portent aucune limite dédiée (100 req/h anon = bombardement email).
+    path("api/v1/auth/password/reset/", ThrottledPasswordResetView.as_view(), name="rest_password_reset"),
+    path(
+        "api/v1/auth/password/reset/confirm/",
+        ThrottledPasswordResetConfirmView.as_view(),
+        name="rest_password_reset_confirm",
+    ),
+    path("api/v1/auth/password/change/", ThrottledPasswordChangeView.as_view(), name="rest_password_change"),
+    # SSO Google (le frontend poste le credential Google sur cette route)
+    path("api/v1/auth/google/", GoogleLoginView.as_view(), name="google-login"),
     path("api/v1/auth/", include("dj_rest_auth.urls")),
-    path("api/v1/auth/registration/", include("dj_rest_auth.registration.urls")),
+    # NOTE : dj_rest_auth.registration.urls n'est volontairement PAS exposé.
+    # Cette route permettait à un anonyme de créer un compte au rôle EMPLOYEE
+    # (défaut du modèle) et d'obtenir un JWT sans vérification d'email.
+    # Inscription candidat = /api/v1/auth/register/candidate/ (avec OTP).
+    # Comptes internes = /api/v1/auth/admin/users/ (réservé aux admins).
     path("api/v1/auth/admin/stats/", AdminStatsView.as_view(), name="admin-stats"),
     path("api/v1/stats/overview/", HRAnalyticsView.as_view(), name="hr-analytics-overview"),
     path("api/v1/stats/overview/export/", HRAnalyticsExportView.as_view(), name="hr-analytics-overview-export"),

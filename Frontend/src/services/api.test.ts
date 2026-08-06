@@ -43,9 +43,9 @@ describe('refreshAccessToken', () => {
     const postSpy = vi.spyOn(axios, 'post').mockResolvedValue({ data: { access: 'new-access-token' } });
 
     const [first, second, third] = await Promise.all([
-      refreshAccessToken('refresh-abc'),
-      refreshAccessToken('refresh-abc'),
-      refreshAccessToken('refresh-abc'),
+      refreshAccessToken(),
+      refreshAccessToken(),
+      refreshAccessToken(),
     ]);
 
     expect(postSpy).toHaveBeenCalledTimes(1);
@@ -54,10 +54,25 @@ describe('refreshAccessToken', () => {
     expect(third).toBe('new-access-token');
   });
 
+  it('envoie un corps vide et les cookies, sans jamais transporter le refresh token', async () => {
+    /* Régression : le refresh token était lu en localStorage et renvoyé dans le
+     * corps, mais la rotation côté backend (ROTATE + BLACKLIST) le rendait
+     * caduc dès le premier appel — la session sautait au refresh suivant. Il
+     * vit désormais uniquement dans un cookie HttpOnly géré par le serveur. */
+    const postSpy = vi.spyOn(axios, 'post').mockResolvedValue({ data: { access: 'cookie-token' } });
+
+    await refreshAccessToken();
+
+    const [, requestBody, requestConfig] = postSpy.mock.calls[0];
+    expect(requestBody).toEqual({});
+    expect(requestConfig).toMatchObject({ withCredentials: true });
+    expect(localStorage.getItem('refresh_token')).toBeNull();
+  });
+
   it('stores the refreshed access token in localStorage', async () => {
     vi.spyOn(axios, 'post').mockResolvedValue({ data: { access: 'stored-token' } });
 
-    await refreshAccessToken('refresh-abc');
+    await refreshAccessToken();
 
     expect(localStorage.getItem('access_token')).toBe('stored-token');
   });
@@ -65,8 +80,8 @@ describe('refreshAccessToken', () => {
   it('allows a new refresh request once the previous one has resolved', async () => {
     const postSpy = vi.spyOn(axios, 'post').mockResolvedValue({ data: { access: 'new-access-token' } });
 
-    await refreshAccessToken('refresh-abc');
-    await refreshAccessToken('refresh-abc');
+    await refreshAccessToken();
+    await refreshAccessToken();
 
     expect(postSpy).toHaveBeenCalledTimes(2);
   });
@@ -74,9 +89,9 @@ describe('refreshAccessToken', () => {
   it('propagates the error and clears the in-flight promise on failure', async () => {
     vi.spyOn(axios, 'post').mockRejectedValueOnce(new Error('refresh expired'));
 
-    await expect(refreshAccessToken('refresh-abc')).rejects.toThrow('refresh expired');
+    await expect(refreshAccessToken()).rejects.toThrow('refresh expired');
 
     vi.spyOn(axios, 'post').mockResolvedValueOnce({ data: { access: 'recovered-token' } });
-    await expect(refreshAccessToken('refresh-abc')).resolves.toBe('recovered-token');
+    await expect(refreshAccessToken()).resolves.toBe('recovered-token');
   });
 });

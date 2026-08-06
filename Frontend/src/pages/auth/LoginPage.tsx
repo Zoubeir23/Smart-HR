@@ -108,7 +108,12 @@ export default function LoginPage() {
   const { toast } = useToast();
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
 
-  const from = (location.state as { from?: { pathname: string } })?.from?.pathname;
+  // La destination initiale arrive soit par le state de React Router (garde de
+  // route), soit par ?next= lorsque l'intercepteur axios a dû forcer un
+  // rechargement complet après l'expiration de la session.
+  const redirectQueryParameter = new URLSearchParams(location.search).get('next') ?? undefined;
+  const from =
+    (location.state as { from?: { pathname: string } })?.from?.pathname ?? redirectQueryParameter;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,12 +158,17 @@ export default function LoginPage() {
     }
   };
 
-  const demoAccounts = [
-    { email: 'admin@smarthr.com', password: 'SmartHR2026!', role: 'Admin', color: 'bg-[#c41e1e]' },
-    { email: 'rh@smarthr.com', password: 'SmartHR2026!', role: 'RH', color: 'bg-[#D62828]' },
-    { email: 'employee@smarthr.com', password: 'SmartHR2026!', role: 'Employé', color: 'bg-[hsl(160,84%,28%)]' },
-    { email: 'candidate@smarthr.com', password: 'SmartHR2026!', role: 'Candidat', color: 'bg-[hsl(25,95%,45%)]' },
-  ];
+  // Raccourcis de connexion réservés au développement : publier des
+  // identifiants ADMIN fonctionnels sur la page de login d'un site en ligne
+  // revient à livrer la plateforme entière au premier visiteur venu.
+  const demoAccounts = import.meta.env.DEV
+    ? [
+        { email: 'admin@smarthr.com', password: 'SmartHR2026!', role: 'Admin', color: 'bg-[#c41e1e]' },
+        { email: 'rh@smarthr.com', password: 'SmartHR2026!', role: 'RH', color: 'bg-[#D62828]' },
+        { email: 'employee@smarthr.com', password: 'SmartHR2026!', role: 'Employé', color: 'bg-[hsl(160,84%,28%)]' },
+        { email: 'candidate@smarthr.com', password: 'SmartHR2026!', role: 'Candidat', color: 'bg-[hsl(25,95%,45%)]' },
+      ]
+    : [];
 
   const features = [
     { icon: BrainCircuit, label: 'Prédiction du turnover (ML)' },
@@ -428,7 +438,8 @@ export default function LoginPage() {
             )}
           </div>
 
-          {/* Demo accounts — compact strip below card */}
+          {/* Demo accounts — compact strip below card (développement uniquement) */}
+          {demoAccounts.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -462,6 +473,7 @@ export default function LoginPage() {
               ))}
             </div>
           </motion.div>
+          )}
 
           {/* Sign up link */}
           <motion.p
