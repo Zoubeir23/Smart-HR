@@ -46,6 +46,22 @@ class TestOpenRegistrationIsClosed:
         assert response.status_code in {status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN}
 
 
+class TestGoogleSingleSignOnRoute:
+    """Le bouton Google du frontend postait sur une route inexistante (404)."""
+
+    def test_google_login_route_exists(self):
+        client = APIClient()
+        response = client.post("/api/v1/auth/google/", {"id_token": "jeton-invalide"}, format="json")
+
+        assert response.status_code != status.HTTP_404_NOT_FOUND
+        # Un jeton bidon doit être rejeté, pas ignoré.
+        assert response.status_code in {
+            status.HTTP_400_BAD_REQUEST,
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
+        }
+
+
 class TestLoginDoesNotLeakSession:
     def test_unverified_candidate_gets_no_authenticated_session(self, client):
         candidate = User.objects.create_user(
