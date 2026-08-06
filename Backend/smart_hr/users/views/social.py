@@ -9,12 +9,18 @@ La signature de l'ID token, son émetteur et son audience (client_id) sont
 vérifiés par l'adapter allauth avant toute création de session.
 """
 
+import logging
+
 from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
 from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+from allauth.socialaccount.providers.oauth2.client import OAuth2Error
 from dj_rest_auth.registration.serializers import SocialLoginSerializer
 from dj_rest_auth.registration.views import SocialLoginView
+from rest_framework import serializers
 
 from smart_hr.core.throttles import LoginRateThrottle
+
+logger = logging.getLogger(__name__)
 
 
 class GoogleIdTokenLoginSerializer(SocialLoginSerializer):
@@ -28,7 +34,14 @@ class GoogleIdTokenLoginSerializer(SocialLoginSerializer):
         has_oauth_credentials = attrs.get("access_token") or attrs.get("code")
         if not has_oauth_credentials and attrs.get("id_token"):
             attrs["access_token"] = attrs["id_token"]
-        return super().validate(attrs)
+        try:
+            return super().validate(attrs)
+        except OAuth2Error as exc:
+            # Jeton illisible, expiré ou émis pour une autre application :
+            # c'est une requête invalide, pas une panne du serveur (500).
+            logger.warning("Connexion Google refusée : %s", exc)
+            message = "Jeton Google invalide ou expiré. Réessayez de vous connecter."
+            raise serializers.ValidationError(message) from exc
 
 
 class GoogleLoginView(SocialLoginView):
