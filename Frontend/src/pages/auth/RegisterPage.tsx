@@ -6,6 +6,7 @@ import Logo from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import api from '@/services/api';
+import { PASSWORD_POLICY_HINT, getPasswordLengthError } from '@/lib/passwordPolicy';
 
 interface RegisterFormData {
   prenom: string;
@@ -46,17 +47,19 @@ const RegisterPage = () => {
       return;
     }
 
-    if (formData.password.length < 8) {
-      setErrorMessage('Le mot de passe doit contenir au moins 8 caractères.');
+    const passwordLengthError = getPasswordLengthError(formData.password);
+    if (passwordLengthError) {
+      setErrorMessage(passwordLengthError);
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const username = `${formData.prenom.toLowerCase()}.${formData.nom.toLowerCase()}`.replace(/\s+/g, '');
+      // Le username n'est plus fabriqué ici : deux homonymes produisaient le
+      // même identifiant et l'inscription échouait sur une erreur d'unicité
+      // incompréhensible. Il est désormais dérivé de l'email côté serveur.
       await api.post('/auth/register/candidate/', {
-        username,
         email: formData.email,
         first_name: formData.prenom,
         last_name: formData.nom,
@@ -257,7 +260,7 @@ const RegisterPage = () => {
                   )}
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Minimum 8 caractères</p>
+              <p className="text-xs text-muted-foreground mt-1">{PASSWORD_POLICY_HINT}</p>
             </div>
 
             <div>
