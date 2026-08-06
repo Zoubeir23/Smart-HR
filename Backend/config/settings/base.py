@@ -457,8 +457,11 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# Lien de réinitialisation mot de passe valide 15 minutes
-PASSWORD_RESET_TIMEOUT = 900
+# Durée de validité des liens à usage unique (réinitialisation de mot de passe
+# ET invitation d'un nouveau compte interne, qui partagent le même générateur de
+# jeton). 15 minutes rendaient toute invitation par email inutilisable en
+# pratique ; la durée réelle est désormais annoncée dans l'email.
+PASSWORD_RESET_TIMEOUT = env.int("DJANGO_PASSWORD_RESET_TIMEOUT", default=3600)
 
 # CORS
 # ------------------------------------------------------------------------------
