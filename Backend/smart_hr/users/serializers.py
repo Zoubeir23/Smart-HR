@@ -7,6 +7,11 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from smart_hr.users.models import User
+from smart_hr.users.username_utils import generate_unique_username
+
+# Aligné sur les validateurs Django (AUTH_PASSWORD_VALIDATORS) et sur les
+# formulaires du frontend, qui affichaient jusqu'ici une règle de 8 caractères.
+MINIMUM_PASSWORD_LENGTH = 12
 
 
 def frontend_password_reset_url_generator(request, user, temp_key):
@@ -50,8 +55,12 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserRegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, min_length=12)
+    password = serializers.CharField(write_only=True, min_length=MINIMUM_PASSWORD_LENGTH)
     password2 = serializers.CharField(write_only=True)
+    # Le username était fabriqué par le navigateur ("prenom.nom") : deux
+    # homonymes déclenchaient une erreur d'unicité incompréhensible pour le
+    # candidat. Il est désormais dérivé de l'email côté serveur.
+    username = serializers.CharField(required=False, allow_blank=True)
 
     class Meta:
         model = User
@@ -66,10 +75,9 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         ]
 
     def validate_email(self, value: str) -> str:
-        existing_user = User.objects.filter(email__iexact=value).first()
-        if existing_user and existing_user.is_email_verified:
-            raise serializers.ValidationError("Un compte avec cet email existe déjà.")
-        return value.lower()
+        # Aucune erreur "compte déjà existant" ici : la vue renvoie une réponse
+        # neutre pour ne pas transformer l'inscription en oracle d'énumération.
+        return value.strip().lower()
 
     def validate(self, data):
         if data["password"] != data["password2"]:
@@ -85,6 +93,7 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop("password2")
         password = validated_data.pop("password")
+        validated_data["username"] = generate_unique_username(validated_data["email"])
         user = User(**validated_data)
         user.set_password(password)
         user.save()
