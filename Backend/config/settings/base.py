@@ -384,6 +384,23 @@ ACCOUNT_FORMS = {"signup": "smart_hr.users.forms.UserSignupForm"}
 SOCIALACCOUNT_ADAPTER = "smart_hr.users.adapters.SocialAccountAdapter"
 # https://docs.allauth.org/en/latest/socialaccount/configuration.html
 SOCIALACCOUNT_FORMS = {"signup": "smart_hr.users.forms.UserSocialSignupForm"}
+# Le client OAuth2 Google est lu depuis l'environnement (pas de SocialApp en base).
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": env("GOOGLE_OAUTH_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_OAUTH_CLIENT_SECRET", default=""),
+            "key": "",
+        },
+        "SCOPE": ["profile", "email"],
+        "AUTH_PARAMS": {"access_type": "online"},
+    },
+}
+# Un compte Google dont l'email correspond à un utilisateur existant se connecte
+# à ce compte. Google garantit la vérification de l'email, et la création de
+# comptes reste fermée (ACCOUNT_ALLOW_REGISTRATION) : le SSO connecte, il n'inscrit pas.
+SOCIALACCOUNT_EMAIL_AUTHENTICATION = True
+SOCIALACCOUNT_EMAIL_AUTHENTICATION_AUTO_CONNECT = True
 
 
 # Django REST Framework
@@ -408,6 +425,8 @@ REST_FRAMEWORK = {
         "otp_verify": "10/hour",
         "otp_resend": "3/hour",
         "registration": "5/hour",
+        "password_reset": "3/hour",
+        "password_change": "5/hour",
         "ai_llm": "20/hour",
         "ai_llm_anon": "10/hour",
         "messaging_send": "120/hour",
@@ -452,7 +471,16 @@ REST_AUTH = {
     "USE_JWT": True,
     "JWT_AUTH_COOKIE": "smart-hr-auth",
     "JWT_AUTH_REFRESH_COOKIE": "smart-hr-refresh-token",
-    "JWT_AUTH_HTTPONLY": False,
+    # Le refresh token (7 jours) n'est plus exposé au JavaScript : il transite
+    # uniquement par un cookie HttpOnly, hors de portée d'une éventuelle XSS.
+    # L'access token (30 min) reste renvoyé dans le corps pour l'en-tête Bearer.
+    "JWT_AUTH_HTTPONLY": True,
+    "JWT_AUTH_SAMESITE": "Lax",
+    "JWT_AUTH_SECURE": env.bool("DJANGO_JWT_COOKIE_SECURE", default=False),
+    # Pas de session Django à la connexion : l'API est authentifiée par JWT.
+    # Sans cela, un candidat non vérifié recevait un 403 tout en repartant avec
+    # un cookie de session authentifié.
+    "SESSION_LOGIN": False,
     "USER_DETAILS_SERIALIZER": "smart_hr.users.serializers.UserSerializer",
     # Serializer custom : génère le lien reset vers le frontend React (pas reverse Django)
     "PASSWORD_RESET_SERIALIZER": "smart_hr.users.serializers.PasswordResetSerializer",
