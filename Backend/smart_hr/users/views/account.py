@@ -23,9 +23,11 @@ class AccountDeleteView(APIView):
         email = user.email
         user.delete()
         logger.info("Compte supprimé (RGPD) : %s", email)
+        # 200 et non 204 : un 204 impose un corps vide, le message de
+        # confirmation était donc systématiquement perdu côté client.
         return Response(
             {"detail": "Votre compte et toutes vos données ont été supprimés."},
-            status=status.HTTP_204_NO_CONTENT,
+            status=status.HTTP_200_OK,
         )
 
 
