@@ -41,10 +41,7 @@ if [ "$1" = "--seed" ]; then
     echo "   Données de démo insérées !"
     echo ""
     echo "   Comptes de démo :"
-    echo "   admin@smarthr.com    / admin123"
-    echo "   rh@smarthr.com       / rh123"
-    echo "   employee@smarthr.com / employee123"
-    echo "   candidate@smarthr.com / candidate123"
+    echo "   Identifiants : cf. DJANGO_DEMO_PASSWORD"
 fi
 
 echo "==> Démarrage de tous les services..."
