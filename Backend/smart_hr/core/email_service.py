@@ -15,6 +15,18 @@ from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
 
+SECONDS_PER_MINUTE = 60
+SECONDS_PER_HOUR = 3600
+
+
+def format_link_expiry_label(expiry_seconds: int) -> str:
+    """Formule en français la durée de validité d'un lien à usage unique."""
+    if expiry_seconds >= SECONDS_PER_HOUR:
+        hours = expiry_seconds // SECONDS_PER_HOUR
+        return f"{hours} heure" if hours == 1 else f"{hours} heures"
+    minutes = max(1, expiry_seconds // SECONDS_PER_MINUTE)
+    return f"{minutes} minute" if minutes == 1 else f"{minutes} minutes"
+
 
 class EmailService:
     """
@@ -498,7 +510,7 @@ def send_account_invitation_email(
     last_name: str,
     role: str,
     invitation_url: str,
-    expiry_hours: int = 24,
+    expiry_seconds: int | None = None,
 ) -> bool:
     """
     Envoie un email d'invitation à un nouvel utilisateur (RH, EMPLOYEE, ADMIN).
@@ -518,7 +530,12 @@ def send_account_invitation_email(
         "email": recipient_email,
         "role_label": role_labels.get(role, role),
         "invitation_url": invitation_url,
-        "expiry_hours": expiry_hours,
+        # La durée annoncée est calculée depuis PASSWORD_RESET_TIMEOUT, qui régit
+        # réellement la validité du lien : l'email promettait 24 h alors que le
+        # jeton expirait en 15 minutes.
+        "expiry_label": format_link_expiry_label(
+            expiry_seconds if expiry_seconds is not None else settings.PASSWORD_RESET_TIMEOUT,
+        ),
     }
 
     success = service.send_template_email(
