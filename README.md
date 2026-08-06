@@ -92,10 +92,23 @@
 
 ### Sécurité & Authentification
 
-- JWT (access 30 min, refresh 7 jours)
+- JWT (access 30 min transmis dans l'en-tête `Authorization`, refresh 7 jours confiné à un cookie **HttpOnly** hors de portée du JavaScript)
 - Argon2 (hachage des mots de passe)
 - OTP email 6 chiffres (brute-force : verrouillage 15 min après 5 tentatives)
 - RBAC : 4 rôles (Admin, RH, Employé, Candidat)
+- **Aucune inscription libre** : les candidats passent par `/api/v1/auth/register/candidate/` (vérification OTP obligatoire), les comptes internes sont créés par un administrateur
+- Réponses neutres sur l'inscription, la vérification et le renvoi d'OTP (pas d'énumération de comptes)
+- Quotas dédiés : connexion (5/min), inscription (5/h), OTP (10/h), renvoi d'OTP (3/h), réinitialisation de mot de passe (3/h)
+
+#### Variables d'environnement liées à l'authentification
+
+| Variable | Rôle | Défaut |
+|----------|------|--------|
+| `DJANGO_ACCOUNT_ALLOW_REGISTRATION` | Ouvre l'inscription libre allauth. **À laisser à `False`** | `False` |
+| `DJANGO_PASSWORD_RESET_TIMEOUT` | Validité (secondes) des liens de réinitialisation et d'invitation | `3600` |
+| `DJANGO_JWT_COOKIE_SECURE` | Restreint le cookie de refresh au HTTPS (forcé en production) | `False` |
+| `DJANGO_DEMO_PASSWORD` | Mot de passe des comptes de démo. **Obligatoire hors DEBUG** | — |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | Client OAuth2 du SSO Google | — |
 - Content-Security-Policy sur l'API (Django) et sur le document HTML de la SPA (nginx)
 - Fichiers sensibles (CV, contrats, bulletins de paie) servis via une vue protégée avec contrôle d'accès par propriétaire, URLs signées et expirantes en cas de stockage objet
 - Logs d'audit (`AuditLog`) pour toutes les actions critiques
