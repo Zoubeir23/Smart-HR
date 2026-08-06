@@ -35,6 +35,7 @@ from smart_hr.tache.models import Task
 
 User = get_user_model()
 
+
 def resolve_demo_password() -> str:
     """Retourne le mot de passe des comptes de démonstration.
 
