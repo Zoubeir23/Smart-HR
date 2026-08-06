@@ -13,8 +13,10 @@ from datetime import date
 from datetime import timedelta
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.utils import timezone
 
@@ -33,7 +35,28 @@ from smart_hr.tache.models import Task
 
 User = get_user_model()
 
-DEFAULT_DEMO_PASSWORD = os.getenv("DJANGO_DEMO_PASSWORD", "Smart" + "HR" + "2026" + "!")
+def resolve_demo_password() -> str:
+    """Retourne le mot de passe des comptes de démonstration.
+
+    Le mot de passe de développement est écrit en clair dans le dépôt et affiché
+    sur la page de connexion : hors DEBUG, il faut donc fournir explicitement
+    DJANGO_DEMO_PASSWORD, sinon la commande refuse de créer des comptes ADMIN
+    dont les identifiants sont publics.
+    """
+    configured_password = os.getenv("DJANGO_DEMO_PASSWORD", "")
+    if configured_password:
+        return configured_password
+    if not settings.DEBUG:
+        message = (
+            "DJANGO_DEMO_PASSWORD est obligatoire hors DEBUG : le mot de passe de "
+            "démonstration par défaut est public (dépôt Git et page de connexion)."
+        )
+        raise CommandError(message)
+    return "Smart" + "HR" + "2026" + "!"
+
+
+# Résolu à l'exécution (et non à l'import) pour ne pas casser le chargement des
+# commandes Django quand la variable d'environnement manque.
 
 
 # ---------------------------------------------------------------------------
@@ -509,6 +532,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options) -> None:
+        self.demo_password = resolve_demo_password()
         with transaction.atomic():
             if options["reset"]:
                 self._reset_data()
@@ -585,7 +609,7 @@ class Command(BaseCommand):
             user.is_staff = data["role"] == "ADMIN"
             user.is_superuser = data["role"] == "ADMIN"
             user.is_email_verified = True
-            user.set_password(DEFAULT_DEMO_PASSWORD)
+            user.set_password(self.demo_password)
             user.save()
             label = "+" if created else "~"
             self.stdout.write(f"    {label} {user.email} ({data['role']})")
@@ -679,7 +703,7 @@ class Command(BaseCommand):
                 },
             )
             if created:
-                user.set_password(DEFAULT_DEMO_PASSWORD)
+                user.set_password(self.demo_password)
                 user.save()
 
             dept = departments.get(dept_name)
@@ -1102,8 +1126,9 @@ class Command(BaseCommand):
 
     def _print_credentials(self) -> None:
         self.stdout.write(self.style.SUCCESS("=" * 60))
+        password_label = self.demo_password if settings.DEBUG else "cf. DJANGO_DEMO_PASSWORD"
         self.stdout.write(
-            self.style.SUCCESS(f"  DEMO CREDENTIALS  (password: {DEFAULT_DEMO_PASSWORD})"),
+            self.style.SUCCESS(f"  DEMO CREDENTIALS  (password: {password_label})"),
         )
         self.stdout.write(self.style.SUCCESS("=" * 60))
         rows = [
