@@ -2,11 +2,15 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UserPlus, Mail, Phone, Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { GoogleLogin } from '@react-oauth/google';
 import Logo from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import api from '@/services/api';
 import { PASSWORD_POLICY_HINT, getPasswordLengthError } from '@/lib/passwordPolicy';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { getSafePostLoginPath } from '@/lib/authNavigation';
 
 interface RegisterFormData {
   prenom: string;
@@ -19,6 +23,10 @@ interface RegisterFormData {
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const { loginWithGoogle } = useAuth();
+  const { toast } = useToast();
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID as string | undefined;
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +44,25 @@ const RegisterPage = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errorMessage) setErrorMessage('');
+  };
+
+  // Un nouvel email crée directement un compte CANDIDAT (Google a déjà vérifié
+  // l'adresse, pas besoin d'OTP). Un email qui correspond à un compte existant
+  // (quel que soit son rôle) connecte simplement cet utilisateur.
+  const handleGoogleSuccess = async (credential: string) => {
+    setIsGoogleSubmitting(true);
+    try {
+      const authenticatedUser = await loginWithGoogle(credential);
+      navigate(getSafePostLoginPath(authenticatedUser.role), { replace: true });
+    } catch (error) {
+      toast({
+        title: 'Inscription Google échouée',
+        description: error instanceof Error ? error.message : 'Une erreur est survenue',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGoogleSubmitting(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -321,6 +348,36 @@ const RegisterPage = () => {
               </p>
             </div>
           </form>
+
+          {googleClientId && (
+            <>
+              <div className="my-5 flex items-center">
+                <div className="flex-1 border-t border-border/50" />
+                <span className="mx-3 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                  ou
+                </span>
+                <div className="flex-1 border-t border-border/50" />
+              </div>
+
+              <div className="flex justify-center">
+                {isGoogleSubmitting ? (
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                ) : (
+                  <GoogleLogin
+                    text="signup_with"
+                    onSuccess={(credentialResponse) => {
+                      if (credentialResponse.credential) {
+                        handleGoogleSuccess(credentialResponse.credential);
+                      } else {
+                        toast({ title: 'Inscription Google échouée', description: 'ID token manquant.', variant: 'destructive' });
+                      }
+                    }}
+                    onError={() => toast({ title: 'Inscription Google échouée', description: 'Une erreur est survenue.', variant: 'destructive' })}
+                  />
+                )}
+              </div>
+            </>
+          )}
         </motion.div>
 
         <motion.p
