@@ -364,7 +364,12 @@ CELERY_TASK_SEND_SENT_EVENT = True
 CELERY_WORKER_HIJACK_ROOT_LOGGER = False
 # django-allauth
 # ------------------------------------------------------------------------------
-ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", True)
+# L'inscription libre est FERMÉE par défaut : les comptes internes (ADMIN, RH,
+# EMPLOYEE) sont créés par un admin via /api/v1/auth/admin/users/, et les
+# candidats passent par /api/v1/auth/register/candidate/ (avec OTP).
+# Laisser cette porte ouverte permettait à un anonyme de s'auto-créer un compte
+# au rôle EMPLOYEE (valeur par défaut du modèle) et de lire l'annuaire RH.
+ACCOUNT_ALLOW_REGISTRATION = env.bool("DJANGO_ACCOUNT_ALLOW_REGISTRATION", False)
 # https://docs.allauth.org/en/latest/account/configuration.html
 ACCOUNT_LOGIN_METHODS = {"email"}
 # https://docs.allauth.org/en/latest/account/configuration.html
