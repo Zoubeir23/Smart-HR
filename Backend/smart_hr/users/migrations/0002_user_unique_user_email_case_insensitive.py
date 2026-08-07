@@ -16,7 +16,12 @@ def rename_duplicate_emails(apps, schema_editor):
     user_model = apps.get_model("users", "User")
     seen_emails: set[str] = set()
 
-    for user in user_model.objects.exclude(email="").order_by("date_joined", "pk").iterator():
+    # list() et non .iterator() : sous PostgreSQL, muter des lignes via .save()
+    # pendant qu'un curseur serveur les parcourt encore (le même ordre, la même
+    # table) est un anti-pattern qui peut faire échouer la migration selon la
+    # configuration de connexion (pooler en mode transaction, etc.). La table
+    # users est petite, la charger entièrement en mémoire ne pose aucun problème.
+    for user in list(user_model.objects.exclude(email="").order_by("date_joined", "pk")):
         normalized_email = user.email.lower()
         if normalized_email not in seen_emails:
             seen_emails.add(normalized_email)
@@ -32,7 +37,7 @@ def rename_duplicate_emails(apps, schema_editor):
 def restore_duplicate_emails(apps, schema_editor):
     """Retire le suffixe posé par la migration avant (opération réversible)."""
     user_model = apps.get_model("users", "User")
-    for user in user_model.objects.filter(email__contains=DUPLICATE_EMAIL_SUFFIX).iterator():
+    for user in list(user_model.objects.filter(email__contains=DUPLICATE_EMAIL_SUFFIX)):
         local_part, _, domain = user.email.partition("@")
         original_local_part = local_part.split(DUPLICATE_EMAIL_SUFFIX)[0]
         user.email = f"{original_local_part}@{domain}" if domain else original_local_part
