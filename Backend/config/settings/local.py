@@ -3,6 +3,7 @@ from .base import INSTALLED_APPS
 from .base import MIDDLEWARE
 from .base import SENTRY_DSN
 from .base import env
+from .base import env_int_or_default
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -26,7 +27,7 @@ CACHES = {
 # EMAIL — Gmail SMTP (OTP + notifications)
 # ------------------------------------------------------------------------------
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
-EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_PORT = env_int_or_default("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", default="")

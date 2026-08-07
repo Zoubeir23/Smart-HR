@@ -7,7 +7,11 @@ set -o nounset
 
 python /app/manage.py collectstatic --noinput
 python /app/manage.py migrate --noinput
-python /app/manage.py seed_demo_data 2>/dev/null || true
+# Le seeding ne doit jamais empêcher l'application de démarrer (|| true), mais
+# ses erreurs doivent rester VISIBLES dans les logs : le `2>/dev/null` d'origine
+# masquait totalement l'échec, et les comptes de démonstration disparaissaient
+# silencieusement (ex. DJANGO_DEMO_PASSWORD manquante) sans aucune trace.
+python /app/manage.py seed_demo_data || echo ">>> AVERTISSEMENT : seed_demo_data a échoué (voir l'erreur ci-dessus). L'application démarre quand même."
 
 exec gunicorn config.wsgi \
   --bind 0.0.0.0:5000 \
