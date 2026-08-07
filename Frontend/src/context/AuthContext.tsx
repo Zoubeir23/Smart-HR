@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, AuthState, UserRole, USER_ROLES } from '@/types';
 import { authService } from '@/services/authService';
+import { getAuthErrorMessage } from '@/lib/authErrors';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<User>;
@@ -149,11 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return user;
     } catch (error: unknown) {
       setState(prev => ({ ...prev, isLoading: false }));
-      const message =
-        error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Email ou mot de passe incorrect'
-          : 'Erreur de connexion au serveur';
-      throw new Error(message);
+      throw new Error(getAuthErrorMessage(error, 'Email ou mot de passe incorrect'));
     }
   }, []);
 
@@ -176,11 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return data.user;
     } catch (error: unknown) {
       setState(prev => ({ ...prev, isLoading: false }));
-      const message =
-        error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || 'Connexion Google échouée'
-          : 'Erreur de connexion au serveur';
-      throw new Error(message);
+      throw new Error(getAuthErrorMessage(error, 'Connexion Google refusée. Réessayez.'));
     }
   }, []);
 
