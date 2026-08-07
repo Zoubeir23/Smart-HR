@@ -15,6 +15,21 @@ if READ_DOT_ENV_FILE:
     # OS environment variables take precedence over variables from .env
     env.read_env(str(BASE_DIR / ".env"))
 
+
+def env_int_or_default(var_name: str, default: int) -> int:
+    """Comme env.int(), mais tolère une variable présente mais vide.
+
+    django-environ n'applique `default` que si la clé est absente de
+    l'environnement : une variable déclarée dans Dokploy/Docker Compose sans
+    valeur remplie (chaîne vide, pas absente) fait planter env.int() avec
+    `ValueError: invalid literal for int()`, et donc tout Django au démarrage
+    (web ET Celery, settings.py est importé par les deux) — un incident déjà
+    survenu en production avec DJANGO_PASSWORD_RESET_TIMEOUT.
+    """
+    raw_value = env(var_name, default="").strip()
+    return int(raw_value) if raw_value else default
+
+
 # GENERAL
 # ------------------------------------------------------------------------------
 # https://docs.djangoproject.com/en/dev/ref/settings/#debug
@@ -255,7 +270,7 @@ EMAIL_BACKEND = env(
 # https://docs.djangoproject.com/en/dev/ref/settings/#email-timeout
 EMAIL_TIMEOUT = 30
 EMAIL_HOST = env("EMAIL_HOST", default="smtp.gmail.com")
-EMAIL_PORT = env.int("EMAIL_PORT", default=587)
+EMAIL_PORT = env_int_or_default("EMAIL_PORT", default=587)
 EMAIL_USE_TLS = env.bool("EMAIL_USE_TLS", default=True)
 EMAIL_USE_SSL = env.bool("EMAIL_USE_SSL", default=False)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
@@ -461,7 +476,7 @@ SIMPLE_JWT = {
 # ET invitation d'un nouveau compte interne, qui partagent le même générateur de
 # jeton). 15 minutes rendaient toute invitation par email inutilisable en
 # pratique ; la durée réelle est désormais annoncée dans l'email.
-PASSWORD_RESET_TIMEOUT = env.int("DJANGO_PASSWORD_RESET_TIMEOUT", default=3600)
+PASSWORD_RESET_TIMEOUT = env_int_or_default("DJANGO_PASSWORD_RESET_TIMEOUT", default=3600)
 
 # CORS
 # ------------------------------------------------------------------------------

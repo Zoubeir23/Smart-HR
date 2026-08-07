@@ -102,6 +102,105 @@ class TestGoogleSignupCreatesCandidateOnly:
         assert is_open is True
 
 
+class TestGoogleConnectsToExistingAccount:
+    """dj_rest_auth refuse par défaut toute connexion sociale dont l'email
+    correspond à un compte déjà existant (ValidationError "already
+    registered"), avant même que l'auto-connexion par email d'allauth ait pu
+    s'exécuter — cassant Google pour TOUT utilisateur déjà inscrit (admin, RH,
+    employé, candidat). Confirmé en production : un admin ne pouvait plus se
+    connecter du tout via Google.
+
+    On ne mocke que la vérification cryptographique du jeton (pas d'appel
+    réseau aux certificats Google) : tout le câblage allauth réel (provider,
+    SocialAccount, populate_user) s'exécute normalement, pour un test fidèle
+    au comportement de production.
+    """
+
+    def _mock_google_claims(self, *, email: str, email_verified: bool):
+        return {
+            "sub": "google-uid-123",
+            "email": email,
+            "email_verified": email_verified,
+            "given_name": "Prénom",
+            "family_name": "Nom",
+        }
+
+    def test_first_google_login_connects_to_existing_account_of_any_role(self, client):
+        from unittest.mock import patch
+
+        existing_admin = User.objects.create_user(
+            username="admin_existant",
+            email="admin.existant@example.com",
+            password=STRONG_PASSWORD,
+            role=User.Role.ADMIN,
+            is_email_verified=True,
+        )
+
+        with patch(
+            "allauth.socialaccount.providers.google.views._verify_and_decode",
+            return_value=self._mock_google_claims(email=existing_admin.email, email_verified=True),
+        ):
+            response = client.post(
+                "/api/v1/auth/google/",
+                {"id_token": "jeton-simule"},
+                content_type="application/json",
+            )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json()["user"]["email"] == existing_admin.email
+        # Aucun doublon : on s'est connecté au compte existant, pas créé un nouveau.
+        assert User.objects.filter(email__iexact=existing_admin.email).count() == 1
+        existing_admin.refresh_from_db()
+        assert existing_admin.role == User.Role.ADMIN
+
+    def test_unverified_google_email_does_not_connect_to_existing_account(self, client):
+        """Sécurité : seul un email certifié par Google (email_verified) peut
+        se connecter à un compte existant — sinon n'importe qui pourrait
+        usurper un compte en déclarant simplement son adresse."""
+        from unittest.mock import patch
+
+        existing_user = User.objects.create_user(
+            username="cible",
+            email="cible@example.com",
+            password=STRONG_PASSWORD,
+            role=User.Role.EMPLOYEE,
+            is_email_verified=True,
+        )
+
+        with patch(
+            "allauth.socialaccount.providers.google.views._verify_and_decode",
+            return_value=self._mock_google_claims(email=existing_user.email, email_verified=False),
+        ):
+            response = client.post(
+                "/api/v1/auth/google/",
+                {"id_token": "jeton-simule"},
+                content_type="application/json",
+            )
+
+        # Ne doit pas se connecter silencieusement au compte existant.
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+    def test_new_email_still_creates_a_candidate_account(self, client):
+        """Non-régression : le fix ne doit pas casser la création de compte
+        pour une adresse Google totalement nouvelle."""
+        from unittest.mock import patch
+
+        with patch(
+            "allauth.socialaccount.providers.google.views._verify_and_decode",
+            return_value=self._mock_google_claims(email="nouveau.candidat@example.com", email_verified=True),
+        ):
+            response = client.post(
+                "/api/v1/auth/google/",
+                {"id_token": "jeton-simule"},
+                content_type="application/json",
+            )
+
+        assert response.status_code == status.HTTP_200_OK
+        new_user = User.objects.get(email__iexact="nouveau.candidat@example.com")
+        assert new_user.role == User.Role.CANDIDATE
+        assert new_user.is_email_verified is True
+
+
 class TestLoginDoesNotLeakSession:
     def test_unverified_candidate_gets_no_authenticated_session(self, client):
         candidate = User.objects.create_user(
