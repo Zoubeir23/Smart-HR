@@ -5,6 +5,7 @@ from .base import INSTALLED_APPS
 from .base import REDIS_URL
 from .base import SENTRY_DSN
 from .base import env
+from .base import env_int_or_default
 
 # GENERAL
 # ------------------------------------------------------------------------------
@@ -15,7 +16,7 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOSTS", default=["smart-hr.tech", "www.
 
 # DATABASES
 # ------------------------------------------------------------------------------
-DATABASES["default"]["CONN_MAX_AGE"] = env.int("CONN_MAX_AGE", default=60)
+DATABASES["default"]["CONN_MAX_AGE"] = env_int_or_default("CONN_MAX_AGE", default=60)
 
 # CACHES
 # ------------------------------------------------------------------------------
@@ -44,7 +45,7 @@ SESSION_COOKIE_NAME = "__Secure-sessionid" if _ssl_enabled else "sessionid"
 CSRF_COOKIE_NAME = "__Secure-csrftoken" if _ssl_enabled else "csrftoken"
 # Le cookie HttpOnly qui porte le refresh token suit la même règle que les autres.
 REST_AUTH = {**REST_AUTH, "JWT_AUTH_SECURE": _ssl_enabled}  # noqa: F405
-SECURE_HSTS_SECONDS = env.int("DJANGO_SECURE_HSTS_SECONDS", default=31536000)
+SECURE_HSTS_SECONDS = env_int_or_default("DJANGO_SECURE_HSTS_SECONDS", default=31536000)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
     "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS",
     default=True,
@@ -84,7 +85,7 @@ if MINIO_STORAGE_ENABLED:
     # connaît ou devine l'URL. À True, `file.url` renvoie une URL signée valable
     # AWS_QUERYSTRING_EXPIRE secondes, et le bucket reste privé.
     AWS_QUERYSTRING_AUTH = True
-    AWS_QUERYSTRING_EXPIRE = env.int("DJANGO_AWS_QUERYSTRING_EXPIRE", default=3600)
+    AWS_QUERYSTRING_EXPIRE = env_int_or_default("DJANGO_AWS_QUERYSTRING_EXPIRE", default=3600)
 
     STORAGES = {
         "default": {
