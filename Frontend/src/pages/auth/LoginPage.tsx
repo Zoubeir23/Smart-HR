@@ -158,17 +158,16 @@ export default function LoginPage() {
     }
   };
 
-  // Raccourcis de connexion réservés au développement : publier des
-  // identifiants ADMIN fonctionnels sur la page de login d'un site en ligne
-  // revient à livrer la plateforme entière au premier visiteur venu.
-  const demoAccounts = import.meta.env.DEV
-    ? [
-        { email: 'admin@smarthr.com', password: 'SmartHR2026!', role: 'Admin', color: 'bg-[#c41e1e]' },
-        { email: 'rh@smarthr.com', password: 'SmartHR2026!', role: 'RH', color: 'bg-[#D62828]' },
-        { email: 'employee@smarthr.com', password: 'SmartHR2026!', role: 'Employé', color: 'bg-[hsl(160,84%,28%)]' },
-        { email: 'candidate@smarthr.com', password: 'SmartHR2026!', role: 'Candidat', color: 'bg-[hsl(25,95%,45%)]' },
-      ]
-    : [];
+  // Raccourcis de connexion affichés en permanence : ce déploiement sert de
+  // support de soutenance académique, pas une mise en production publique —
+  // le jury doit pouvoir tester les 4 rôles sans avoir les identifiants sous
+  // la main. Ne pas réintroduire ce comportement sur un déploiement réel.
+  const demoAccounts = [
+    { email: 'admin@smarthr.com', password: 'SmartHR2026!', role: 'Admin', color: 'bg-[#c41e1e]' },
+    { email: 'rh@smarthr.com', password: 'SmartHR2026!', role: 'RH', color: 'bg-[#D62828]' },
+    { email: 'employee@smarthr.com', password: 'SmartHR2026!', role: 'Employé', color: 'bg-[hsl(160,84%,28%)]' },
+    { email: 'candidate@smarthr.com', password: 'SmartHR2026!', role: 'Candidat', color: 'bg-[hsl(25,95%,45%)]' },
+  ];
 
   const features = [
     { icon: BrainCircuit, label: 'Prédiction du turnover (ML)' },
