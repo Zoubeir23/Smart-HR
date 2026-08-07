@@ -123,35 +123,41 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
 
+    // Les deux appels réseau sont traités séparément plutôt qu'imbriqués : un
+    // try/catch englobant renvoyait l'échec de récupération du profil dans
+    // getAuthErrorMessage(), qui n'y trouvait aucune réponse HTTP et écrasait
+    // le message précis par un générique « Impossible de joindre le serveur ».
+    let data: Awaited<ReturnType<typeof authService.login>>;
     try {
-      const data = await authService.login(email, password);
-
-      // Access token sauvé avant getCurrentUser() car l'intercepteur axios le
-      // lit depuis localStorage. Le refresh token, lui, reste dans son cookie
-      // HttpOnly : le JavaScript n'y a jamais accès.
-      localStorage.setItem('access_token', data.access);
-
-      let user: User;
-      try {
-        user = data.user ?? await authService.getCurrentUser();
-      } catch {
-        localStorage.removeItem('access_token');
-        throw new Error('Impossible de récupérer le profil utilisateur');
-      }
-
-      setState({
-        user,
-        accessToken: data.access,
-        refreshToken: null,
-        isAuthenticated: true,
-        isLoading: false,
-      });
-
-      return user;
+      data = await authService.login(email, password);
     } catch (error: unknown) {
       setState(prev => ({ ...prev, isLoading: false }));
       throw new Error(getAuthErrorMessage(error, 'Email ou mot de passe incorrect'));
     }
+
+    // Access token sauvé avant getCurrentUser() car l'intercepteur axios le
+    // lit depuis localStorage. Le refresh token, lui, reste dans son cookie
+    // HttpOnly : le JavaScript n'y a jamais accès.
+    localStorage.setItem('access_token', data.access);
+
+    let user: User;
+    try {
+      user = data.user ?? await authService.getCurrentUser();
+    } catch {
+      localStorage.removeItem('access_token');
+      setState(prev => ({ ...prev, isLoading: false }));
+      throw new Error('Connexion acceptée, mais impossible de récupérer votre profil. Réessayez.');
+    }
+
+    setState({
+      user,
+      accessToken: data.access,
+      refreshToken: null,
+      isAuthenticated: true,
+      isLoading: false,
+    });
+
+    return user;
   }, []);
 
   const loginWithGoogle = useCallback(async (accessToken: string) => {
