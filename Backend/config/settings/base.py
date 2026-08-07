@@ -26,7 +26,7 @@ def env_int_or_default(var_name: str, default: int) -> int:
     (web ET Celery, settings.py est importé par les deux) — un incident déjà
     survenu en production avec DJANGO_PASSWORD_RESET_TIMEOUT.
     """
-    raw_value = env(var_name, default="")
+    raw_value = env(var_name, default="").strip()
     return int(raw_value) if raw_value else default
 
 
