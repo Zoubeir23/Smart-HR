@@ -359,19 +359,14 @@ const RegisterPage = () => {
                 <div className="flex-1 border-t border-border/50" />
               </div>
 
-              {isGoogleSubmitting ? (
-                <div className="flex justify-center">
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                </div>
-              ) : (
-                <GoogleAuthButton
-                  text="signup_with"
-                  onCredential={handleGoogleSuccess}
-                  onFailure={(description) =>
-                    toast({ title: 'Inscription Google échouée', description, variant: 'destructive' })
-                  }
-                />
-              )}
+              <GoogleAuthButton
+                label="S'inscrire avec Google"
+                isBusy={isGoogleSubmitting}
+                onAuthorizationCode={handleGoogleSuccess}
+                onFailure={(description) =>
+                  toast({ title: 'Inscription Google échouée', description, variant: 'destructive' })
+                }
+              />
             </>
           )}
         </motion.div>
