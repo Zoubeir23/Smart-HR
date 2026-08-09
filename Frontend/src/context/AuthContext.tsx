@@ -5,7 +5,7 @@ import { getAuthErrorMessage } from '@/lib/authErrors';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<User>;
-  loginWithGoogle: (accessToken: string) => Promise<User>;
+  loginWithGoogle: (authorizationCode: string) => Promise<User>;
   logout: () => void;
   hasRole: (roles: UserRole[]) => boolean;
   hasPermission: (permission: string) => boolean;
@@ -160,11 +160,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return user;
   }, []);
 
-  const loginWithGoogle = useCallback(async (accessToken: string) => {
+  const loginWithGoogle = useCallback(async (authorizationCode: string) => {
     setState(prev => ({ ...prev, isLoading: true }));
 
     try {
-      const data = await authService.googleLogin(accessToken);
+      const data = await authService.googleLogin(authorizationCode);
 
       localStorage.setItem('access_token', data.access);
 
