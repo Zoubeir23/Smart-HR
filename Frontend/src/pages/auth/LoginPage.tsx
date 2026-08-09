@@ -423,8 +423,9 @@ export default function LoginPage() {
 
             {googleClientId && (
               <GoogleAuthButton
-                text="signin_with"
-                onCredential={handleGoogleSuccess}
+                label="Se connecter avec Google"
+                isBusy={isLoading}
+                onAuthorizationCode={handleGoogleSuccess}
                 onFailure={(description) =>
                   toast({ title: 'Connexion Google échouée', description, variant: 'destructive' })
                 }
