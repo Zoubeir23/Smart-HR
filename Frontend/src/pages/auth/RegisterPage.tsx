@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { UserPlus, Mail, Phone, Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import Logo from '@/components/common/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -359,23 +359,14 @@ const RegisterPage = () => {
                 <div className="flex-1 border-t border-border/50" />
               </div>
 
-              <div className="flex justify-center">
-                {isGoogleSubmitting ? (
-                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                ) : (
-                  <GoogleLogin
-                    text="signup_with"
-                    onSuccess={(credentialResponse) => {
-                      if (credentialResponse.credential) {
-                        handleGoogleSuccess(credentialResponse.credential);
-                      } else {
-                        toast({ title: 'Inscription Google échouée', description: 'ID token manquant.', variant: 'destructive' });
-                      }
-                    }}
-                    onError={() => toast({ title: 'Inscription Google échouée', description: 'Une erreur est survenue.', variant: 'destructive' })}
-                  />
-                )}
-              </div>
+              <GoogleAuthButton
+                label="S'inscrire avec Google"
+                isBusy={isGoogleSubmitting}
+                onAuthorizationCode={handleGoogleSuccess}
+                onFailure={(description) =>
+                  toast({ title: 'Inscription Google échouée', description, variant: 'destructive' })
+                }
+              />
             </>
           )}
         </motion.div>

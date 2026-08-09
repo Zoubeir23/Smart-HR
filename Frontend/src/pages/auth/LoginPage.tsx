@@ -14,7 +14,7 @@ import {
   Shield,
   ChevronRight,
 } from 'lucide-react';
-import { GoogleLogin } from '@react-oauth/google';
+import { GoogleAuthButton } from '@/components/auth/GoogleAuthButton';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -422,18 +422,14 @@ export default function LoginPage() {
             </div>
 
             {googleClientId && (
-              <div className="flex justify-center">
-                <GoogleLogin
-                  onSuccess={(credentialResponse) => {
-                    if (credentialResponse.credential) {
-                      handleGoogleSuccess(credentialResponse.credential);
-                    } else {
-                      toast({ title: 'Connexion Google échouée', description: 'ID token manquant.', variant: 'destructive' });
-                    }
-                  }}
-                  onError={() => toast({ title: 'Connexion Google échouée', description: 'Une erreur est survenue.', variant: 'destructive' })}
-                />
-              </div>
+              <GoogleAuthButton
+                label="Se connecter avec Google"
+                isBusy={isLoading}
+                onAuthorizationCode={handleGoogleSuccess}
+                onFailure={(description) =>
+                  toast({ title: 'Connexion Google échouée', description, variant: 'destructive' })
+                }
+              />
             )}
           </div>
 
