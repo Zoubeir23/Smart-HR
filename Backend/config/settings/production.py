@@ -36,15 +36,32 @@ CACHES = {
 # SECURITY
 # ------------------------------------------------------------------------------
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
-# When DJANGO_SECURE_SSL_REDIRECT=False (HTTP-only VPS), disable HTTPS-only cookies
-_ssl_enabled = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=True)
-SESSION_COOKIE_SECURE = _ssl_enabled
-CSRF_COOKIE_SECURE = _ssl_enabled
-SESSION_COOKIE_NAME = "__Secure-sessionid" if _ssl_enabled else "sessionid"
-CSRF_COOKIE_NAME = "__Secure-csrftoken" if _ssl_enabled else "csrftoken"
+
+# Redirection HTTP → HTTPS par Django.
+#
+# Volontairement DÉCOUPLÉE de la sécurisation des cookies ci-dessous : ces deux
+# réglages partageaient auparavant la même variable, si bien que désactiver la
+# redirection (seul moyen d'urgence pour sortir d'une boucle 301) dégradait du
+# même coup TOUS les cookies en non-Secure. Il ne doit pas falloir choisir entre
+# un site en panne et un site moins sûr.
+#
+# Le défaut est False car le reverse-proxy (Traefik/Dokploy) redirige déjà
+# HTTP → HTTPS en amont : Django ne reçoit jamais de requête en clair, sa propre
+# redirection est donc redondante. Elle devient même dangereuse si un proxy
+# intermédiaire n'achemine pas `X-Forwarded-Proto` intact — Django se croit
+# alors en HTTP et redirige indéfiniment vers l'URL déjà demandée.
+SECURE_SSL_REDIRECT = env.bool("DJANGO_SECURE_SSL_REDIRECT", default=False)
+
+# Le site est servi en HTTPS : les cookies portent le flag Secure et le préfixe
+# `__Secure-`, indépendamment de QUI effectue la redirection.
+# À ne passer à False que sur un déploiement réellement sans TLS.
+_https_enabled = env.bool("DJANGO_HTTPS_ENABLED", default=True)
+SESSION_COOKIE_SECURE = _https_enabled
+CSRF_COOKIE_SECURE = _https_enabled
+SESSION_COOKIE_NAME = "__Secure-sessionid" if _https_enabled else "sessionid"
+CSRF_COOKIE_NAME = "__Secure-csrftoken" if _https_enabled else "csrftoken"
 # Le cookie HttpOnly qui porte le refresh token suit la même règle que les autres.
-REST_AUTH = {**REST_AUTH, "JWT_AUTH_SECURE": _ssl_enabled}  # noqa: F405
+REST_AUTH = {**REST_AUTH, "JWT_AUTH_SECURE": _https_enabled}  # noqa: F405
 SECURE_HSTS_SECONDS = env_int_or_default("DJANGO_SECURE_HSTS_SECONDS", default=31536000)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = env.bool(
     "DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS",
