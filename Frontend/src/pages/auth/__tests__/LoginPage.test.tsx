@@ -23,6 +23,17 @@ vi.mock("@/context/AuthContext", async () => {
 });
 
 describe("LoginPage", () => {
+  // VITE_GOOGLE_CLIENT_ID conditionne l'affichage du bouton Google. Sans valeur
+  // explicite, le test dépendrait de la présence d'un fichier .env local : vert
+  // sur le poste du développeur, rouge en CI (ou l'inverse).
+  beforeEach(() => {
+    vi.stubEnv("VITE_GOOGLE_CLIENT_ID", "client-id-de-test.apps.googleusercontent.com");
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it("renders login form", () => {
     render(
       <MemoryRouter>
