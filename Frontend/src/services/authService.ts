@@ -17,9 +17,11 @@ export const authService = {
     return data;
   },
 
-  // SSO Google — POST /auth/google/ (credential = ID token signé par Google)
-  googleLogin: async (idToken: string): Promise<LoginResponse> => {
-    const { data } = await api.post('/auth/google/', { id_token: idToken });
+  // SSO Google — POST /auth/google/
+  // On envoie le code d'autorisation : le backend l'échange lui-même contre les
+  // jetons, avec le client_secret. L'identité est ainsi liée à notre application.
+  googleLogin: async (authorizationCode: string): Promise<LoginResponse> => {
+    const { data } = await api.post('/auth/google/', { code: authorizationCode });
     return data;
   },
 

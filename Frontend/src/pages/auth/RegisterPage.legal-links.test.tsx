@@ -5,7 +5,7 @@ import RegisterPage from './RegisterPage';
 import { AuthProvider } from '@/context/AuthContext';
 
 vi.mock('@react-oauth/google', () => ({
-  GoogleLogin: () => <button>GoogleLogin</button>,
+  useGoogleLogin: () => () => undefined,
 }));
 
 vi.mock('@/hooks/use-toast', () => ({
