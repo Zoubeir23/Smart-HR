@@ -3,8 +3,8 @@ import { MemoryRouter } from "react-router-dom";
 import LoginPage from "../LoginPage";
 import { AuthProvider } from "@/context/AuthContext";
 
-vi.mock("@react-oauth/google", () => ({
-  GoogleLogin: () => <button>GoogleLogin</button>,
+vi.mock('@react-oauth/google', () => ({
+  useGoogleLogin: () => () => undefined,
 }));
 
 vi.mock("@/hooks/use-toast", () => ({
@@ -33,6 +33,8 @@ describe("LoginPage", () => {
     );
 
     expect(screen.getByText("Connexion")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /se connecter/i })).toBeInTheDocument();
+    // Ancre le motif : « Se connecter avec Google » correspondrait aussi.
+    expect(screen.getByRole("button", { name: /^se connecter$/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /se connecter avec google/i })).toBeInTheDocument();
   });
 });
