@@ -5,7 +5,7 @@ import RegisterPage from './RegisterPage';
 import { AuthProvider } from '@/context/AuthContext';
 
 vi.mock('@react-oauth/google', () => ({
-  GoogleLogin: () => <button>GoogleLogin</button>,
+  useGoogleLogin: () => () => undefined,
 }));
 
 vi.mock('@/hooks/use-toast', () => ({
@@ -24,7 +24,7 @@ describe('RegisterPage — inscription Google', () => {
       </MemoryRouter>
     );
 
-    expect(screen.getByRole('button', { name: /googlelogin/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /s'inscrire avec google/i })).toBeInTheDocument();
 
     vi.unstubAllEnvs();
   });
@@ -40,7 +40,7 @@ describe('RegisterPage — inscription Google', () => {
       </MemoryRouter>
     );
 
-    expect(screen.queryByRole('button', { name: /googlelogin/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /s'inscrire avec google/i })).not.toBeInTheDocument();
 
     vi.unstubAllEnvs();
   });

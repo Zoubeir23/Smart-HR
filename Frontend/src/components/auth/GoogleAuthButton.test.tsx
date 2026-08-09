@@ -2,74 +2,104 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { GoogleAuthButton } from './GoogleAuthButton';
 
-const { googleLoginPropsSpy } = vi.hoisted(() => ({
-  googleLoginPropsSpy: vi.fn(),
+const { useGoogleLoginSpy, startLoginSpy } = vi.hoisted(() => ({
+  useGoogleLoginSpy: vi.fn(),
+  startLoginSpy: vi.fn(),
 }));
 
 vi.mock('@react-oauth/google', () => ({
-  GoogleLogin: (props: Record<string, unknown>) => {
-    googleLoginPropsSpy(props);
-    return (
-      <button
-        type="button"
-        onClick={() => (props.onSuccess as (r: unknown) => void)({ credential: 'jeton-google' })}
-      >
-        Google
-      </button>
-    );
+  useGoogleLogin: (options: Record<string, unknown>) => {
+    useGoogleLoginSpy(options);
+    return startLoginSpy;
   },
 }));
 
+/** Récupère les options passées à useGoogleLogin lors du dernier rendu. */
+function lastGoogleOptions() {
+  return useGoogleLoginSpy.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+}
+
 describe('GoogleAuthButton', () => {
   beforeEach(() => {
-    googleLoginPropsSpy.mockClear();
+    useGoogleLoginSpy.mockClear();
+    startLoginSpy.mockClear();
   });
 
-  it('impose une largeur explicite au bouton Google', () => {
-    /* Régression : sans prop `width`, Google dimensionne le bouton en fonction
-     * de son texte. Il ne s'alignait donc pas sur le bouton pleine largeur du
-     * formulaire juste au-dessus — la mise en page paraissait décalée.
-     * Google Identity Services n'accepte qu'une largeur en pixels. */
-    render(<GoogleAuthButton onCredential={vi.fn()} onFailure={vi.fn()} />);
+  it('demande systématiquement à Google quel compte utiliser', () => {
+    /* Régression : le bouton Google Identity Services affichait un bouton
+     * « personnalisé » verrouillé sur la session ouverte, sans possibilité
+     * évidente de choisir un autre compte. `prompt: 'select_account'` force
+     * Google à présenter le sélecteur de compte à chaque connexion. */
+    render(<GoogleAuthButton onAuthorizationCode={vi.fn()} onFailure={vi.fn()} />);
 
-    const passedProps = googleLoginPropsSpy.mock.calls.at(-1)?.[0];
-    expect(typeof passedProps.width).toBe('number');
-    expect(passedProps.width).toBeGreaterThan(0);
-    expect(passedProps.width).toBeLessThanOrEqual(400);
+    expect(lastGoogleOptions().prompt).toBe('select_account');
   });
 
-  it("transmet l'ID token au parent lorsque Google authentifie l'utilisateur", () => {
-    const onCredential = vi.fn();
-    render(<GoogleAuthButton onCredential={onCredential} onFailure={vi.fn()} />);
+  it("utilise le flux code d'autorisation, échangé côté serveur", () => {
+    /* Le flux implicite renverrait un access_token exploitable depuis n'importe
+     * quelle application Google : le backend ne pourrait pas garantir que
+     * l'identité vient bien de la nôtre. Le code, lui, est échangé côté serveur
+     * avec le client_secret. */
+    render(<GoogleAuthButton onAuthorizationCode={vi.fn()} onFailure={vi.fn()} />);
 
-    fireEvent.click(screen.getByRole('button', { name: /google/i }));
-
-    expect(onCredential).toHaveBeenCalledWith('jeton-google');
+    expect(lastGoogleOptions().flow).toBe('auth-code');
   });
 
-  it('signale un échec lisible quand Google ne renvoie aucun jeton', () => {
+  it('ouvre la fenêtre Google au clic', () => {
+    render(<GoogleAuthButton onAuthorizationCode={vi.fn()} onFailure={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button'));
+
+    expect(startLoginSpy).toHaveBeenCalled();
+  });
+
+  it("transmet le code d'autorisation au parent", () => {
+    const onAuthorizationCode = vi.fn();
+    render(<GoogleAuthButton onAuthorizationCode={onAuthorizationCode} onFailure={vi.fn()} />);
+
+    (lastGoogleOptions().onSuccess as (r: { code: string }) => void)({ code: 'code-google' });
+
+    expect(onAuthorizationCode).toHaveBeenCalledWith('code-google');
+  });
+
+  it('signale un échec lisible quand Google ne renvoie aucun code', () => {
     const onFailure = vi.fn();
-    render(<GoogleAuthButton onCredential={vi.fn()} onFailure={onFailure} />);
+    render(<GoogleAuthButton onAuthorizationCode={vi.fn()} onFailure={onFailure} />);
 
-    const passedProps = googleLoginPropsSpy.mock.calls.at(-1)?.[0];
-    (passedProps.onSuccess as (r: unknown) => void)({ credential: undefined });
+    (lastGoogleOptions().onSuccess as (r: { code?: string }) => void)({ code: undefined });
 
-    expect(onFailure).toHaveBeenCalledWith(expect.stringMatching(/jeton/i));
+    expect(onFailure).toHaveBeenCalledWith(expect.stringMatching(/code/i));
   });
 
-  it('signale un échec lisible quand Google interrompt la connexion', () => {
+  it("n'alerte pas l'utilisateur quand il ferme lui-même la fenêtre Google", () => {
+    /* Fermer la popup est un abandon volontaire, pas une panne : afficher une
+     * alerte rouge dans ce cas serait du bruit. */
     const onFailure = vi.fn();
-    render(<GoogleAuthButton onCredential={vi.fn()} onFailure={onFailure} />);
+    render(<GoogleAuthButton onAuthorizationCode={vi.fn()} onFailure={onFailure} />);
 
-    const passedProps = googleLoginPropsSpy.mock.calls.at(-1)?.[0];
-    (passedProps.onError as () => void)();
+    (lastGoogleOptions().onNonOAuthError as () => void)();
 
-    expect(onFailure).toHaveBeenCalledWith(expect.stringMatching(/réessayez/i));
+    expect(onFailure).not.toHaveBeenCalled();
   });
 
-  it('utilise le libellé demandé (connexion ou inscription)', () => {
-    render(<GoogleAuthButton text="signup_with" onCredential={vi.fn()} onFailure={vi.fn()} />);
+  it('affiche le libellé demandé et se désactive pendant la connexion', () => {
+    const { rerender } = render(
+      <GoogleAuthButton
+        label="S'inscrire avec Google"
+        onAuthorizationCode={vi.fn()}
+        onFailure={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button', { name: /s'inscrire avec google/i })).toBeEnabled();
 
-    expect(googleLoginPropsSpy.mock.calls.at(-1)?.[0].text).toBe('signup_with');
+    rerender(
+      <GoogleAuthButton
+        label="S'inscrire avec Google"
+        isBusy
+        onAuthorizationCode={vi.fn()}
+        onFailure={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole('button')).toBeDisabled();
   });
 });
