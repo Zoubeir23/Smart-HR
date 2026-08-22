@@ -11,7 +11,7 @@ A **Zhipu AI API key** was accidentally committed to the Git repository in file 
 ### Exposed Credential
 - **File:** `.env.docker`
 - **Key Type:** ZHIPU_API_KEY
-- **Exposed Value:** `***REMOVED-ZHIPU-API-KEY***`
+- **Exposed Value:** `***REVOKED-REMOVED-FROM-DOC***` (la valeur réelle a été retirée de ce document et purgée de l'historique Git — voir section Actions ci-dessous)
 - **Commit:** cc316c4
 - **Detection:** GitGuardian (Incident #26953230)
 
@@ -29,7 +29,7 @@ A **Zhipu AI API key** was accidentally committed to the Git repository in file 
 ```bash
 # Go to Zhipu AI Dashboard
 # URL: https://open.bigmodel.cn/usercenter/apikeys
-# Find key: ***REMOVED-ZHIPU-API-KEY***...
+# Rechercher la clé dans le tableau de bord Zhipu et la révoquer
 # Click "Delete" or "Revoke"
 ```
 
