@@ -1,6 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import axios from 'axios';
-import { normalizeApiUrl, refreshAccessToken } from './api';
+import api, { normalizeApiUrl, refreshAccessToken } from './api';
 
 describe('normalizeApiUrl', () => {
   it("retombe sur un chemin relatif '/api/v1' quand l'URL est vide", () => {
@@ -93,5 +93,36 @@ describe('refreshAccessToken', () => {
 
     vi.spyOn(axios, 'post').mockResolvedValueOnce({ data: { access: 'recovered-token' } });
     await expect(refreshAccessToken()).resolves.toBe('recovered-token');
+  });
+});
+
+describe('FormData requests', () => {
+  const originalAdapter = api.defaults.adapter;
+
+  afterEach(() => {
+    api.defaults.adapter = originalAdapter;
+  });
+
+  it('n\'écrase pas un corps FormData en JSON malgré le Content-Type par défaut de l\'instance', async () => {
+    /* Régression production (candidature à une offre d'emploi → 400) :
+     * l'instance axios fixe 'Content-Type: application/json' par défaut.
+     * Sans retirer ce header pour un corps FormData, axios sérialise le
+     * FormData en JSON (transformRequest) au lieu de l'envoyer en
+     * multipart/form-data — le CV et les autres champs disparaissent et le
+     * backend répond 400. */
+    let capturedConfig: { data: unknown; headers: { get: (name: string) => string | undefined } } | undefined;
+    api.defaults.adapter = async (config) => {
+      capturedConfig = config as typeof capturedConfig;
+      return { data: {}, status: 200, statusText: 'OK', headers: {}, config };
+    };
+
+    const formData = new FormData();
+    formData.append('job_offer', '5');
+    formData.append('cover_letter', 'Ma lettre de motivation');
+
+    await api.post('/recruitment/applications/', formData);
+
+    expect(capturedConfig?.data).toBeInstanceOf(FormData);
+    expect(capturedConfig?.headers.get('Content-Type')).not.toContain('application/json');
   });
 });
