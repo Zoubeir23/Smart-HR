@@ -105,11 +105,10 @@ const ApplyPage = () => {
       });
       navigationTimerRef.current = setTimeout(() => navigate('/my-applications'), 3000);
     },
-    onError: (err: Error & { response?: { data?: { detail?: string } } }) => {
-      const apiMessage = err?.response?.data?.detail;
+    onError: (err: Error & { response?: { data?: Record<string, unknown> } }) => {
       toast({
         title: 'Erreur',
-        description: apiMessage || err.message || 'Impossible d\'envoyer la candidature.',
+        description: extractApplicationErrorMessage(err),
         variant: 'destructive',
       });
     },
