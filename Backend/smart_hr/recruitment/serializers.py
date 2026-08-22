@@ -69,6 +69,29 @@ class ApplicationSerializer(serializers.ModelSerializer):
             "created_at",
         ]
 
+    def validate(self, attrs):
+        """Empêche une double candidature (job_offer, candidate) en amont du DB.
+
+        `candidate` est en lecture seule (affecté dans la vue via
+        `serializer.save(candidate=request.user)`), donc DRF ne génère pas
+        automatiquement le UniqueTogetherValidator basé sur
+        `Meta.unique_together` : sans ce contrôle explicite, une double
+        candidature levait un IntegrityError non intercepté → 500 au lieu
+        d'un 400 propre.
+        """
+        request = self.context.get("request")
+        job_offer = attrs.get("job_offer")
+        if request is not None and job_offer is not None:
+            candidate = self.instance.candidate if self.instance else request.user
+            duplicates = Application.objects.filter(job_offer=job_offer, candidate=candidate)
+            if self.instance is not None:
+                duplicates = duplicates.exclude(pk=self.instance.pk)
+            if duplicates.exists():
+                raise serializers.ValidationError(
+                    {"job_offer": "Vous avez déjà postulé à cette offre d'emploi."},
+                )
+        return attrs
+
     def validate_cv(self, value):
         if value.size > 5 * 1024 * 1024:
             raise serializers.ValidationError("Le CV ne doit pas dépasser 5 Mo.")
