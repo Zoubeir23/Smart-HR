@@ -125,4 +125,16 @@ describe('FormData requests', () => {
     expect(capturedConfig?.data).toBeInstanceOf(FormData);
     expect(capturedConfig?.headers.get('Content-Type')).not.toContain('application/json');
   });
+
+  it('conserve Content-Type: application/json pour un corps JSON classique', async () => {
+    let capturedConfig: { headers: { get: (name: string) => string | undefined } } | undefined;
+    api.defaults.adapter = async (config) => {
+      capturedConfig = config as typeof capturedConfig;
+      return { data: {}, status: 200, statusText: 'OK', headers: {}, config };
+    };
+
+    await api.post('/recruitment/job-offers/', { title: 'Dev Backend' });
+
+    expect(capturedConfig?.headers.get('Content-Type')).toContain('application/json');
+  });
 });
