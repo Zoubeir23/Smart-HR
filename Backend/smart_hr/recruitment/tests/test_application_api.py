@@ -217,3 +217,66 @@ class TestApplicationAnalyzeCV:
         url = f"{LIST_URL}{application.pk}/analyze-cv/"
         response = client.post(url)
         assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+class TestApplicationCreate:
+    @staticmethod
+    def _payload(job_offer_id, cv):
+        return {
+            "job_offer": str(job_offer_id),
+            "cv": cv,
+            "cover_letter": "Ma lettre de motivation",
+            "gdpr_consent": "true",
+        }
+
+    @patch("smart_hr.recruitment.views.application.analyze_cv_async")
+    def test_candidate_can_apply_with_multipart_payload(
+        self,
+        mock_task,
+        candidate_user,
+        open_job,
+        fake_cv,
+    ):
+        client = APIClient()
+        client.force_authenticate(user=candidate_user)
+        response = client.post(
+            LIST_URL,
+            self._payload(open_job.id, fake_cv),
+            format="multipart",
+        )
+        assert response.status_code == status.HTTP_201_CREATED
+        assert response.data["job_offer"] == open_job.id
+
+    def test_duplicate_application_returns_400_not_500(
+        self,
+        candidate_user,
+        open_job,
+        fake_cv,
+    ):
+        """Régression : candidater deux fois à la même offre levait un
+        IntegrityError (unique_together job_offer+candidate) non intercepté
+        par le serializer — `candidate` étant read_only, DRF ne génère pas
+        automatiquement le UniqueTogetherValidator. Résultat en production :
+        un 500 brut au lieu d'un message de validation propre."""
+        client = APIClient()
+        client.force_authenticate(user=candidate_user)
+
+        first = client.post(
+            LIST_URL,
+            self._payload(open_job.id, fake_cv),
+            format="multipart",
+        )
+        assert first.status_code == status.HTTP_201_CREATED
+
+        second_cv = SimpleUploadedFile(
+            "cv_test_2.pdf",
+            b"%PDF-1.4 fake pdf content for testing purposes",
+            content_type="application/pdf",
+        )
+        second = client.post(
+            LIST_URL,
+            self._payload(open_job.id, second_cv),
+            format="multipart",
+        )
+        assert second.status_code == status.HTTP_400_BAD_REQUEST
+        assert "job_offer" in second.data
