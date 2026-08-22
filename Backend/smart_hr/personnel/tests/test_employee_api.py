@@ -5,8 +5,12 @@ from rest_framework import status
 from rest_framework.test import APIClient
 
 from smart_hr.personnel.models import Department
+from smart_hr.personnel.models import Diploma
 from smart_hr.personnel.models import Employee
+from smart_hr.personnel.models import FamilyStatus
+from smart_hr.personnel.models import Nationality
 from smart_hr.personnel.models import Position
+from smart_hr.personnel.models import Service
 from smart_hr.users.models import User
 
 pytestmark = pytest.mark.django_db
@@ -99,6 +103,55 @@ class TestEmployeePermissions:
         ids = [item["id"] for item in response.data["results"]]
         assert employee.pk in ids
         assert rh_employee.pk not in ids
+
+
+class TestEmployeeListQueryCount:
+    def test_list_stays_bounded_regardless_of_row_count(
+        self,
+        rh_user,
+        department,
+        position,
+        django_assert_max_num_queries,
+    ):
+        """Régression N+1 : EmployeeSerializer traverse service.name,
+        nationality.name, family_status.label et diploma.label, mais
+        get_queryset() ne faisait un select_related que sur
+        user/department/position — chacun de ces 4 champs déclenchait une
+        requête par employé listé. Avec 3 employés ayant tous ces champs
+        renseignés, ça faisait jusqu'à 12 requêtes en trop. Le nombre de
+        requêtes doit rester borné indépendamment du nombre d'employés."""
+        service = Service.objects.create(name="Support", department=department)
+        nationality = Nationality.objects.create(name="Sénégalaise")
+        family_status = FamilyStatus.objects.create(label="Marié(e)")
+        diploma = Diploma.objects.create(label="Master")
+
+        for index in range(3):
+            employee_account = User.objects.create_user(
+                username=f"n1_emp_{index}",
+                email=f"n1_emp_{index}@test.com",
+                password="pass1234!",
+                role=User.Role.EMPLOYEE,
+            )
+            Employee.objects.create(
+                user=employee_account,
+                department=department,
+                position=position,
+                service=service,
+                nationality=nationality,
+                family_status=family_status,
+                diploma=diploma,
+                hire_date=datetime.date(2023, 1, 1),
+                salary=500000,
+            )
+
+        client = APIClient()
+        client.force_authenticate(user=rh_user)
+
+        with django_assert_max_num_queries(6):
+            response = client.get(LIST_URL)
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.data["results"]) == 3
 
 
 class TestEmployeeCRUD:
