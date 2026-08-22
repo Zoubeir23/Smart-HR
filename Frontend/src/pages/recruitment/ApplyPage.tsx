@@ -31,6 +31,27 @@ const JOB_TYPE_LABELS: Record<string, string> = {
   internship: 'Stage',
 };
 
+/**
+ * Traduit une erreur DRF (dict de champ -> liste de messages, ou {detail: ...})
+ * en un message lisible. DRF ne renvoie pas de clé "detail" pour les erreurs
+ * de validation de champ : sans ceci, seul err.message générique s'affichait.
+ */
+function extractApplicationErrorMessage(
+  err: Error & { response?: { data?: Record<string, unknown> } },
+): string {
+  const data = err?.response?.data;
+  if (data && typeof data === 'object') {
+    if (typeof data.detail === 'string') return data.detail;
+    const firstFieldErrors = Object.values(data).find(
+      (value) => Array.isArray(value) && value.length > 0,
+    );
+    if (Array.isArray(firstFieldErrors) && typeof firstFieldErrors[0] === 'string') {
+      return firstFieldErrors[0];
+    }
+  }
+  return err.message || "Impossible d'envoyer la candidature.";
+}
+
 const ApplyPage = () => {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
