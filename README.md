@@ -495,7 +495,7 @@ npm run lint
 
 ## Auteur
 
-**Zoubeir Ibrahima Ba** — Projet de soutenance HESTAFRICA 2026
+**Zoubeir IBRAHIMA AMED**  Projet de soutenance HESTAFRICA 2026
 
 [GitHub](https://github.com/Zoubeir23)
 
