@@ -75,7 +75,19 @@ class ApplicationViewSet(viewsets.ModelViewSet):
         return Application.objects.filter(candidate=user)
 
     def get_permissions(self):
-        """Applique des permissions par action selon le rôle métier."""
+        """Applique des permissions par action selon le rôle métier.
+
+        Une action déclarée via @action(..., permission_classes=[...]) est
+        prioritaire sur la règle par défaut ci-dessous : sans cette lecture
+        explicite, ce paramètre est silencieusement ignoré (get_permissions
+        ne retombe jamais sur le comportement par défaut de DRF qui le lit
+        depuis self.permission_classes), ce qui peut donner l'illusion
+        qu'une action est restreinte alors qu'elle ne l'est pas.
+        """
+        action_method = getattr(self, self.action, None)
+        action_permission_classes = getattr(action_method, "kwargs", {}).get("permission_classes")
+        if action_permission_classes:
+            return [permission() for permission in action_permission_classes]
         if self.action == "create":
             return [IsCandidate()]
         if self.action in ["list", "retrieve"]:

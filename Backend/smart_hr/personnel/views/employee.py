@@ -50,7 +50,15 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Retourne les employés visibles selon le rôle de l'utilisateur connecté."""
         user = self.request.user
-        qs = Employee.objects.select_related("user", "department", "position").order_by("id")
+        qs = Employee.objects.select_related(
+            "user",
+            "department",
+            "position",
+            "service",
+            "nationality",
+            "family_status",
+            "diploma",
+        ).order_by("id")
         if user.role in [User.Role.ADMIN, User.Role.RH]:
             return qs
         return qs.filter(user=user)
