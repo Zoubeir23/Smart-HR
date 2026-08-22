@@ -1,13 +1,17 @@
+from unittest.mock import Mock
 from unittest.mock import patch
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.test import APIClient
 
 from smart_hr.recruitment.models import Application
 from smart_hr.recruitment.models import JobOffer
+from smart_hr.recruitment.views.application import ApplicationViewSet
 from smart_hr.users.models import User
+from smart_hr.users.permissions import IsRH
 
 pytestmark = pytest.mark.django_db
 
@@ -162,6 +166,38 @@ class TestApplicationFilters:
         client.force_authenticate(user=rh_user)
         response = client.get(LIST_URL + "?job_offer=abc")
         assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+class TestGetPermissionsHonorsActionDecorator:
+    def test_action_declared_permission_classes_take_priority(self):
+        """Régression : get_permissions() décidait uniquement via son switch
+        interne (create / list-retrieve / défaut IsRH), en ignorant tout
+        permission_classes= déclaré sur le décorateur @action d'une action —
+        ce paramètre était du code mort (aucune action existante n'en
+        souffrait car leur défaut IsRH coïncidait, mais une nouvelle action
+        déclarant une permission différente serait silencieusement retombée
+        sur IsRH). Simule une action dont le décorateur déclare une
+        permission distincte du défaut et vérifie qu'elle est bien honorée.
+        """
+        view = ApplicationViewSet()
+        view.action = "fake_action"
+        view.fake_action = Mock(kwargs={"permission_classes": [IsAuthenticated]})
+
+        permissions = view.get_permissions()
+
+        assert len(permissions) == 1
+        assert isinstance(permissions[0], IsAuthenticated)
+
+    def test_action_without_declared_permission_classes_falls_back_to_default(self):
+        """Sans permission_classes= sur le décorateur, la règle par défaut
+        (IsRH pour les actions hors create/list/retrieve) s'applique toujours."""
+        view = ApplicationViewSet()
+        view.action = "anonymize"
+
+        permissions = view.get_permissions()
+
+        assert len(permissions) == 1
+        assert isinstance(permissions[0], IsRH)
 
 
 class TestApplicationInternalNote:
