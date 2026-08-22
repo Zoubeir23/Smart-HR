@@ -7,7 +7,7 @@ feat: corrections MVP pour démo + sécurité renforcée
 - Remplacement clé API ZHIPU exposée par placeholder
 - Documentation incident sécurité (SECURITY_INCIDENT.md)
 
-⚠️ ACTION REQUISE : Révoquer clé ***REMOVED-ZHIPU-API-KEY***...
+⚠️ ACTION REQUISE : Révoquer la clé ZHIPU exposée (voir SECURITY_INCIDENT.md)
    sur https://open.bigmodel.cn/usercenter/apikeys
 
 ✨ BACKEND (Django)
