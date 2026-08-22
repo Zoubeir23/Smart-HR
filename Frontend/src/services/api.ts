@@ -40,6 +40,16 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Le Content-Type par défaut de l'instance est 'application/json'. Pour un
+  // corps FormData (upload de CV, documents, import Excel...), ce header
+  // forcé fait sérialiser le FormData en JSON par axios (transformRequest le
+  // convertit via JSON.stringify) au lieu de l'envoyer en multipart/form-data
+  // — le fichier et les champs sont alors perdus et le backend répond 400.
+  // On retire le header pour laisser le navigateur poser lui-même
+  // 'multipart/form-data; boundary=...'.
+  if (config.data instanceof FormData) {
+    config.headers.delete('Content-Type');
+  }
   return config;
 });
 
