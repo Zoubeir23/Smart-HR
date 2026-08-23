@@ -68,8 +68,8 @@
 | **Inscription candidat** | **Dashboard Admin** |
 | <img src="Docs/screenshots/05-dashboard-rh.png" alt="Dashboard RH" width="400"/> | <img src="Docs/screenshots/06-dashboard-employe.png" alt="Dashboard Employé" width="400"/> |
 | **Dashboard RH** | **Dashboard Employé** |
-| <img src="Docs/screenshots/07-dashboard-candidat.png" alt="Dashboard Candidat" width="400"/> | |
-| **Dashboard Candidat** | |
+| <img src="Docs/screenshots/07-dashboard-candidat.png" alt="Dashboard Candidat" width="400"/> | <img src="Docs/screenshots/08-employes.png" alt="Gestion des employés" width="400"/> |
+| **Dashboard Candidat** | **Gestion des employés** |
 
 </div>
 
