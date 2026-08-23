@@ -36,7 +36,7 @@
 
 <br/>
 
-[Démarrage rapide](#-démarrage-rapide) · [Fonctionnalités](#-fonctionnalités) · [Architecture](#-architecture) · [IA Intégrée](#-ia-intégrée) · [Déploiement](#-déploiement)
+[Démarrage rapide](#-démarrage-rapide) · [Aperçu](#aperçu-de-lapplication) · [Fonctionnalités](#-fonctionnalités) · [Architecture](#-architecture) · [Commandes Make](#commandes-make) · [IA Intégrée](#-ia-intégrée) · [Déploiement](#-déploiement)
 
 </div>
 
@@ -53,6 +53,25 @@
 - **Conduit des entretiens vocaux** — Intégration Vapi (WebRTC) pour des sessions d'entretien IA avec feedback structuré en fin d'appel
 - **Assiste les RH via chatbot** — Agent conversationnel multi-LLM (Gemini, OpenAI, Anthropic, Grok) avec actions directes sur la base de données
 - **Gère l'ensemble du cycle RH** — Congés, présences, paie, documents, formations, tâches
+
+---
+
+## Aperçu de l'application
+
+<div align="center">
+
+| | |
+|---|---|
+| <img src="Docs/screenshots/01-home.png" alt="Page d'accueil" width="400"/> | <img src="Docs/screenshots/02-login.png" alt="Connexion" width="400"/> |
+| **Page d'accueil** | **Connexion** |
+| <img src="Docs/screenshots/03-register.png" alt="Inscription candidat" width="400"/> | <img src="Docs/screenshots/04-dashboard-admin.png" alt="Dashboard Admin" width="400"/> |
+| **Inscription candidat** | **Dashboard Admin** |
+| <img src="Docs/screenshots/05-dashboard-rh.png" alt="Dashboard RH" width="400"/> | <img src="Docs/screenshots/06-dashboard-employe.png" alt="Dashboard Employé" width="400"/> |
+| **Dashboard RH** | **Dashboard Employé** |
+| <img src="Docs/screenshots/07-dashboard-candidat.png" alt="Dashboard Candidat" width="400"/> | |
+| **Dashboard Candidat** | |
+
+</div>
 
 ---
 
@@ -205,7 +224,25 @@ Smart-HR/
 - Redis 7+
 - Docker (optionnel, recommandé)
 
-### Avec Docker (recommandé)
+### Avec Make (le plus rapide)
+
+Une fois les fichiers `.env` créés (voir [Variables d'Environnement](#variables-denvironnement)), tout se lance en une seule commande :
+
+```bash
+git clone https://github.com/Zoubeir23/Smart-HR.git
+cd Smart-HR
+
+mkdir -p Backend/.envs/.local
+touch Backend/.envs/.local/.django Backend/.envs/.local/.postgres
+cp Frontend/.env.example Frontend/.env
+# Éditer les fichiers .env avec vos clés API
+
+make init-all   # up + migrate + seed-demo, dans l'ordre, avec les temps d'attente nécessaires
+```
+
+La liste complète des commandes disponibles est dans la section [Commandes Make](#commandes-make) ci-dessous, ou via `make help`.
+
+### Avec Docker (sans Make)
 
 ```bash
 git clone https://github.com/Zoubeir23/Smart-HR.git
@@ -292,6 +329,62 @@ celery -A config.celery_app beat --loglevel=info
 | **RH** | `rh@smarthr.com` | `rh123` | Dashboard RH, IA, recrutement, congés |
 | **Employé** | `employee@smarthr.com` | `employee123` | Profil, congés, tâches |
 | **Candidat** | `candidate@smarthr.com` | `candidate123` | Offres d'emploi, postuler |
+
+---
+
+## Commandes Make
+
+Toutes les commandes agissent sur la stack Docker locale (`Backend/docker-compose.local.yml`), sauf mention contraire. Liste complète et à jour : `make help`.
+
+### Initialisation
+
+| Commande | Description |
+|----------|-------------|
+| `make init-all` | Setup complet : démarre les conteneurs, applique les migrations, charge les données de démo |
+| `make reset` | ⚠️ Destructif — supprime les volumes Docker puis relance `init-all` de zéro |
+| `make clean-all` | ⚠️ Destructif — supprime les volumes Docker et les fichiers de migration, sans relancer |
+
+### Docker
+
+| Commande | Description |
+|----------|-------------|
+| `make up` | Démarre tous les conteneurs en arrière-plan |
+| `make down` | Arrête les conteneurs |
+| `make down-v` | Arrête les conteneurs et supprime les volumes (perte des données locales) |
+| `make restart` | Redémarre les conteneurs |
+| `make build` | Reconstruit les images Docker |
+| `make rebuild` | Arrête, reconstruit et relance les conteneurs |
+| `make logs` | Suit les logs du backend Django en direct |
+| `make celery-logs` | Suit les logs Celery (worker + beat) en direct |
+
+### Frontend
+
+| Commande | Description |
+|----------|-------------|
+| `make frontend-install` | Installe les dépendances npm |
+| `make frontend-dev` | Lance le serveur de développement Vite (`localhost:5173`) |
+| `make frontend-build` | Build de production |
+| `make frontend-test` | Lance les tests Vitest |
+| `make frontend-lint` | Vérifie le code avec ESLint |
+
+### Django
+
+| Commande | Description |
+|----------|-------------|
+| `make shell` | Ouvre le shell Python Django (`manage.py shell`) |
+| `make dbshell` | Ouvre le shell PostgreSQL (`psql`) |
+| `make migrate` | Applique les migrations en base |
+| `make migrate-local` | Applique les migrations sans Docker (SQLite) |
+| `make makemigrations` | Génère les fichiers de migration |
+| `make makemigrations-local` | Génère les fichiers de migration sans Docker (SQLite) |
+| `make delete-migrations` | Supprime tous les fichiers de migration existants |
+| `make check` | Vérifie la configuration Django (`manage.py check`) |
+| `make test` | Lance la suite de tests pytest du backend |
+| `make createsuperuser` | Crée un compte super-administrateur |
+| `make collectstatic` | Collecte les fichiers statiques |
+| `make flush-db` | Vide les données de la base (conserve les tables) |
+| `make seed-demo` | (Re)génère les données de démonstration |
+| `make docs-build` | Construit la documentation MkDocs |
 
 ---
 
