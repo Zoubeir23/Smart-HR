@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 48" width="200" height="48">
-  <g>
-    <rect width="48" height="48" rx="10" fill="#D62828"></rect>
-    <rect x="12" y="14" width="6" height="20" rx="3" fill="white" fill-opacity="0.95"></rect>
-    <rect x="21" y="10" width="6" height="24" rx="3" fill="white"></rect>
-    <rect x="30" y="14" width="6" height="20" rx="3" fill="white" fill-opacity="0.95"></rect>
-    <rect x="12" y="22" width="24" height="2" rx="1" fill="white" fill-opacity="0.8"></rect>
-  </g>
-  <text x="60" y="33" font-family="Plus Jakarta Sans, Inter, sans-serif" font-weight="800" font-size="22" letter-spacing="-0.5" fill="#1c1410">Smart<tspan fill="#D62828">-HR</tspan></text>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="48" viewBox="0 0 200 48"><g><rect width="48" height="48" fill="#D62828" rx="10"/><rect width="6" height="20" x="12" y="14" fill="#fff" fill-opacity=".95" rx="3"/><rect width="6" height="24" x="21" y="10" fill="#fff" rx="3"/><rect width="6" height="20" x="30" y="14" fill="#fff" fill-opacity=".95" rx="3"/><rect width="24" height="2" x="12" y="22" fill="#fff" fill-opacity=".8" rx="1"/></g><text x="60" y="33" fill="#1c1410" font-family="Plus Jakarta Sans, Inter, sans-serif" font-size="22" font-weight="800" letter-spacing="-.5">Smart<tspan fill="#D62828">-HR</tspan></text></svg>
